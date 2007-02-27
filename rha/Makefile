@@ -8,7 +8,7 @@
 PREFIX=..
 
 #
-# standard symbols and auto-configuration (it's magic!!!!!)
+# standard symbols and auto-configuration (it's magic!)
 #
 export LD=gcc
 export CC=gcc
