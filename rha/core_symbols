@@ -1,0 +1,120 @@
+// e.g.  'if' is a prule (parse rule); 'op_if' is a function/macro
+dot		.
+op_dot		op.
+nobinddot	.!
+op_nobinddot	op.!
+quest		?
+op_quest	op?
+fn		fn
+op_fn		op_fn
+macro		macro
+op_macro	op_macro
+prule		prule
+op_prule	op_prule
+if		if
+op_if		op_if
+while		while
+op_while	op_while
+for		for
+op_for_iterator	op_for_iterator
+op_for_cstyle	op_for_cstyle
+return		return
+op_return	op_return
+deliver		deliver
+op_deliver	op_deliver
+break		break
+op_break	op_break
+import		import
+op_import	op_import
+try		try
+op_try		op_try
+throw           throw
+op_throw        op_throw
+
+// auxiliary symbols (used inside parse rules)
+in		in
+else		else
+catch		catch
+
+// symbols for typing
+type	        type
+typename	typename
+
+// other builtin functions
+snatch		=?
+do		do
+exit		exit
+eval		eval
+delete		delete
+tuplefy		tuplefy
+true		true
+false		false
+group           group
+id		id
+
+// symbols for literal-separator, 
+// it would be more consequent to have: comma   ,
+// but this would hard to read when tuple are printed
+comma		comma
+semic		semic
+colon		colon
+
+// special objects
+from		from
+parent		parent
+this		this
+that		that
+root		root
+env		env
+
+rha_location 	rha_location
+call		rha_call
+calldef		rha_calldef
+
+// operators
+quote		\\
+op_quote	op\\
+assign	        =
+op_assign	op=
+plusassign	+=
+minusassign	-=
+timesassign	*=
+divideassign	/=
+plus		+
+op_plus		op+
+minus		-
+op_minus	op-
+times		*
+op_times	op*
+divide		/
+op_divide	op/
+equal		==
+op_equal	op==
+notequal	!=
+op_notequal	op!=
+greater		>
+op_greater	op>
+greaterequal 	>=
+op_greaterequal op>=
+less		<
+op_less		op<
+lessequal	<=
+op_lessequal	op<=
+and		&&
+op_and		op&&
+or		||
+op_or		op||
+not		!
+op_not		op!
+literal		literal
+copy            copy
+
+// note that ++ is special, it can be manipulated via int.inc
+inc		inc
+plusplus	++
+preplusplus	preplusplus
+postplusplus	postplusplus
+dec		dec
+minusminus	--
+preminusminus	preminusminus
+postminusminus	postminusminus

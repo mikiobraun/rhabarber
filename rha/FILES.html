@@ -1,0 +1,243 @@
+<html>
+<head>
+<title>Rhabarber File List</title>
+<style type="text/css">
+   table { background: #e0e0e0; font-size: xx-small;}
+   td { background: #ffffff; }
+   tr { background: #f0f0f0; }
+   pre { background: #e0e0e0; }
+</style>
+</head>
+<body>
+<h1 align=center>Rhabarber</h1>
+
+<p align=center>Tag: $Date: 2005-11-14 14:14:39 +0100 (Mon, 14 Nov 2005) $</p>
+
+<h2>Rhabarber File List</h2>
+
+<table align=center border=0 cellspacing=5>
+<tr>
+<th rowspan=7>Components
+<th>Infrastructure
+<td>
+    alloc - GC'd alloc<br>
+    debug - debugging support<br>
+    messages - for printing out error messages, warnings, etc.
+    usage<br>
+    utils - utility functions
+    extensions - further language extensions
+<tr>
+<th>The Languag Objects:
+<td>
+    object - dynamically typed objects with slots<br>
+    rhavt - virtual table for primtypes<br>
+    primtype - primitive types<br>
+    symtable
+<tr>
+<th>The Language:
+<td>
+    rhabarber - the main file (main & read-eval loop)<br>
+    core - initialize core objects and builtin functions<br>
+    eval - the interpreter<br>
+    &nbsp;<br>
+    eval_typed - beta versions for eval with types<br>
+    extensions - builtin language features<br>
+    function_typed<br>
+<tr>
+<th>Experimental Language features:
+<td>
+    parser - dynamic parser<br>
+    lexer - dynamic lexer
+<tr>
+<th>Other stuff:
+<td>
+    graphics - interface to OpenGL (for now)
+<tr>
+<th>Parsing:
+<td>
+    rhaparser.y<br>
+    rhalexer.fl
+<tr>
+<th>Helpers for Templates:
+<td>
+    stringdefs
+<tr>
+<th rowspan=4>Rhabarber Types
+<th>Datatypes
+<td>
+   bool<br>
+   complex<br>
+   int<br>
+   real<br>
+   matrix<br>
+   plain<br>
+   string<br>
+   symbol<br>
+<tr>
+<th>  Functions
+<td>
+    builtin<br>
+    function<br>
+    method - bound method<br>
+    overloaded
+<tr>
+<th>Containers:
+<td>
+    list<br>
+    tuple<br>
+    tree
+<tr>
+<th>Other:
+<td>
+    cons<br>
+    exception
+</table>
+
+<h2>Program initialization</h2>
+
+<p>The general project flow is like this:</p>
+<pre>
+    main
+      init
+      init_stubs
+      execute "-x" commands
+      execute files passed on command line
+      enter read_eval_loop
+</pre>
+
+<p>The read-eval-loops always have this structure:</p>
+<pre>
+    obtain parsed code using rhaparsestring or rhaparsefile
+    call eval(root, code) in a try/catch block
+</pre>
+
+<p>The initialization is in two steps:
+<ol>
+<li>in <tt>init()</tt>, the different modules are actually
+initialized.
+<li>in <tt>init_stubs()</tt>, the corresponding stub initializers are
+called. These mostly built the corresponding objects and add them to
+the root environment.
+</ol>
+The functions also call the <tt>init()</tt> functions for other
+classes on which they depend, so that it should in principle not
+matter in which order the init functions are called.
+</p>
+
+<h2>Object model</h2>
+
+<p>In rhabarber, an object consists of some opaque data and a number
+of slots. The opaque data is an ecapsulated C structure. For example,
+an integer contains the value in its data part. The slots assign
+symbols to other rhabarber objects.</p>
+
+<p>The slots of an object can be enriched by linking an object to
+other objects. There exists two kinds of links, the <tt>parent</tt>
+and the <tt>this</tt> link. The <tt>parent</tt> link is static and is set at
+object construction time. The <tt>this</tt> pointer is more dynamic is
+mainly used in methods calls. The lookup order is:
+<tt>local-this-parent</tt>.
+</p>
+
+<p>In plots, the <tt>parent</tt> pointer is often drawn as pointing
+up, while the <tt>this</tt>pointer points to the left.
+</p>
+<pre class=example>
+
+               parent object
+                  ^
+                  | parent
+          this    |
+    this <-----  data:  some C struct
+   object       slots:  sym1 -> obj1
+                        sym2 -> obj2
+                             ...
+                        symn -> objn
+
+</pre>
+
+<p>The main reason for linking the slots is, of course, code
+re-use. Since you can alter the semantic of the slots, cloning is not
+equal to sub-typing.
+</p>
+
+<p>Technically, there is no difference between a method call and a
+ordinary function call. The receiver of a method call is passed by
+setting the <tt>this</tt> pointer of the function to the receiver when
+calling the function. This is kinda whacky because it is not
+guaranteed that the <tt>this</tt> pointer of the function points to
+the receiver throughout the function call (it will get overwritten if
+something else happens), but that information is not accessed anyway.
+</p>
+
+<h2>Construction of the activation record</h2>
+
+<p>
+There are basically two kinds of function calls, pure function calls
+and method calls. The environment in which the function's code is
+executed is called the <em>activation record</em>.
+</p>
+
+<p>In general, the activtaion record consists of the functions
+syntactic scope plus the arguments. The syntactic scope is the
+environment in which the function has been defined.</p>
+
+<p>For method calls, there exist two alternatives: Either the slots of
+the receiver of the call (the "this" object) are also part of the
+activation record, or a special name is used to refer to the
+receiver. An example for the first kind is <tt>C++</tt>, and for the
+latter is <tt>python</tt>, which uses the first argument of the method
+to refer to the receiver.</p>
+
+<p>In rhabarber, the activation record is constructed by first cloning
+the syntactic environment of the function. Then, the arguments values
+are assigned in the activation record. Finally, for method calls, the
+<tt>this</tt> pointer of the activation record is set to the
+receiver.</p>
+
+<p>The final picture looks like this:</p>
+<pre class=example>
+
+               syntactic environment of f
+                  ^
+                  | parent
+		  |
+                  
+ method   this   +ACTIVATION RECORD----+
+  call   <-----  | data:  none         |
+ receiver        |slots:  arg1 -> val1 |
+                 |        arg2 -> obj2 |
+                 |             ...     |
+                 |        argn -> argn |
+                 +---------------------+
+
+</pre>
+
+<h2>primtype initialization</h2>
+
+<p>When you define a new primitive type (that is, some C type which
+should be accessible from within rhabarber, you need to export at
+least the primtype variable and an <tt>*_init()</tt> function.</p>
+
+<p>The <tt>*_init()</tt> function, typically looks like this (assuming
+that you are definint <tt>foobar</tt>):
+<pre class=example>
+    void foobar_init(void)
+    {
+       if(!foobar_type) {
+          // initialize the primtype
+          foobar_type = primtype_new("foobar", sizeof(struct foobar_s));
+
+          // more primtype initialization, for example virtual tables, 
+          // or global variables
+
+          // construct the first, prototypical object
+          foobar_new();
+    }
+</pre>
+First you check whether you have already been initialized, and if not,
+you construct the primtype. At the end, you construct the first object
+which will become the prototypical object (<tt>object_new()</tt> takes
+care of that).</p>
+</body>
+</html>

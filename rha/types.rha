@@ -1,0 +1,76 @@
+
+(a, b, c)           // tuple
+[a, b, c]           // list
+{a, b, c}           // set
+{a->x, b->y, c->z}  // map is a special set
+
+// comma vs semicolon
+// actually, code is a list of statements, i.e.
+f(x) = { x = 2*x; x };
+
+
+x:any;  // is boolean on the right side of assignments or in expressions
+
+// types are dynamic
+// each object is its own type
+// we can compare types with 'match'
+// the slots of an object defines type information
+
+any
+// we should have the type 'any' which is super-type to everybody
+// rename 'void' to 'any'
+
+int
+// maybe integers should not have slots but only 'int' as a parent
+x = 5;        // ? abr. for x.default = 5;
+x.value = 5;
+
+tuple
+// could be implicitely functions
+x(2, 3);
+
+functions
+// we could map 
+f = fn(x)2*x;
+f.args = (x);
+f.code = 2*x;
+f.env = env;
+f.nargs = length(f.args);
+
+eq(int);  // creates an object with typed slots to check equality for 'int'
+          // because there are no implementations in 'eq(a)'
+
+list(int);  // creates an object with typed slots that can be used,
+	    // because implementation are available
+
+add(a, b, c).op+(x:a, y:b) : c;
+
+
+// does eq(a) have a slot a?
+
+eq(a).op==(x:a, y:a) : bool;
+ord(a) = eq(a);
+ord(a).op<(x:a, y:a) : bool;
+
+ce:container(e);
+
+container(e).empty() : void; // 
+container(e).insert(x:e) : void;
+container(e).member(x:e) : bool;
+
+op==(:a, :b):c  => a*b->c
+
+
+int.op==(x, y) = { bla; };
+:: (int, int) -> bool
+
+match(int, eq(int));
+
+
+map(k, a).insert(x:k, y:a) = 0;
+map(k, a).find(x,:k):a = 0;
+
+match(array(a), map(int, a));
+
+empty(dict:map(k, a)): void;
+container(a, array(a));

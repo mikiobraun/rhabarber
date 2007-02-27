@@ -1,0 +1,70 @@
+import init;
+import domains;
+
+// evaluate an expression which contains rha-mxarrays
+//
+// For example, eval(("disp(", X, ")"))
+//
+// evaluates disp on the rha-mxarray X
+//
+matlab.name = "matlab";
+
+matlab.eval(t) = {
+  @cmd = "";
+  if (t?tuple) {
+    cmd = "";
+    for(arg, t) {
+      print(arg);
+      if (arg?mxarray) {
+	arg.putobj();
+	cmd = cmd + arg.varidname();
+      }
+      else
+	cmd = cmd + arg.to_string();
+    }
+  }
+  else
+    cmd = t.to_string();
+  evalstring(cmd);
+  return none;
+};
+
+mxarray.prototypes("int") = {
+  @convertto = intconverter;
+};
+
+mxarray.prototypes("double") = {
+  @realconverter = realconverter;
+  @matrixconverter = matrixconverter;
+  @convertto(domain) = { 
+    if (cols() == 1 && rows() == 1)
+      return realconverter(domain)
+    else 
+      return matrixconverter(domain);
+  };
+  @rha_call(i, j) = get(i.getint(), j.getint());
+  @rha_calldef(idx, v) = set(idx(0), idx(1), v);
+};
+
+mxarray.prototypes("remote") = {
+  @convertto(domain) = {
+    getobj();
+    this =? prototypes(typeid());
+    return convertto(domain);
+  };
+};
+
+op*.add(fn(x,y) mxarray.binop("*", x, y), (mxarray, mxarray));
+op+.add(fn(x,y) mxarray.binop("+", x, y), (mxarray, mxarray));
+op-.add(fn(x,y) mxarray.binop("-", x, y), (mxarray, mxarray));
+
+if (false) {
+  n = matlab.newinteger(3);
+  m = matlab.newinteger(5);
+
+  a = matlab.call("rand", 1, (n, m));
+  b = matlab.call("rand", 1, (n, m));
+  
+  a.getobj();
+  a(0,0);
+}

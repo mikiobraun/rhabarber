@@ -1,0 +1,6 @@
+2006-03-08 Stefan
+
+        * Matlab matrices are not shown:
+
+             import matlab
+             matlab.randn(1, 2, 3)  // a matrix is created but not shown

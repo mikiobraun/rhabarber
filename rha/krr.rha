@@ -1,0 +1,83 @@
+//
+// kernel_ridge_regression demo
+// 
+
+kernel_ridge_regression(kernfct, X, Y, tau) = {
+  // read data-set dimensions
+  D = X.rows();
+  N = X.cols();
+
+  // setup kernel matrix
+  K = map(kernfct, X, X);
+
+  // compute alpha
+  alpha = linsolve(K + tau*matrix.eye(N), Y.transpose());
+
+  // build classifier
+  cl.trainX = X;
+  cl.alpha = alpha;
+  cl.kernfct = kernfct;
+  cl.predict(X) = {
+    K = map(kernfct, X, trainX);
+    K*alpha;  // return 
+  };
+
+  // return the classifier
+  cl;
+};
+
+demo1() = {
+  // kernel ridge regression demo
+  unwatch();
+  disp("setting up kernel matrix");
+  disp("and more..");
+  rbfkern(sigma) = fn (x,y) exp(0.0-((x - y).norm()) / (2.0*sigma));
+  
+  disp("defining parameters");
+  N = 100;
+  noise = 0.1;
+  sigma = 0.3;
+  tau = 0.0001;
+  
+  disp("getting data");
+  X = matrix.randn(1, N).sort();
+  Y = sinc(2.0*pi*X) + noise*matrix.randn(1, N);
+  
+  // plot data set
+  watch(X, Y, ".");
+  
+  cl = kernel_ridge_regression(rbfkern(sigma), X, Y, tau);
+  Yh = cl.predict(X).transpose();
+  
+  watch(X, Yh, "-");
+};
+
+demo2() = {
+  // interactive demo
+  unwatch();
+  disp("setting up kernel matrix");
+  disp("and more..");
+  rbfkern(sigma) = fn (x,y) exp(0.0-((x - y).norm()) / (2.0*sigma));
+  
+  disp("defining parameters");
+  N = 100;
+  noise = 0.1;
+  sigma = 0.3;
+  tau = 0.0001;
+  
+  disp("getting data");
+  X = matrix.randn(1, N).sort();
+  Y = sinc(2.0*pi*X) + noise*matrix.randn(1, N);
+  
+  // fully interactive
+  //watch(X, Y, "-");
+  
+  Yh(X, Y, sigma, tau) 
+  = kernel_ridge_regression(rbfkern(sigma), X, Y, tau).predict(X);
+  
+  watch(X, Y, ".");
+  watch(X, Yh(X, Y, sigma, tau), "-"); 
+};
+
+demo1();
+demo2();

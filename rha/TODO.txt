@@ -1,0 +1,238 @@
+13oct2005 (harmeli)
+* @ means now only local, removed private/public/protected stuff
+* get rid of void and psubtype
+* implement 'match' and 'snatch'
+
+
+06oct2005 (harmeli)
+* implement #$@ (private/protected/public) with one symbol table.
+  the entries always start with one of #$@, the lookup uses the string
+  to search and add the modifier if needed.
+* implement list/matrix literals
+* is the clone of an integer an integer?  the type should be
+  transparent from the slots, thus overloaded the object_lookup for each
+  primtype to include the slots that are defined in the struct and that  
+  are not in the table.  
+
+04oct2005
+public/private
+store all variables in a single table with @ or # prefix to indicate their availability.  For lookup check first symbol, and add @ #.  etc...
+
+01oct2005
+
+implemente public, private and maybe protected
+a = { @x = 17; #y = 42; @f = fn() y; };
+a.x == 17
+a.y  error
+a.f() == 42
+
+28sep2005
+
+// @ and # are symbol modifier that influence the lookup/replace.
+obj = {
+  @f(x) = 2*x;  // visible function, local variable, determines type
+  #g(x) = 3*x;  // auxiliary hidden function
+}
+
+
+TODO 27sep2005
+done* get rid of template stuff, i.e. f(x).g(y) = x*y
+done* evaluate args immediately
+* change calling convention to f.call
+* default args
+done* quotable args
+* list, dict, tree literals
+* adjust function_new
+
+[2] builtin tuple and list support
+
+[8] type checking and (int x)
+
+[9] bool type
+
+[12] activation records: banking account example
+
+[14] access all slots of object
+
+[15] primtypes have not env as parent, allow only l.append to access members
+
+[16] overloading: allow only l.append and have special feature for operators
+     see [28]
+
+[17] list(t).f(t x) implicitely defines an function list(t) without
+     code, shall we use the code slot for init code, e.g. list(t) = { init }
+
+[18] note: (f.a)(x) = {} is not allowed, only f.(a(x)) = {}; no space
+     allowed in f.a(x); f(b).g(c);  or even f(a)(b) is allowed
+
+[21] how can we distinguish templates and virtual functions?  both
+     have code==0.
+
+[22] what about the dot?
+
+     (i)  LEFT-VALUE: lookup but don't evaluate, maybe check that the
+          number of parameters doesn't change
+
+             list(t).append(this.t x) = { blbabla; };
+
+             list(t).delete(this.t x) = { ....};
+
+     (ii) RIGHT-VALUE: in a.b only b can be a function call, a must
+          resolve to some object???  no, both will be evaluated.
+ 
+             y = list(int).append(5);
+
+          list(int) creates an empty object that is lost after the
+          call of append(5), since nobody points to it.
+
+	     y = list(t).append(5);
+ 
+          will probably cause an error because t is only set to nil.
+
+[23] . and = are special symbol.
+
+[24] "parent" provides lexical scoping.  "that" dynamic scoping.
+
+[25] in ((fun (n) (if (< n 2) 1 (* n (parent (- n 1))))) 5)
+     the use of parent is weird. the reason is that the function
+     itself is PAR which is the parent of the AAR.
+
+[26] entering ")" into the parser leads to a segfault.
+
+[27] do we still need "fun". what about brackets around args in 
+     function definitons and calls
+
+[28] the parser should translate a+b to ((. a op+) b)
+
+[29] out of order function parameters:
+     f(x=y) is short for f(this.x=env.y)
+     f(x=x) is short for f(this.x=env.x)
+
+[30] weird comment after reading Graham's stuff: in lisp the code is
+     already the parse tree.  can we use for rhabarber something else?
+     i.e. not a parse tree but something that reflects better the
+     source code we write?
+
+[31] have a basic set of operators but allow combinations of it, e.g. .*
+
+[32] have a specialized operator or function for cloning
+
+[33] we do we have to do if (this!=env) object_assign(par, symbol_new("that"), this);
+
+[35] speed-up: 
+        (1) in symbol.c: use search_and_insert instead of search and
+	    insert
+        (2) don't copy the tuple for function definitions
+
+[36] rewrite or get rid of create_fn
+
+[38] multiple types are currently missing, e.g. "serializable int"
+
+[m39] introduce "virtual tables" in eval.c
+
+[s40] identify unused functions (like list_appendlist)
+
+[s41] remove all symbol_new("style")
+
+[s42] maybe we should split rhabarber.c into another file called
+      arith.c where we store all arithmetic stuff (including operators)
+
+[s43] rewrite macro ARITH() that it accepts only two args, we don't need more
+
+
+[m44] tidy up things in literals.[ch]
+
+[s45] operator overloading mechnaism ueberdenken.
+
+[s46] rewrite ADDBUILTIN to handle symbols better.  symbols related to
+      matrix should be in matrix.c
+
+[s47] check number of args of "in" in builtin functions, might be off by one
+
+[s48] check naming for builtin function compared to c functions, e.g.
+      matrix_rand corresponds to builtin(rand_b)
+
+[s49] could n't we link the real c-functions in the env and do c type
+      checking in builtin-call
+
+[s50] do fillwitharray etc need dimension checks?
+
+[s51] what if builtin function are overloaded, e.g. "if=5;"
+
+[s52] there is some problem with matrix_set/get ; pointer arith
+
+[s53] rename builtin to c-function, function to rha_function
+      rename env to lex
+
+[s54] rewrite object_print such that it calls only member functions
+      defined in the different files (arithmetics, strings, matrix)
+
+[s55] function.c invoke:  eval(this, env, args) OR eval(env, env,
+args)
+
+[s56] question: is the parent of a parameterized activation record
+used?
+
+[s57] let's try to design a virtual machine that can run forward and
+backward.  basically the vm is creating objects and assigning objects
+to slots.  if we keep a list of all operations and all
+overwriting/erased objects we can go back and forth.
+
+[s58] GTK: have something like this: x = slider(0, 1); which assigns a
+slider to x, thus x will always contain the value of the slider
+
+[s59] do we need primtypes?
+
+[s60] how to do the overloading mechanism?
+
+[s61] put tests into the different init procedure that test
+      automatically the calling ordering of the init functions.
+
+[s62] unit type has only value 0 which is what void functions return
+
+[s63] how about tuples?  f () = 5;  g(x) = x+2;  -> lingua franca
+
+[s64] l = list(int); should this create a child list(int) from which
+      we can clone and to which we can add specialized methods for all
+      list(int)?  probably not.
+
+[s65] what are interfaces?  e.g. eq should require op==(x:t,y:t):bool
+         eq(t).op==(x:t,y:t):bool = 0;
+         int.op+(x:int, y:int) = x+y;
+	 implementation eq(int) = {
+	   int.op==(x:int, y:int) = x==y;
+         }
+         implementation eq(list(t)) = {
+           list(t).op==(x:list(t), y:list(t)) = ...;
+         }
+
+[s66] why are symbols also objects?
+
+[s67] what happens if we clone objects of primitive type? two options:
+      (i)  create an empty object with the right parent 
+           -> inherit slots
+      (ii) memcopy also the content part and set the primtype
+           -> inherit slots and content
+
+[ms68] cons -> stack or list
+
+[s69] if the "f" in "f(x)" can not be found we should eval "x" and
+      look among its members.  this would allow expr like "slots(x)",
+      even if "slots" is a member of "object_obj"
+
+[s70] let's say we clone list_obj.  do I have a list?  probably not!
+      this can be solved by overloading list_obj.clone with list_obj.new.
+
+[s71] void 
+
+[s72] what are the essential primtypes:
+        void, bool, int, real, list, function, builtin
+      isn't tuple a special case of list?
+
+[s73] get rid of int_obj (and similar) from int_stub.h
+
+[s74] "_t" should only be used for stuff that is visible in rhabarber
+
+[s75] have a distinction between constructors and members, e.g.
+      members beginning with "new" are constructors, this has implications
+      for rha_stub.h, e.g. see parameters in cons_stub.c

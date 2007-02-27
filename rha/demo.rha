@@ -1,0 +1,25 @@
+// simple arithmetics
+1 + 2
+3 * 4
+(4 + 5) * 7
+
+// functions
+f(x) = 2*x
+f(3)
+
+fib(n) = if (< n 2) 1 else fib(n-1) + fib(n-2);
+fib(1)
+fib(2)
+fib(3)
+fib(4)
+fib(5)
+
+// anonymous functions
+fn (x) 2 * x
+(fn (x) 2 * x) 3
+
+// parameterized functions
+adder(a) = fn(x) a + x
+A = adder(3)
+A(5)
+

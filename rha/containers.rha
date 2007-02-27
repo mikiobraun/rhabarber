@@ -1,0 +1,32 @@
+// This file demonstrates the new features of overloadable () and
+// assignments to ()
+
+import init;
+
+// get a new dictionary with dict
+d = dict.new();
+for(i in upto(10))
+     d.insert(i, i*i); // insert is the standard method
+print(d);
+
+// you can also assign objects with function-call like notation
+d = dict.new();
+d("mikio") =  "030/6392-1906";
+d("katrin") = "030/897907341";
+
+print(d);
+print(d("mikio"));
+
+// in init.rha, these functions are also defined for lists and tuples
+l = slots(plain);
+
+// of course, this takes too much time (O(n^2))! You should iterate over l
+// directly.
+for(i in upto(l.length()))
+     print(l(i));
+
+// And the same for tuples:
+t = slots(plain).solidify();
+print(t(0));
+
+t(0) = 1;

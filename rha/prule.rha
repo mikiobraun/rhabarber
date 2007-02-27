@@ -1,0 +1,29 @@
+// Let's try to create a syntax like:
+//
+//	     maximize f(x)
+//           maximize f(x) st x>0
+//
+
+	
+maximize = prule (10.0, pt) {
+  print("resolving 'maximize' prule\n");
+  print(pt);   // for debugging
+  @lpt = pt.to_list();  // a list is easier to chop
+  @first = pt.pop();     // the first symbol should be maximize
+  if (first != symbol.new("maximize"))
+    throw	"first symbol must be 'maximize'";
+  @lpt_len = lpt.length();
+  // now let's chop off everything until 'st'
+  @goal = list.chop_first(lpt, symbol.new("st"));
+  // check whether we chopped off 'st'
+  if (lpt_len == goal.length()) {
+    // nothing chopped off
+    return (symbol.new("op_maximize"), goal.solidify());
+  }
+  if (lpt_len > goal.length() + 1) {
+    // chopped something off and there is something left for the constraints
+    return (symbol.new("op_maximize"), goal.solidify(), lpt.solidify());
+  }
+  throw "chopped off 'st', but nothing was following";
+}
+  

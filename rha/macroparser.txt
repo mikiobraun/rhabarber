@@ -1,0 +1,147 @@
+// we need two parser!
+
+PARSER 1
+// everything between semicolons
+
+expr 
+: term 
+| expr term
+;
+
+term 
+: symbol
+| LRP expr RRP       // grouped expression
+| LRP commalist RRP  // tuples
+| LSP RSP            // literals
+| LSP litlist RSP
+| LCP RCP            // code blocks
+| LCP semiclist RCP
+;
+
+commalist // for tuples
+: expr COMMA         // singleton
+| expr COMMA expr
+| commalist COMMA expr
+;
+
+semiclist
+: expr
+| semiclist SEMIC expr
+| semiclist SEMIC
+;
+
+litsep
+: COLON
+| COMMA
+| SEMIC
+| ENTAILS
+;
+
+litlist
+: expr
+| litlist litsep expr
+;
+
+
+PARSER 2
+// resolves function calls and arithmetic expressions
+
+term 
+: literals
+| symbols
+| prefixterm         // prefix stuff
+| term + term    // infix stuff
+| term tuple     // function calls
+| tuple          // other stuff like complex literals, tuples, blocks
+;
+
+prefixterm
+: + term
+: ++ term
+;
+
+this second parser can be very simple:  first merge all function calls and then work out all operators in the order of preference...
+what about prefix stuff?
+
+parsetree.nextterm;
+
+if - 17 bla     ( if op- 17 bla )
+
+// take the next *term*
+
+if if if;   ( call if_fn if if )
+
+HOW TO DO IT:
+
+string         if true f (x) + 42
+(1) run parse 1 to obtain parsetree that ignores function calls and arithmetics
+parsetree      ( if true f (x) op+ 42 )
+(2) is there a macro on the first level?
+    yes, transform macro expression to function call
+    no, transform tuple with parser 2 to function call and operator stuff
+parsetree      ( call if_fn true ( f (x) op+ 42 ) )
+(3) run (2) on each argument
+parsetree      ( call if_fn true ( f (x) op+ 42 ) )
+* run parser2 on each tuple
+parsetree      ( call if_fn true ( call op+ (call f x) 42 ) )
+* eval
+result
+
+
+ask_for_one_term:
+* look at the next tuple entry
+* if macro then run it on the rest and return the result
+* if not macro then return it
+what about:
+if 44+55 bla else blub;
+if 44 \55 else \77;
+the two macros \ and + differ in their position inside their expressions, \ is always at the beginning, + is always second.
+distinguish these two cases when asking for one term:
+for \:  don't follow it after getting 44
+for +:  do follow it to get the full next expression
+
+ask for the rest:
+* also resolves the contained macros
+
+weird examples:
+
+if x ++ bla;   ->   if (x) then ++bla;
+if (x++) bla;  ->   if (x++) then bla;
+if - 17 bla;   ->   if (-17) then bla;
+if if t t else f bla else blub;   -> if (if (t) then t else f) bla else blub;
+if if t t else blub bla;   -> if (if (t) then t else blub) bla;
+if if t t bla else blub;   -> ERROR
+if (if t t) bla else blub; -> if (if (t) then t) bla else blub;
+
+
+
+Q: who takes care of +=?
+A: = macro must take care of += and -= and *= and /=
+++ macro must take care of 17++ and ++17
+
+
+Q: do we need to require brackets around the condition for the if-macro?
+A: yes, otherwise consider:
+if f (x,y) 17 else 42;
+if f (x,y) else (y,x);    // here the cond is only f because there wouldn't be anything before 'else'.  that is not easy to parse.
+
+
+Q: why do we not want "f x" to be the function call in addition to f (x,y)?  Why do we require brackets?
+A: assume "f x" is function call and consider:
+     f ( 17, 42 )  // calls f with two args
+                   // OR calls f with one arg being a tuple
+   this can't be distinguished
+
+Q: what about asking for more than one think after the macro?
+A: no problem now, since we have to use brackets:
+   if (fn(x)x*x) (17) bla else blub;     // error
+   if ((fn(x)x*x) (17)) bla else blub;   // no error
+
+Q: what if at the beginning of a file we define some macros.  when are they active?
+A: only after calling eval. i.e. that rhaparsefile does use the macros until it is done parsing the whole file...  maybe it is ok...
+
+Q: why do we need group_sym and tuplefy_sym?
+A: group_sym allows us to distinguish between grouping use and a singleton:
+     if (x,) + 3
+     if (x) + ; /???? not fully answered this question
+

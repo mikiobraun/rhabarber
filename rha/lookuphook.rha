@@ -1,0 +1,19 @@
+//
+// a demo of the new lookupfailed hook
+//
+// after loading this file, mikio and stefan are resolved although they
+// do not exist in the environment.
+//
+// This is not useful, but my plan is to make most of rhabarber
+// customizable - in rhabarber!
+//
+
+specialobj = { 
+  @mikio = "braun";
+  @stefan = "harmeling";
+};
+
+eval.lookupfailed_hook(env, x) = { 
+  obj = specialobj.lookup(x);
+  return if (obj.name == "none") eval(env,x) else obj;
+}

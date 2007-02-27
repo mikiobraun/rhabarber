@@ -1,0 +1,283 @@
+// -*- C -*-
+//@name list<T>
+//@param T
+//@param alloc=malloc
+//@param free=(void)
+//@param null=0
+
+//@info doubly linked list
+//@info
+//@info arguments are:
+//@info
+//@info     T: type
+//@info alloc: allocator as malloc
+//@info  free: free
+//@info
+
+//@header
+
+#include <stdbool.h>
+
+struct node<T> {
+  struct node<T> *next;
+  struct node<T> *prev;
+  <T> data;
+};
+
+struct list<T> {
+  int len;
+  struct node<T> *first;
+  struct node<T> *last;
+};
+
+// Basic access
+typedef struct list<T> @t;
+typedef struct node<T> *@iterator_t;
+typedef void @proc(<T> data);
+
+extern void @init(@t *l);
+extern void @clear(@t *l);
+
+extern void @append(@t *l, <T> data);
+extern void @prepend(@t *l, <T> data);
+extern void @appendlist(@t *l1, @t *l2);
+
+extern <T> @remove(@t *l);
+extern <T> @pop(@t *l);
+
+extern <T> @front(@t *l);
+extern <T> @last(@t *l);
+
+extern bool @isempty(@t *l);
+extern int @length(@t *l);
+
+// in case == makes sense
+extern void @uniquecopyappendlist(@t *l1, @t *l2);
+extern void @uniqueappend(@t *l, <T> data);
+extern bool @ismember(@t *l, <T> data);
+
+// Iterating
+extern void @foreach(@t *l, @proc *p);
+
+extern void @begin(@iterator_t *i, @t *l);
+extern @iterator_t @iterator(@t *l);
+extern bool @done(@iterator_t *i); 
+extern void @next(@iterator_t *i);
+extern <T> @get(@iterator_t *i);
+extern void @set(@iterator_t *i, <T> data);
+
+//@implementation
+#include <stdlib.h>
+
+typedef struct node<T> @node_t;
+
+void @init(@t *l)
+{
+  l->len = 0;
+  l->first = l->last = 0;
+}
+
+
+void @clear(@t *l)
+{
+  @node_t *n = l->first, *n2;
+
+  while(n) {
+    n2 = n -> next;
+    <free>(n);
+    n = n2;
+  }
+}
+
+
+void @uniquecopyappendlist(@t *l1, @t *l2)
+     // append a copy of l2 to l1 and keep each element unique
+{
+  for(struct node<T> *n2 = l2->first; n2; n2 = n2->next) {
+    int found = 0; // false
+    for(struct node<T> *n1 = l1->first; n1 && !found; n1 = n1->next) {
+      if (n2->data == n1->data) found = 1;
+    }
+    if (!found) @append(l1, n2->data);
+  }
+}
+
+
+void @uniqueappend(@t *l, <T> data)
+     // append data if it is not yet in l
+{
+  int found = 0; // false
+  for(struct node<T> *n = l->first; n && !found; n = n->next) {
+    if (data == n->data) found = 1;
+  }
+  if (!found) @append(l, data);
+}
+
+
+bool @ismember(@t *l, <T> data)
+{
+  for(struct node<T> *n = l->first; n; n = n->next) {
+    if (data == n->data) return true;
+  }
+  return false;
+}
+
+
+void @append(@t *l, <T> data)
+{
+  @node_t *n = <alloc>(sizeof(@node_t));
+  *n = (@node_t) { .prev = 0, .next = 0, .data = data };
+  
+  if(!l->last) {
+    l->first = n; l->last = n;
+  }
+  else {
+    l->last->next = n; n->prev = l->last; l->last = n;
+  }
+  l->len++;
+}
+
+
+void @prepend(@t *l, <T> data)
+{
+  @node_t *n = <alloc>(sizeof(@node_t));
+  *n = (@node_t) { .prev = 0, .next = 0, .data = data };
+  
+  if(!l->first) {
+    l->first = n; l->last = n;
+  }
+  else {
+    l->first->prev = n; n->next = l->first; l->first = n;
+  }
+  l->len++;
+}
+
+
+void @appendlist(@t *l1, @t *l2)
+{
+  l1->last->next = l2->first;
+  l2->first->prev = l1->last;
+  l1->last = l2->last;
+  l1->len += l2->len;
+  l2->first = l2->last = 0;
+}
+
+
+<T> @remove(@t *l)
+     // removes and returns the last element
+{
+  if(!l->first) // empty list: nothing to do
+    return <null>;
+  else if(l->first == l->last) { // only one element
+    <T> v = l->first->data;
+    <free>(l->first);
+    l->first = l->last = 0;
+    l->len--;
+    return v;
+  }
+  else { // more than one element
+    @node_t *n = l->last;
+    <T> v = n->data;
+    l->last = n->prev;
+    l->last->next = 0;
+    l->len--;
+    <free>(n);
+    return v;
+  }
+}
+
+
+<T> @pop(@t *l)
+     // removes and returns the first element
+{
+  if(!l->first) // empty list: nothing to do
+    return <null>;
+  else if(l->first == l->last) { // only one element
+    <T> v = l->first->data;
+    <free>(l->first);
+    l->first = l->last = 0;
+    l->len--;
+    return v;
+  }
+  else { // more than one element
+    @node_t *n = l->first;
+    <T> v = n->data;
+    l->first = n->next;
+    l->first->prev = 0;
+    l->len--;
+    <free>(n);
+    return v;
+  }
+}
+
+
+<T> @front(@t *l)
+     // get the first element but keep it
+{
+  if(!l->first)
+    return <null>;
+  else
+    return l->first->data;
+}
+
+<T> @last(@t *l)
+     // get the last element but keep it
+{
+  if(!l->last)
+    return <null>;
+  else
+    return l->last->data;
+}
+
+bool @isempty(@t *l)
+{
+  return l->first == 0 && l->last == 0;
+}
+
+
+int @length(@t *l)
+{
+  return l->len;
+}
+
+void @foreach(@t *l, @proc *p)
+{
+  for(struct node<T> *n = l->first; n; n = n->next)
+    (*p)(n->data);
+}
+
+//
+// Iterating
+//
+
+void @begin(@iterator_t *i, @t *l)
+{
+  *i = l->first;
+}
+
+@iterator_t @iterator(@t *l)
+{
+  return l->first;
+}
+
+void @next(@iterator_t *i)
+{
+  if (!@done(i))
+    *i = (*i)->next;
+}
+
+bool @done(@iterator_t *i)
+{
+  return (*i == 0);
+}
+
+<T> @get(@iterator_t *i)
+{
+  return @done(i) ? 0 : (*i)->data;
+}
+
+void @set(@iterator_t *i, <T> data)
+{
+  if (!@done(i))
+    (*i)->data = data;
+}

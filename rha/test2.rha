@@ -1,0 +1,51 @@
+"cat test.rha | sexprha"
+
+"integer arithmetics"
+(+ 12 4)
+(- 12 4)
+(* 12 4)
+(/ 12 4)
+(< 12 4)
+(> 12 4)
+(== 12 4)
+
+
+"simple assignments"
+(= a 4)
+(* a a)
+
+
+"hierarchical slot access"
+(= (. a (. b c)) 17)
+(. a (. b c))
+(. (. a b) c)
+(= (. (. x y) z) 42)
+(. (. x y) z)
+(. x (. y z))
+
+"functions with recursion"
+(= f (fun n (if (< n 2) 1 (* n (f (- n 1))))))
+(f 1)
+(f 2)
+(f 3)
+(f 4)
+(f 5)
+"alternatively"
+(= (g n) (if (< n 2) 1 (* n (g (- n 1)))))
+(g 1)
+(g 2)
+(g 3)
+(g 4)
+(g 5)
+
+"functions on the fly"
+((fun x (* 2 x)) 5)
+((fun n (if (< n 2) 1 (* n (parent (- n 1))))) 5)
+
+"function functions"
+(= applya (fun g (fun x (g x x))))
+((applya *) 5)
+
+"function functions - alternatively"
+(= (applyb g) (fun x (g x x)))
+((applyb *) 5)

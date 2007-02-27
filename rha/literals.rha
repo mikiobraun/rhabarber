@@ -1,0 +1,300 @@
+// literals: new idea: not yet implemented...
+
+// translate the content of [] not with precedences but only into a
+// list of separators and expressions, i.e.
+// [2+5, 3+2]     ->    [7, ',', 5]
+// [0, 1; 2, 3]   ->    [0, ',', 1, ';', 2, ',', 3]
+// Then the .literal method can decide what string it is looking for.
+
+// literals are created with squared brackets
+
+// the parse tree between the brackets is interpreted according to the
+// structuring symbols (such as ,;>.>>:":.') 
+// then there is a list of possible data types, e.g.
+// [list, matrix, etc] which determines the order in which rhabarber
+// will try to create new objects.
+
+// x = [12, 34, "bla"];  // a list
+// m = [23, 42; 54, 12]; // a matrix
+
+
+import init;
+
+// helper function for literals
+islitlist(key, parsetree) = {
+  if (parsetree?tuple) {
+    @len = parsetree.length();
+    if (len>1) // at least one actual element
+      if (parsetree(0)?string)
+        if (parsetree(0) == key)
+          return true;
+  };
+  return false;
+};
+
+list.literal(parsetree) = {
+  @l = list.new();
+  // parsetree empty
+  if (parsetree?none) return l;
+
+  // the parsetree should be a "COMMA"-separated list?
+  if (islitlist("COMMA", parsetree)) {
+    @len = parsetree.length();
+    @i = 1;
+    while (i < len) {
+      try {
+        l.append(eval(parsetree(i)));
+      }
+      catch(e) {
+	throw "list.literal: can't eval "
+	  + i.to_string()
+	  + "th expression.";
+      };
+      i = i + 1;
+    };
+    return l;
+  };
+
+  // parsetree is just an expression (or a tuple 
+  // that does not begin with "COMMA")
+  try {
+    l.append(eval(parsetree));
+  }
+  catch(e) {
+    throw "list.literal: can't eval expression.";
+  };
+  return l;
+};
+
+
+matrix.literal(parsetree) = {
+
+  @realify_eval(x) = {
+    x = eval(x);
+    if (!(x?real)) x = real.from(x);
+    return x;
+  };
+
+  // parsetree empty
+  if (parsetree?none) return matrix.new(0, 0);
+
+  // parsetree a tuple that begins with "COMMA" or "SEMIC"
+  if (islitlist("COMMA", parsetree)) {
+    // 1. case: only one row
+    @cols = parsetree.length() - 1;
+    @m = matrix.new(1, cols);
+    @j = 0;
+    while (j < cols) {
+      try {
+	m(0, j) = realify_eval(parsetree(j+1));
+      }
+      catch(e) {
+	throw "matrix.literal: can't eval "
+	  + (j+1).to_string()
+	  + "th expression.";
+      };
+      j++;
+    };
+    return m;
+  }
+  else if (islitlist("SEMIC", parsetree)) {
+    // 2. case: more than one row
+    @rows = parsetree.length() - 1;
+
+    if (islitlist("COMMA", parsetree(1))) {
+      // 2.1 case: full matrix
+      // check that all rows fit together
+      @cols = parsetree(1).length() - 1;
+      // check that all rows have same length and start with "COMMA"
+      @i = 1;
+      @n = cols;
+      while (i < rows) {
+	if (!islitlist("COMMA", parsetree(i+1)))
+	  throw "matrix.literal: all rows must match.";
+	n += parsetree(i+1).length() - 1;
+	i++;
+      };
+      if (n != cols * rows)
+	throw "matrix.literal: all rows must have same length.";
+      @m = matrix.new(rows, cols);
+      @i = 0;
+      while (i < rows) {
+	@j = 0;
+	while (j < cols) {
+	  try {
+	    m(i, j) = realify_eval(parsetree(i+1)(j+1));
+	  }
+	  catch(e) {
+	    throw "matrix.literal: can't eval "
+	      + ((i+1)*(j+1)).to_string()
+	      + "th expression.";
+	  };
+	  j++;
+	};
+	i++;
+      };
+      return m;
+    }
+    else {
+      // 2.2 case: matrix with one column
+      @m = matrix.new(rows, 1);
+      @i = 0;
+      while (i < rows) {
+        try {
+	  m(i, 0) = realify_eval(parsetree(i+1));
+	}
+	catch(e) {
+	  throw "matrix.literal: can't eval "
+	    + (i+1).to_string()
+	    + "th expression.";
+	};
+	i++;
+      };
+      return m;
+    }
+  }
+
+  // parsetree is just single expression
+  else {
+    @m = matrix.new(1, 1);
+    try {
+      m(0, 0) = realify_eval(parsetree);
+    }
+    catch(e) {
+      throw "matrix.literal: can't eval expression in brackets."
+    };
+    return m;
+  }
+};
+
+
+dict.literal(parsetree) = {
+
+  d = dict.new();
+
+  // parsetree empty
+  if (parsetree?none) return d;
+
+  // parsetree a tuple that begins with "COMMA" or "COLON"
+  if (islitlist("COMMA", parsetree)) {
+    // 1. case: more than one entry
+    // check that all entries are COLON tuples of length 2
+    @len = parsetree.length() - 1;
+    @i = 1;
+    while (i <= len) {
+      if (!islitlist("COLON", parsetree(i)))
+	throw "dict.literal: all entries must be COLON pairs.";
+      if (parsetree(i).length() - 1 != 2)
+	throw "dict.literal: each COLON tuple must be a pair.";
+      try {
+	@key = eval(parsetree(i)(1));
+	@value = eval(parsetree(i)(2));
+	d(key) = value;
+      }
+      catch(e) {
+	throw "dict.literal: can't eval key or value expression.";
+      };
+      i++;
+    };
+    return d;
+  }
+  else if (islitlist("COLON", parsetree)) {
+    // 2. case: only one entry
+    if (parsetree.length() - 1 != 2)
+      throw "dict.literal: each COLON tuple must be a pair.";
+    try {
+      @key = eval(parsetree(1));
+      @value = eval(parsetree(2));
+      d(key) = value;
+    }
+    catch(e) {
+      throw "dict.literal: can't eval key or value expression.";
+    };
+    return d;
+  }
+  else
+  throw "dict.literal: single entry must be colon separated.";
+};
+
+foo = {
+  @new() = {
+    @a = 17;
+    @b = 42;
+  };
+  
+  @bar() = a*b;
+};
+
+clause = {
+
+  @new() = {
+    @c = clone(this); // clone the clause
+    c.head = none;
+    c.body = none;
+    return c;
+  };
+
+  // constructor by literal
+  @literal(parsetree) = {
+    
+    @c = clause.new();
+
+    // parsetree empty
+    if (parsetree?none) return c;
+    
+    // parsetree a tuple that begins with "ENTAILS"
+    if (islitlist("ENTAILS", parsetree)) {
+      // check that all entries are ENTAILS tuples of length 2
+      @len = parsetree.length() - 1;
+      if (len != 2)
+	throw "clause.literal: each ENTAILS tuple must be a pair.";
+      c.head = parsetree(1);
+      @cbody = parsetree(2);
+      if (islitlist("COMMA", cbody)) {
+	c.body = list.new();
+	@len = cbody.length() - 1;
+	@i = 1;
+	while (i <= len) {
+	  c.body.append(cbody(i));
+	  i++;
+	};
+	return c;
+      }
+      else {
+	// body contains only one entry
+	c.body = list.new();
+	c.body.append(cbody);
+	return c;
+      };
+    }
+    else
+      throw "clause.literal: single entry must be ENTAILS separated.";
+  };
+};
+
+
+
+
+// in the following is a weird way to force a list literal:
+// it would be good to improve it
+//literal_order = list.literal((list, "COMMA", matrix, "COMMA", dict, "COMMA", clause));
+literal(parsetree) = {
+  // the default literal function different literal functions are
+  // tried in the order specified in the global var 'literal_order'
+  @el = list.new();  // list of exceptions
+  for(x in literal_order) {
+    try {
+      return x.literal(parsetree);
+    }
+    catch(e) {
+      el.append(e); // collect exception, but do nothing else, try next
+    }
+  };
+  // write out the collected exceptions
+  print("Collectively caught exceptions:");
+  for (e in el) {
+    if (!(e?string)) e = e.to_string();
+    print("* "+e);
+  };
+  throw "literal: can't translate given literal expression.";
+};

@@ -1,0 +1,81 @@
+// -*- C -*-
+//@name stack<T>
+//@param T
+//@param alloc=malloc
+//@param free=free
+
+//@header
+
+#include <stdbool.h>
+
+struct @stacknode
+{
+  struct @stacknode *prev;
+  <T> value;
+};
+
+struct stack<T>
+{
+  int length;
+  struct @stacknode *top;
+};
+
+typedef struct @stacknode @stacknode_t;
+typedef struct stack<T> @t;
+
+extern void @init(@t *s);
+extern void @clear(@t *s);
+extern bool @isempty(@t *s);
+extern void @push(@t *s, <T> v);
+extern <T> @pop(@t *s);
+extern <T> @top(@t *s);
+
+//@implementation
+
+void @init(@t *s)
+{
+  s->length = 0;
+  s->top = 0;
+}
+
+
+void @clear(@t *s)
+{
+  while(!@isempty(s)) @pop(s);
+}
+
+
+bool @isempty(@t *s)
+{
+  return s->length == 0;
+}
+
+
+void @push(@t *s, <T> v)
+{
+  @stacknode_t *sn = <alloc>(sizeof(@stacknode_t));
+  sn->prev = s->top;
+  sn->value = v;
+  s->top = sn;
+  s->length++;
+}
+
+
+<T> @pop(@t *s)
+{
+  @stacknode_t *n = s->top;
+  <T> v = n->value;
+  s->top = n->prev;
+  <free>(n);
+  s->length--;
+  return v;
+}
+
+
+<T> @top(@t *s)
+{
+  return s->top->value;
+}
+
+
+

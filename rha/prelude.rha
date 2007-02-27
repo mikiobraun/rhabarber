@@ -1,0 +1,427 @@
+// distinguishing features of rhabarber:
+// 1. integrates different languages
+// 2. everything is directly accessable in the object hierarchy
+//    (even dll-files could be objects with the functions as slots)
+// 3. shell like addition such as '&' and '|' for threads etc
+// 4. type system, type inference
+// 5. new language features such as { bla } as a literals for objects 
+
+// allow to overload the application operator op(),
+// function will be executed, arrays will be accessed
+
+// ruby allows calls like 
+//   put "test"
+// and
+//   put("test")
+// we should also allow this, hereby we can easier accomodate
+// languages like perl
+
+// the colon notation
+//   x:a;
+// creates a variables 
+
+
+// (a, b) tuple
+// [a, b] list
+// {a; b} opens new scope
+
+{ bla; blub }       // new scope, returns the activation record
+{ bl; return a }    // new scope, returns a
+
+f(a) = 2 * a;
+g(a) = { bla; blub; return 2 * a };
+g(a) = ( bla; blub; return 2 * a );
+
+// how to compare a template with a normal object
+// actually, we want to compare any object with any other via a:b
+
+// templates should have all their slots at the time of their creation
+
+// comparing templates becomes as difficult as comparing functions
+
+// how about lookup/replace
+
+// equality
+eq = {
+  op== : (any, any) -> bool;
+  op!=(x, y) = not( x == y );   // type will be inferred from op==
+};
+
+// orderable
+ord = {
+  args = (a);
+  parent = eq;
+  cmp(:a, :a) :int;
+  op< (x, y) =  cmp(x, y) == -1;
+  op<=(x, y) =  cmp(x, y) != +1;
+  op> (x, y) =  cmp(x, y) == +1;
+  op>=(x, y) =  cmp(x, y) != -1;
+};
+
+// mapping
+map = {
+  k:ord;
+  get(:k) : a;
+  insert(:k, :a) :void;
+};
+
+ar = [ 'bla', 'blub' ];  // creates array, similar to
+ar = [ i1='bla'; i2='blub' ];
+
+f = fn (x) x + 2;
+f = fn (x) { x + 2; };
+
+f(x).g(y) = x * y;
+f(x).g = fn (y) x*y;
+f(x) = {
+  g(y) = x*y;
+};
+
+f = fn (x) { g = fn (y) x * y; };
+
+a = { x = 4; y = 2; };
+
+b.x = 0;
+b.setx(z) = { x = z; };
+
+
+if x<0 then 3 else 4; end
+
+if x<0 {
+  x = -x;
+  print("great");
+  if x==0 {
+    bla;
+  }
+}
+else {
+  x = 2*x;
+  print("also ok");
+}
+
+while x>0 {
+  bla;
+  blub;
+}
+
+x = 5            // assignment
+fn (a, b) a+b;   // parameterized expression
+a.x;             // slots
+
+// local vars in scopes
+// 'local' points to the current 'env'
+{ 
+  x = 5;         // changes the global x
+  local.x = 17;  // creates a local x and sets it
+}
+
+// string interpolation using 'to_string' methods
+x = 'bla and blub';  // no interpolation
+x = "bla and $x";    // interpolation a la perl calling x.to_string()
+
+
+// object creation
+// functions:
+// create a scope with possible local variables
+
+f(x) = { x += 1; return x };
+g(x) = { x += 1 };
+list(t).add(x) = { };
+list(t) = [
+  append(x:t):void;
+  pop(x):t;
+];
+
+
+
+// literal for objects
+// opening scopes
+// association
+// templates
+// types
+// 
+
+obj(y) = [ a=y; b=2; bla:int ];
+f(x) = { x += 1; return x };
+
+
+// what is the difference between a template and a function
+
+// function
+f(x) = { x ++; return x };
+f(x) = 2*x;
+
+f.args = (x);
+f.x = nil;
+f.code = 2*x;
+f.env = local;
+
+// template
+list(t).append(x) = { bla; blub };
+list(t).pop() = { bla };
+
+list.args = (t);
+list.t = nil;
+list.append.args = (x);
+list.append.x = nil;
+list.append.code = {};
+list.append.env = local;
+list.pop.args = ();
+list.pop.code = {};
+list.pop.env = local;
+list.env = local;        // needed ?
+
+f(x) = { return x++ };
+list(t) = {
+  append(x:t) = { bla; blub };
+  pop() = { blubber };
+}
+
+// equality
+eq(a) = {
+  op==(x :a, y :a) :bool;
+  op!=(x, y) = not( x == y );   // type will be inferred from op==
+};
+
+// orderable
+ord(a) = {
+  this.parent = eq;
+  this.cmp(x :a, y: a) :int;
+  this.op< (x, y) =  cmp(x, y) == -1;
+  this.op<=(x, y) =  cmp(x, y) != +1;
+  this.op> (x, y) =  cmp(x, y) == +1;
+  this.op>=(x, y) =  cmp(x, y) != -1;
+};
+
+// mapping
+map(k, a) = {
+  get(:k) : a;
+  insert(:k, :a) :void;
+};
+
+account(x) = {
+  withdraw(z) = x -= z;
+  deposit(z) = x += z;
+}
+
+account(s) = { 
+  this.deposit(x) =  s = s + x; 
+  this.withdraw(x) =  s = s - x; 
+  this.saldo() = s; 
+  this; 
+}
+()
+[]
+{}
+  , ;
+x = 5;
+
+f(y) = { x = 3; return y = y + x; }
+
+foo = @{
+  x = 3;
+  y = 5;
+};
+
+account(s) = {
+  @deposit(x) =  s = s + x;
+  @withdraw(x) =  s = s - x;
+  @saldo() = s;
+}
+
+// create two accounts
+stefan = account(100);
+mikio = account(200);
+
+stefan.saldo() // (. stefan (saldo))
+mikio.saldo() // (. mikio (saldo))
+"add money"
+stefan.deposit(50) // (. stefan (deposit 50))
+stefan.saldo() // (. stefan (saldo))
+mikio.saldo() // (. mikio (saldo))
+
+
+//////////////////////////////////
+//////////////////////////////////
+
+// * an object is a collection of named slots
+
+// * there are two types of slots:
+//   (i)  slots that determine the type
+//   (ii) other slots
+
+// * syntactically they could be distinguished by prefix characters
+//   like $ # @ _
+
+// * for now let @a correspond to (i), and #a to (ii)
+
+// * the type of a function is determined by its code (optionally,
+//   maybe this is not even necessary)
+
+// * what about the colon?
+         x:a;
+//   is short for
+         match(x, a);
+
+
+// * a function defined like
+         f = fn (x) 2*x;
+//   creates an object which could also be described as:
+         f = {
+           args = ('x'); // is this a tuple or a grouping?
+           env = env;
+           code = '2*x'; // code is not executed, only the parse tree
+	                  // is assigned, a better notation is needed
+         };
+
+// * calling f, clones f and adds new slots for all symbols in #args
+
+// * how about predicate-like types?  consider
+         eq = {
+           args = ('a');
+	   @op==(x:a, y:a) = {};  // the empty object
+	   @op!=(x, y) = not( x == y );   // type will be inferred from op==
+	   #globals = 19;
+	 };
+//   thus 'eq' behaves like a function but has no code.  calling
+//   'eq(int)' clones 'eq' and assigns 'a' to 'int'
+
+// * '#args' allows to have a parameterized object, even with or without code
+
+// * how shall we clone/inherit from a parameterized object?
+         ord = {
+           _parent = eq;
+	   cmp(x, y) = {};  // the empty object
+	   op< (x, y) =  cmp(x, y) == -1;
+	   op<=(x, y) =  cmp(x, y) != +1;
+	   op> (x, y) =  cmp(x, y) == +1;
+	   op>=(x, y) =  cmp(x, y) != -1;
+	 };
+
+bank.f(x) = do
+  bla;
+  return x;
+end
+
+f(x) = 2*x;
+
+
+
+// * note that the object
+         { #a = 17; @a = 42 }
+//   has only one type-determining slot 'a' with value 42
+
+// * what about outside 'a'?  'a' without '@' and '#' will be looked
+//   up along the scope.  if 'a' doesn't exists yet, 
+         { a = 17 }
+//   is the same as
+         { @a = 17 }
+
+// * is there a difference between a singleton and the element itself
+//   in our grammar?
+         a == (a)  // yes or no
+//   I think yes.
+
+// * I think the type stuff should be kept as simple as possible.
+
+
+
+
+
+// 18jul2005
+//
+// operators only allowed for same types
+// e.g. op+(int, int)
+// converter only allowed if content stays the same
+// e.g. int_to_real is allowed
+//      real_to_int is not allowed
+// converters go only in one direction
+// operators are special member functions
+
+// questions:  vector spaces ?
+//    
+
+
+// 19jul2005
+//
+// * a slot with name op+ adds a new implementation to the centrally
+//   organized operator plus
+//
+// * similar with converters called real_from_int
+//
+// * note that int_to_real is not used for overloading
+//
+// * vector spaces: convert vector_from_real
+//
+// * some implementations might not belong to any object, such as
+//   real_times_vector
+//
+
+// 20jul2005
+//
+// * have a versioning for rhabarber objects, this will allow us to
+//   run code backwards a few steps
+
+
+// 2005aug08
+
+// let's change 'void' to 'any'?
+
+clone(x) = { parent = x; return this; };
+
+any.match(x) = {
+  for s in that.slots()
+    if !member(s, x, slots()) 
+      return false;
+  return true;
+};
+
+any.snatch(x) = {
+  for s in x.slots()
+    that.(symbol.new(s)) = s;
+};
+
+eq = {
+  op==(x, y) = nil;
+  op!=(x, y) = !op==(x, );
+  return this;
+}
+
+ord = {
+  parent = eq;
+  cmp(x, y) = nil;
+  return this;
+}
+
+
+// 2005aug09
+
+// primtypes in rhabarber:
+// bool, int, real, complex, cons, function, matrix, list, string
+
+// grouping of statements (not opening a local scope)
+x = rand();
+if (x<0) { x++; x = -x; };
+
+// opening scopes
+f = fn (x) { bla; blub; };
+
+// groups statement into a local block and returns the activation record
+// inside squared brackets outside variables can only be referenced but,
+// not changed, this might be interesting for concurrency as well
+obj = [ a = 5; f(x) = x+1; ];
+
+// lists
+list = (4, 5, 2);
+f(3, 4);
+
+// array access like function calls
+list(2) + 1;
+
+
+// 2005aug10
+
+for i in x { bla, blub; }
+
+
+

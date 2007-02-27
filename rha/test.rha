@@ -1,0 +1,270 @@
+// "./rhabarber < test.rha | grep false"
+
+"teste import"
+import init
+
+"integer arithmetics"
+12 + 4 == 16
+12 - 4 == 8
+12 * 4 == 48
+(12 / 4) == 3
+(12 < 4) == false
+(12 > 4) == true
+(12 <= 4) == false  // as imported
+(12 >= 4) == true   // as imported
+(12 == 4) == false
+
+"plus plus"
+x = 0;
+x++ == 0
+++x == 2
+x-- == 2
+--x == 0
+x += 5; // short for x=x+5, i.e. x is overwritten
+x == 5
+x -= 3;
+x == 2
+x *= 4;
+x == 8
+x /= 2;
+x == 4
+
+"if/while"
+x = 17;
+(if (x>0) "yepp") == "yepp"
+(if (x>0) "yepp" else "nope") == "yepp"
+(if (x<0) "yepp" else "nope") == "nope"
+while (x<20) { x++; x++; };
+x == 21
+while (x<20) x++;
+x == 21
+
+"simple assignments"
+(a = 4) == 4
+a * a == 16
+
+"hierarchical slot access"
+(x.y.z = 42) == 42
+x.y.z      == 42
+
+"functions with recursion"
+f(n) = if (n < 2) 1 else n * f(n - 1);
+f(1) == 1
+f(2) == 2
+f(3) == 6
+f(4) == 24
+f(5) == 120
+g = 0;
+g = fn(n) if (n < 2) 1 else n * g(n - 1);
+g(1) == 1
+g(2) == 2
+g(3) == 6
+g(4) == 24
+g(5) == 120
+h = fn(n) if (n < 2) 1 else n * recur(n - 1);
+h(1) == 1
+h(2) == 2
+h(3) == 6
+h(4) == 24
+h(5) == 120
+
+"functions on the fly / anonymous recursion"
+(fn(x) 2*x)(5) == 10
+(fn(n) if (n < 2) 1 else n * recur(n - 1))(5) == 120
+
+"function functions"
+applya = fn(g) fn(x) g(x, x);
+star = fn(x,y) x*y;
+applya(star)(5) == 25
+applyb(g) = fn(x) g(x, x);
+applyb(star)(5) == 25
+
+"more function functions with reference to lexical scope"
+f = fn(x) fn(y) x*y;
+f(5)(4) == 20
+g = f(3);
+g(2) == 6
+h(x) = fn(y) x*y;
+h(5)(4) == 20
+g = h(4);
+g(5) == 20
+
+"methods"
+x = 1;
+a.x = 2;
+a.f(y) = y+x;
+a.g(x) = x*f(x);
+x         == 1
+a.f(2)    == 4
+a.g(3)    == 15
+h = a.f;              // a method
+h(17)     == 19
+
+"blocks/scoping"
+x = 17;
+{ x = 42 }
+x == 42
+{ y = 3; { y = 5; x = y } }
+x == 5
+
+"blocks"
+f(x) = { x = 2*x; return x };
+f(42) == 84
+
+"object literal"
+konto(x) = {@s = x; @deposit(x) = s = s+x; @withdraw(x) = s = s-x; @saldo() = s};
+stefan = konto(100);
+mikio = konto(200);
+stefan.saldo() == 100
+mikio.saldo() == 200
+stefan.deposit(50);
+stefan.saldo() == 150
+mikio.saldo() == 200
+
+"this"
+a = 17;
+x = 42;
+a.x = 19;
+a.f() = this;
+g() = x;
+a.g = g;
+a.f() == 17
+a.g() == 19
+b.g = g;
+b.g() == 42
+
+
+"bank account/closures"
+account.new(x) = { @a = clone(this); a.s = x; return a; };
+account.deposit(x) = s = s + x;
+account.withdraw(x) = s = s - x;
+account.saldo() = s;
+alice = account.new(100);
+bob = account.new(200);
+alice.saldo() == 100
+bob.saldo() == 200
+alice.deposit(50);
+alice.saldo() == 150
+bob.saldo() == 200
+baccount = {@new(x) = { @a = clone(this); a.s = x; return a; }; @deposit(x) = s = s + x; @withdraw(x) = s = s - x; @saldo() = s; };
+alice = baccount.new(100);
+bob = baccount.new(200);
+alice.saldo() == 100
+bob.saldo() == 200
+alice.deposit(50);
+alice.saldo() == 150
+bob.saldo() == 200
+
+"overloaded"
+1+1 == 2
+1+1.0 == 2.0
+1.0+1 == 2.0
+1.0+1.0 == 2.0
+z = complex.new(1.0, 2.0);
+z+1 == complex.new(2.0, 2.0);
+1+z == complex.new(2.0, 2.0);
+z+1.0 == complex.new(2.0, 2.0);
+1.0+z == complex.new(2.0, 2.0);
+
+"lookup"
+a = 5;
+b.c = 6;
+f(x) = a + x;
+b.f(x) = c + x + a;
+b.g(x) = { @n = 4; return c + x + a + n; };
+d = clone(b);
+d.c = 7;
+a + 3 == 8 // == 5 + 3
+b.c + 3 == 9 // == 6 + 3
+f(3) == 8 // == 5 + 3
+b.f(3) == 14 // == 6 + 3 + 5
+b.g(3) == 18 // == 6 + 3 + 5 + 4
+d.g(3) == 19 // == 7 + 3 + 5 + 4
+
+"see which scope comes first"
+x = 1;
+a.x = 2;
+a.f(x) = x;
+a.g() = x;
+a.h() = { @x = 4; return x; };
+f() = x;
+f() == 1 // global x
+a.g() == 2 // x as member of a
+a.f(3) == 3 // x in argument scope
+a.h() == 4 // x as local variable
+
+"local arguments in function call"
+id(x) = x;
+f(x) = id(x);
+g(x) = { @n = x; return id(n); };
+a.f(x) = id(x);
+a.g(x) = { @n = x; return id(n); };
+a.h(x) = { @n = x; return f(n); };
+f(1) == 1 // argument in function call
+g(2) == 2 // local var in fn call
+a.f(3) == 3 // arg in fc, memfct
+a.g(4) == 4 // loc var in fc, memfct
+a.h(5) == 5 // loc var in fc, called fct also memfct
+
+"local slots"
+// @ local slots
+a = { @x = 17; @y = 42; @f() = y; };
+a.x == 17
+a.f() == 42
+
+"integer inc and dec" // note that x++ creates a new integer
+x = 1;
+x++ == 1
+++x == 3
+x-- == 3
+--x == 1
+a = (17, 42);
+i=0;
+a(i) = ++i;
+a(0) == 1
+a(1) == 42
+
+"return and break and deliver"
+f(x) = { @a=3; if (a<x) { a=a+x; return a } else return 100 };
+f(5) == 8
+f(1) == 100
+x = { @a=1; @b=42; deliver 17 };
+x == 17;
+x = 1;
+while (x<30) if (x++==25) break;
+x == 26
+while (x<30) if (x++==25) { break } ;
+x == 30
+
+"for loop"
+x = 17;
+for (@x in fromto(3, 6)) print(x);
+x == 17 // because x was local in 'for'
+for (x in fromto(3, 6)) print(x);
+x == 5  // now x is not local in 'for'
+for (x in fromto(56, 78)) print(x);
+x == 77 // after the last round we have x==77 which is different from C
+f(x) = { x++; deliver x };
+f(16) == 17
+//f(x) = { x++; break x };  // should give error message
+f(x) = { x++; return x };
+f(16) == 17
+f(x) = { if (x > 5) return x else return };
+f(42) == 42
+
+"try and catch"
+f(x) = { if (x<0) throw("negative arg"); return x*x };
+(try f(5) catch(excp) if (excp=="negative arg") 42 else "nope") == 25
+(try f(-17) catch(excp) if (excp=="negative arg") 42 else "nope") == 42
+y = try f(3) catch(excp) 42;
+y == 9
+y = try f(-3) catch(excp) 42;
+y == 42
+
+"binding/macro related"
+1-2+3 == 2
+1+2-3 == 0
+1.0/2.0*3.0 == 1.5
+1.0*2.0/3.0 == 2.0/3.0
+1-2-3 == -4
+24.0/2.0/3.0 == 4.0

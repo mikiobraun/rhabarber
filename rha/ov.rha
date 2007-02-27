@@ -1,0 +1,10 @@
+"overload check"
+(1+1).to_string() + " == 2"
+(1+1.0).to_string() + " == 2.0"
+(1.0+1).to_string() + " == 2.0"
+(1.0+1.0).to_string() + " == 2.0"
+z = complex.new(1.0,2.0);
+(z+1).to_string() + " == 2.0+2.0i"
+(1+z).to_string() + " == 2.0+2.0i"
+(z+1.0).to_string() + " == 2.0+2.0i"
+(1.0+z).to_string() + " == 2.0+2.0i"

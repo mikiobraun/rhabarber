@@ -1,0 +1,42 @@
+import literals;
+import python;
+import matlab;
+
+/////////////////////////////////////////////////////////////////
+// Domains
+
+__builtin__.sum([1,2,3,4,5,6,7,8,9,10]);
+
+l = __builtin__.tuple([1,2,3,4,5,6,7,8,9,10]);
+
+for(i in l) print("These are python objects: ", i, "  i.domain = ", i.domain);
+
+/////////////////////////////////////////////////////////////////
+// Matrices
+
+numarray = python.importmodule("numarray");
+mlab = python.importmodule("numarray.mlab");
+
+// two python matrices
+M = mlab.randn(10,10);
+A = M * numarray.transpose(M);
+
+// plotted in matlab
+matlab.surf(0, M);
+
+// Eigenvalues computed in matlab
+E = matlab.eig(1, A);
+
+// sin computed in python
+S = mlab.sin(E);
+
+// operators in python
+S * S;
+
+// operators in matlab
+E + E;
+
+// automatic conversion
+S + E;
+S + 2;
+

@@ -1,0 +1,32 @@
+//@name vector<T>
+//@param T
+//@header
+
+struct vector<T> {
+  int len;
+  <T> array;
+};
+
+extern void @init(struct vector<T> *v, int len);
+extern void @set(struct vector<T> *v, int i, <T> x);
+extern <T> @get(struct vector<T> *v, int i);
+
+//@implementation
+
+void @init(struct vector<T> *v, int len)
+{
+  v->len = len;
+  v->array  = malloc(sizeof(<T>) * len);
+}
+
+
+void @set(struct vector<T> *v, int i, <T> x)
+{
+  v->array[i] = x;
+}	
+
+
+<T> @get(struct vector<T> *v, int i)
+{
+  return v->array[i];
+}	

@@ -1,0 +1,9 @@
+// these two functions are due to Konrad Rieck
+pow(x, n) = if (n == 0) 1 else x*pow(x, n-1);
+
+for(n, code) = {
+  for_inner(n, code, i) =
+    if(i < n) { code(i); for_inner(n, code, i + 1); } else 0;
+
+  for_inner(n, code, 1);
+}

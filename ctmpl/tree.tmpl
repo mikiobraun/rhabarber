@@ -1,0 +1,497 @@
+//-*- C -*-
+//@name tree<K><V>
+//@param K
+//@param V
+//@param lessthan
+//@param printkey=(void)
+//@param printvalue=(void)
+//@param alloc=malloc
+//@param free=
+
+// binary trees implemented as red-black trees
+// as described in Cormen, Leiserson, Rivest: Introduction to algorithms
+//
+// written by Stefan Harmeling, 2005
+//
+// templatized by Mikio Braun
+
+//@header
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
+
+struct @treenode {
+  enum {@RED, @BLACK} color;
+  <K> key;
+  <V> value;
+  struct @treenode *left;
+  struct @treenode *right;
+  struct @treenode *p;      // parent
+};
+
+
+typedef struct @ {
+  struct @treenode *root;
+  int size;
+} @t;
+
+struct @iterstack {
+  enum {@LEFT, @RIGHT} state;
+  struct @iterstack *prev;
+};
+
+typedef struct {
+  struct @treenode *c;
+  struct @iterstack *hist;
+} @iterator_t;
+
+extern int @lastsearchdepth;
+
+extern void @init(@t *t);
+// creates the empty tree
+
+extern void @print(@t *t);
+// prints the t in order
+
+extern void @clear(@t *t);
+// clears t
+
+extern bool @isempty(@t *t);
+// is the tree empty?
+
+extern int @size(@t *t);
+// size of the tree
+
+extern <V> @search(@t *x, <K> key);
+// finds the key in x and return its value
+// or NULL if not found (e.g. if x is empty)
+// note that also value might be NULL
+
+extern void @insert(@t *t, <K> key, <V> value);
+// inserts (key,value) into t
+
+extern <V> @delete(@t *t, <K> key);
+// deletes key in t and returns its value
+
+// Iterating
+extern void @begin(@iterator_t *i, @t *t);
+extern bool @done(@iterator_t *i);
+extern void @next(@iterator_t *i);
+extern <K> @get_key(@iterator_t *i);
+extern <V> @get_value(@iterator_t *i);
+
+//@implementation
+// binary trees implemented as red-black trees
+// as described in Cormen, Leiserson, Rivest: Introduction to algorithms
+//
+// written by Stefan Harmeling, 2005
+//
+// templatized by Mikio Braun
+
+#include <stdlib.h>
+
+int @lastsearchdepth;
+static struct @treenode *nil = NULL;
+
+// all leaves point to nil
+// the parent of the root is NULL
+
+void @init(@t *t) {
+  // is this the first call of @init?
+  if (nil == NULL) {
+    nil = (struct @treenode *) <alloc>(sizeof(struct @treenode));
+    nil->color = @BLACK;
+  }
+
+  // the empty tree
+  t->root = nil;
+  t->size = 0;
+}
+
+
+bool @isempty(@t *t) {
+  // is the tree empty?
+  return (t->root == nil);
+}
+
+
+int @size(@t *t) {
+  // size of the tree
+  return t->size;
+}
+
+
+bool @node_isempty(struct @treenode *t) {
+  // is the tree empty?
+  return (t == nil);
+}
+
+
+void @node_print(struct @treenode *t) {
+  // prints the t in order
+  if (t != nil) {
+    @node_print(t->left);
+    <printkey>(t->key);
+    printf(":");
+    <printvalue>(t->value);
+    printf("\n");
+    @node_print(t->right);
+  }
+}
+
+void @print(@t *t) { 
+  @node_print(t->root); 
+}
+
+
+void @node_clear(struct @treenode *t) {
+  // clears t
+  if (t != nil) {
+    @node_clear(t->left);
+    @node_clear(t->right);
+    <free>(t);
+  }
+}
+void @clear(@t *t) { 
+  @node_clear(t->root); 
+  @init(t);
+}
+
+<V> @node_search(struct @treenode *x, <K> key) {
+  // find the key in x and return its value
+  // or NULL if not found (e.g. if x is empty)
+  // note that also value might be NULL
+
+  @lastsearchdepth = 0;
+  while (x != nil) {
+    if (<lessthan>(key,x->key)) x = x->left;
+    else if (<lessthan>(x->key,key)) x = x->right;
+    else return x->value;
+    @lastsearchdepth++;
+  }
+  return (<V>) NULL;  // not found
+}
+<V> @search(@t *t, <K> key) { 
+  return @node_search(t->root, key);
+}
+
+struct @treenode *@node_minimum(struct @treenode *x) {
+  // returns the node containing the minimum of x or NULL if x is empty
+  if (@node_isempty(x)) return NULL;
+  while (x->left != nil)
+    x = x->left;
+  return x;
+}
+
+struct @treenode *@maximum(struct @treenode *x) {
+  // returns the node containing the maximum of x or NULL if x is empty
+  if (@node_isempty(x)) return NULL;
+  while (x->right != nil)
+    x = x->right;
+  return x;
+}
+
+struct @treenode *@node_successor(struct @treenode *x) {
+  if (@node_isempty(x)) return NULL;
+  if (x->right != nil) return @node_minimum(x->right);
+  struct @treenode *y = x->p;
+  while (y != NULL && x == y->right) {
+    x = y;
+    y = x->p;
+  }
+  return y;
+}
+
+struct @treenode *@node_predecessor(struct @treenode *x) {
+  if (@node_isempty(x)) return NULL;
+  if (x->left != nil) return @maximum(x->left);
+  struct @treenode *y = x->p;
+  while (y != NULL && x == y->left) {
+    x = y;
+    y = x->p;
+  }
+  return y;
+}
+
+struct @treenode *@node_insert(@t *t, <K> key, <V> value) {
+  // inserts (key,value) in t, if key exists, replaces value
+
+  // find location to insert (key,value) into t
+  struct @treenode *y = NULL;   // NULL is the parent of t
+  struct @treenode *x = t->root;
+  while (x != nil) {
+    y = x;  // y is the parent of x after the loop
+    if (<lessthan>(key,x->key)) x = x->left;
+    else if (<lessthan>(x->key,key)) x = x->right;
+    else {
+      // key exist, only change its value
+      x->value = value;
+      return NULL;
+    }
+  }
+
+  // create new node z
+  struct @treenode *z = (struct @treenode *) <alloc>(sizeof(struct @treenode));
+  z->key = key;
+  z->value = value;
+  z->left = nil;
+  z->right = nil;
+  z->p = y;
+  if (y == NULL) t->root = z;
+  else {
+    if (<lessthan>(z->key,y->key)) y->left = z;
+    else y->right = z;
+  }
+  t->size++;
+  return z;
+}
+
+void @node_leftrotate(@t *t, struct @treenode *x) {
+  // assumption: x->right != nil
+  struct @treenode *y = x->right;         // set y
+  x->right = y->left;   // turn y's left subtree into x's right subtree
+  if (y->left != nil) y->left->p = x;
+  y->p = x->p;          // link x's parent to y
+  if (x->p == NULL) t->root = y;
+  else { 
+    if (x == x->p->left) x->p->left = y;
+    else x->p->right = y;
+  }
+  y->left = x;          // put x on y's left
+  x->p = y;
+}
+
+void @node_rightrotate(@t *t, struct @treenode *x) {
+  // assumption: x->left != nil
+  struct @treenode *y = x->left;         // set y
+  x->left = y->right;   // turn y's right subtree into x's left subtree
+  if (y->right != nil) y->right->p = x;
+  y->p = x->p;          // link x's parent to y
+  if (x->p == NULL) t->root = y;
+  else { 
+    if (x == x->p->right) x->p->right = y;
+    else x->p->left = y;
+  }
+  y->right = x;          // put x on y's right
+  x->p = y;
+}
+
+void @insert(@t *t, <K> key, <V> value) {
+  // inserts (key,value) into t
+  struct @treenode *x = @node_insert(t,key,value);
+  // to test whether red-black stuff is working replace 
+  // if (0 && x!=NULL) ...
+  if (x != NULL) {  // if x == NULL then x existed already
+    x->color = @RED;
+    struct @treenode *y;
+    while (x != t->root && x->p->color == @RED) {
+      if (x->p == x->p->p->left) {
+	y = x->p->p->right;
+	if (y->color == @RED) {
+	  x->p->color = @BLACK;
+	  y->color = @BLACK;
+	  x->p->p->color = @RED;
+	  x = x->p->p;
+	}
+	else {
+	  if (x == x->p->right) {
+	    x = x->p;
+	    @node_leftrotate(t,x);
+	  }
+	  x->p->color = @BLACK;
+	  x->p->p->color = @RED;
+	  @node_rightrotate(t,x->p->p);
+	}
+      }
+      else {
+	y = x->p->p->left;
+	if (y->color == @RED) {
+	  x->p->color = @BLACK;
+	  y->color = @BLACK;
+	  x->p->p->color = @RED;
+	  x = x->p->p;
+	}
+	else {
+	  if (x == x->p->left) {
+	    x = x->p;
+	    @node_rightrotate(t,x);
+	  }
+	  x->p->color = @BLACK;
+	  x->p->p->color = @RED;
+	  @node_leftrotate(t,x->p->p);
+	}
+      }
+    }
+    t->root->color = @BLACK;
+  }
+}
+
+void @node_deletefixup(@t *t, struct @treenode *x) {
+  struct @treenode *w;
+  while (x != t->root && x->color == @BLACK) {
+    if (x == x->p->left) {
+      w = x->p->right;
+      if (w->color == @RED) {
+	w->color = @BLACK;
+	x->p->color = @RED;
+	@node_leftrotate(t,x->p);
+	w = x->p->right;
+      }
+      if (w->left->color == @BLACK && w->right->color == @BLACK) {
+	w->color = @RED;
+	x = x->p;
+      }
+      else {
+	if (w->right->color == @BLACK) {
+	  w->left->color = @BLACK;
+	  w->color = @RED;
+	  @node_rightrotate(t,w);
+	  w = x->p->right;
+	}
+	w->color = x->p->color;
+	x->p->color = @BLACK;
+	w->right->color = @BLACK;
+	@node_leftrotate(t,x->p);
+	x = t->root;
+      }
+    }
+    else {
+      w = x->p->left;
+      if (w->color == @RED) {
+	w->color = @BLACK;
+	x->p->color = @RED;
+	@node_rightrotate(t,x->p);
+	w = x->p->left;
+      }
+      if (w->right->color == @BLACK && w->left->color == @BLACK) {
+	w->color = @RED;
+	x = x->p;
+      }
+      else {
+	if (w->left->color == @BLACK) {
+	  w->right->color = @BLACK;
+	  w->color = @RED;
+	  @node_leftrotate(t,w);
+	  w = x->p->left;
+	}
+	w->color = x->p->color;
+	x->p->color = @BLACK;
+	w->left->color = @BLACK;
+	@node_rightrotate(t,x->p);
+	x = t->root;
+      }
+    }
+  }
+  x->color = @BLACK;
+}
+
+<V> @delete(@t *t, <K> key) {
+  // deletes key in t and returns its value
+
+  // find key in t
+  struct @treenode *z = t->root;
+  while (z != nil) {
+    if (<lessthan>(key,z->key)) z = z->left;
+    else if (<lessthan>(z->key,key)) z = z->right;
+    else break;
+  }
+  if (z == nil) return (<V>) NULL;  // not found and not deleted
+
+  // remove z
+  struct @treenode *y;
+  if (z->left == nil || z->right == nil) y = z;
+  else y = @node_successor(z);
+  struct @treenode *x;
+  if (y->left != nil) x = y->left;
+  else x = y->right;
+  x->p = y->p;
+  if (y->p == NULL) t->root = x;
+  else {
+    if (y == y->p->left) y->p->left = x;
+    else y->p->right = x;
+  }
+  <V> value = z->value;
+  if (y != z) {
+    z->key = y->key;
+    z->value = y->value;
+  }
+  if (y->color == @BLACK) @node_deletefixup(t,x);
+  <free>(y);
+  t->size--;
+  return value;
+}
+
+//
+// Iterating
+//
+
+void @downleft(@iterator_t *i) {
+  // go to the left-most node
+  //  if (i->c == nil) return; // subtree is empty
+  while (i->c->left != nil) {
+    struct @iterstack *s = <alloc>(sizeof(struct @iterstack));
+    s->state = @LEFT;
+    s->prev = i->hist;
+    i->hist = s;
+    i->c = i->c->left;
+  }
+}
+
+void @begin(@iterator_t *i, @t *t)
+{
+  struct @iterstack *s = <alloc>(sizeof(struct @iterstack));
+  s->state = @LEFT;
+  s->prev = 0;
+  i->hist = s;
+  if (t->root==nil) {
+    i->c = NULL;
+    return;
+  }
+  i->c = t->root;
+  @downleft(i);
+}
+
+void @next(@iterator_t *i)
+{
+  if (i->c == nil) return;
+  if (i->hist->state == @LEFT) {
+    // have a look at the right side
+    struct @treenode *right = i->c->right;
+    if (right != nil) {
+      i->hist->state = @RIGHT;
+      i->c = right;
+      struct @iterstack *s = <alloc>(sizeof(struct @iterstack));
+      s->state = @LEFT;
+      s->prev = i->hist;
+      i->hist = s;
+      @downleft(i);
+      return;
+    }
+  }
+  // try to backtrack
+  do {
+    struct @treenode *p = i->c->p;
+    i->c = p;
+    if (p == NULL) return; // end of the tree
+    // pop off the current state
+    struct @iterstack *st = i->hist;
+    i->hist = st->prev;
+    <free>(st);
+  } while (i->hist->state == @RIGHT);
+}
+
+bool @done(@iterator_t *i)
+{
+  return (i->c == NULL);
+}
+
+<K> @get_key(@iterator_t *i)
+{
+  return i->c->key;
+}
+
+<V> @get_value(@iterator_t *i)
+{
+  return i->c->value;
+}

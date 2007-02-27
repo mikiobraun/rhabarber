@@ -1,0 +1,11 @@
+"template example"
+"define a template with two members"
+f(x).g(y) = x * y // (= (. (f x) (g y)) (* x y))
+f(x).h(y) = x + y // (= (. (f x) (h y)) (+ x y))
+"call it anonymously"
+f(3).g(4) // (. (f 3) (g 4))
+"create an instance of the template"
+a = f(10) // (= a (f 10))
+"call member functions"
+a.g(3) // (. a (g 3))
+a.h(3) // (. a (h 3))

@@ -1,0 +1,107 @@
+//
+// initialization file
+//
+
+// some operators are just reduced to others
+op&&(x,y) = if(!x) false else if (!y) false else true;
+op||(x,y) = if(x) true else if (y) true else false;
+op<=(x,y) = x < y || x == y;
+op>=(x,y) = x > y || x == y;
+op!=(x,y) = !(x == y);
+
+same(x, y) = addr(x) == addr(y);
+which(x) = for(i in allslots(root)) if(same(x, root.(i))) return i;
+
+// some mathematical functions
+sin(x)  = x.sin();
+cos(x)  = x.cos();
+tan(x)  = x.tan();
+sqrt(x) = x.sqrt();
+exp(x)  = x.exp();
+sinc(x) = x.sinc();
+
+// matrix stuff
+mf = matrix;
+randn(n,m) = mf.randn(n,m);
+rand(n,m)  = mf.rand(n,m);
+eye(n)     = mf.eye(n);
+tr(m)      = m.transpose();
+
+// other basic stuff
+none = none.new();
+
+/// Print help on an object
+///
+/// Documentation is stored in the .documentation slot
+help(x) = {
+  if(x?rha_documentation)
+    print(x.rha_documentation)
+  else
+    print("No documentation available for ", x);
+  return none;
+};
+
+// an iterator to use integers in for loops
+fromto(start, end) = {
+  @iter() = {
+    @value = start;
+    @limit = end;
+    @current() = value;
+    @next() = value = value + 1;
+    @done() = value >= limit;
+  }
+};
+
+// or, if you're counting up from zero anyway...
+upto(b) = fromto(0, b);
+
+// iterators for list and tuple
+list.iter() = listit.new(this);
+tuple.iter() = {
+  @i = 0;
+  @t = this;
+  @current() = t.get(i);
+  @next() = i = i + 1;
+  @done() = i >= t.length();
+};
+
+// More stuff for containers...
+tuple.rha_call(i) = get(i);
+tuple.rha_calldef(t, v) = { set(t(0), v); return v; };
+matrix.rha_call(i, j) = get(i, j);
+matrix.rha_calldef(t, v) = { set(t(0), t(1), v); return v; };
+
+list.rha_call(i) = {
+  if(i < 0)
+    error("list access error: index out of bounds");
+  @it = iter();
+  for(dummy in upto(i)) {
+    it.next();
+    if(it.done())
+      error("list access error: index out of bounds");
+  };
+  return it.current();
+};
+
+list.rha_calldef(i,v) = {
+  i = i(0);
+  if(i < 0)
+    error("list access error: index out of bounds");
+  @it = iter();
+  for(dummy in upto(i)) {
+    it.next();
+    if(it.done())
+      error("list access error: index out of bounds");
+  };
+  it.replace(v);
+  return it.current();
+};
+
+pair(x,y) = {
+  @t = tuple.new(2);
+  t(0) = x;
+  t(1) = y;
+  return t;
+};
+
+print("loaded init.rha")

@@ -1,0 +1,18 @@
+// iterators in rhabarber
+// we use the fact that even basic types can have additional slots
+// that is, when i is an iterator, it also has the slots
+// next() and done()
+
+// range construct iterator
+@rangeinner(i, limit) = {
+  @iter = i;	
+  iter.iter_done() = !(this < limit);
+  iter.iter_next() = rangeinner(i + 1, limit);
+  return iter;
+};
+
+range(limit) = rangeinner(0, limit);
+
+for(r = range(10)) {
+  print("For loop ", r);
+};

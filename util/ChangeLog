@@ -1,0 +1,44 @@
+2005-11-28  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+	* except.[ch]: resurrected except.[ch] - we might not need it for
+	rhabarber, but maybe for some future project.
+
+2005-11-27  harmeli  <harmeli@xyan>
+
+	* Makefile: try and catch macros are now in eval.h.  also got rid
+	of except.[ch] which are no longer needed.
+
+2005-11-24  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+	* cstream.c (sstropen): Fixed bug that returned garbage if nothing
+	gets every written to a string-stream.
+	(ssputc): Fixed a bug that you couldn't add more than BUFSIZE
+	characters. (Reallocation of buffer was done correctly, but the
+	buffer length was not updated)
+
+2005-07-03  harmeli  <harmeli@xyan>
+
+	* except.h: Added note about 'return' inside 'try' or 'catch'
+	block, which is not allowed.  Otherwise, 'except_tos' does not
+	have a proper value anymore.
+
+2005-06-27  Mikio Braun  <mikio@bone20.first.fraunhofer.de> + stefan
+
+	* except.h, except.c: exceptions are now void pointers.
+
+2005-06-24  Stefan Harmeling  <harmeli@bone11.first.fraunhofer.de>
+
+	* except.h, expect.c: There was a bug in the setjmp/longjmp
+	business: 'except_tos' was increased with each new try block, but
+	only decreased if we throw an exception.  Hereby, we reach quickly
+	'EXCEPT_MAX_NESTING'.  Now, 'except_tos' is increased at the
+	beginning of the macro 'try' and decreased at the end of macro
+	'endtry'.  All other macros keep except_tos constant.  Also, I
+	moved 'except_tos++' into the line before 'setjmp' to avoid
+	confusion with the current state/stack.  I think this way it is
+	more clear.  Furthermore, the initial value of 'except_tos' is now
+	-1, so also the check at the beginning of 'throw' has been
+	changed.  Inside a try block, 'except_tos' also is the index of
+	the current entries in 'except_stack' and 'except_retval'.
+	
+

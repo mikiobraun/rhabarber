@@ -1,0 +1,20 @@
+[s1] x = 5;
+     f(x = 3);   // x is still 5 because x = 3 is already in the local scope of f
+ 
+[s2] x = 5;
+     f(y = x) = y*y;   // y will be assigned when f is actually called
+     x = 3;
+     f();         // is 9 and not 25;
+     this is necessary for templates
+     f(t).g(x=t) = x*x;
+
+[s3] f(x) = x*x;
+     f(y=2);      // should this be an error?
+    
+[s4] the parent of a PAR will point to the message receiver
+     the code_env of a PAR will point to the lexical environment
+     the that of a PAR will point the owner if it is a member
+
+[s5] lookup:  first along parents, thus
+  
+         f(x).g(y) = fn(z) x*y*z;

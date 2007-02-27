@@ -1,0 +1,36 @@
+/* -*- C -*- */
+%{
+#include "sexplexer.h"
+%}
+
+%%
+"("			return LPAREN;
+")"			return RPAREN;
+[a-zA-Z_+*/\-.=<>]+	return SYMBOL;
+\"[^\"]*\"		return STRING;
+[0-9]+			return INTEGER;
+([0-9]+\.[0-9]*)|([0-9]*\.[0-9]+) return REAL;
+" "			/* eat up white spaces */
+.			printf("Warning: Unrecognized character \"%s\"\n", yytext);
+<<EOF>>			yyterminate();
+%%
+YY_BUFFER_STATE currentstring;
+
+int nexttoken()
+{
+  return yylex();
+}
+
+
+void beginstringparse(const char *s)
+{
+  currentstring = yy_scan_string(s);
+}
+
+
+void endparse()
+{
+  yy_delete_buffer(currentstring);
+}
+
+

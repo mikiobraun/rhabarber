@@ -1,0 +1,21 @@
+// I think there are some problems with the parenta and environments:
+
+a = { @f(x) = 2*x }
+
+// who is the parent a?  probably the current scope.
+
+// what about
+a.f.env
+
+g(y) = 3*y
+
+// what is
+g.env
+
+// STRANGE:
+rha[1]$ g(x) = 2*x
+[function with args (x) and code (op* 2 x)]
+rha[2]$ g.env
+[method 0x10058360 bound to 0x10055c80]
+rha[3]$ g
+[function with args (x) and code (op* 2 x)]

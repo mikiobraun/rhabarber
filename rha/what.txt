@@ -1,0 +1,116 @@
+* matrix_plus_vector ala Konrad's suggestion
+
+* translate haskell prelude to rhabarber interfaces.  this hierarchy
+  should also influence the overloading mechanism.
+
+* I think the next two big steps are exceptions and subtyping (possibly
+  type inference).
+
+* how about allowing types to be declared const, hereby we would simplify 
+  subtyping.   
+
+* let's formulate interfaces for a lot of things (classifier, mapping, 
+  preprocessor, ICA, etc.)
+
+* we should include op+, etc as operators to rhalexer.fl, but how to do
+  it right?
+
+* there are problems with cons.new(1,2) and to_string() and object_print
+
+* there is still a conceptual problem: on the one hand: a method that
+  is not found in an object should be looked-up in the parent (etc.)
+  however, what if the parent has a different primtype?  this will
+  violate a CHECK(a) and also the generated type check of rha_stub.pl
+  what shall we do?  the solution is to replace all checks with proper
+  subtype checks...
+
+  similar is that a function f doesn't have function_tr as its parent
+
+* object_less_object might lead to double evaluation of o2
+
+* do we need parent and this?
+
+* implement command line args for rhabarber
+
+* implement arbitrary dimensional matrices (tensors)
+
+* why does tuple_make not work?
+
+* have automated test code
+
+* there is a problem with symbol_tr if set to USE_UNIQUEID:
+      object_name(primtype_obj(symbol_type))
+      object_name(primtype_obj(string_type))
+  are undefined after initializing the symbol trees.
+
+* automated comments for rha_stub.pl
+
+* exceptions for eval
+* exceptions for rha
+
+* quote mechanism: how about a special type 'parsetree' which stops
+  invocation
+
+* where 'load', 'disp', 'eval' goes: core -> eval object, root
+
+* sub-typing
+
+* while, for, etc
+
+* list literals
+
+* why can't we have expression without semicolon in a rha file
+  (e.g. test.rha)
+  answer: because those expressions are not legal in a file, where a newline
+  is simply a whitespace (the whole file corresponds to a line in the
+  command line. You might want to change this, but then it is not easy
+  to write multiline expressions in rha-files without using something
+  like ... as in matlab which I find particularily horrifying
+
+* return  -> wait for exceptions
+
+* for lingua franca add:
+  prog:      spacelist SEMIC    { parsetree = list_solidify($1); parseprintresult = false; }
+           | spacelist          { parsetree = list_solidify($1); parseprintresult = true; }
+
+  expr:      LRP spacelist RRP       { $$ = list_solidify($2); }
+
+
+  /* returns list_tr */
+  spacelist: expr                    { $$ = list_new(); list_append($$, $1); }
+           | spacelist expr          { list_append($1, $2); $$ = $1; }
+  ;
+
+  to rhaparser.y  and remove the usual function call.  Note that in
+    f(3) 5
+  the first part f(3) should resolve to a function of one arg.  
+  But maybe we should skip this idea.
+
+
+* arrays
+
+* function_tr as the generic function_type for rha_fn, c_fn, overloaded_fn,
+  function should be parent to (all implemented in C)
+  + rha_fn
+  + c_fn
+  + overloaded (actually a c_fn)
+
+* macro CLASS_INIT(int);
+
+* implement tree_tr.[ch]
+  # is done
+
+/ have a to_string method to faciliate printdebug stuff
+/ disp doesn't work yet
+/ solved: arithmetics: bug with 1.0+1 -> complex, see rethink
+/ overloading object
+/ rha_stub.pl ellipse ..., e.g. tuple_make
+/ rethink the overloading mechanism
+  the problem is that real*int will be defined by complex*complex even
+  though there is a shorter way.  use a list to maintain the operators
+  to be checked for promotion.  check always the first and drop it if
+  we can not promote it on either side (always try both sides
+  immediately).  if it got promoted put it at the end of the list and
+  proceed.  hereby we guarantee that we will always use the shortest
+  path.  maybe it will be cool to say that there are more than one way.
+  # done

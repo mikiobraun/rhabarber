@@ -1,0 +1,140 @@
+//
+// 2do:
+//
+// - a.x for python objects
+// - matrices
+//
+
+import domains;
+
+python.name = "python";
+
+// getting the most basic two modules
+__builtin__ = python.importmodule("__builtin__");
+__main__ = python.importmodule("__main__");
+
+// the function which computes the type
+pytype = __builtin__.__getattribute__("type");
+
+pyobject.!tuplesetitem.domain = python;
+
+// make python objects comparable
+pythonless(x,y) = __builtin__.cmp(x,y).getint() < 0;
+op<.add(pythonless, (pyobject, pyobject));
+
+// get two python lists
+pylist = __builtin__.list;
+pytuple = __builtin__.tuple;
+
+// you can actually exhibit the parent problem here.  If you just
+// construct the iterator online, it is a parent of "this", which is a
+// pyobject, leading to all kinds of odd problems.
+
+pyobject_iterator() = {
+   x = clone(plain);
+   x.i = 0; 
+   x.l = this;
+   x.len = l.__len__().getint();
+   x.current() = l.__getitem__(i);
+   x.next() = (i = i + 1);
+   x.done() = (i >= len);
+   return x;
+};
+
+typeid(pyobj) = pytype(pyobj).to_string();
+
+pyobject.prototypes(typeid(pylist())) = {
+  @iter = pyobject_iterator;
+  @length() = __len__();
+  @get(i) = __getitem(i);
+  @rha_call(i) = __getitem__(i);
+  @set(i, v) = __setitem__(i, v);
+  @rha_calldef(i, v) = set(i(0), v);
+  @convertto = listconverter;
+};
+
+pyobject.prototypes(typeid(pytuple())) = {
+  @iter = pyobject_iterator;
+  @length() = __len__();
+  @get(i) = __getitem__(i);
+  @set(i, v) = tuplesetitem(i, v);
+  @rha_call(i) = __getitem__(i.convertto(python));
+  @rha_calldef(i, v) = tuplesetitem(i(0), v);
+  @convertto = tupleconverter;
+};
+
+pyobject.prototypes(typeid(int)) = {
+  @convertto = intconverter;
+};
+
+pyobject.prototypes(typeid(real)) = {
+  @convertto = realconverter;
+};
+
+pyobject.prototypes(typeid(string)) = {
+  @convertto = stringconverter;
+};
+
+numarray = python.importmodule("numarray");
+
+pyarray = numarray.array;
+
+pyobject.prototypes(typeid(pyarray(()))) = {
+  @get(i, j) = __getitem__((i,j).convertto(python));
+  @set(i, j, v) = __setitem__((i, j).convertto(python), v.convertto(python));
+  @rha_call(i, j) = __getitem__((i,j).convertto(python));
+  @rha_calldef(i, v) = __setitem__(i.convertto(python), v.convertto(python));
+  @convertto = matrixconverter;
+  @rows() = _shape(0.convertto(python));
+  @cols() = _shape(1.convertto(python));
+};
+
+python.newmatrix(r, c) = numarray.zeros((r, c).convertto(python), numarray.Float);
+
+op+.add(fn(x,y) x.__add__(y), (pyobject, pyobject));
+op-.add(fn(x,y) x.__sub__(y), (pyobject, pyobject));
+op*.add(fn(x,y) x.__mul__(y), (pyobject, pyobject));
+op/.add(fn(x,y) x.__div__(y), (pyobject, pyobject));
+
+@a = none;
+if (false) {
+  a = pyarray(((1.0,2,3),(4,5,6),(7,8,9)));
+
+  testmod = python.importmodule("testmod");
+  print(a.__getitem__((0,0)));
+};
+
+
+if (false) {
+  python.newlist() = pylist();
+
+  l = none;
+ 
+  if (false) {
+    // python objects and rhabarber object interact:
+    print(10 + python.newinteger(3));
+    
+    // python containers behave like rhabarber containers:
+    l = pylist();
+    print("ccc = ", ccc);
+    for(i in upto(1000))
+      l.append(i);
+    print("ccc = ", ccc);
+    print(l);
+    
+    print(l(0));
+    l(0) = 4711;
+    print(l);
+    
+    print("Iterating over python lists");
+    print("ccc = ", ccc);
+    a = 0;
+    for(i in l) a = a + i;
+    print("sum = ", a);
+    print("ccc = ", ccc);
+  };
+  
+  math = python.importmodule("math");
+
+}
+

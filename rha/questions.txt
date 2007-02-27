@@ -1,0 +1,3 @@
+26. July 2006
+Q: suppose during the evalution of the third argument there is some error.  what about the side-effects of the evaluation of the first and second argument?
+A: problem solved! see resolve_eval() in rhabarber.c

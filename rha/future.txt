@@ -1,0 +1,21 @@
+Some cool ideas for future work:
+
+1. Profiler:  have a horizontal bar plot with a row for each function
+   and with some reset button.  While running a program update the bar
+   plot constantly.  Reset sets the bars back to zero.
+
+2. quote function:
+
+   `(x) returns the parsetree of "x"
+
+3. define functions that don't evaluate:
+
+   for(x, `y, `z) = { z.compile(); y.compile(); bla; blub; }
+
+   the quote registers for as a function that is parsed differently,
+   i.e. it creates a special macro.
+
+   z.compile() creates bytes compiled code.  also z.eval()
+
+4. make functions of .o files available if .h file is accessible
+   use this feature for all c-implemented rhabarber functions.

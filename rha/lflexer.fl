@@ -1,0 +1,56 @@
+/* -*- C -*-  */
+%{
+#include "lflexer.h"
+
+#include <stdio.h>
+#include "object.h"
+#define YYSTYPE object_t
+#include "lfparser.tab.h"
+#include "literalfactory.h"
+%}
+
+SYMBOL		([a-zA-Z_][a-zA-Z_0-9]*)
+INTEGER		-?[0-9]+
+%%
+{INTEGER}		{ 
+                          yylval = create_integer(atoi(yytext)); 
+                          return INT;
+                        }
+{SYMBOL}		{
+                          yylval = create_symbol(yytext);
+                          return SYM;
+                        }
+"+"			return PLUS;
+"-"			return MINUS;
+"*"			return TIMES;
+"/"			return DIV;
+"="			return ASSIGN;
+","			return COMMA;
+";"			return SEMI;
+"."			return DOT;
+"("			return LP;
+"["			return LB;
+"{"			return LC;
+")"			return RP;
+"]"			return RB;
+"}"			return RC;
+<<EOF>>			yyterminate();
+%%
+YY_BUFFER_STATE currentstring;
+
+void beginstringparse(const char *s)
+{
+  currentstring = yy_scan_string(s);
+}
+
+
+void endparse()
+{
+  yy_delete_buffer(currentstring);
+}
+
+
+void yyerror(const char *s)
+{
+  fprintf(stderr, "error: %s\n", s);
+}

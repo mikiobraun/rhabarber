@@ -1,0 +1,171 @@
+// Domains in rhabarber
+// 
+// How it works:
+// 
+//   Every object and every function potentially has a "domain" slot
+//   which points to its domain.
+//
+//   Each object which is convertable has to implement a certain
+//   standard interface. For example, for integers, it has to
+//   implement the function getint() which returns a standard
+//   rhabarber integer.
+//
+//   Now, when calling a function, one checks whether the domain of
+//   the argument is the same as that of the function. If the function
+//   does not have a domain, no argument conversion takes place.
+//
+//   If the domains are different, the convertto() slot is called on
+//   the object. This function is implemented in an abstract fashion
+//   for each type, and allows to construct a new object in the other
+//   domain.
+//
+
+import init;
+
+//debug.domains = true;
+debug.domains = false;
+
+// the rhabarber domain
+rhabarber = {
+  @name = "rhabarber";
+  @newinteger(i) = i;
+  @newreal(r) = r;
+  @newstring(s) = s;
+  @newlist() = list.new();
+  @newnone() = none;
+  @newtuple(len) = tuple.new(len);
+  @newmatrix(r, c) = matrix.new(r,c);
+};
+
+//
+// these are the abstract converters
+//
+noneconverter(domain) = domain.newnone();
+intconverter(domain) = domain.newinteger(getint());
+realconverter(domain) = domain.newreal(getreal());
+stringconverter(domain) = domain.newstring(getstring());
+tupleconverter(domain) = {
+  if(debug.domains)
+    print("---tupleconverter");
+  @newtuple = domain.newtuple(length());
+
+  for(@i in upto(length().convertto(domain)))
+    newtuple.set(i.convertto(domain), get(i).convertto(domain));
+
+  return newtuple;
+};
+listconverter(domain) = {
+  if(debug.domains)
+    print("---listconverter");
+  @newlist = domain.newlist();
+
+  for(@x in this) newlist.append(x.convertto(domain));
+
+  return newlist;
+};
+matrixconverter(domain) = {
+  if(debug.domains)
+    print("---matrixconverter");
+  @r = rows().getint();
+  @c = cols().getint();
+
+  if(debug.domains)
+    print("Constructing ", r, " * ", c, " matrix");
+  @newmatrix = domain.newmatrix(r, c);
+
+  if(debug.domains)
+    print("Copying...");
+  for(@i in upto(r)) {
+    for(@j in upto(c)) {
+      newmatrix.set(i, j, get(i, j).getreal());
+    }
+  };
+  return newmatrix;
+};
+
+//
+// plug converters into rhabarber's standard types
+// 
+none.convertto = noneconverter;
+
+int.convertto = intconverter;
+int.getint() = return this;
+
+real.convertto = realconverter;
+real.getreal() = return this;
+
+string.convertto = stringconverter;
+string.getstring() = return this;
+
+tuple.convertto = tupleconverter;
+
+list.convertto = listconverter;
+
+matrix.convertto = matrixconverter;
+
+//
+// this plugs into rhabarber's eval loop to automatically convert
+// arguments.
+// 
+ccc = 0;
+
+convertcallto(domain, call) = {
+  @l = call.length();
+
+  @newcall = tuple.new(l);
+  newcall.set(0, call.get(0));
+
+  for(@i in fromto(1, l)) {
+    @arg = call.get(i);
+
+    if (!same(getdomain(arg), domain)) {
+      if(debug.domains)
+	print("   Conv ", i, ": ", arg, 
+	      " from ", getdomain(arg).name, " to ", domain.name);
+      arg = arg.convertto(domain);
+      if(debug.domains)
+	print("ok");
+      ccc++;
+    };
+    newcall.set(i, arg);
+  };
+  return newcall;
+};
+
+eval.fctcall_hook(env, call) = { 
+  if(call.length() == 1)
+    return call;
+
+  @fct = call.get(0);
+
+  if(!fct?domain) return call
+  else  @fctdomain = fct.domain;
+
+  if(debug.domains)
+    print("Call ", call, " in domain ", fctdomain.name);
+
+  return convertcallto(fctdomain, call);
+};
+
+unify_domains(env, call) = {
+  if(debug.domains)
+    print("unifying elements in call ", call);
+
+  //@x = call(1);
+  //@domain = if(x?domain) x.domain else rhabarber;
+
+  return convertcallto(rhabarber, call);
+};
+
+
+// the default domain is rhabarber
+getdomain(o) = if (o?domain) o.domain else rhabarber;
+
+op+.resolve_failed_hook = unify_domains;
+op-.resolve_failed_hook = unify_domains;
+op*.resolve_failed_hook = unify_domains;
+op/.resolve_failed_hook = unify_domains;
+op>.resolve_failed_hook = unify_domains;
+op<.resolve_failed_hook = unify_domains;
+op==.resolve_failed_hook = unify_domains;
+

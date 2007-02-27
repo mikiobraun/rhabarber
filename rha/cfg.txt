@@ -1,0 +1,122 @@
+/* a context free grammar for rhabarber */
+
+f(x):int
+f(g:(int->int))
+f(x, y) = x*y;                           /* no type constraints */
+f(x:int, y:int):int = { return x*y; }    /* return var can not be named */
+f(x:int, g:(int*int->int)):real = { ... }
+f(int, (int*int->int) -> real) = { ... } /* not allowed */
+f(x:int, g:(int*int->int)) : real
+f(x:int, g:(int*(int->int)->int)) : real = { ... }
+f(x:int, g:(int*int->void)) = { z = bla; return z; }
+g(:int, h:(int->int)):int
+f(x:int, y:int):int
+g:(int*int->int) 
+
+f(a:int, g:(int*int->int)) = { ... }     /* definition */
+f(a=17, g=(fn (x, y) return x*y));       /* passing functions */
+f(a=17, g(x,y) = return x*y);            /* alternatively */
+f(a=17, h(z).g(x,y) = {return x*y;});    /* not allowed */
+
+
+
+literal   : integer
+	  | real
+	  | string
+	  ;
+
+keyw      : 'this' 
+	  | 'that'
+	  | 'parent'
+	  ;
+
+sym	  :  identifier
+	  | keyw
+	  ;
+
+rv        : sym
+	  | rv '.' sym                   /* dot expression */
+	  | literal
+	  | rv '+' rv                    /* infix operators */
+	  | rv '-' rv
+          | rv '*' rv
+	  | rv '/' rv
+          | rv '<' rv
+	  | rv '>' rv
+	  | rv '==' rv
+	  | rv '(' pass-list ')'         /* function call */
+          | 'fn' '(' arg-list ')' stmt   /* anonymous function */
+	  | '(' rv ')'                   /* grouping */
+	  | '{' stmt '}'                 /* code as data, brackets avoid parse errors */
+	  ;
+
+var       : identifier                   /* no dot expressions */
+	  | identifier '(' arg-list ')'  /* function declaration */
+	  ;
+
+ooo-list  : var '=' rv                   /* out of order args */
+	  | ooo-list ',' var '=' rv
+	  ;
+
+rv-list   : rv
+          | rv-list ',' rv
+	  ;
+
+pass-list : /* empty */
+          | rv-list
+          | ooo-list
+          | rv-list ooo-list
+	  ;
+
+type      : identifier
+          | type type                    /* multiple constraints */
+	  | type '*' type                /* no problem with op* */
+	  | type '->' 'void'             /* functions w/o return value */
+	  | type '->' type               /* functions */
+	  | '(' type ')'                 /* grouping */
+	  ;
+            /* examples:  int
+                          int*int->int
+                          int*int->void
+                          printable t*t
+                          (printable t)*t 
+			  */
+
+arg       : identifier
+	  | identifier '=' rv            /* default value */
+	  ;
+
+argt      : arg
+          | arg ':' type                 /* type constraint */
+	  ;
+
+argt-list : argt
+	  | argt-list ',' argt
+	  ;
+
+arg-list  : /* empty */
+	  | argt-list
+	  ;
+
+asg       : var                          /* the assignables */
+	  | keyw
+	  ;
+
+lv        : asg
+	  | lv '.' asg                   /* dot expression */
+	  | '(' lv ')'
+	  ;
+
+stmt      : ';'
+	  | rv ';'
+	  | lv '=' rv ';'
+	  | 'return' rv ';'
+	  | 'if' '(' rv ')' stmt
+	  | 'if' '(' rv ')' '{' stmt '}' 'else' stmt  
+					 /* brackets avoid ambiguity */
+	  | '{' stmt-list '}'            /* should open a new scope, i.e. a new object */
+	  ;
+
+stmt-list : stmt
+	  | stmt-list stmt
+	  ;

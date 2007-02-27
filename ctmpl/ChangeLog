@@ -1,0 +1,15 @@
+2005-11-28  harmeli  <harmeli@xyan>
+
+	* list.tmpl (get, next, ...): added test @done() before accessing
+	the iterator to avoid segfault.
+
+2005-08-22  harmeli  <harmeli@xyan>
+
+	* maketmpl.l (expand_prefix): creating 'treeintint' under cygwin
+	(on my IBM laptop) lead to segfault.  the problem was in
+	expand_prefix(): after mallocing new space for char *s, s was not
+	empty, thus strcatting prefix to s increased the size of s and the
+	beginning of s was some crappy characters.  initializing s with
+	the empty string solved the problem.
+
+

@@ -1,0 +1,155 @@
+// -*- C -*-
+//@name tuple<T>
+//@param T
+//@param alloc=malloc
+//@param free=free
+//@param null=0
+
+//@info a tuple with fixed size
+//@info
+//@info parameters:
+//@info
+//@info       T : the stored type
+//@info   alloc : used for allocating the array (default: malloc)
+//@info    free : used to free the array (default: free)
+//@info    null : the default value of T
+
+//@header
+
+struct tuple<T> {
+  int len;
+  <T> *array;
+};
+
+typedef struct tuple<T> @t;
+typedef void @proc(<T> v);
+
+extern void @init(@t *t, int len);
+extern void @initto(@t *t, int len, <T> x);
+extern void @copy(@t *t, @t *t2);
+extern void @clear(@t *t);
+extern void @foreach(@t *t, @proc *fct);
+
+extern int @length(@t *t);
+extern void @set(@t *t, int i, <T> x);
+extern <T> @get(@t *t, int i);
+extern <T>* @array(@t *t);
+
+// this is just stuff which maybe exists
+#ifdef _NOT_YET_
+#include "list<T>.h"
+
+extern void @fromlist(@t *t, list<T>_t *list);
+
+#ifdef USE_INLINES
+extern inline
+int @length(@t *t)
+{
+  return t->len;
+}
+
+extern inline
+void @set(@t *t, int i, <T> x)
+{
+  t->array[i] = x;
+}	
+
+extern inline
+<T> @get(@t *t, int i)
+{
+  return t->array[i];
+}	
+
+extern inline
+<T> *@array(@t *t)
+{
+  return t->array;
+}
+#endif // USE_INLINES
+
+#endif
+
+//@implementation
+
+#ifdef USE_INLINES
+#define INLINE inline
+#else
+#define INLINE
+#endif
+
+void @init(@t *t, int len)
+{
+  t->len = len;
+  t->array  = <alloc>(sizeof(<T>) * len);
+  for(int i = 0; i < len; i++)
+    t->array[i] = <null>;
+}
+
+
+void @initto(@t *t, int len, <T> x)
+{
+  t->len = len;
+  t->array  = <alloc>(sizeof(<T>) * len);
+  for(int i = 0; i < len; i++)
+    t->array[i] = x;
+}
+
+
+void @copy(@t *t, @t *t2)
+{
+  t->len = t2->len;
+  t->array = <alloc>(sizeof(<T>) * t->len);
+  for(int i = 0 ; i < t->len; i++)
+    t->array[i] = t2->array[i];
+}
+
+
+void @clear(@t *t)
+{
+  <free>(t->array);
+}
+
+INLINE
+int @length(@t *t)
+{
+  return t->len;
+}
+
+INLINE
+void @set(@t *t, int i, <T> x)
+{
+  t->array[i] = x;
+}	
+
+INLINE
+<T> @get(@t *t, int i)
+{
+  return t->array[i];
+}	
+
+INLINE
+<T> *@array(@t *t)
+{
+  return t->array;
+}
+
+#ifdef _NOT_YET_
+void @fromlist(@t *t, list<T>_t *l)
+{
+  @init(t, list<T>_length(l));
+  
+  list<T>_iterator_t it;
+  int i = 0;
+  for(list<T>_begin(&it, l);
+      !list<T>_done(&it);
+      list<T>_next(&it), i++) {
+    @set(t, i, list<T>_get(&it));
+  }
+}
+#endif
+
+void @foreach(@t *t, @proc *fct)
+{
+  for(int i = 0; i < t->len; i++)
+    (*fct)(t->array[i]);
+}

@@ -1,0 +1,26 @@
+benchmark(iters) = {
+  tic();
+  @s = 0;
+  for(@i in upto(iters)) s = s + i;
+  print(s);
+  @t = toc();
+  print(iters, " iterations in ", t, " seconds");
+  print(iters/t, " iterations per second");
+  return;
+};
+
+import init;
+
+print("--Raw rhabarber");
+benchmark(1000);
+
+import domains;
+
+print("--With domains");
+benchmark(1000);
+
+import python;
+
+print("--With python");
+benchmark(python.newinteger(100));
+print(ccc, " Conversions");

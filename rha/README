@@ -1,0 +1,69 @@
+Components
+==========
+
+  Infrastructure:
+
+    alloc - GC'd alloc
+    debug - debugging support
+    usage
+    utils
+
+  The Languag Objects:
+
+    object - dynamically typed objects with slots
+    primtype - primitive types
+    symtable
+
+  The Language:
+
+    rhabarber - the main file (main & read-eval loop)
+    core - initialize core objects and builtin functions
+    eval - the interpreter
+
+    eval_typed - beta versions for eval with types
+    function_typed
+
+Other stuff:
+
+  graphics - interface to OpenGL (for now)
+
+Parsing:
+
+  rhaparser.y
+  rhalexer.fl
+
+Helpers for Templates:
+
+  stringdefs
+
+Rhabarber Types
+===============
+
+  Datatypes:
+
+   bool
+   complex
+   int
+   real
+   matrix
+   string
+   symbol
+   void
+
+  Functions:
+
+    builtin
+    function
+    overloaded
+
+  Containers:
+
+    list
+    tuple
+    tree
+
+  Other:
+
+    cons
+    exception
+

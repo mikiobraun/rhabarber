@@ -1,0 +1,1119 @@
+2006-08-03  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>
+
+	* core.c (core_stub_init):
+	(i) removed a lot of redundant stuff (some of the prules were
+	calling exactly the same code).
+	(ii) introduced lazy-and and lazy-or, this required
+	- and_sym and or_sym are now no longer overloaded functions,
+	because for those the args have to be evaluated before we can
+	decide which function to call
+	- core.c now contains two macros (function w/o args eval) called
+	b_lazy_and and b_lazy_or that do the lazy stuff
+	(iii) I was wondering where is the right place to eval args?
+	Actually, where it is right now (in eval()) it is not the right
+	place, because suppose you call a method.  In eval() we don't know
+	whether we will end up with a macro or a function.  I tried to
+	change it but reverted my changes, because I couldn't get it to 
+	run: here is what I was trying to do:
+	- remove the eval of args from eval()
+	- have a function eval_args() in eval.c
+	- call eval_args() in function_vt_call, builtin_vt_call dependent
+	on whether we have a function, a macro (ismacro==true) or a prule
+	(priority>0.0) 
+	- don't call it in method_vt_call
+	- call it in overloaded_vt_call to decide the types
+	- call it in pyobject_vt_call and mxfunc_t_call, because I 
+	somewhat believe that they expect it
+	- call it in dict_vt_call,...  mmmhh, probably here was the
+	problem
+	Anyway, I didn't get the test code to run fully, so I reverted
+	this nice try...
+	(iv) Last but not least some fun syntactical stuff:
+
+	        if ( (x == 0)  && (y > 0) ) print("hello world");
+
+	That is the usual way to write it in rhabarber (and C).  One
+	criticism of C is that && and || are so cryptical (wikipedia), so
+	why not add a new prule!  Just type in:
+
+	        and = eval(\&&)
+
+	Hereby, you have a new pointer to the prule behind '&&'.  Note
+	that magically, while resolving an expression with 'and',
+	rhabarber knows that there is an 'and' and not a '&&' to look for
+	while chopping the parsetree into pieces.  Now we can have:
+
+	        if ( (x == 0) and (y > 0) ) print("hello world");
+
+	which is easy to read.  Of course we could have written:
+
+	        if ( 0 == x < y ) print("hello world");
+
+	but this was already possible since the previous commit...
+	
+2006-08-02  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>
+
+	* literals.rha: 
+
+	* more random notes:
+	(i) note that return and break are very special.  'if' is
+	different.
+	(ii) Next step: make also ',' and ';' an operator, to be able to
+	(iii) distinction between prule and macro and function
+	
+	* all_over_the_place...:  ok, now:
+
+	    ./rhabarber < test.rha | grep false
+
+	runs without problems.  I made big changes to the parser, which is
+	now dealing only with the bracket stuff.  Most work is done in
+	resolve_prules() in prule.c.  Here are a few new words:
+
+             function      as before
+	     macro         a function where the args are not evaluated
+	     prule         a parser rule, which is kind of an art to write one,
+	                   it can also destroy the syntax...
+
+	Let's discuss whether we want to keep prules.  Basically, to extend the
+	syntax you write a prule, e.g.
+
+	     maximize = prule (10.0, pt) { ... }
+
+	10.0 is the priority and one should really know what you are doing, if you
+	change that.  'pt' is a symbol that will contain the parsetree to be
+	chopped into pieces by { ... }.  Let's try to create a syntax like:
+
+	     maximize f(x)
+             maximize f(x) st x>0
+
+	Ok:
+	
+           maximize = prule (10.0, pt) {
+	     print("resolving 'maximize' prule\n");
+	     print(pt);   // for debugging
+	     @lpt = pt.to_list();  // a list is easier to chop
+	     @first = pt.pop();     // the first symbol should be maximize
+	     if (first != symbol.new("maximize"))
+	       throw	"first symbol must be 'maximize'";
+	     @lpt_len = lpt.length();
+	     // now let's chop off everything until 'st'
+	     @goal = list.chop_first(lpt, symbol.new("st"));
+	     // check whether we chopped off 'st'
+	     if (lpt_len == goal.length()) {
+	       // nothing chopped off
+	       return (symbol.new("op_maximize"), goal.solidify());
+	     }
+	     if (lpt_len > goal.length() + 1) {
+	       // chopped something off and there is something left for the constraints
+	       return (symbol.new("op_maximize"), goal.solidify(), lpt.solidify());
+	     }
+	     throw "chopped off 'st', but nothing was following";
+	   }
+
+        Finally, write the function to executed (as a macro):
+
+	  op_maximize = macro (goal, constraints) code
+
+	and we are back to reality, because we can't write functions/macros with 
+        variable number of args.  That still remains to be done.  Anyway,
+        I hope that the changes to the parser do not only give us new
+        weird error messages but also sooner or later a distinguishing feature.    
+        
+        I also tried to make consistent symbols (see core_symbols) and probably 
+        many other little things.  Let's talk at the phone some time.
+  
+
+2006-07-27  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>
+
+	* bool_tr.[hc]: for some reason AND and OR had wrong names:
+	     bool_and     is now    bool_and_bool
+	     bool_or      is now    bool_or_bool
+	  this influenced the stubs and withit the overloading,
+	  AND and OR were only registered with one argument...
+
+	* list_tr.[hc]: changed the meaning of list_solidify():
+
+	     list_to_tuple()   is identical to the old list_solidify()
+	     list_solidify()   if the list has only one element, the 
+	                       element itself is returned, otherwise
+	                       identical to list_to_tuple();
+
+2006-07-25  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>
+
+	* rhaparser.y: added "demacrofy_sym" to the mlist.  This makes sure that macros are resolved exactly once in eval().
+
+	* core.c (core_stub_init): added all symbols to the symbol table of
+	 root.  this is useful for writing macros.
+
+	* tuple_tr.h: added tuple_to_list method.  However, how can I the
+	return type be list_tr without having circularities with the 	#includes (list_tr.h #includes tuple_tr.h)?  This is probably a
+	 C-programming 101 question...
+
+	* list_tr.c (lost): added list_popuntilsymbol method, which does
+	the following:
+
+	   list = [(fn(x)x*x), in, 17-42, 56];
+	   part = list.popuntilsymbol(list, symbol.new("in"));
+	   part == [(fn(x)x*x)]
+	   list == [17-42, 56]
+
+	This is for macros.
+
+	* tuple_tr.c (tuple_to_list): added tuple_to_list method.  This is
+	 for macros.		
+
+2006-07-12  Stefan Harmeling  <harmeli@82-41-255-20.cable.ubr04.edin.blueyonder.co.uk>
+
+	* matrix_tr.c (matrix_solve): for now I excluded the use of the
+	function clapack_dgesv which does not exist in my ATLAS that comes
+	with my mac.
+	Also I added some mac options to the rha/Makefile.
+	And I added some -D_ANSI_SOURCE in all remaining Makefiles to avoid double 	definitions of "strdup()" which is under BSD already
+	defined in "string.h".
+	What else?  For intel mac I had to install gc6.7, which works just
+	fine.
+
+2006-03-16  harmeli  <harmeli@xyan>
+
+	* rhaparser_macro.y, rhalexer_macro.fl: Rewrote the whole parser
+	to have true macros.  There is a lot to explain, here only
+	briefly: everything is a term which is one of:
+
+	   expr         1+2 OR 17 OR true                   // as usual
+	   prexpr       -1 OR -1+23 OR ++x                  // prefixed
+	   wsexpr       while true print() OR if (x>0) x=5  // white-spaced
+	   litexpr      [1,2,3] OR matrix[3,4;5,6]          // new literals
+
+	Note: "while", "if", "for", "import", "try", ... are from now on
+	macros.  The user can define more macros him-/herself, hereby
+	really extending the language arbitrarily, e.g.
+
+           maximize x*x subject to x>0;
+	   max x*x st x>0;                      // for brevity
+           max (-x) st 1>x>0;                   // note '-x' needs brackets
+	   Circle = from Shape with Serial { print() = ...; }; // classes
+
+	The eval-function in eval.c will figure out the right grouping of
+	the white-spaced sequence by considering the maximal arity of the
+	macros involved.  In this process, functions have always arity
+	one, but can use tuples for more arguments.  Note that in the
+	example above with '-x' the parser doesn't know that 'max' defines
+	a macro.  At parser level it is just a symbol and maybe you mean
+	'max-x'.  Only the eval-function in eval.c knows which macros are
+	defined in the active scope.  I.e. macros are very much like
+	functions with the difference that they have to evaluate their
+	args themselves. However, this magic (in eval.c) is not yet
+	implemented (but I hope I think I know how to do it;).  Hopefully
+	soon.  This is why right now the new parser/lexer is checked-in as
+	additional files that are not used.  For playing around, those
+	files replace rhalexer.fl and rhaparser.y and I suggest to use the
+	function "quote", e.g.
+
+	   \1+2 
+           \(-1)            // note \-1 is a syntax error, as is now "- -1"
+	   \(while true 17) // also \while ... is only quoting while
+
+	This macro stuff should be extremely powerful (if I fully get it
+	to work).  The grammar was already the first, big step towards a
+	very expressive language (surprisingly all conflicts could be
+	resolved).
+	
+2006-03-15  harmeli  <harmeli@xyan>
+
+	* rhaparser.y: got rid of the "copy" stuff for the literals.
+	Suprising the test still works.  Probably Mikio changed already
+	something for x++ example?
+
+2006-03-08  harmeli  <harmeli@xyan>
+
+	* Makefile: Changed the conditions for the MATLAB/PYTHON/ATLAS
+	variables to include Stefan's laptop.  Instead of checking the
+	HOSTNAME, we now check PLATFORM, which currently is either
+	"cygwin" or "unix".  For MATLAB/ATLAS "evo" and "xyan" (our two
+	laptops) agree, but for PYTHON "xyan" also uses the UNIX options.
+
+        * KnownBugs: Added the file known bugs, to write down bugs, which
+	we know of, but are right now too lazy/busy to remove.
+	
+2005-12-02  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+   MAKEFILE
+	* added some directives to the matlab file to automatically chose
+	the right configuration based on the OS and the computer name.
+	
+   MATLAB
+	
+	* added objects matlab, mxarry, mxfunc and matlab.rha. To bind
+	matlab. Matrices should work for now.
+	
+   EVALUATION
+
+	* moved call to eval_fctcall_hook out of eval.c to function_tr.c,
+	etc. basically only to those points where you actually do want to
+	promote arguments. This is still not perfect. We want to have
+	domain resolution also within converters.
+	
+   SNATCH
+	
+        * added symbol "=?" for snatch: "a =? b" means make that "a ? b"
+	eventually, works for now.
+	 
+	* object.c (object_snatch): suppressed the warning for now
+
+2005-11-29  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+   JUST A BUNCH OF MINOR CHANGES
+	
+	* eval.c (eval): changed implementations of a.x, a?x, and a./b
+	("./" is a non-binding lookup. If a.f is a method, a./f is the
+	unbound function (not the method-object)).
+
+	* core.c (b_for): changed assign in for to assigntosymbol, which
+	does not evaluate its arguments again.
+
+	* benchmark.rha: added a file which runs a small benchmark in
+	rhabarber
+
+	* rha_stub.pl: Adds a slot "builtins" which contains all the
+	builtin functions of a type
+
+	* rhabarber.c: restricted maximum heap size to 512M for debugging
+	purposes (my machine froze at least once from an infinite loop).
+
+	* python.rha -> pythonmod.rha: It's not a good idea to have
+	modules which have the same name as objects
+	
+	* core.c (b_tic, b_toc, id): added tic, toc, and id functions. tic
+	and toc are for measuring time, and id is the identity function.
+
+	* method_tr.c (method_new): removed some hack concerning the
+	domains of bound functions, which didn't work.
+
+2005-11-28  harmeli  <harmeli@xyan>
+
+	* listit_tr.c (listit_replace): added test before replace
+
+	* listit_tr.h: changed the list_foreach macro:
+
+	    list_tr l;
+	    object_t x;  // iteration variable
+	    list_foreach(x, l)
+              do_something(x);
+
+	Note that x must be defined beforehand.  For this there were also
+	some additions to ../ctmpl/list.tmpl necessary.  In particular
+	adding a function @iterator which creates an iterator.
+
+	* core.c (b_plusplus, b_minusminus, b_postplusplus,
+	b_postminusminus), rhaparser.y, rhalexer.fl, core_symbols: the
+	inc/dec mechanism has changed: now x++, ++x, x--, --x are only
+	syntactic sugar for inc/dec.  If an object has method inc and dec,
+	the constructions ++ -- do work.  Note that there will be some
+	copying, i.e. for x = 42; x.a = 17; the slot x.a will be lost
+	after x++.  Thus now a=(17, 42); i=0; a(i) = ++i; works as
+	expected.
+
+	* rhalexer.fl: added ++op, --op to the list of strings creating
+	SYMBOL, moved this rule up as the top rule to make sure that
+	things like op++ are interpreted as a SYMBOL and not as "op ++"
+
+	* rhaparser.y: removed the SEMIC after the try block.
+
+2005-11-27  harmeli  <harmeli@xyan>
+
+	* rhaparser.y, rhalexer.fl: added grammar support for
+	try/catch/throw.
+
+	* core.c: added b_trycatch and b_throw for exception mechanism in
+	rhabarber.
+
+	* exception_tr.[hc]: renamed exception_msg to exception_to_string.
+	
+
+	* eval.h: the try-catch mechanism is now embedded into the
+	frames-mechanism.  also the syntax in C slightly changed:
+	 
+           object_t exception;
+	   try f();
+	   catch(exception) printf("%s\n", exception_msg(exception));
+
+	Or also:
+
+	   object_t exception;
+	   try {
+	      f();
+           }
+	   catch(exception) {
+	      g();
+	   }
+	
+	The 'endtry' is no longer necessary.  However, now the macros look
+	really weird, because all the action happens in some "else is" and
+	"do while".
+	
+2005-11-26  harmeli  <harmeli@xyan>
+
+	* rhaparser.y, bool_tr.[hc], int_tr.[hc], real_tr.[hc],
+	string_tr.[hc], core_symbols: the problem was that the following
+	function showed some weird behavior:
+
+	   f() = { @i = 2; print(i); i++ }
+
+	Each call f() modified the code and increased the literal that is
+	assigned to @i, i.e. after the first call the code looks like
+	this:
+
+	   f() = { @i = 3; print(i); i++ }
+
+	The reason is that the code is only parsed once.  Thus we create
+	only once an integer with value 2.  "@i=2" will bind i to the
+	2-object that is contained in the s-expression of the code,
+	i.e. i++ is really increasing the 2-object in the code, thus
+	modifying the code.  This problem is solved by replacing the
+	2-object in the s-expr of the code by 2.copy().  This forces to
+	create each time the code is used to create a new 2-object.  The
+	type for which we added copy methods are bool, int, real and
+	string. 
+
+	* core.c: added b_delete (based on the calling convention of
+	b_eval) which deletes a slot from the current environment (called
+	with one arg) or from the specified object.
+
+	* rhaparser.y: corrected the use of wl() in the terms that I
+	added.  Isn't right that it would suffice to add $$=wl($$); at the
+	end of each code snip?
+
+2005-11-25  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+        * completed rha_call and rha_calldef things, now also work for
+	python objects (although python support is broken right now :( )
+
+	* makesymbols.pl: new perl script for adding new symbols to be
+	defined in core.c
+
+	* overloaded_tr.c: now uses the type entries, not the parents.
+
+2005-11-25  harmeli  <harmeli@xyan>
+
+	* rhaparser.y: now there is support for tuple literals, e.g.
+
+	    (23, 34, 54) 
+
+	is a tuple with three elements.  Note the comma, which is also
+	added for the output.  Herewith function calls are now an
+	expression followed by a tuple (as usual).  Note that in order not
+	to interfere with grouping in calculations we have to make the
+	singleton a special case:
+
+	    (324) == 324
+
+	I.e. singleton literals result always in their element.  In order
+	to explicitely create a singleton use
+
+	    tuplefy(324) != 324 
+
+	* list_tr.[hc]: added list_from_tuple() which is used in rhaparser.y.
+	this function could be also tuple_to_list().  also list_solidify()
+	could be named list_to_tuple(), etc.
+
+	* core.[hc]: added tuple_sym.  note that in lisp notation (tuplefy),
+	(tuplefy 4), (tuplefy 23 54) are tuples.  Tuples can be written as
+	(23, 453, 456).  Note that function calls require an expression
+	followed by a tuple.  For the singleton we need to write
+	explicitely tuplefy(23). 
+
+	* tuple_tr.c (tuple_to_string): added a ',' between entries to
+	match the tuple literal.
+
+2005-11-24  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+   EVALUATION
+
+	* object.c: simplified object lookup mechanism. There exist only
+	two functions now: object_lookup and object_lookuplocal (does not
+	go to parents). The "this" pointer has been removed. Instead,
+	thisproxy is now used.
+
+	* thisproxy_tr.[ch]: new type which refers all lookup's and
+	replace's requests to another object passed at construction
+	time. The most important feature is "implicit binding": when a
+	bindable object (via rha_bindable) is found in the other object,
+	it gets bound automatically. This is necessary such that things
+	like
+
+	     a.f() = ...; a.g() = f() + ... ;
+
+	work correctly.
+
+	If it is not found in the other object, the requests are
+	passed to the parents. This construction replaces the existing one
+	where the activation record points to the this pointer.
+
+	Now, when calling a slot function, the following things happen:
+
+	   a.f(x).
+
+	1. a.f is lookup up. f is bound to a by constructing a method_tr
+	2. method_invoke calls rha_bind on the bound function to register
+	   "a". 
+	3. the function then constructs a thisproxy_tr which is put above
+   	   the activation record:
+
+	           lexical scope
+	           thisproxy (->  a)
+	           activation record (contains arguments)
+
+   CONTAINERS, AND OVERLOADING FUNCTION CALLS AND DEFINITIONS
+
+        > See containers.rha for some examples.
+	
+	* eval.c (assign): re-wrote most of assign and assign_symdot
+	(which became assigntosymbol in the process) to be able to
+	overload assignments of the form "f(0) = a" which we need for
+	containers.
+
+	* dict_tr.[ch]: added a dictionary
+
+	* init.rha: added rha_call definitions for tuples and lists. Now,
+	l(), l() =  works.
+
+	* rhavt.h (struct rhavt): The virtual table now contains six
+	entries:
+
+	  call     - calling an object
+	  callable - asking an object if it can be called
+	  bind     - bind an object to another object (used for method
+	             calls)
+	  calldef  - overloading fct definitions
+	  lookup   - symbol lookup
+	  replace  - symbol assignment
+
+	Of these, call and calldef can be overloaded also in rhabarber
+	itself by defining slots rha_call and rha_calldef.
+
+    OTHER THINGS
+
+	* core.c (b_error): addded builtin function error which lets you
+	raise errors in rhabarber:
+
+	   error("something odd happened with object", o);
+
+	prints an error message and stops execution.
+
+	* object.[ch]: renamed object_ptype -> object_primtype, because it
+	is called primtype everywhere else.
+
+	* newtr.pl: added a perl script which construct skeleton files for
+	new primtypes. Usage: "newtr.pl name" constructs name_tr.h and
+	name_tr.c and prints instructions on what is left to do.
+	
+2005-11-23  harmeli  <harmeli@xyan>
+
+	* rha_stub.pl (create_ctmpl): renamed "name" to "type", i.e. now
+	the objects created by stubs have their name in the slot "type".
+	Hereby, we can asked the type of their children better:
+	   17.type == "int"
+	Furthermore, we added a slot with the name of the primtype.  This
+	allows to check the type in the following way:
+	   17?int
+	which checks whether 17 (or its parents) have a slot named "int".
+
+2005-11-22  harmeli  <harmeli@xyan>
+
+	* none_tr.h, none_tr.c: added none_is_none to test for none.
+
+	* init.rha: 'next' of an iterator should stop doing anything once
+	the boundary is reached. added 'reset'.
+
+	* plain_tr.h (plain_equal_plain): plain_equal_plain is now an
+	'operator' (was before 'method')
+
+	* rhaparser.y: changed opsb_sym to literal_sym
+	the parse tree passed to a "literal" method must be quoted.
+
+	* core.h, core.c: changed opsb_sym=="op[]" to literal_sym="literal"
+
+	* rhaparser.y: added support for matrix[23, 23;43, 24].
+
+2005-11-21  harmeli  <harmeli@xyan>
+
+	* core.h, core.c: added symbols for ',' and ';'
+
+	* rhalexer.fl: 'composed literals': added LSP and RSP (squared parens).
+
+	* rhaparser.y: added parser support for 'composed literals', i.e.
+	    a = [234, 234; 23, 456];
+	  for now ';', ',' and ':' are allowed (can be easily extended).  Try 
+	    \[23, 234; 345]
+	  to get the parse tree.
+	
+2005-11-21  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+    PYTHON EMBEDDING
+
+	The current feature list is as follows:
+
+	- Object python allows to import python modules
+	- Python objects are managed within rhabarber as pyobjects
+	- You can look up a slot of a python object
+	- You can call a python function
+	- You can call a python method
+	- If you import "domains", integers, reals are converted. 
+	- python.rha contains an example of how to build an iterator for a
+	python list. Then, you can even iterator over the python
+	objects. Of course, you would want to have this automatically.
+
+	Files involved: python_tr.[ch], pyobject_tr.[ch].
+	
+    EVALUATION
+
+	### EVALUATION HAS BEEN FURTHER MODIFIED (Nov 24, 2005) ######
+	    
+	* object.[ch]: I had to move the binding of methods from eval.c
+	here, because this functionality has to be available whenever you
+	look up a slot. There now exists three variants:
+
+	   object_lookup: just looks up the slot and returns the object
+	   object_lookupbind: looks it up, and if it is callable, bind to
+	                      the object
+	   object_lookupbindthis: looks the symbol up and binds to the
+                                  "this" part if the symbol was found
+	                          there
+  
+	The last case seems a bit artificial, but this is actually
+	necessary when you call another member function from within a
+	member function:
+
+	   a.f(x) = x + 1; a.g(x) = f(x).
+
+	When you look up f in the call to a.g, you have to respect that f
+	is found in this and bind it, otherwise the call won't work.
+        	
+	* rhavt.[ch]: added callable and lookup slots. These are necessary
+	for embedding other languages, or in general, for having different
+	objects which nevertheless behave as python objects.
+
+    MODIFICATION OF "FOR"
+
+	* eval.h: made assign() private again - using assign_symdot() instead.
+
+	* core.c (b_for): Changed code such that the first object is taken
+	by calling first(), not next(). The reason was that the previous
+	implementation required that next() has "x++" semantic. That is,
+	you first increment, but then return the old value. I found that
+	too complicated, because next() should just return the next
+	object. In order to get the first object, first() is called. 
+
+	* listit_tr.h, listit_tr.c: these two files provide iterator
+	facilities. init.rha defines a list-iterator. 
+
+    OTHER THINGS
+
+	* added a '?' operator to check if an object has a certain slot:
+        a?x returns true iff a has slot x.
+
+	* bool_tr: none is the same as false
+
+	* object.c (object_name): Fixed a bug that would return "no-name"
+	if the name is a symbol, not a string (this affected the
+	builtin-operator functions).
+
+	* Makefile (all): added "all" target to rebuild everything
+
+2005-11-19  mikio  <mikio@localhost.localdomain>
+
+    GENERAL IMPROVEMENT OF ERROR HANDLING AND ERROR MESSAGES
+	
+	* rhalexer.fl, rhaparser.y: added location information for the
+	parsetree. Each object gets a rha_location slot which is a string
+	describing where this expression was parsed. In rhaparser.y, you
+	have to call wl() for each parsetree when assigning to $$, which
+	adds the information.
+
+	* eval.c: added eval_currentlocation object which points to the
+	location object of what eval.c is evaluating. In order for this to
+	work correctly, two macros ENTER and RETURN have been defined
+	which keep track of the current eval_currentlocation.
+
+	* messages.c: rha_error now checks the value of
+	eval_currentlocation and adds this information as well.
+
+	* rhaparser.y: added a rule "expr : error" which allows the parser
+	to continue once he detects an error. Also, the error messages
+	were updated to match the standard C-style.
+
+2005-11-17  harmeli  <harmeli@xyan>
+
+	* object.c (object_lookup): added case for 'parent'.  now it is
+	possible to access the parent of each object.
+	(object_replace, object_assign): allow to set the parent
+	explicitely.
+
+	* rhaparser.y: updated the FOR entry to match our current calling
+	convention
+
+	* eval.c (assign): removed typo printdebug string
+
+	* eval.h: made assign() accessible for core.c (b_for)
+	  ---mikio removed this. Use object_assign instead---
+
+        * core.c (b_do), rhaparser.y: before b_do required one argument,
+	e.g. (do 5), now also empty do's do, i.e. (do).  Simply the inner
+	scope with parent current scope is returned.  Also the parser got
+	a new rule that {} should become (do).  Now like in C,
+            if (i > 500) {} else printf("hallo");
+	also in Rhabarber we have
+	    if (i > 500) {} else print("hallo");
+	what about
+	    x = {}
+	is root the parent of x?  We added a line such that the parent
+	env is replaced by primtype_obj(plain_type).
+	(b_if): now "if(2<1) 17" returns none_new(); 
+	(b_for): rewrote for loop to have the following semantics:
+	    for (x, list) code;
+	translates to
+            {
+	      @iter = list.iterator();  // ensure iter is local
+	      while(!iter.done()) {
+	        x = iter.current();
+	        res = { bla; blub }
+	        iter.next();
+	      }
+	      return res;
+	    }
+        ---mikio changed this---
+	
+        * init.rha: added a cool implementation of 'fromto'.
+
+	* rhaparser.y: changed the definition of 'semiclist' with
+	implications for 'prog'.  Now, semicolon separated list don't have
+	to be finished with a semicolon, i.e.
+	    f(x) = { x = x+1; return x; }       // legal, as usual
+	    f(x) = { x = x+1; return x }        // legal, as well
+	    f(x) = { x = x+1;; ; return x ; }   // also legal
+
+	* eval.h (frame_jump): slightly improved the frame stuff.  The
+	problem was all three possibilities 
+	    f(x) = deliver 1;
+	    f(x) = break 1;
+	    f(x) = return 1;
+	worked which makes no sense, because in the first two there is
+	no block to deliver from and no loop to break.  By having added a
+	condition to the initial check we have the following behavior:
+	    f(x) = deliver 1;      f(2) // error: No block to deliver from.
+	    f(x) = break 1;        f(2) // error: No loop to break.
+	    f(x) = return 1;       f(2) // ok
+	    f(x) = { deliver 1; }; f(2) // now it is ok
+	    f(x) = { break 1; };   f(2) // error: still no loop
+	    f(x) = { return 1; };  f(2) // still ok
+
+2005-11-16  harmeli  <harmeli@xyan>
+
+	* rhaparser.y: the new functions for x++ and ++x simplified the
+	implementation of 'expr PLUSPLUS' and required changes for
+	'PLUSPLUS expr', similar for 'MINUSMINUS'.
+
+	* core.c: added functions for int_plusplus, int_minusminus,
+	int_preplusplus and int_preminusminus.  core_stub_init() adds this
+	functions as overloaded to the corresponding symbols.   
+
+	* core.h: added symbols for preplusplus and preminusminus
+
+	* int_tr.[hc]: x++ and ++x needs special handling which does not
+	work together with the stub mechanism.  thus removed int_plusplus
+	und int_minusminus and added int_inc and int_dec which change the
+	object but do not replace it.  the implementations for x++ and ++x
+	are now in core.c.  same for x-- and --x.
+
+	* eval.h (FRAME_MAX_NESTING): added macros for handling frames.
+	Frames are used when a function is called, when a loop runs or
+	when a new block is opened.  Frames can be interupted by 'return'
+	(functions), 'break' (loops) and 'deliver' (blocks).  Note that
+	'break' interupt also blocks inside the corresponding loop.
+	Likewise, 'return' interupts loops and blocks inside the
+	corresponding function.
+
+	* eval.c: added variables for the frame stack, this should be
+	replaced with some dynamic data structure, to overcome the fixed
+	limit defined by FRAME_MAX_NESTING (in eval.h).
+
+	* function_tr.c (function_invoke): remade function_return() and
+	rewrote function_invoke() using the macros for frames defined in
+	eval.h (see above).
+
+	* function_tr.h: removed function_return() which is not needed
+	anymore, since now 'return' is placed core.c together with
+	'deliver' and 'break', which are its equivalents.
+
+	* core.c (BUILTIN): also rewrote b_return, b_do, b_for, b_while
+	with the new macros for frames defined in eval.h (see above).
+	added b_break and b_deliver.
+
+	* core.h: added symbols 'break' and 'deliver'
+
+	* rhaparser.y: added stuff for 'break' and 'deliver', and repaired
+   	op++, etc. by replacing return_sym with deliver_sym
+
+	* rhalexer.fl: added 'break' and 'deliver', which allow to jump
+	out of loops and blocks.  More precisely:
+
+	    block:     'deliver' finishes the current block and optionally
+                       returns a result
+	    loop:      'break' finishes the current loop (and possibly
+	               also blocks) and optionally returns a results
+	    function:  'return' finishes the current functions (and
+	               possibly also loops and blocks) and optionally
+	               returns a result.
+
+2005-11-14  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+	* rhalexer.fl (escexpand): the lexer now expands escape-sequences
+	in strings (like \n)
+
+	* core.c: added two global variables, path and root. lookup is
+	also done along path. Modules can be loaded with the import
+	keyword, which executes a module in a new environment and then
+	adds the object to the path.
+
+	* eval.c (eval): lookup of variables also searches in path if
+	nothing is found in the current enviornment.
+
+	* *_tr.c: removed a lot of dependencies on plain_tr.h. Removing
+	dependencies is always good :), because it simplifies the
+	structure of the module interaction and it also possibly reduces
+	compilation times.
+	
+	* init.rha: started a prelude file, this time for real. Since
+	prelude contained so much historic stuff, I didn't want to delete
+	it and rather started a new one.
+
+	* bool_tr.h: added "not", "and", and "or" operators. 
+
+	* rhalexerl.l, rhaparser.y, core.c: added ||, &&, !, <=, and >=
+	operators.
+
+	* *_tr.c, rha_stub.pl: Moved the definition of the name slot of
+	the prototype to the stub files. This makes the actual *_init()
+	functions even more simpler.
+
+	* eval.c (pushframe, exitframe, popframe): added functions for
+	frame management. b_return is now implemented using these
+	functions. I felt that these functions belonged to eval.c
+
+	* core.c (b_do), function_tr.c (function_invoke): return now exits
+	functions, not new on-the-fly objects. The calling frame is now
+	set up in function_invoke (using the *frame() functions in eval.c)
+
+2005-11-13  mikio  <mikio@localhost.localdomain>
+
+	* primtype.h, primtype.c: removed the obj argument on
+	primtype_new. The new rule is that the first object constructed
+	using that primtype becomes the prototypical object.
+
+	* *_tr.c: Changed everyhting to reflect the changes in primtype.*
+
+2005-11-11  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+	* cons_tr.h, cons_tr.c: Removed these as we don't use them right
+	now. 
+	
+        * core.c: removed graphics for now (we will switch to wxwidgets
+	anyway :)
+	
+	* core.c (b_allslots): Added an allslots function which returns
+	the list of all defined slots.
+
+	* core.c (b_disp -> b_print): Renamed disp in print.
+
+	* core.c (b_load): Does not return the result of the evaluated
+	file anymore (pretty useless feature if you load a module or
+	something). 
+	
+	* eval.c (eval_lookupfailed_hook): In my quest to make rhabarber
+	customizable from within rhabarber, I added a first hook. You can
+	set eval.lookupfailed_hook to a function which gets called
+	whenever a symbol has not been found. You can search other
+	modules, etc. This is so far not really useful but this kind of
+	hooks can make hacking rhabarber much more efficient.
+
+	* none_tr.h, none_tr.c: added a none class which has the same
+	semantic as a null pointer. Returning a null pointer caused eval
+	to just stop, which made problems, for example, if you
+	accidentally (or intentionally) pass back a null pointer through
+	return (didn't work, and "return" never got executed).
+
+	* builtin_tr.c (builtin_invoke): Checked if return value is zero
+	and returned "none" instead.
+
+	* rhalexer.fl: op+, op*, ... are now recognized as symbols. This
+	set is not complete yet.
+
+	* object.c (object_lookup): Added code to return a bound method if
+	a callable was found in the "this" path. Without this fix, the
+	following code does not work correctly:
+	
+	x = 1;
+	a.x = 2;
+	a.f(y) = y+x;
+	a.g(x) = x*f(x);
+	x         == 1
+	a.f(2)    == 4
+	a.g(3)    == 15  <- this one returns 12 without the fix.1
+
+	This used to work, and didn't because I'm resetting the function's
+	this pointer before the actual call. Note that this used to work
+	only by chance! If I called a.g(3) before calling a.f(2), f's this
+	pointer is not yet set, and a.g(3) also executes 12.
+
+	Now it should be safe, although object.c needs to know more and
+	more about other things (a bad thing, generally).
+
+	* function_tr.c (function_invoke): Set f.this = 0 after we have
+	the method call receiver. Otherwise, recur's lookup is screwed
+	(will look up in the receiver, not the function).
+
+	BTW, this whole "modifying function_tr during call" thing gives me
+	severe pains. It feels like a hack (and given the fix above, it
+	really is). The function object should not be modified in calls,
+	because it might recursively called again. On the other hand, I
+	don't know how to pass the receiver information to rha_invoke.
+
+	* FILES.html: Added some more background information. I have no
+	idea if we can keep this file up-to-date.
+
+	* method_tr.c (struct method_s): added an explicit receiver
+	entry. Using the methods "this" pointer screwed up slot lookup for
+	method objects (for example, to_string did not work, because it
+	always look up to_string in the receiver of the
+	method. "3.to_string.to_string()" called 3's to_string()
+
+	* function_tr.c: Added some background information on the
+	construction of the activation record. I know this is a bit of
+	work, but we should keep the explanation up-to-date.
+
+	* object.c: removed psubtype and subtype stuff.
+
+	* rha_stub.pl (create_typecheck): rewrote the type check such that
+	it uses HAS_TYPE in order to get rid of the psubtype stuff.
+
+	
+
+2005-11-10  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+	* rhabarber.c (rhabarber_completion_generator): Added command-line
+	completion. Try tapping TAB twice on the command line, or type
+	"int." + TAB. Is currently plagued by the same error as slots(),
+	that is, you only see slots which are defined in the object itself.
+
+	* alloc.c (nongc_strdup): added this function in case you
+	explicitly want to pass out a non-gc'ed string (for example to
+	other C libraries like readline) 
+
+	* eval.c (eval): Replaced the check for callability in the dot
+	expression branch. We should *never again* explicitly check if an
+	object is callable by enumerating all known callable types.
+
+	* object.c (object_print): replaced the whole ugly switch with a
+	single call to object_to_string. For that, I had to remove several
+	non-generic callable tests. Now, there exists a function
+	rha_callable in rhavt which checks if the invoke slot in the
+	rha-virtual table has been modified or not.
+
+	* rhavt.c (rha_callable): returns whether the invoke entry is
+	different from the default entry. Then, by default, the primtype
+	is invocable.
+
+	* Makefile: I modified the directory layout. The goal was to move
+	the automatically generated files out of the main directory, such
+	that only essential files are contained in the rha directory.
+
+	Templates are now constructed entirely in the templates
+	subdirectory. If you need more templates, go there, and do it
+	there.
+
+	Stubs: *_tr files still reside in the main directory, after all,
+	they are essential. But the stubs files will be written into the
+	stubs subdirectory (rha_stub.pl has been patched for that), and
+	the stubs are then compiled in the stubs directory.
+
+	Both compilations result in archive files libtemplates.a and
+	libstubs.a which are then linked to the main program in the
+	build.
+
+2005-10-13  Stefan Harmeling  <harmeli@bone11.first.fraunhofer.de>
+
+	* *_tr.c: changed all 
+	     obj = object_new(plain_type); 
+	to the shorter and correcter ones
+	     obj = plain_new();
+
+2005-10-13  harmeli  <harmeli@xyan>
+
+	* object.c: got rid of object_slots(), since this is not used in
+	the C-code.  in rhabarber core.c:b_slots is used
+
+2005-10-12  harmeli  <harmeli@xyan>
+
+	* void_tr.c: moved void_slots() to object.c:object_slots().
+
+	* core.c (BUILTIN): added b_slots, which calls object_slots().
+
+	* object.c (object_lookup): removed the private stuff, since right
+	now it doesn't make sense, because you can freely add new public
+	slots that can access 'private' slots.  The 'public' slots are now
+	called 'local', i.e. @x is a local variable.
+	(object_slots): removed 'slots' from void_tr.c and moved it here,
+	it is called from core.c:b_slots.
+
+2005-10-07  Stefan Harmeling  <harmeli@bone11.first.fraunhofer.de>
+
+	* eval.c: updated documentation for eval() and assign().
+
+	* function_tr.c (function_new): after all, the comment that the
+	implementation is not so nice is gone, because it is a nice
+	implementation which unifies assignments like f(x)=2*x and
+	f=fn(x)2*x.
+
+	* eval.c (assign_symdot): added support for f(x)=2*x.  It is still
+	missing to check for keywords in assignments.
+
+2005-10-01  harmeli  <harmeli@xyan>
+
+	* test.rha: this is the test to test.  you should run it like this:
+	 
+        	 rhabarber < test.rha | grep false
+
+	all additional tests should go here.
+
+	* function_tr.c (function_invoke): for recursion in anonymous
+	functions [e.g. (fn(n)if(n<2)1else n*recurse(n-1))(5)] we
+	introduced the new keyword 'recur' which points to the function
+	object that created the activation record.
+	(function_invoke): 
+
+2005-09-29  Stefan Harmeling  <harmeli@bone11.first.fraunhofer.de>
+
+	* eval.c: BIG CHANGES (badly documented...), rewrote the eval
+	function, for this introduced method_tr, run a test like this:
+
+	   rhabarber < test.rha | grep false
+
+2005-09-27  Stefan Harmeling  <harmeli@bone11.first.fraunhofer.de>
+
+	* rhabarber.c: the compiler-warning is gone, because I changed in
+	../utils/except.[hc] the type of retval from intptr_t to object_t.
+	The #include "../rha/object.h" in those files is still not nice.
+	Maybe except.[hc] should go into ../rha as well?
+
+2005-08-08  Stefan Harmeling  <harmeli@bone11.first.fraunhofer.de>
+
+	* function_tr.c (function_invoke): now 'this' is no longer
+	available on the stack of scopes, instead can be accessed via
+	'that':
+	
+	   a.x = 5;
+	   a.f(y) = { x = y + 2; };  // x is local to f, because it 
+           // does not exist in the current stack of scopes
+           a.f(y) = { this.x = 2; }; // local for sure
+           a.f(y) = { that.x = 2; }; // x is slot of a
+
+	or also:
+
+	    x = 5;
+	    f(y) = { x = y + 2; };    // x is kind of global
+	
+	* rhaparser.y (rhaparsefile): was expecting a FILE *f instead of a
+	char *str.  Now it's opening the file itself.
+
+2005-07-04  harmeli  <harmeli@xyan>
+
+	* core.c (b_return, b_do): Added support for 'return' statement.
+	Currently, an expression like { a; b; } returns the activation
+	record.  The mechanism for 'return' resembles the exception
+	mechanism.  I suggest to get rid of the 'RETURN_MAX_NESTING'
+	limitation by using a list for the jump buffer.
+
+2005-06-27  Mikio Braun  <mikio@bone20.first.fraunhofer.de> + Stefan
+
+	* eval.c: fixed some bugs introduced by using exception
+	handling. Now everything works fine. (at least, we hope)
+
+2005-06-24  Stefan Harmeling  <harmeli@bone11.first.fraunhofer.de>
+
+	* matrix_tr.c (matrix_norm): Needed to add 'return 0' for the
+	SIMPLE case, to get rid of compiler warning 'end of non-void
+	function reached without return'.
+
+	* eval.c (eval): After adding try-catch-block for 'loc' simple
+	things like 'a.x=4' work again.  Now 'rhabarber < test.rha' works
+	again.  Same for bank.rha.  However, templates.rha doesn't work
+	yet.  I think there is more that has to be done now with
+	exceptions.  We should look for all places like 'if (!o)' and
+	similar stuff.
+
+2005-06-23  harmeli  <harmeli@xyan>
+
+	* graphics.c: changed the SIMPLE mechanism as well
+
+	* matrix_tr.c: changed the SIMPLE mechanism, the
+	matrix_tr_simple.c file has been removed, instead, the BLAS stuff
+	is switch off with #ifndef SIMPLE, similar in graphics.c
+
+2005-06-17  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+        * list_tr.c: Altered the LIST_FOREACH macro. Now, you have to use
+	a LIST_END at the end. But this means that the iteration variable
+	is local and LIST_FOREACH can be used more than once in a file
+	(although not nested). Use it now as:
+
+	   LIST_FOREACH(l) {
+	     object_t o = LIST_GET;
+	     do something
+	   } LIST_END;
+
+	* object.h: added the "_O" macro which casts an object to object_t
+	(void pointer). Strictly speaking, this should be used whenever an
+	object is passed through "..." (print routines, also tuple_make)
+	to make sure that one really uses a void pointer.
+
+	* tuple_tr.c: added tuple_make1 and tuple_make2 which should be a
+	tiny bit more efficient than the global tuple_make().
+
+	* messages.h: this file now contains rha_warning and rha_error
+	which should be used to issue warnings and errors. Right now,
+	errors raise exceptions which are caught at top-level in the
+	read-eval-loop. Therefore changed error messages at a lot of
+	points.
+
+	* overloaded_tr.c: restructured the file a lot:
+
+	Made all non-exported functions static and removed the overloaded_
+	prefix from them. Also moved these static functions to the end of
+	the file.
+
+	replaced the debugging outputs by a one-line calls to printdebug
+	registering "%T" as a format which writes the names of the objects
+	in a tuple.
+
+	recompute was too long. I basically removed some redundant
+	type-checking code (which seemed to test whether list_from_tree()
+	worked), and factored some code out to 
+
+	  - getconverters() (look up "from" in object, check if the
+	functions really take only one argument, and return the list)
+
+	  - promotekey() (alters one entry of a key to the promoted type)
+
+	Also restructured the for/while and if's a bit such that there are
+	really only three levels of indentation now (one for each loop)
+
+2005-06-09  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+	* utils.h: Important! utils has been renamed to extensions such
+	that utils can be used for utilities
+
+2005-06-08  Mikio Braun  <mikio@bone20.first.fraunhofer.de>
+
+	* Makefile (TEMPLATES): cleaned up definitions for stubs (using
+	subst function) and removed no longer needed templates.
+

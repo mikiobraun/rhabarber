@@ -1,0 +1,15 @@
+"banking account example --- closures"
+// (= (account s) (do (= (. this (deposit x)) (= s (+ s x))) (= (. this (withdraw x)) (= s (- s x))) (= (. this (saldo)) s) this))
+account(s) = { this.deposit(x) =  s = s + x; this.withdraw(x) =  s = s - x; this.saldo() = s; this; }
+"create two accounts"
+stefan = account(100) // (= stefan (account 100))
+mikio = account(200)  // (= mikio (account 200))
+"what is the saldo --- not allowed"
+(stefan.saldo)() // ((. stefan saldo))
+"alternatively --- allowed"
+stefan.saldo() // (. stefan (saldo))
+mikio.saldo() // (. mikio (saldo))
+"add money"
+stefan.deposit(50) // (. stefan (deposit 50))
+stefan.saldo() // (. stefan (saldo))
+mikio.saldo() // (. mikio (saldo))

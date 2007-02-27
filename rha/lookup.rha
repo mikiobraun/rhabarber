@@ -1,0 +1,56 @@
+a = 5;
+b.c = 6;
+f(x) = a + x;
+b.f(x) = c + x + a;
+b.g(x) = { n = 4; c + x + a + n; };
+d = clone(b);
+d.c = 7;
+""
+"should give: 8 = 5 + 3"
+a + 3
+"should give: 9 = 6 + 3"
+b.c + 3
+"should give: 8 = 5 + 3"
+f(3)
+"should give: 14 = 6 + 3 + 5"
+b.f(3)
+"should give: 18 = 6 + 3 + 5 + 4"
+b.g(3)
+"should give: 19 = 7 + 3 + 5 + 4"
+d.g(3)
+
+// see which scope comes first
+x = 1;
+a.x = 2;
+a.f(x) = x;
+a.g() = x;
+a.h() = { x = 4; x; };
+f() = x;
+""
+"should be 1 (global)"
+f()
+"should be 2 (in a)"
+a.g()
+"should be 3 (argument scope)"
+a.f(3)
+"should be 4 (local)"
+a.h()
+
+// local arguments in function call
+id(x) = x;
+f(x) = id(x);
+g(x) = { n = x; id(n); };
+a.f(x) = id(x);
+a.g(x) = { n = x; id(n); };
+a.h(x) = { n = x; f(n); };
+
+"should be 1 (argument in function call)"
+f(1)
+"should be 2 (local var in fn call)"
+g(2)
+"should be 3 (arg in fc, memfct)"
+a.f(3)
+"should be 4 (loc var in fc, memfct)"
+a.g(4)
+"should be 5 (loc var in fc, called fct also memfct)"
+a.h(5)

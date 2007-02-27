@@ -1,0 +1,320 @@
+
+
+	   maketmpl - a template generating mechanism for C
+
+
+INTRODUCTION
+
+maketmpl is a small tool which allows the automatic generation of
+header and implementation files based on a single configuration file
+containing an exemplary implementation with some free parameters left
+out. maketmpl is vaguely modelled after the template mechnism in C++,
+but works on a purely syntactic level.
+
+SYNPOSIS
+
+	maketmpl [options] [var1=var2] [files...]
+
+options are:
+
+	-d : print the documentation
+    -Iname : include <name>
+    -iname : include "name"
+        -h : show help
+    -oname : use prefix "name"
+
+AN EXAMPLE
+
+The template configuration file is a normal C (that is, C99) file,
+with certain embedded keywords which define the template name, the
+parameters, and where the header and the implementation part begins.
+Embedded commands have the form
+
+	 //@command text...
+
+The most important such command is the @name command, which defines
+the prefix which is used in the construction of the class. Paramters
+are defined using the @param command. Consider, for example a generic
+vector (which is of course nothing new, because this already exists in
+C):
+
+	//@name vector<T>
+	//@param T
+
+This defines the prefix to have the form vector<T>, with required
+parameter T (it is required, because it has no default).
+
+Then, we can begin the header file
+
+	//@header
+
+	struct vector<T> {
+	  int len;
+          <T> array;
+        };
+
+We already see a difference compared to the template mechanism in C++,
+the parameter T has to be included in angle brackets
+everywhere. maketmpl does little less than replacing every occurrence
+of a paremeter <T> by its definition.
+
+We also declare some functions
+
+	extern void @init(struct vector<T> *v, int len);
+	extern void @set(struct vector<T> *v, int i, <T> x);
+	extern <T> @get(struct vector<T> *v, int i);
+
+This already shows the last feature: "@" expands to the expanded name
+of the template (also known as the "prefix") plus "_". In our example,
+the name is vector<T>, for example for T=int, the name is thus
+vectorint, and @init becomes vectorint_init. This mechanism has to be
+employed due to the lack of namespaces and to distinguish different
+instantiations.
+
+The implementation part begins with
+
+	//@implementation
+
+	void @init(struct vector<T> *v, int len)
+	{
+	  v->len = len;
+	  v->array  = malloc(sizeof(<T>) * len);
+	}
+
+	
+	void @set(struct vector<T> *v, int i, <T> x)
+	{
+	  v->array[i] = x;
+	}	
+
+
+	<T> @get(struct vector<T> *v, int i)
+	{
+	  return v->array[i];
+	}	
+
+Now, in order to generate a specific implementation, you call maketmpl
+with the configuration file vector.tmpl, defining the type of
+implementation:
+
+	maketmpl T=int vector.tmpl
+
+maketmpl performs the following step: First, the commands are parsed
+and the variables are set. As already explained above, each
+instantiation has a specific prefix. By default, this is given by
+expanding the types in the name of the template. This prefix is also
+used for the files. Therefore, if vector<T> is instantiated with
+T=int, then the prefix is vectorint, and the header and implementation
+files will be called "vectorint.h" and "vectorint.c".
+
+At the @header command, the file "prefix plus .h" is created and the
+usual #ifdef-guards are included. Moreover, it is possible to #include
+some custom files (for a full summary of the commands, see
+above). After that, the header is copied translating <var> to their
+definition and @ to "prefix plus _".
+
+At the @implementation command, the file "prefix plus .h" is created,
+an #include of the "prefix plus .h" file is added. After that, the
+implementation is translateed and copied.
+
+In both files, #line directives are used such that compile errors are
+directly linked to the template configuration file. 
+
+ADVANCED TOPICS
+
+As it is, one will typically want to instantiate for a type with has a
+simple name like "int" or "string", and nothing complicated as
+"char*[]", because otherwise, replacement of the variables will lead
+to illegal symbol names. However, the definition of such types has to
+be included before the actual definition begins. Therefore, the -i
+and -I switches allow to insert #include directives at the beginning
+of the header file.
+
+For more complex applications, it might not suffice to just
+instantiate given a certain type, but one also wants to specify some
+behavior. This can be achieved also through variables. Assume for
+example, that you want to use a different memory allocation routine
+(for example, one with garbage collection).
+
+Then, you add a parameter
+
+      //@param alloc=malloc
+
+with default value. Instead of calling malloc, you can then call
+
+     p = <alloc>(sizeof(struct ...)))
+
+This way, behavior can be fine-tuned. Other applications are cloning
+functions, compare functions, et cetera.
+
+
+Another trick is to use typdefs at the beginning of the implementation
+file in order to simplify the notation a bit:
+
+     //@implementation
+     typedef struct vector<T> vector_t ;
+
+
+
+WHY NOT USING #DEFINE
+
+There are at least two possibilities to use #define's to achieve a
+similar effect. The first is to make the whole instatiation one large
+macro. Then, INSTANTIATE_VECTOR_IMPLEMENTATION(int), for example,
+would generate the code of a vector with int. The drawback of this
+approach is that the whole implementation has to be written as a macro
+with backslashes at the end of each line, which I find rather
+ugly. Moreover, debugging is also not entirely easy, because the whole
+expansion does not occurr in the line count of the compiler.
+
+A slightly more flexible approach would be to have template files
+which depend on several macros like T. Then, you would do something
+like
+
+	#define T int
+	#include "vector.tmpl"
+	#undef T
+
+The problem here is that I have found no way to generate prefixed
+functions, that is, how do you write a macro prefix(x, name) which
+when called as
+
+     prefix(T, init) (T l)
+     {
+       ... code for initialization of T
+     }
+
+produces
+
+    int_init(T_l).
+
+If you define
+
+	#define prefix(x, name) x ## _ ## name
+
+then,
+
+	prefix(T,init) -> T_name,
+
+and only then is the expanded text reconsidered (##-concatenation
+takes place before the expanded text is rescanned).
+
+Therefore, some more elaborate macro mechanism has to be devised,
+which is what I tried to do.
+
+
+APPENDIX: A MORE COMPLETE EXAMPLE (HASH TABLE)
+
+// -*- C -*-
+//@name hash<K><V>
+//@param K
+//@param V
+//@param compare=
+//@param hash=
+//@param clonekey=
+//@param freekey=(void)
+//@param clonevalue=
+//@param freevalue=(void)
+//@param alloc=malloc
+
+//@info a hashtable
+
+//@header
+
+struct hashnode<K><V>
+{
+  struct hashnode<K><V> *next;
+  <K> key;
+  <V> val;
+};
+
+struct hash<K><V>
+{
+  int len;
+  int numbins;
+  struct hashnode<K><V> **table;
+};
+
+typedef struct hash<K><V> *hash<K><V>_t;
+typedef void value<K><V>proc_t(<V>);
+typedef void key<K><V>proc_t(<K>);
+
+extern void @init(hash<K><V>_t h);
+extern void @clear(hash<K><V>_t h);
+extern <V> @lookup(hash<K><V>_t h, <K> k);
+extern void @assign(hash<K><V>_t h, <K> k, <V> v);
+extern void @dump(hash<K><V>_t h, key<K><V>proc_t (*kp), value<K><V>proc_t (*vp) );
+
+//@implementation
+#include <stdio.h>
+
+typedef struct hash<K><V> hash_t;
+typedef struct hashnode<K><V> node_t;
+
+/*
+ * symtable
+ */
+void @init(hash_t *h)
+{
+  h->len = 0;
+  h->numbins = 113;
+  h->table = <alloc>(sizeof(node_t*) * h->numbins);
+  for(int i = 0; i < h->numbins; i++)
+    h->table[i] = 0;
+}
+
+
+void @clear(hash<K><V>_t h)
+{
+  for(int i = 0; i < h->numbins; i++) {
+    for(node_t *n = h->table[i]; n; n = n->next) {
+      <freekey>(n->key);
+      <freevalue>(n->val);
+    }
+  }  
+}
+
+
+<V> @lookup(hash_t *h, <K> k)
+{
+  int hash = <hash>(k) % h->numbins;
+  node_t *n = h->table[hash];
+
+  while(n && !<compare>(n->key, k)) n = n->next;
+
+  if(n) return n->val;
+  else return 0;
+}
+
+
+void @assign(hash_t *h, <K> k, <V> v)
+{
+  int hash = <hash>(k) % h->numbins;
+  
+  node_t *n = h->table[hash];
+
+  while(n && !<compare>(n->key, k)) n = n->next;
+
+  if(n) n->val = v;
+  else {
+    h->len++;
+    n = <alloc>(sizeof(node_t));
+    n->next = h->table[hash];
+    n->key = <clonekey>(k);
+    n->val = <cloneval>(v);
+    h->table[hash] = n;
+  }
+}
+
+
+void @dump(hash_t *h, key<K><V>proc_t *kp, value<K><V>proc_t *vp )
+{
+  printf("len:  %d\n", h->len);
+  printf("bins: %d\n", h->numbins);
+  for(int i = 0; i < h->numbins; i++) {
+    //printf("Bin %d\n", i);
+    for(node_t *n = h->table[i]; n; n = n->next) {
+      (*kp)(n->key); printf(" -> "); (*vp)(n->val); printf("\n");
+    }
+  }
+}

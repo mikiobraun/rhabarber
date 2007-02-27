@@ -1,0 +1,166 @@
+// -*- C -*-
+//@name hash<K><V>
+//@param K
+//@param V
+//@param compare=
+//@param hash=
+//@param alloc=malloc
+//@param free=(void)
+
+//@info a hashtable
+
+//@header
+
+#include <stdbool.h>
+
+struct @hashnode
+{
+  struct @hashnode *next;
+  <K> key;
+  <V> val;
+};
+
+struct @iterator
+{
+  struct @hash *hash;
+  int cnt;
+  struct @hashnode *node;
+  bool done;
+};
+
+struct @hash
+{
+  int len;
+  int numbins;
+  struct @hashnode **table;
+};
+
+typedef struct @hash @t;
+typedef struct @hashnode @hashnode_t;
+typedef struct @iterator @iterator_t;
+typedef void @valueproc_t(<V>);
+typedef void @keyproc_t(<K>);
+
+extern void @init(@t *h);
+extern void @clear(@t *h);
+extern <V> @lookup(@t *h, <K> k);
+extern void @assign(@t *h, <K> k, <V> v);
+extern void @dump(@t *h, @keyproc_t (*kp), @valueproc_t (*vp) );
+
+extern void @begin(@iterator_t *t, @t *h);
+extern bool @done(@iterator_t *t);
+extern void @next(@iterator_t *t);
+extern <K> @get_key(@iterator_t *t);
+extern <V> @get_value(@iterator_t *t);
+
+//@implementation
+#include <stdio.h>
+
+/*
+ * symtable
+ */
+void @init(@t *h)
+{
+  h->len = 0;
+  h->numbins = 113;
+  h->table = <alloc>(sizeof(@hashnode_t *) * h->numbins);
+  for(int i = 0; i < h->numbins; i++)
+    h->table[i] = 0;
+}
+
+
+void @clear(@t *h)
+{
+  for(int i = 0; i < h->numbins; i++) {
+    @hashnode_t *n, *n2;
+    for(n = h->table[i]; n; n = n2) {
+      n2 = n->next;
+      <free>(n);
+    }
+  }  
+}
+
+
+<V> @lookup(@t *h, <K> k)
+{
+  int hash = <hash>(k) % h->numbins;
+  @hashnode_t *n = h->table[hash];
+
+  while(n && !<compare>(n->key, k)) n = n->next;
+
+  if(n) return n->val;
+  else return 0;
+}
+
+
+void @assign(@t *h, <K> k, <V> v)
+{
+  int hash = <hash>(k) % h->numbins;
+  
+  @hashnode_t *n = h->table[hash];
+
+  while(n && !<compare>(n->key, k)) n = n->next;
+
+  if(n) n->val = v;
+  else {
+    h->len++;
+    n = <alloc>(sizeof(@hashnode_t));
+    n->next = h->table[hash];
+    n->key = k;
+    n->val = v;
+    h->table[hash] = n;
+  }
+}
+
+
+void @dump(@t *h, @keyproc_t *kp, @valueproc_t *vp )
+{
+  printf("len:  %d\n", h->len);
+  printf("bins: %d\n", h->numbins);
+  for(int i = 0; i < h->numbins; i++) {
+    //printf("Bin %d\n", i);
+    for(@hashnode_t *n = h->table[i]; n; n = n->next) {
+      (*kp)(n->key); printf(" -> "); (*vp)(n->val); printf("\n");
+    }
+  }
+}
+
+
+void @begin(@iterator_t *t, @t *h)
+{
+  t->hash = h;
+  for(t->cnt = 0; 
+      t->hash->table[t->cnt] 
+	&& t->cnt < t->hash->numbins; 
+      t->cnt++) 
+    t->node = t->hash->table[t->cnt];
+  t->done = (t->cnt == t->hash->numbins);  
+}
+
+bool @done(@iterator_t *t)
+{
+  return t->done;
+}
+
+<K> @get_key(@iterator_t *t)
+{
+  return t->node->key;
+}
+
+<V> @get_value(@iterator_t *t)
+{
+  return t->node->val;
+}
+
+void @next(@iterator_t *t)
+{
+  t->node = t->node->next;
+  if(!t->node) {
+    for(; t->hash->table[t->cnt] 
+	&& t->cnt < t->hash->numbins; 
+      t->cnt++)
+      t->node = t->hash->table[t->cnt];
+    if(t->cnt == t->hash->numbins)
+      t->done = true;
+  }
+}
