@@ -17,7 +17,7 @@ initialize:
 	fi
 	(cd rha; make templates core_symbols.h depend; make)
 	@echo
-	@echo "Congratulations! Compliation complete."
+	@echo "Congratulations! Compilation complete."
 	@echo
 	@echo "Don't forget to set LD_LIBRARY_PATH to include $(PWD)/lib."
 
