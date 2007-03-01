@@ -8,7 +8,7 @@
 PREFIX=..
 
 #
-# standard symbols and auto-configuration (it's magic!!)
+# standard symbols and auto-configuration (it's magic!)
 #
 export LD=gcc
 export CC=gcc
@@ -48,8 +48,8 @@ ifeq (evo, $(HOSTNAME))
 else
   PYVER=python2.4
   ifeq (mac, $(PLATFORM))
-    PY_CFLAGS=-I/sw/include/$(PYVER)
-    PY_LDFLAGS=-L/sw/lib/$(PYVER)/config
+    PY_CFLAGS=-I/Library/Frameworks/Python.framework/Versions/2.4/include/$(PYVER)
+    PY_LDFLAGS=-L/Library/Frameworks/Python.framework/Versions/2.4/lib/$(PYVER)/config
     PY_LOADLIBES=-l$(PYVER)
   else
     PY_CFLAGS=-I/usr/include/$(PYVER)
