@@ -1,0 +1,53 @@
+rhabarber
+A new progamming language
+
+The goal is to design a general purpose programming language specially
+tailored to the needs of machine learning.
+
+The special requirements of machine learning include:
+
+    * Support for interactive, explorative programming
+    * Built-in support for data types like matrices, trees, et cetera
+    * Scaling prototypical implementations to large data sets 
+
+Rhabarber tries to be as flexible as possible, and providing powerful
+features in seamless manner.
+
+(c) Mikio Braun and Stefan Harmeling, 2005, 2006, 2007
+
+License: see information on http://code.google.com/p/rhabarber/
+
+===========================================
+
+THE NOT SO EASY STEPS FOR COMPILING DELICOUS RHABABER:
+
+0. get the source code from http://code.google.com/p/rhabarber/
+
+1. from http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source/ 
+   get gc6.8.tar.gz (which is some fancy garbage collector), 
+   untar it on the same level as install.txt
+
+2. if not unix you must set some paths correctly in rha/Makefile for 
+   the Python stuff, i.e. vars PY_CFLAGS, PY_LDFLAGS, PY_LOADLIBES, and
+   maybe for the Matlab stuff, as well?
+
+3. run 'make',  good luck with this, there is currently no support for you!
+
+4. run 'cd rha'
+
+4. run './rhabarber < test.rha | grep false'
+
+5. if all goes well, there shouldn't be any output
+
+6. run './rhabarber' and you can play around with it after seeing something like:
+
+   Delicious rhabarber!
+   --RHA has been conceived by Stefan Harmeling and Mikio Braun.
+   --This interpreter was written by Mikio Braun and Stefan Harmeling, 2005.
+   This is build $Revision: 324 $
+                 $Date: 2006-08-02 02:04:16 +0200 (Wed, 02 Aug 2006) $
+   Compiled      Mar  1 2007, 17:15:19
+  
+   rha[1]$ 17+42
+   59
+   rha[2]$ 
