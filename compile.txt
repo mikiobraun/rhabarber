@@ -25,7 +25,7 @@ THE NOT SO EASY STEPS FOR COMPILING DELICOUS RHABABER:
 
 1. from http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source/ 
    get gc6.8.tar.gz (which is some fancy garbage collector), 
-   untar it on the same level as install.txt
+   untar it on the same level as compile.txt
 
 2. if not unix you must set some paths correctly in rha/Makefile for 
    the Python stuff, i.e. vars PY_CFLAGS, PY_LDFLAGS, PY_LOADLIBES, and
