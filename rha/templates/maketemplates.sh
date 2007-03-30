@@ -14,7 +14,7 @@ maketmpl tuple.tmpl T=symbol_tr -isymbol_tr.h
 
 ## for parse_tr.c
 maketmpl tuple.tmpl T=int 
-maketmpl tuple.tmpl T=treeintint_t -itreeintint.h 
+#maketmpl tuple.tmpl T=treeintint_t -itreeintint.h 
 maketmpl list.tmpl T=int
 maketmpl list.tmpl T=voidp -ivoidp_defs.h
 maketmpl tuple.tmpl T=voidp -ivoidp_defs.h
