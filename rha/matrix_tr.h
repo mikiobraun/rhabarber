@@ -1,6 +1,10 @@
 #ifndef MATRIX_TR_H
 #define MATRIX_TR_H
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include "primtype.h"
 #include "object.h"
 #include "symbol_tr.h"

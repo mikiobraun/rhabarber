@@ -2,6 +2,11 @@
 %{
 #include <string.h>
 #include <ctype.h>
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
   int haserror;
   int wascommand;
   int writingheader;
@@ -67,7 +72,10 @@ char headertag[1024];
 //
 // forward references
 //
+
+#ifndef HAVE_STRDUP
 extern char *strdup(char *);
+#endif
 void usage(char *name);
 void parse_option(char *s);
 void init_arrays(int c);

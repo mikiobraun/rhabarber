@@ -255,7 +255,6 @@ string_t list_to_string(list_tr l)
   return s;
 }
 
-
 /*
  * store (key, value)-pairs of tree in a list
  */
@@ -272,7 +271,6 @@ list_tr list_from_tree(treeobjectobject_t t)
     }
   return l;
 }
-
 
 
 

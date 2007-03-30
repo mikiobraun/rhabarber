@@ -12,7 +12,13 @@
 static bool fmt_initialized = false;
 static fmt_f *table[256];
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#ifndef HAVE_STRDUP
 static char *strdup(const char *s);
+#endif
 
 static void fmt_init();
 
@@ -230,6 +236,7 @@ void addfmt(char c, fmt_f f)
  * helper functions
  */
 
+#ifndef HAVE_STRDUP
 static
 char *strdup(const char *s)
 {
@@ -237,6 +244,7 @@ char *strdup(const char *s)
   strcpy(p, s);
   return p;
 }
+#endif
 
 /* parse a format string. This basically consists in collecting all
    non-numerical characters into the flag array and extracting two

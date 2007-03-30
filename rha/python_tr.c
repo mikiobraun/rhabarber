@@ -8,6 +8,8 @@
  *                             
  */
 
+#ifdef HAVE_PYTHON
+
 #include <Python.h>
 
 #include "python_tr.h"
@@ -167,3 +169,5 @@ pyobject_tr python_newstring(string_t s)
 
 
 #undef CHECK
+
+#endif /* HAVE_PYTHON */

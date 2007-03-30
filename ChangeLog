@@ -1,0 +1,33 @@
+2007-03-30  Mikio L. Braun  <mikiobraun@gmail.com>
+
+	* Switched to autoconf + automake configuration. Now, libgc has to
+	be installed somewhere. To do: write sensible tests for python and
+	matlab, currently they are just set to false. "make all", "make
+	dist" and building from the distribution works, but "make
+	distcheck" fails due to some weird bug in rha/rha_stub.pl
+
+
+	In case you don't know about autotools:
+
+	Global configuration file is "configure.ac". Makefiles are
+	replaced by "Makefile.am". Dependencies are defined by special
+	variables, having the format programname_WHAT, for example (WHAT =)
+
+	SOURCES (the actual sources from which the program is built)
+	LDADD (objects to link into)
+	CFLAGS (flags for compiling this program)
+
+	Some of the "Makefile.am"s are pretty weird because we have make
+	use of automatically generated source files quite heavily.
+
+	If you change "configure.ac" or any "Makefile.am", it's best to do
+	a "autoreconf && configure" in the base directory to remake
+	everything.
+	
+
+	Things we get "for free" with autoconf:
+
+	  "make all" - compiles everything
+	  "make dist" - constructs a tar.gz file for distribution
+	  "make install" - actually installs files somewhere
+	  "make uninstall" - uninstalls files

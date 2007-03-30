@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "rhaparser.h"
+#include "rhaparser_extra.h"
 #include "messages.h"
 #include "object.h"
 #include "prule.h"
@@ -70,18 +70,22 @@
 #include "exception_stub.h"
 #include "parser_stub.h"
 
-#include "python_tr.h"
-#include "python_stub.h"
-#include "pyobject_tr.h"
-#include "pyobject_stub.h"
+#ifdef HAVE_PYTHON
+#  include "python_tr.h"
+#  include "python_stub.h"
+#  include "pyobject_tr.h"
+#  include "pyobject_stub.h"
+#endif
 #include "thisproxy_tr.h"
 #include "thisproxy_stub.h"
-//#include "matlab_tr.h"
-//#include "matlab_stub.h"
-//#include "mxarray_tr.h"
-//#include "mxarray_stub.h"
-//#include "mxfunc_tr.h"
-//#include "mxfunc_stub.h"
+#ifdef HAVE_MATLAB
+#  include "matlab_tr.h"
+#  include "matlab_stub.h"
+#  include "mxarray_tr.h"
+#  include "mxarray_stub.h"
+#  include "mxfunc_tr.h"
+#  include "mxfunc_stub.h"
+#endif
 
 // forward declarations
 void read_eval_loop();
@@ -107,17 +111,21 @@ int main(int argc, char *argv[])
   // initialize rhabarber
   object_t root = init_stubs();
 
+# ifdef HAVE_PYTHON
   python_init();
   pyobject_init();
   python_stub_init(root);
   pyobject_stub_init(root);
+# endif
 
-  //  matlab_init();
-  //  matlab_stub_init(root);
-  //  mxarray_init();
-  //  mxarray_stub_init(root);
-  //  mxfunc_init();
-  //  mxfunc_stub_init(root);
+# ifdef HAVE_MATLAB
+  matlab_init();
+  matlab_stub_init(root);
+  mxarray_init();
+  mxarray_stub_init(root);
+  mxfunc_init();
+  mxfunc_stub_init(root);
+# endif
 
   // execute string
   if (argc > 1) {

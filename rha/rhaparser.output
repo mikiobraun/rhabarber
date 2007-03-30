@@ -1,6 +1,4 @@
-
-
-Terminals which are not used:
+Terminals which are not used
 
    FN
    THIS
@@ -10,653 +8,625 @@ Terminals which are not used:
    BS
    WSL
    IMPORT
-   TRY
    CATCH
-   WHILE
+   TRY
    FOR
+   WHILE
    IF
    ELSE
    RETURN
    BREAK
    DELIVER
    THROW
-   ASSIGN
-   PLUSASSIGN
-   MINUSASSIGN
-   TIMESASSIGN
-   DIVIDEASSIGN
    SNATCH
+   DIVIDEASSIGN
+   TIMESASSIGN
+   MINUSASSIGN
+   PLUSASSIGN
+   ASSIGN
    SYMASSIGN
    MAPS
    NOT
-   AND
    OR
-   LESS
-   LESSEQUAL
-   GREATER
-   GREATEREQUAL
-   EQUAL
+   AND
    NOTEQUAL
-   PLUS
+   EQUAL
+   GREATEREQUAL
+   GREATER
+   LESSEQUAL
+   LESS
    MINUS
-   TIMES
+   PLUS
    DIVIDE
-   PLUSPLUS
+   TIMES
    MINUSMINUS
+   PLUSPLUS
    PRE
    NEG
-   DOT
-   QUEST
    NOBINDDOT
-
+   QUEST
+   DOT
 
 
 Grammar
-rule 1    prog -> semiclist
-rule 2    prog ->		/* empty */
-rule 3    semiclist -> expr
-rule 4    semiclist -> semiclist SEMIC expr
-rule 5    semiclist -> semiclist SEMIC
-rule 6    expr -> wslist
-rule 7    wslist -> term
-rule 8    wslist -> wslist term
-rule 9    term -> INT
-rule 10   term -> BOOL
-rule 11   term -> REAL
-rule 12   term -> STRING
-rule 13   term -> SYMBOL
-rule 14   term -> LRP expr RRP
-rule 15   term -> LRP RRP
-rule 16   term -> LRP expr COMMA RRP
-rule 17   term -> LRP commalist RRP
-rule 18   term -> LSP RSP
-rule 19   term -> LSP litlist RSP
-rule 20   term -> LCP RCP
-rule 21   term -> LCP semiclist RCP
-rule 22   term -> error
-rule 23   commalist -> expr COMMA expr
-rule 24   commalist -> commalist COMMA expr
-rule 25   litsep -> COLON
-rule 26   litsep -> COMMA
-rule 27   litsep -> SEMIC
-rule 28   litsep -> ENTAILS
-rule 29   litlist -> expr
-rule 30   litlist -> litlist litsep expr
+
+    0 $accept: prog $end
+
+    1 prog: semiclist
+    2     | /* empty */
+
+    3 semiclist: expr
+    4          | semiclist SEMIC expr
+    5          | semiclist SEMIC
+
+    6 expr: wslist
+
+    7 wslist: term
+    8       | wslist term
+
+    9 term: INT
+   10     | BOOL
+   11     | REAL
+   12     | STRING
+   13     | SYMBOL
+   14     | LRP expr RRP
+   15     | LRP RRP
+   16     | LRP expr COMMA RRP
+   17     | LRP commalist RRP
+   18     | LSP RSP
+   19     | LSP litlist RSP
+   20     | LCP RCP
+   21     | LCP semiclist RCP
+   22     | error
+
+   23 commalist: expr COMMA expr
+   24          | commalist COMMA expr
+
+   25 litsep: COLON
+   26       | COMMA
+   27       | SEMIC
+   28       | ENTAILS
+
+   29 litlist: expr
+   30        | litlist litsep expr
+
 
 Terminals, with rules where they appear
 
-$ (-1)
+$end (0) 0
 error (256) 22
-LRP (257) 14 15 16 17
-RRP (258) 14 15 16 17
-SYMBOL (259) 13
-STRING (260) 12
-INT (261) 9
-REAL (262) 11
-BOOL (263) 10
-FN (264)
-THIS (265)
-THAT (266)
-PARENT (267)
-VOID (268)
-BS (269)
-WSL (270)
-LSP (271) 18 19
+LRP (258) 14 15 16 17
+RRP (259) 14 15 16 17
+SYMBOL (260) 13
+STRING (261) 12
+INT (262) 9
+REAL (263) 11
+BOOL (264) 10
+FN (265)
+THIS (266)
+THAT (267)
+PARENT (268)
+VOID (269)
+BS (270)
+WSL (271)
 RSP (272) 18 19
-SEMIC (273) 4 5 27
-IMPORT (274)
-TRY (275)
+LSP (273) 18 19
+SEMIC (274) 4 5 27
+IMPORT (275)
 CATCH (276)
-WHILE (277)
+TRY (277)
 FOR (278)
-IF (279)
-ELSE (280)
-RETURN (281)
-BREAK (282)
-DELIVER (283)
-THROW (284)
-ENTAILS (285) 28
-COMMA (286) 16 23 24 26
-ASSIGN (287)
-PLUSASSIGN (288)
-MINUSASSIGN (289)
+WHILE (279)
+IF (280)
+ELSE (281)
+RETURN (282)
+BREAK (283)
+DELIVER (284)
+THROW (285)
+ENTAILS (286) 28
+COMMA (287) 16 23 24 26
+SNATCH (288)
+DIVIDEASSIGN (289)
 TIMESASSIGN (290)
-DIVIDEASSIGN (291)
-SNATCH (292)
-SYMASSIGN (293)
-COLON (294) 25
-MAPS (295)
-NOT (296)
-AND (297)
+MINUSASSIGN (291)
+PLUSASSIGN (292)
+ASSIGN (293)
+SYMASSIGN (294)
+COLON (295) 25
+MAPS (296)
+NOT (297)
 OR (298)
-LESS (299)
-LESSEQUAL (300)
-GREATER (301)
+AND (299)
+NOTEQUAL (300)
+EQUAL (301)
 GREATEREQUAL (302)
-EQUAL (303)
-NOTEQUAL (304)
-PLUS (305)
+GREATER (303)
+LESSEQUAL (304)
+LESS (305)
 MINUS (306)
-TIMES (307)
+PLUS (307)
 DIVIDE (308)
-PLUSPLUS (309)
+TIMES (309)
 MINUSMINUS (310)
-PRE (311)
-NEG (312)
-DOT (313)
-QUEST (314)
-NOBINDDOT (315)
-LCP (316) 20 21
+PLUSPLUS (311)
+PRE (312)
+NEG (313)
+NOBINDDOT (314)
+QUEST (315)
+DOT (316)
 RCP (317) 20 21
+LCP (318) 20 21
+
 
 Nonterminals, with rules where they appear
 
-prog (64)
-    on left: 1 2
-semiclist (65)
+$accept (64)
+    on left: 0
+prog (65)
+    on left: 1 2, on right: 0
+semiclist (66)
     on left: 3 4 5, on right: 1 4 5 21
-expr (66)
+expr (67)
     on left: 6, on right: 3 4 14 16 23 24 29 30
-wslist (67)
+wslist (68)
     on left: 7 8, on right: 6 8
-term (68)
+term (69)
     on left: 9 10 11 12 13 14 15 16 17 18 19 20 21 22,
     on right: 7 8
-commalist (69)
+commalist (70)
     on left: 23 24, on right: 17 24
-litsep (70)
+litsep (71)
     on left: 25 26 27 28, on right: 30
-litlist (71)
+litlist (72)
     on left: 29 30, on right: 19 30
 
 
 state 0
 
-    error	shift, and go to state 1
-    LRP 	shift, and go to state 2
-    SYMBOL	shift, and go to state 3
-    STRING	shift, and go to state 4
-    INT 	shift, and go to state 5
-    REAL	shift, and go to state 6
-    BOOL	shift, and go to state 7
-    LSP 	shift, and go to state 8
-    LCP 	shift, and go to state 9
+    0 $accept: . prog $end
 
-    $   	reduce using rule 2 (prog)
+    error   shift, and go to state 1
+    LRP     shift, and go to state 2
+    SYMBOL  shift, and go to state 3
+    STRING  shift, and go to state 4
+    INT     shift, and go to state 5
+    REAL    shift, and go to state 6
+    BOOL    shift, and go to state 7
+    LSP     shift, and go to state 8
+    LCP     shift, and go to state 9
 
-    prog	go to state 40
-    semiclist	go to state 10
-    expr	go to state 11
-    wslist	go to state 12
-    term	go to state 13
+    $end  reduce using rule 2 (prog)
 
+    prog       go to state 10
+    semiclist  go to state 11
+    expr       go to state 12
+    wslist     go to state 13
+    term       go to state 14
 
 
 state 1
 
-    term  ->  error .   (rule 22)
+   22 term: error .
 
-    $default	reduce using rule 22 (term)
-
+    $default  reduce using rule 22 (term)
 
 
 state 2
 
-    term  ->  LRP . expr RRP   (rule 14)
-    term  ->  LRP . RRP   (rule 15)
-    term  ->  LRP . expr COMMA RRP   (rule 16)
-    term  ->  LRP . commalist RRP   (rule 17)
+   14 term: LRP . expr RRP
+   15     | LRP . RRP
+   16     | LRP . expr COMMA RRP
+   17     | LRP . commalist RRP
 
-    error	shift, and go to state 1
-    LRP 	shift, and go to state 2
-    RRP 	shift, and go to state 14
-    SYMBOL	shift, and go to state 3
-    STRING	shift, and go to state 4
-    INT 	shift, and go to state 5
-    REAL	shift, and go to state 6
-    BOOL	shift, and go to state 7
-    LSP 	shift, and go to state 8
-    LCP 	shift, and go to state 9
+    error   shift, and go to state 1
+    LRP     shift, and go to state 2
+    RRP     shift, and go to state 15
+    SYMBOL  shift, and go to state 3
+    STRING  shift, and go to state 4
+    INT     shift, and go to state 5
+    REAL    shift, and go to state 6
+    BOOL    shift, and go to state 7
+    LSP     shift, and go to state 8
+    LCP     shift, and go to state 9
 
-    expr	go to state 15
-    wslist	go to state 12
-    term	go to state 13
-    commalist	go to state 16
-
+    expr       go to state 16
+    wslist     go to state 13
+    term       go to state 14
+    commalist  go to state 17
 
 
 state 3
 
-    term  ->  SYMBOL .   (rule 13)
+   13 term: SYMBOL .
 
-    $default	reduce using rule 13 (term)
-
+    $default  reduce using rule 13 (term)
 
 
 state 4
 
-    term  ->  STRING .   (rule 12)
+   12 term: STRING .
 
-    $default	reduce using rule 12 (term)
-
+    $default  reduce using rule 12 (term)
 
 
 state 5
 
-    term  ->  INT .   (rule 9)
+    9 term: INT .
 
-    $default	reduce using rule 9 (term)
-
+    $default  reduce using rule 9 (term)
 
 
 state 6
 
-    term  ->  REAL .   (rule 11)
+   11 term: REAL .
 
-    $default	reduce using rule 11 (term)
-
+    $default  reduce using rule 11 (term)
 
 
 state 7
 
-    term  ->  BOOL .   (rule 10)
+   10 term: BOOL .
 
-    $default	reduce using rule 10 (term)
-
+    $default  reduce using rule 10 (term)
 
 
 state 8
 
-    term  ->  LSP . RSP   (rule 18)
-    term  ->  LSP . litlist RSP   (rule 19)
+   18 term: LSP . RSP
+   19     | LSP . litlist RSP
 
-    error	shift, and go to state 1
-    LRP 	shift, and go to state 2
-    SYMBOL	shift, and go to state 3
-    STRING	shift, and go to state 4
-    INT 	shift, and go to state 5
-    REAL	shift, and go to state 6
-    BOOL	shift, and go to state 7
-    LSP 	shift, and go to state 8
-    RSP 	shift, and go to state 17
-    LCP 	shift, and go to state 9
+    error   shift, and go to state 1
+    LRP     shift, and go to state 2
+    SYMBOL  shift, and go to state 3
+    STRING  shift, and go to state 4
+    INT     shift, and go to state 5
+    REAL    shift, and go to state 6
+    BOOL    shift, and go to state 7
+    RSP     shift, and go to state 18
+    LSP     shift, and go to state 8
+    LCP     shift, and go to state 9
 
-    expr	go to state 18
-    wslist	go to state 12
-    term	go to state 13
-    litlist	go to state 19
-
+    expr     go to state 19
+    wslist   go to state 13
+    term     go to state 14
+    litlist  go to state 20
 
 
 state 9
 
-    term  ->  LCP . RCP   (rule 20)
-    term  ->  LCP . semiclist RCP   (rule 21)
+   20 term: LCP . RCP
+   21     | LCP . semiclist RCP
 
-    error	shift, and go to state 1
-    LRP 	shift, and go to state 2
-    SYMBOL	shift, and go to state 3
-    STRING	shift, and go to state 4
-    INT 	shift, and go to state 5
-    REAL	shift, and go to state 6
-    BOOL	shift, and go to state 7
-    LSP 	shift, and go to state 8
-    LCP 	shift, and go to state 9
-    RCP 	shift, and go to state 20
+    error   shift, and go to state 1
+    LRP     shift, and go to state 2
+    SYMBOL  shift, and go to state 3
+    STRING  shift, and go to state 4
+    INT     shift, and go to state 5
+    REAL    shift, and go to state 6
+    BOOL    shift, and go to state 7
+    LSP     shift, and go to state 8
+    RCP     shift, and go to state 21
+    LCP     shift, and go to state 9
 
-    semiclist	go to state 21
-    expr	go to state 11
-    wslist	go to state 12
-    term	go to state 13
-
+    semiclist  go to state 22
+    expr       go to state 12
+    wslist     go to state 13
+    term       go to state 14
 
 
 state 10
 
-    prog  ->  semiclist .   (rule 1)
-    semiclist  ->  semiclist . SEMIC expr   (rule 4)
-    semiclist  ->  semiclist . SEMIC   (rule 5)
+    0 $accept: prog . $end
 
-    SEMIC	shift, and go to state 22
-
-    $default	reduce using rule 1 (prog)
-
+    $end  shift, and go to state 23
 
 
 state 11
 
-    semiclist  ->  expr .   (rule 3)
+    1 prog: semiclist .
+    4 semiclist: semiclist . SEMIC expr
+    5          | semiclist . SEMIC
 
-    $default	reduce using rule 3 (semiclist)
+    SEMIC  shift, and go to state 24
 
+    $default  reduce using rule 1 (prog)
 
 
 state 12
 
-    expr  ->  wslist .   (rule 6)
-    wslist  ->  wslist . term   (rule 8)
+    3 semiclist: expr .
 
-    error	shift, and go to state 1
-    LRP 	shift, and go to state 2
-    SYMBOL	shift, and go to state 3
-    STRING	shift, and go to state 4
-    INT 	shift, and go to state 5
-    REAL	shift, and go to state 6
-    BOOL	shift, and go to state 7
-    LSP 	shift, and go to state 8
-    LCP 	shift, and go to state 9
-
-    $   	reduce using rule 6 (expr)
-    RRP 	reduce using rule 6 (expr)
-    RSP 	reduce using rule 6 (expr)
-    SEMIC	reduce using rule 6 (expr)
-    ENTAILS	reduce using rule 6 (expr)
-    COMMA	reduce using rule 6 (expr)
-    COLON	reduce using rule 6 (expr)
-    RCP 	reduce using rule 6 (expr)
-
-    term	go to state 23
-
+    $default  reduce using rule 3 (semiclist)
 
 
 state 13
 
-    wslist  ->  term .   (rule 7)
+    6 expr: wslist .
+    8 wslist: wslist . term
 
-    $default	reduce using rule 7 (wslist)
+    error   shift, and go to state 1
+    LRP     shift, and go to state 2
+    SYMBOL  shift, and go to state 3
+    STRING  shift, and go to state 4
+    INT     shift, and go to state 5
+    REAL    shift, and go to state 6
+    BOOL    shift, and go to state 7
+    LSP     shift, and go to state 8
+    LCP     shift, and go to state 9
 
+    $end     reduce using rule 6 (expr)
+    RRP      reduce using rule 6 (expr)
+    RSP      reduce using rule 6 (expr)
+    SEMIC    reduce using rule 6 (expr)
+    ENTAILS  reduce using rule 6 (expr)
+    COMMA    reduce using rule 6 (expr)
+    COLON    reduce using rule 6 (expr)
+    RCP      reduce using rule 6 (expr)
+
+    term  go to state 25
 
 
 state 14
 
-    term  ->  LRP RRP .   (rule 15)
+    7 wslist: term .
 
-    $default	reduce using rule 15 (term)
-
+    $default  reduce using rule 7 (wslist)
 
 
 state 15
 
-    term  ->  LRP expr . RRP   (rule 14)
-    term  ->  LRP expr . COMMA RRP   (rule 16)
-    commalist  ->  expr . COMMA expr   (rule 23)
+   15 term: LRP RRP .
 
-    RRP 	shift, and go to state 24
-    COMMA	shift, and go to state 25
-
+    $default  reduce using rule 15 (term)
 
 
 state 16
 
-    term  ->  LRP commalist . RRP   (rule 17)
-    commalist  ->  commalist . COMMA expr   (rule 24)
+   14 term: LRP expr . RRP
+   16     | LRP expr . COMMA RRP
+   23 commalist: expr . COMMA expr
 
-    RRP 	shift, and go to state 26
-    COMMA	shift, and go to state 27
-
+    RRP    shift, and go to state 26
+    COMMA  shift, and go to state 27
 
 
 state 17
 
-    term  ->  LSP RSP .   (rule 18)
+   17 term: LRP commalist . RRP
+   24 commalist: commalist . COMMA expr
 
-    $default	reduce using rule 18 (term)
-
+    RRP    shift, and go to state 28
+    COMMA  shift, and go to state 29
 
 
 state 18
 
-    litlist  ->  expr .   (rule 29)
+   18 term: LSP RSP .
 
-    $default	reduce using rule 29 (litlist)
-
+    $default  reduce using rule 18 (term)
 
 
 state 19
 
-    term  ->  LSP litlist . RSP   (rule 19)
-    litlist  ->  litlist . litsep expr   (rule 30)
+   29 litlist: expr .
 
-    RSP 	shift, and go to state 28
-    SEMIC	shift, and go to state 29
-    ENTAILS	shift, and go to state 30
-    COMMA	shift, and go to state 31
-    COLON	shift, and go to state 32
-
-    litsep	go to state 33
-
+    $default  reduce using rule 29 (litlist)
 
 
 state 20
 
-    term  ->  LCP RCP .   (rule 20)
+   19 term: LSP litlist . RSP
+   30 litlist: litlist . litsep expr
 
-    $default	reduce using rule 20 (term)
+    RSP      shift, and go to state 30
+    SEMIC    shift, and go to state 31
+    ENTAILS  shift, and go to state 32
+    COMMA    shift, and go to state 33
+    COLON    shift, and go to state 34
 
+    litsep  go to state 35
 
 
 state 21
 
-    semiclist  ->  semiclist . SEMIC expr   (rule 4)
-    semiclist  ->  semiclist . SEMIC   (rule 5)
-    term  ->  LCP semiclist . RCP   (rule 21)
+   20 term: LCP RCP .
 
-    SEMIC	shift, and go to state 22
-    RCP 	shift, and go to state 34
-
+    $default  reduce using rule 20 (term)
 
 
 state 22
 
-    semiclist  ->  semiclist SEMIC . expr   (rule 4)
-    semiclist  ->  semiclist SEMIC .   (rule 5)
+    4 semiclist: semiclist . SEMIC expr
+    5          | semiclist . SEMIC
+   21 term: LCP semiclist . RCP
 
-    error	shift, and go to state 1
-    LRP 	shift, and go to state 2
-    SYMBOL	shift, and go to state 3
-    STRING	shift, and go to state 4
-    INT 	shift, and go to state 5
-    REAL	shift, and go to state 6
-    BOOL	shift, and go to state 7
-    LSP 	shift, and go to state 8
-    LCP 	shift, and go to state 9
-
-    $   	reduce using rule 5 (semiclist)
-    SEMIC	reduce using rule 5 (semiclist)
-    RCP 	reduce using rule 5 (semiclist)
-
-    expr	go to state 35
-    wslist	go to state 12
-    term	go to state 13
-
+    SEMIC  shift, and go to state 24
+    RCP    shift, and go to state 36
 
 
 state 23
 
-    wslist  ->  wslist term .   (rule 8)
+    0 $accept: prog $end .
 
-    $default	reduce using rule 8 (wslist)
-
+    $default  accept
 
 
 state 24
 
-    term  ->  LRP expr RRP .   (rule 14)
+    4 semiclist: semiclist SEMIC . expr
+    5          | semiclist SEMIC .
 
-    $default	reduce using rule 14 (term)
+    error   shift, and go to state 1
+    LRP     shift, and go to state 2
+    SYMBOL  shift, and go to state 3
+    STRING  shift, and go to state 4
+    INT     shift, and go to state 5
+    REAL    shift, and go to state 6
+    BOOL    shift, and go to state 7
+    LSP     shift, and go to state 8
+    LCP     shift, and go to state 9
 
+    $end   reduce using rule 5 (semiclist)
+    SEMIC  reduce using rule 5 (semiclist)
+    RCP    reduce using rule 5 (semiclist)
+
+    expr    go to state 37
+    wslist  go to state 13
+    term    go to state 14
 
 
 state 25
 
-    term  ->  LRP expr COMMA . RRP   (rule 16)
-    commalist  ->  expr COMMA . expr   (rule 23)
+    8 wslist: wslist term .
 
-    error	shift, and go to state 1
-    LRP 	shift, and go to state 2
-    RRP 	shift, and go to state 36
-    SYMBOL	shift, and go to state 3
-    STRING	shift, and go to state 4
-    INT 	shift, and go to state 5
-    REAL	shift, and go to state 6
-    BOOL	shift, and go to state 7
-    LSP 	shift, and go to state 8
-    LCP 	shift, and go to state 9
-
-    expr	go to state 37
-    wslist	go to state 12
-    term	go to state 13
-
+    $default  reduce using rule 8 (wslist)
 
 
 state 26
 
-    term  ->  LRP commalist RRP .   (rule 17)
+   14 term: LRP expr RRP .
 
-    $default	reduce using rule 17 (term)
-
+    $default  reduce using rule 14 (term)
 
 
 state 27
 
-    commalist  ->  commalist COMMA . expr   (rule 24)
+   16 term: LRP expr COMMA . RRP
+   23 commalist: expr COMMA . expr
 
-    error	shift, and go to state 1
-    LRP 	shift, and go to state 2
-    SYMBOL	shift, and go to state 3
-    STRING	shift, and go to state 4
-    INT 	shift, and go to state 5
-    REAL	shift, and go to state 6
-    BOOL	shift, and go to state 7
-    LSP 	shift, and go to state 8
-    LCP 	shift, and go to state 9
+    error   shift, and go to state 1
+    LRP     shift, and go to state 2
+    RRP     shift, and go to state 38
+    SYMBOL  shift, and go to state 3
+    STRING  shift, and go to state 4
+    INT     shift, and go to state 5
+    REAL    shift, and go to state 6
+    BOOL    shift, and go to state 7
+    LSP     shift, and go to state 8
+    LCP     shift, and go to state 9
 
-    expr	go to state 38
-    wslist	go to state 12
-    term	go to state 13
-
+    expr    go to state 39
+    wslist  go to state 13
+    term    go to state 14
 
 
 state 28
 
-    term  ->  LSP litlist RSP .   (rule 19)
+   17 term: LRP commalist RRP .
 
-    $default	reduce using rule 19 (term)
-
+    $default  reduce using rule 17 (term)
 
 
 state 29
 
-    litsep  ->  SEMIC .   (rule 27)
+   24 commalist: commalist COMMA . expr
 
-    $default	reduce using rule 27 (litsep)
+    error   shift, and go to state 1
+    LRP     shift, and go to state 2
+    SYMBOL  shift, and go to state 3
+    STRING  shift, and go to state 4
+    INT     shift, and go to state 5
+    REAL    shift, and go to state 6
+    BOOL    shift, and go to state 7
+    LSP     shift, and go to state 8
+    LCP     shift, and go to state 9
 
+    expr    go to state 40
+    wslist  go to state 13
+    term    go to state 14
 
 
 state 30
 
-    litsep  ->  ENTAILS .   (rule 28)
+   19 term: LSP litlist RSP .
 
-    $default	reduce using rule 28 (litsep)
-
+    $default  reduce using rule 19 (term)
 
 
 state 31
 
-    litsep  ->  COMMA .   (rule 26)
+   27 litsep: SEMIC .
 
-    $default	reduce using rule 26 (litsep)
-
+    $default  reduce using rule 27 (litsep)
 
 
 state 32
 
-    litsep  ->  COLON .   (rule 25)
+   28 litsep: ENTAILS .
 
-    $default	reduce using rule 25 (litsep)
-
+    $default  reduce using rule 28 (litsep)
 
 
 state 33
 
-    litlist  ->  litlist litsep . expr   (rule 30)
+   26 litsep: COMMA .
 
-    error	shift, and go to state 1
-    LRP 	shift, and go to state 2
-    SYMBOL	shift, and go to state 3
-    STRING	shift, and go to state 4
-    INT 	shift, and go to state 5
-    REAL	shift, and go to state 6
-    BOOL	shift, and go to state 7
-    LSP 	shift, and go to state 8
-    LCP 	shift, and go to state 9
-
-    expr	go to state 39
-    wslist	go to state 12
-    term	go to state 13
-
+    $default  reduce using rule 26 (litsep)
 
 
 state 34
 
-    term  ->  LCP semiclist RCP .   (rule 21)
+   25 litsep: COLON .
 
-    $default	reduce using rule 21 (term)
-
+    $default  reduce using rule 25 (litsep)
 
 
 state 35
 
-    semiclist  ->  semiclist SEMIC expr .   (rule 4)
+   30 litlist: litlist litsep . expr
 
-    $default	reduce using rule 4 (semiclist)
+    error   shift, and go to state 1
+    LRP     shift, and go to state 2
+    SYMBOL  shift, and go to state 3
+    STRING  shift, and go to state 4
+    INT     shift, and go to state 5
+    REAL    shift, and go to state 6
+    BOOL    shift, and go to state 7
+    LSP     shift, and go to state 8
+    LCP     shift, and go to state 9
 
+    expr    go to state 41
+    wslist  go to state 13
+    term    go to state 14
 
 
 state 36
 
-    term  ->  LRP expr COMMA RRP .   (rule 16)
+   21 term: LCP semiclist RCP .
 
-    $default	reduce using rule 16 (term)
-
+    $default  reduce using rule 21 (term)
 
 
 state 37
 
-    commalist  ->  expr COMMA expr .   (rule 23)
+    4 semiclist: semiclist SEMIC expr .
 
-    $default	reduce using rule 23 (commalist)
-
+    $default  reduce using rule 4 (semiclist)
 
 
 state 38
 
-    commalist  ->  commalist COMMA expr .   (rule 24)
+   16 term: LRP expr COMMA RRP .
 
-    $default	reduce using rule 24 (commalist)
-
+    $default  reduce using rule 16 (term)
 
 
 state 39
 
-    litlist  ->  litlist litsep expr .   (rule 30)
+   23 commalist: expr COMMA expr .
 
-    $default	reduce using rule 30 (litlist)
-
+    $default  reduce using rule 23 (commalist)
 
 
 state 40
 
-    $   	go to state 41
+   24 commalist: commalist COMMA expr .
 
+    $default  reduce using rule 24 (commalist)
 
 
 state 41
 
-    $   	go to state 42
+   30 litlist: litlist litsep expr .
 
-
-
-state 42
-
-    $default	accept
+    $default  reduce using rule 30 (litlist)

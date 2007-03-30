@@ -23,21 +23,20 @@ THE NOT SO EASY STEPS FOR COMPILING DELICOUS RHABABER:
 
 0. get the source code from http://code.google.com/p/rhabarber/
 
-1. from http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source/ 
-   get gc6.8.tar.gz (which is some fancy garbage collector), 
-   untar it on the same level as compile.txt
+1. You'll need a compiler which can handle C99, and the libgc library,
+available at http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source/
 
-2. if not unix you must set some paths correctly in rha/Makefile for 
-   the Python stuff, i.e. vars PY_CFLAGS, PY_LDFLAGS, PY_LOADLIBES, and
-   maybe for the Matlab stuff, as well?
+2. run 'configure'
 
-3. run 'make',  good luck with this, there is currently no support for you!
+3. run 'make all'
 
 4. run 'cd rha'
 
-4. run './rhabarber < test.rha | grep false'
+4. run './rhabarber < test.rha | grep ^false'
 
 5. if all goes well, there shouldn't be any output
+
+6. if you want type 'make install'
 
 6. run './rhabarber' and you can play around with it after seeing something like:
 

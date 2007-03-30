@@ -8,6 +8,8 @@
  *                             
  */
 
+#ifdef HAVE_PYTHON
+
 #ifndef PYOBJECT_H
 #define PYOBJECT_H
 
@@ -36,3 +38,5 @@ extern method void pyobject_tuplesetitem(pyobject_tr po, pyobject_tr i,
 					 pyobject_tr o);
 
 #endif
+
+#endif /* HAVE_PYTHON */

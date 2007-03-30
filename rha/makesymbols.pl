@@ -5,6 +5,9 @@ if ($#ARGV == -1) {
 }
 
 $symtab = shift @ARGV;
+if ($symtab =~ m/.*\/(.*)/) {
+    $symtab = $1;
+}
 $SYMTAB = "\U$symtab";
 
 $decl = "";
@@ -126,5 +129,5 @@ To add the symbols (somewhere in the .c-file), insert
 #include "$symtab.h"
 #undef $SYMTAB\_ADD
 
-This little hack has been written by Mikio L. Braun, mikio@first.fhg.de
+This little hack has been written by Mikio L. Braun, mikiobraun\@gmail.com
 ENDE

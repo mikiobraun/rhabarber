@@ -8,6 +8,8 @@
  *                             
  */
 
+#ifdef HAVE_PYTHON
+
 #include "pyobject_tr.h"
 
 #include <gc/gc.h>
@@ -283,3 +285,5 @@ void pyobject_tuplesetitem(pyobject_tr po, pyobject_tr idx,
   Py_INCREF(o->object); // SetItem steals references
   PyTuple_SetItem(po->object, i, o->object);
 }
+
+#endif /* HAVE_PYTHON */

@@ -35,7 +35,7 @@
 #include "prule.h"
 #include "eval.h"
 #include "function_tr.h"
-#include "rhaparser.h"
+#include "rhaparser_extra.h"
 #include "matrix_tr.h"
 #include "none_tr.h"
 #include "symtable.h"

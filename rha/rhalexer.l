@@ -11,7 +11,7 @@
 #include "real_tr.h"
 #include "string_tr.h"
 #define YYSTYPE object_t /* is this really correct? */
-#include "rhaparser.tab.h"
+#include "rhaparser.h"
 
 char *escexpand(char *);
 %}

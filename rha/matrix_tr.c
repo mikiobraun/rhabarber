@@ -114,7 +114,7 @@ matrix_tr matrix_transpose(matrix_tr a)
 double matrix_norm(matrix_tr a)
 {
   // Frobenius norm
-#ifndef SIMPLE
+#ifdef HAVE_LIBCBLAS
   return cblas_ddot(a->length, a->array, 1, a->array, 1);
 #else
   return 0;
@@ -157,7 +157,7 @@ matrix_tr matrix_randn(int m, int n)
 void matrix_scale(matrix_tr a, double b)
 {
   CHECK(a);
-#ifndef SIMPLE
+#ifndef HAVE_LIBCBLAS
   cblas_dscal(a->length, b, a->array, 1);
 #endif 
 }
@@ -344,7 +344,7 @@ matrix_tr matrix_plus_matrix(matrix_tr a, matrix_tr b)
   // checks dims
   if (a->cols!=b->cols || a->rows!=b->rows) return 0;
   matrix_tr c = matrix_copy(a);
-#ifndef SIMPLE
+#ifndef HAVE_LIBCBLAS
   cblas_daxpy(b->length, 1.0, b->array, 1, c->array, 1);
 #endif
   return c;
@@ -373,7 +373,7 @@ matrix_tr matrix_minus_matrix(matrix_tr a, matrix_tr b)
   // checks dims
   if (a->cols!=b->cols || a->rows!=b->rows) return 0;
   matrix_tr c = matrix_copy(a);
-#ifndef SIMPLE
+#ifndef HAVE_LIBCBLAS
   cblas_daxpy(b->length, -1.0, b->array, 1, c->array, 1);
 #endif
   return c;
@@ -407,7 +407,7 @@ matrix_tr matrix_times_matrix(matrix_tr a, matrix_tr b)
   matrix_tr c = matrix_new(a->rows, b->cols);
   if(b->cols == 1) {
     // matrix-vector multiplication
-#ifndef SIMPLE
+#ifdef HAVE_LIBCBLAS
     cblas_dgemv(CblasColMajor, CblasNoTrans,
 		a->rows, a->cols, 
 		1.0, a->array, a->rows,
@@ -417,7 +417,7 @@ matrix_tr matrix_times_matrix(matrix_tr a, matrix_tr b)
   }
   else {
     // matrix-matrix multiplication
-#ifndef SIMPLE
+#ifdef HAVE_LIBCBLAS
     cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
 		c->rows, c->cols, a->cols,
 		1.0, a->array, a->rows,

@@ -8,6 +8,8 @@
  *                             
  */
 
+#ifdef HAVE_PYTHON
+
 #ifndef PYTHON_H
 #define PYTHON_H
 
@@ -40,3 +42,5 @@ extern constructor pyobject_tr python_importmodule(string_t name);
 extern method string_t python_getversion(python_tr p);
 
 #endif
+
+#endif /* HAVE_PYTHON */

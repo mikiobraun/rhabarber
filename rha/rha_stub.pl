@@ -136,12 +136,12 @@ ENDE
 ##################################################################
 
 # create $class_stub.h
-open(STUBH, ">stubs/$class\_stub.h") or die "Can't open $class\_stub.h: $!";
+open(STUBH, ">$class\_stub.h") or die "Can't open $class\_stub.h: $!";
 print STUBH create_htmpl($class);
 close STUBH;
 
 # create $class_stub.c
-open(STUBC, ">stubs/$class\_stub.c") or die "Can't open $class\_stub.c: $!";
+open(STUBC, ">$class\_stub.c") or die "Can't open $class\_stub.c: $!";
 print STUBC create_ctmpl($class, $includes, $builtindefines, $builtinassigns);
 close STUBC;
 
