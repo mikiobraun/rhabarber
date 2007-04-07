@@ -28,10 +28,23 @@ AC_PROG_RANLIB
 # some more programs
 AC_PROG_YACC
 AM_PROG_LEX
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
 
 # todo: write sensible checks for this!
-AM_CONDITIONAL([HAVE_PYTHON],[false])
+
+#
+# Checking for python!
+#
+AM_PATH_PYTHON([2.3],,[:])
+#AC_CHECK_HEADERS([python$PYTHON_VERSION/Python.h],[CFLAGS='CFLAGS -I)
+AM_CONDITIONAL([HAVE_PYTHON],[test x"$PYTHON" = x":"])
+
+#
+# Checking for matlab!
+#
 AM_CONDITIONAL([HAVE_MATLAB],[false])
+
 
 # check for libraries
 AC_CHECK_LIB([gc],[GC_malloc])
@@ -47,6 +60,30 @@ if test "$ac_cv_lib_readline_readline" = no; then
 fi
 AC_CHECK_LIB([cblas],[cblas_dgemm],[],[],[-lm])
 AC_CHECK_LIB([m],[sin])
+
+# these are taken from autoscan
+AC_FUNC_ALLOCA
+AC_HEADER_STDC
+AC_CHECK_HEADERS([inttypes.h libintl.h limits.h malloc.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT8_T
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT8_T
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([gettimeofday memset sqrt strchr strdup])
+# end of functions taken from autoscan
 
 AM_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([Makefile

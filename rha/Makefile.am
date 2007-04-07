@@ -38,7 +38,7 @@ rhabarber_SOURCES = rhabarber.c \
 	thisproxy_tr.c thisproxy_tr.h \
 	dict_tr.c dict_tr.h
 EXTRA_rhabarber_SOURCES = list_inline.c matrix_inline.c object_inline.c \
-	symbol_inline.c tuple_inline.c rhaparser.h rhalexerpure.l \
+	symbol_inline.c tuple_inline.c rhalexerpure.l \
 	tree_tr.h
 rhabarber_LDADD = templates/libtemplates.a @LEXLIB@ @top_srcdir@/util/libutil.a
 AM_CFLAGS = -I@top_srcdir@/util -I@srcdir@/templates
@@ -46,7 +46,7 @@ EXTRA_DIST = rha_stub.pl makesymbols.pl test.rha init.rha
 
 AM_YFLAGS = -d
 
-BUILT_SOURCES = rhalexerpure.c
+BUILT_SOURCES = rhalexerpure.c rhaparser.h 
 CLEANFILES = rhalexerpure.c
 rhabarber_LDADD += rhalexerpure.o
 
