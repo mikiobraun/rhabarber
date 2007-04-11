@@ -44,7 +44,7 @@ struct rhavt overloaded_vt;
 
 //////////////////////////////////////////////////////////////////////
 // Forward declarations
-static void fmt_tuplenames(STREAM *s, char *spec, va_list *ap);
+static void fmt_tuplenames(STREAM *s, char *spec, va_list ap);
 static object_t resolve(overloaded_tr ov, tuple_tr t);
 static void recompute(overloaded_tr ov);
 static tuple_tr promotekey(tuple_tr t, int i, object_t cv);
@@ -381,9 +381,9 @@ object_t promotefct(object_t f, int i, object_t cv)
 //
 
 static
-void fmt_tuplenames(STREAM *out, char *spec, va_list *ap)
+void fmt_tuplenames(STREAM *out, char *spec, va_list ap)
 {
-  object_t o = va_arg(*ap, object_t);
+  object_t o = va_arg(ap, object_t);
   if (tuple_length(o) == 0)
     strputs(out, "[empty]");
   for(int i = 0; i < tuple_length(o); i++) {

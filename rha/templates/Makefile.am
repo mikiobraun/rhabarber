@@ -33,5 +33,5 @@ CLEANFILES = $(TEMPLATES)
 INCLUDES = -I@top_srcdir@/rha
 
 $(TEMPLATES):
-	. maketemplates.sh
+	. @srcdir@/maketemplates.sh
 

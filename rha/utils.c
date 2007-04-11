@@ -8,12 +8,12 @@
 #include "symbol_tr.h"
 
 /* print an object */
-static void fmt_object(STREAM *s, char *fmt, va_list *ap)
+static void fmt_object(STREAM *s, char *fmt, va_list ap)
 {
   if (fmt[strlen(fmt) - 2] != '#')
-    strputs(s, object_to_string(va_arg(*ap, object_t)));
+    strputs(s, object_to_string(va_arg(ap, object_t)));
   else
-    strputs(s, rha_lookup(va_arg(*ap, object_t), symbol_new("typename")));
+    strputs(s, rha_lookup(va_arg(ap, object_t), symbol_new("typename")));
 }
 
 

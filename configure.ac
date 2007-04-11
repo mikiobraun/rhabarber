@@ -90,6 +90,6 @@ AC_CONFIG_FILES([Makefile
 		util/Makefile 
 		ctmpl/Makefile 
 		rha/Makefile 
-		rha/templates/Makefile])
+		rha/templates/Makefile rha/templates/maketemplates.sh])
 AC_OUTPUT
 

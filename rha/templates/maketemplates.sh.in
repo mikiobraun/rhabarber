@@ -1,6 +1,6 @@
+# -*- shell-script -*-
 function maketmpl {
-    PREFIX=../..
-    TMPLDIR=$PREFIX/ctmpl
+    TMPLDIR=@top_srcdir@/ctmpl
     TMPLDEFS='-ialloc.h alloc=GC_malloc free=GC_free'
     MAKETMPL=$TMPLDIR/maketmpl
 

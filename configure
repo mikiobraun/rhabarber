@@ -7630,7 +7630,7 @@ done
 
 ac_config_headers="$ac_config_headers config.h"
 
-ac_config_files="$ac_config_files Makefile util/Makefile ctmpl/Makefile rha/Makefile rha/templates/Makefile"
+ac_config_files="$ac_config_files Makefile util/Makefile ctmpl/Makefile rha/Makefile rha/templates/Makefile rha/templates/maketemplates.sh"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -8230,6 +8230,7 @@ do
     "ctmpl/Makefile") CONFIG_FILES="$CONFIG_FILES ctmpl/Makefile" ;;
     "rha/Makefile") CONFIG_FILES="$CONFIG_FILES rha/Makefile" ;;
     "rha/templates/Makefile") CONFIG_FILES="$CONFIG_FILES rha/templates/Makefile" ;;
+    "rha/templates/maketemplates.sh") CONFIG_FILES="$CONFIG_FILES rha/templates/maketemplates.sh" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

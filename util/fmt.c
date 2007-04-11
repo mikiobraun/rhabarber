@@ -61,7 +61,7 @@ void vprtfmt(struct stream *s, const char *fmt, va_list ap)
 
 	fmt_f *f = table[(int)*p];
 
-	if(f != NULL)  f(s, start, &ap);
+	if(f != NULL)  f(s, start, ap);
 	else   
 	  for(char *q = start; *q; q++)
 	    strputc(s, *q);
@@ -141,60 +141,60 @@ void sprtfmt(char **buffer, const char *fmt, ...)
 #define STDFMTBUFSIZE 1024 // maximum format size for standard formats
 static char buffer[STDFMTBUFSIZE];
 
-void fmt_int(STREAM *s, char *fmt, va_list *ap)
+void fmt_int(STREAM *s, char *fmt, va_list ap)
 {
   int l = strlen(fmt);
   if (fmt[l - 2] == 'l')
     if (l > 3 && fmt[l - 3] == 'l')
-      snprintf(buffer, STDFMTBUFSIZE, fmt, (long long)va_arg(*ap, long long));
+      snprintf(buffer, STDFMTBUFSIZE, fmt, (long long)va_arg(ap, long long));
     else
-      snprintf(buffer, STDFMTBUFSIZE, fmt, (long)va_arg(*ap, long));      
+      snprintf(buffer, STDFMTBUFSIZE, fmt, (long)va_arg(ap, long));      
   else
-    snprintf(buffer, STDFMTBUFSIZE, fmt, va_arg(*ap, int));
+    snprintf(buffer, STDFMTBUFSIZE, fmt, va_arg(ap, int));
   strputs(s, buffer);
 }
 
 
-void fmt_char(STREAM *s, char *fmt, va_list *ap)
+void fmt_char(STREAM *s, char *fmt, va_list ap)
 {
-  snprintf(buffer, STDFMTBUFSIZE, fmt, va_arg(*ap, int));
+  snprintf(buffer, STDFMTBUFSIZE, fmt, va_arg(ap, int));
   strputs(s, buffer);
 }
 
 
-void fmt_uint(STREAM *s, char *fmt, va_list *ap)
+void fmt_uint(STREAM *s, char *fmt, va_list ap)
 {
   int l = strlen(fmt);
   if (fmt[l - 2] == 'l')
     if (l > 3 && fmt[l - 3] == 'l')
-      snprintf(buffer, STDFMTBUFSIZE, fmt, (unsigned long long)va_arg(*ap, unsigned long long));
+      snprintf(buffer, STDFMTBUFSIZE, fmt, (unsigned long long)va_arg(ap, unsigned long long));
     else
-      snprintf(buffer, STDFMTBUFSIZE, fmt, (unsigned long)va_arg(*ap, unsigned long));      
+      snprintf(buffer, STDFMTBUFSIZE, fmt, (unsigned long)va_arg(ap, unsigned long));      
   else
-    snprintf(buffer, STDFMTBUFSIZE, fmt, (unsigned int)va_arg(*ap, unsigned int));
+    snprintf(buffer, STDFMTBUFSIZE, fmt, (unsigned int)va_arg(ap, unsigned int));
   strputs(s, buffer);
 }
 
-void fmt_double(STREAM *s, char *fmt, va_list *ap)
+void fmt_double(STREAM *s, char *fmt, va_list ap)
 {
   if (fmt[strlen(fmt) - 2] == 'L') {
-    snprintf(buffer, STDFMTBUFSIZE, fmt, (long double)va_arg(*ap, long double));
+    snprintf(buffer, STDFMTBUFSIZE, fmt, (long double)va_arg(ap, long double));
   }
   else
-    snprintf(buffer, STDFMTBUFSIZE, fmt, va_arg(*ap, double));
+    snprintf(buffer, STDFMTBUFSIZE, fmt, va_arg(ap, double));
   strputs(s, buffer);
 }
 
 
-void fmt_string(STREAM *s, char *fmt, va_list *ap)
+void fmt_string(STREAM *s, char *fmt, va_list ap)
 {
-  snprintf(buffer, STDFMTBUFSIZE, fmt, va_arg(*ap, char*));
+  snprintf(buffer, STDFMTBUFSIZE, fmt, va_arg(ap, char*));
   strputs(s, buffer);
 }
 
-void fmt_voidptr(STREAM *s, char *fmt, va_list *ap)
+void fmt_voidptr(STREAM *s, char *fmt, va_list ap)
 {
-  snprintf(buffer, STDFMTBUFSIZE, fmt, va_arg(*ap, void*));
+  snprintf(buffer, STDFMTBUFSIZE, fmt, va_arg(ap, void*));
   strputs(s, buffer);
 }
 

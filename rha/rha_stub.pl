@@ -40,7 +40,7 @@ if ($hfilename !~ /($id)\_tr.h/) {
 $class = $1;
 
 # load original h file into one string
-open(HFILE, "$class\_tr.h") or die "Can't open $class\_tr.h: $!";
+open(HFILE, "<$hfilename") or die "Can't open $class\_tr.h: $!";
 @input = <HFILE>;
 close(HFILE);
 $input = join '', @input;
