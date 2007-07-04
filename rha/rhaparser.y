@@ -78,12 +78,12 @@ semiclist : expr                      { $$ = list_new(); list_append($$, $1); $$
 
 
 /* expression, returns object_t, does evaluate to some value */
-expr      : wslist                    { if (list_length($1) == 1) $$ = wl(list_front($1));
-                                        else $$ = wl(list_to_tuple($1)); }
+expr      : wslist                    { $$ = wl(list_to_tuple($1)); }
           ;
 
 /* white_space_list, returns list_tr */
-wslist    : term                      { $$ = list_new(); list_append($$, $1); $$ = wl($$); }
+wslist    : term                      { $$ = list_new();
+                                        list_append($$, $1); $$ = wl($$); }
           | wslist term               { list_append($1, $2); $$ = wl($1); }
           ;
 
@@ -93,27 +93,22 @@ term      : INT                       { $$ = wl($1); }
 	  | REAL                      { $$ = wl($1); }
           | STRING                    { $$ = wl($1); }
           | SYMBOL                    { $$ = wl($1); }
-// grouped expressions, e.g. (17+42), note that we need to remember the grouping until the macros are resolved
-          | LRP expr RRP              { $$ = wl(tuple_make(2, group_sym, $2)); }
-// tuples, e.g. (), (17,), (17, 42)
+// grouped expressions, e.g. (17+42), note that we need to remember
+// the grouping until the macros are resolved, because grouped
+// expressions can also be singleton argument lists
+          | LRP expr RRP              { $$ = wl(tuple_make(2, tuplefy_sym, $2)); }
+// non-singleton tuples, e.g. (), (17, 42)
           | LRP RRP                   { $$ = wl(tuple_make(1, tuplefy_sym)); }     // empty tuples, e.g. ()
-          | LRP expr COMMA RRP        { $$ = wl(tuple_make(2, tuplefy_sym, $2)); } // singletons, e.g. (17)
           | LRP commalist RRP         { list_prepend($2, tuplefy_sym); 
                                         $$ = wl(list_to_tuple($2)); }          // tuples with more than one element, e.g. (7, 4)
 // complicated literals, e.g. [ ], [17, 42; 13, 57]
-          | LSP RSP                   { $$ = wl(tuple_make(2, literal_sym, none_obj)); } // empty literals, e.g. [ ]
-          | LSP litlist RSP           { list_prepend($2, tuplefy_sym);
-	                                $2 = list_to_tuple($2);
-                                        $$ = wl(tuple_make(2, literal_sym, tuple_make(2, group_sym, $2))); } // literals, e.g. [17; 42]
+| LSP RSP                   { $$ = wl(tuple_make(1, literal_sym)); } // empty literals, e.g. [ ]
+          | LSP litlist RSP           { list_prepend($2, literal_sym);
+                                        $$ = list_to_tuple($2); } // literals e.g. [17; 42]
 // code blocks, e.g. { }, {bla; blub }
-          | LCP RCP                   { $$ = wl(tuple_make(2, do_sym, tuple_make(1, tuplefy_sym))); }  // empty code block, e.g. { }
-	  | LCP semiclist RCP         { list_prepend($2, tuplefy_sym);
-	                                $$ = list_to_tuple($2);
-	                                for (int i=1; i<tuple_length($$); i++ )
-					  tuple_set($$, i, tuple_get($$, i)); 
-					if (tuple_length($$)==2)
-					  tuple_set($$, 0, group_sym);
-					$$ = tuple_make(2, do_sym, $$); }               // some non-empty code block, e.g. { bla; blub }
+          | LCP RCP                   { $$ = wl(tuple_make(1, do_sym)); }  // empty code block, e.g. { }
+	  | LCP semiclist RCP         { list_prepend($2, do_sym);
+	                                $$ = list_to_tuple($2); }          // some non-empty code block, e.g. { bla; blub }
 /* finally some error-generating stuff */
           | error
           ;

@@ -288,7 +288,7 @@ sub create_builtintmpl {
 	$nargerror = "rha_error(\"$fnname: exactly $nin arguments expected, got %d.\\n\", tuple_length(in));";
     }
     return <<ENDE;
-object_t b_$fnname(object_t this, object_t env, tuple_tr in)
+object_t b_$fnname(object_t env, tuple_tr in)
 {
   $nargcheck$getchecks$fncall
     return res;
@@ -313,8 +313,8 @@ sub create_tupleget {
 	$i = $i + 1;
     }
     if ($keyword eq "method" and $i==0) {
-	return "    assert(this != 0);\n"
-	     . "    object_t t$i = this;\n";
+	return "    assert(env != 0);\n"
+	     . "    object_t t$i = env;\n";
     }
     else {
 	return "    object_t t$i = tuple_get(in, $i);\n";

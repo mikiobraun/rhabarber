@@ -28,7 +28,7 @@
 #include "builtin_tr.h"
 #include "function_tr.h"
 #include "overloaded_tr.h"
-#include "method_tr.h"
+//#include "method_tr.h"
 //#include "graphics.h"
 #include "exception_tr.h"
 
@@ -66,7 +66,7 @@
 #include "builtin_stub.h"
 #include "function_stub.h"
 #include "overloaded_stub.h"
-#include "method_stub.h"
+//#include "method_stub.h"
 #include "exception_stub.h"
 #include "parser_stub.h"
 
@@ -76,8 +76,8 @@
 #  include "pyobject_tr.h"
 #  include "pyobject_stub.h"
 #endif
-#include "thisproxy_tr.h"
-#include "thisproxy_stub.h"
+//#include "thisproxy_tr.h"
+//#include "thisproxy_stub.h"
 #ifdef HAVE_MATLAB
 #  include "matlab_tr.h"
 #  include "matlab_stub.h"
@@ -285,8 +285,9 @@ void read_eval_loop(object_t env) {
 	//object_print(expr_list);
 	eval_currentlocation = NULL;
 	object_t o = resolve_eval_list(env, expr_list);
-	if(o && !HAS_TYPE(none, o))
-	  print("%o\n", o);
+	//if(o && !HAS_TYPE(none, o))
+	//  print("%o\n", o);
+	if(o) print("%o\n", o);
       }
     }
     catch(excp) {
@@ -319,10 +320,10 @@ void init(int argc, char *argv[])
   function_init();
   overloaded_init();
   symbol_init();
-  method_init();
+  //method_init();
   //graphics_init(argc, argv);
   exception_init();
-  thisproxy_init();
+  //thisproxy_init();
 
   // containers
   tuple_init();
@@ -363,10 +364,10 @@ object_t init_stubs(void)
   // deeper
   builtin_stub_init(root);
   function_stub_init(root);
-  method_stub_init(root);
+  //method_stub_init(root);
   //graphics_stub_init(root);
   exception_stub_init(root);
-  thisproxy_stub_init(root);
+  //thisproxy_stub_init(root);
 
   // containers
   tuple_stub_init(root);

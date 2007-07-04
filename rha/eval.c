@@ -29,14 +29,14 @@
 #include "function_tr.h"
 #include "core.h"
 #include "overloaded_tr.h"
-#include "method_tr.h"
+//#include "method_tr.h"
 #include "none_tr.h"
 #include "bool_tr.h"
 #include "prule.h"
 
 object_t loc(object_t env, object_t expr);
-object_t assign(object_t env, object_t lhs, object_t rhs);
-
+object_t assign(object_t env, object_t scope, object_t sym, object_t rhs);
+object_t eval_args(object_t env, object_t expr);
 object_t eval_lookupfailed_hook(object_t, object_t);
 object_t eval_fctcall_hook(object_t env, object_t tuple);
 
@@ -54,9 +54,9 @@ object_t resolve_eval_list(object_t env, list_tr exprlist)
   object_t o = 0;
   object_t expr;
   list_foreach(expr, exprlist) {
-    //fprint(stdout, "before: %o\n", expr);
+    fprint(stdout, "before resolving prules: %o\n", expr);
     o = resolve_prules(env, expr);
-    //fprint(stdout, "after:  %o\n", o);
+    fprint(stdout, "after resolving prules:  %o\n", o);
     o = eval(env, o);
   }
   return o;
@@ -70,14 +70,16 @@ object_t resolve_eval_list(object_t env, list_tr exprlist)
  * the following constructs are recognized:
  *
  * symbol                
- * \ expr
+ * semiclist
+ * literals
+ * (f 17 42)    function calls
+ * \ expr       could be dealt with by usual function calls????
+ * 
+ * all the rest is handled elsewhere
  * lhs = expr (see assign)
  * expr . symbol
  * expr . expr
  * fn(args) expr
- * f(args)
- * semiclist
- * literals
  */
 
 
@@ -88,6 +90,10 @@ object_t eval(object_t env, object_t expr)
 
   // symbol
   if(HAS_TYPE(symbol, expr)) {
+    // local
+    if (symbol_equal_symbol(local_sym, expr))
+      return env;
+    // all other stuff
     object_t o = rha_lookup(env, expr);
     if (!o) {
       object_t x;  // iter var
@@ -98,7 +104,7 @@ object_t eval(object_t env, object_t expr)
     }
     if (!o) o = eval_lookupfailed_hook(env, expr);
     if (!o) 
-      rha_error("symbol \"%s\" not found!\n", symbol_name(expr));
+      rha_error("eval(): symbol \"%s\" not found!\n", symbol_name(expr));
     RETURN( o );
   }
 
@@ -109,59 +115,67 @@ object_t eval(object_t env, object_t expr)
 
   // assignment
   else if(iscallof(op_assign_sym, expr)) {
-    object_t lhs = tuple_get(expr, 1);
-    object_t rhs = tuple_get(expr, 2);
-    RETURN( assign(env, lhs, rhs) );
+    object_t scope = tuple_get(expr, 1);
+    object_t lhs = tuple_get(expr, 2);
+    object_t rhs = tuple_get(expr, 3);
+    RETURN( assign(env, scope, lhs, rhs) );
   }
 
   // dot expression, e.g. a.b
   else if(iscallof(op_dot_sym, expr)) {
-    object_t obj = eval(env, tuple_get(expr, 1));
-    object_t slotname = tuple_get(expr, 2);
-    if (!HAS_TYPE(symbol, slotname)) {
-      slotname = eval(env, slotname);
-      if (!HAS_TYPE(symbol, slotname)) {
-	rha_error("Rhs of a dot must be symbol or must evaluate to a symbol.\n");
-      }
+    object_t lhs = eval(env, tuple_get(expr, 1));
+    object_t rhs = tuple_get(expr, 2);
+    if (HAS_TYPE(symbol, rhs)) {
+      // do the look up in lhs
+      rhs = rha_lookup(lhs, rhs);
+      if (!rhs)
+	rha_error("No slot with name \"%o\" in object %o.\n", rhs, lhs);
+      RETURN( rhs );
     }
-
-    object_t slot = rha_lookup(obj, slotname);
-    if(slot && rha_bindable(slot))
-      slot = method_new(obj, slot);
-
-    if(!slot)
-      rha_error("No slot with name \"%o\" in object %o.\n", slotname, obj);
-
-    RETURN( slot  );
+    else {
+      // we are calling a function!
+      assert(HAS_TYPE(tuple, rhs));
+      assert(tuple_length(rhs)>0);
+      object_t rhs0 = tuple_get(rhs, 0);
+      if (!HAS_TYPE(symbol, rhs0))
+	rha_error("RHS of dots are not evaluated only looked up.\n");
+      // evaluate the symbol in 'lhs'
+      tuple_set(rhs, 0, eval(lhs, rhs0));
+      // evaluate the args in the local scope
+      object_t t = eval_args(env, rhs);
+      // call the function in 'lhs' which is 'this'
+      RETURN( rha_call(lhs, t) );
+    }
+    assert(1==0);
   }
 
-  // question-mark expression
-  else if(iscallof(op_quest_sym, expr)) {
-    object_t obj = eval(env, tuple_get(expr, 1));
-    object_t slotname = tuple_get(expr, 2);
-    if (!HAS_TYPE(symbol, slotname)) {
-      slotname = eval(env, slotname);
-      if (!HAS_TYPE(symbol, slotname)) {
-	rha_error("Rhs of a ? must be symbol or must evaluate to a symbol.\n");
-      }
-    }
-    RETURN( bool_new( object_lookup(obj, slotname) != 0) );
-  }
+  //// question-mark expression
+  //else if(iscallof(op_quest_sym, expr)) {
+  //  object_t obj = eval(env, tuple_get(expr, 1));
+  //  object_t slotname = tuple_get(expr, 2);
+  //  if (!HAS_TYPE(symbol, slotname)) {
+  //    slotname = eval(env, slotname);
+  //    if (!HAS_TYPE(symbol, slotname)) {
+  //       rha_error("Rhs of a ? must be symbol or must evaluate to a symbol.\n");
+  //    }
+  //  }
+  //  RETURN( bool_new( object_lookup(obj, slotname) != 0) );
+  //}
 
-  else if(iscallof(op_nobinddot_sym, expr)) {
-    object_t obj = eval(env, tuple_get(expr, 1));
-    object_t slotname = tuple_get(expr, 2);
-    if (!HAS_TYPE(symbol, slotname)) {
-      slotname = eval(env, slotname);
-      if (!HAS_TYPE(symbol, slotname)) {
-	rha_error("Rhs of a ./ must be symbol or must evaluate to a symbol.\n");
-      }
-    }
-    object_t slot = object_lookup(obj, slotname);
-    if(!slot)
-      rha_error("No slot with name \"%o\" in object %o.\n", slotname, slot);
-    RETURN( slot );
-  }
+  //else if(iscallof(op_nobinddot_sym, expr)) {
+  //  object_t obj = eval(env, tuple_get(expr, 1));
+  //  object_t slotname = tuple_get(expr, 2);
+  //  if (!HAS_TYPE(symbol, slotname)) {
+  //    slotname = eval(env, slotname);
+  //    if (!HAS_TYPE(symbol, slotname)) {
+  //      rha_error("Rhs of a ./ must be symbol or must evaluate to a symbol.\n");
+  //    }
+  //  }
+  //  object_t slot = object_lookup(obj, slotname);
+  //  if(!slot)
+  //    rha_error("No slot with name \"%o\" in object %o.\n", slotname, slot);
+  //  RETURN( slot );
+  //}
 
   // fn expression, e.g. fn (x,y) x + y
   else if(iscallof(op_fn_sym, expr)) {
@@ -190,20 +204,16 @@ object_t eval(object_t env, object_t expr)
 
   // function call, e.g.  f(x, y, z)
   else if(HAS_TYPE(tuple, expr)) {
-    // evaluate f and its args
     int tlen = tuple_length(expr);
     assert(tlen>0);
-    tuple_tr t = tuple_new(tlen);
-    object_t fn = eval(env, tuple_get(expr, 0));
-    tuple_set(t, 0, fn);
-    bool ismacro = rha_ismacro(fn);
-    for (int i = 1; i < tlen; i++) {
-      object_t arg = tuple_get(expr, i);
-      if (!ismacro)
-	arg = eval(env, arg);
-      if (!arg) RETURN( 0 );
-      tuple_set(t, i, arg);
-    }
+    // evaluate the function in the local scope
+    object_t f = eval(env, tuple_get(expr, 0));
+    if (!f)
+      rha_error("Can't evaluate the function\n.");
+    tuple_set(expr, 0, f);
+    // evaluate the args in the local scope
+    object_t t = eval_args(env, expr);
+    // call the function
     RETURN( rha_call(env, t) );
   }
 
@@ -212,10 +222,32 @@ object_t eval(object_t env, object_t expr)
 }
 
 
+object_t eval_args(object_t env, object_t expr)
+{
+  // evaluate args
+  int exprlen = tuple_length(expr);
+  assert(exprlen>0);
+  tuple_tr t = tuple_new(exprlen);
+  tuple_set(t, 0, tuple_get(expr, 0));
+  bool ismacro = rha_ismacro(tuple_get(t, 0));
+  for (int i = 1; i < exprlen; i++) {
+    object_t arg = tuple_get(expr, i);
+    if (!ismacro)
+      arg = eval(env, arg);
+    if (!arg) 
+      rha_error("Could not evaluate argument.\n");
+    tuple_set(t, i, arg);
+  }
+  return t;
+}
+
+
 object_t loc(object_t env, object_t expr)
      // loc == look up or create
      // this function is only used for assignments to dot expressions
 {
+  assert(0==1);  // don't use this function anymore
+
   printdebug("loc(env = %p, expr = %o)\n", (void*)env, expr);
 
   // symbol
@@ -247,6 +279,9 @@ object_t loc(object_t env, object_t expr)
 // replace a slot in one of the parents.
 object_t assigntosymbol(object_t env, object_t lhs, object_t rhs)
 {
+  assert(0==1);  // don't use this function anymore
+
+
   string_t str = symbol_name(lhs);
   if (str[0] == '@') {
     // local variable
@@ -287,37 +322,27 @@ object_t assigntosymbol(object_t env, object_t lhs, object_t rhs)
  *       target = symbol | expr . symbol
  */
 
-object_t assign(object_t env, object_t lhs, object_t rhs)
+object_t assign(object_t env, object_t scope, object_t lhs, object_t rhs)
+// 'scope' and 'rhs' will be evaluated in 'env'
+// 'lhs' will be created in 'scope'
+//
+// there are two cases:
+// (i)    x = 17       // assign new symbol
+// (ii)   f(x) = 17    // adding a case to a function
 {
-  printdebug("assign(env = %p, lhs = %o, rhs = %o)\n", 
-	     (void*)env, lhs, rhs);
-  object_t savedenv = env;
+  printdebug("assign(env = %p, scope = %o, lhs = %o, rhs = %o)\n", 
+	     (void*)env, scope, lhs, rhs);
 
-  // Simple assignements: symb = rhs
-  if (HAS_TYPE(symbol, lhs)) 
-    return assigntosymbol(env, lhs, eval(env, rhs));
-
-  // dotted assignment: expr . symb = rhs
-  if (iscallof(op_dot_sym, lhs)) {
-    env = loc(env, tuple_get(lhs, 1));
-    return object_assign(env, tuple_get(lhs, 2), eval(savedenv, rhs));
+  if (HAS_TYPE(symbol, lhs)) {
+    // always local to 'scope'
+    scope = eval(env, scope);
+    return object_assign(scope, lhs, eval(env, rhs));
   }
-
   // Function-call like assignments: expr() = rhs
   else if (HAS_TYPE(tuple, lhs)) {
     object_t target = tuple_get(lhs, 0);
 
     //print("Looking at target %o\n", target);
-
-    // subcase:  (expr . symb) () = rhs
-    if(iscallof(op_dot_sym, target)) {
-      env = loc(env, tuple_get(target, 1));
-      target = tuple_get(target, 2);
-    }
-    else if(!HAS_TYPE(symbol, target)) {
-      // subcase: f() () = rhs
-      target = eval(env, target);
-    }
 
     if (!HAS_TYPE(symbol, target)) {
       rha_error("Cannot assign to \"%o\"\n", target);
@@ -325,18 +350,19 @@ object_t assign(object_t env, object_t lhs, object_t rhs)
 
     // now,
     // target: should be a symbol describing the name,
-    //    env: should point to the object in which to assign target,
-    //    lhs: contains the call expression
+    // scope: should point to the object in which to assign target,
+    // lhs: contains the call expression
 
     //print("assigning %o to %o in %o\n", rhs, target, env);
 
     // if the object exists, use rha_calldef, else,
     // define a new function
-    object_t o = rha_lookup(env, target);
+    scope = eval(env, scope);
+    object_t o = rha_lookup(scope, target);
     if(!o || !rha_calldefable(o)) {
       int tlen = tuple_length(lhs);
-      function_tr fn = function_new(lhs, tlen-1, rhs, savedenv);
-      return assigntosymbol(env, target, fn);
+      function_tr fn = function_new(lhs, tlen-1, rhs, env);
+      return object_assign(scope, target, fn);
     }
     else {
       // call calldef slot. In this case, we evaluate the "argument variables"
@@ -344,8 +370,8 @@ object_t assign(object_t env, object_t lhs, object_t rhs)
       // it evaluated, right?
       lhs = tuple_shiftfirst(lhs);
       for(int i = 0; i < tuple_length(lhs); i++)
-	tuple_set(lhs, i, eval(savedenv, tuple_get(lhs, i)));
-      return rha_calldef(o, lhs, eval(savedenv, rhs));
+	tuple_set(lhs, i, eval(env, tuple_get(lhs, i)));
+      return rha_calldef(o, lhs, eval(env, rhs));
     }
   }
   else {

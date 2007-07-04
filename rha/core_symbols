@@ -1,8 +1,8 @@
 // e.g.  'if' is a prule (parse rule); 'op_if' is a function/macro
 dot		.
 op_dot		op.
-nobinddot	.!
-op_nobinddot	op.!
+//nobinddot	.!
+//op_nobinddot	op.!
 quest		?
 op_quest	op?
 fn		fn
@@ -20,8 +20,6 @@ op_for_iterator	op_for_iterator
 op_for_cstyle	op_for_cstyle
 return		return
 op_return	op_return
-deliver		deliver
-op_deliver	op_deliver
 break		break
 op_break	op_break
 import		import
@@ -60,6 +58,7 @@ semic		semic
 colon		colon
 
 // special objects
+local		local
 from		from
 parent		parent
 this		this

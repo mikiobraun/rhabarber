@@ -57,7 +57,7 @@ BUILTIN(b_and);
 BUILTIN(b_or);
 BUILTIN(b_quote);
 BUILTIN(b_dot);
-BUILTIN(b_nobinddot);
+//BUILTIN(b_nobinddot);
 BUILTIN(b_quest);
 BUILTIN(b_not);
 
@@ -76,8 +76,6 @@ BUILTIN(b_macro);
 BUILTIN(b_prule);
 BUILTIN(b_return);
 BUILTIN(b_op_return);
-BUILTIN(b_deliver);
-BUILTIN(b_op_deliver);
 BUILTIN(b_break);
 BUILTIN(b_op_break);
 BUILTIN(b_do);
@@ -160,7 +158,6 @@ object_t core_stub_init(void)
   ADDBUILTINMACRO(root, "op_for_iterator", b_op_for_iterator);
   ADDBUILTINMACRO(root, "op_for_cstyle", b_op_for_cstyle);
   ADDBUILTIN(root, "op_return", b_op_return);
-  ADDBUILTIN(root, "op_deliver", b_op_deliver);
   ADDBUILTIN(root, "op_break", b_op_break);
   ADDBUILTIN(root, "op_throw", b_op_throw);
   ADDBUILTINMACRO(root, "do", b_do);
@@ -192,6 +189,8 @@ object_t core_stub_init(void)
   object_assign(root, from_sym, ov);
 
   // add binary operators as overloaded functions to root
+  ov = overloaded_new();  object_assign(ov, symbol_new("name"), op_dot_sym);
+  object_assign(root, op_dot_sym, ov); 
   ov = overloaded_new();  object_assign(ov, symbol_new("name"), op_plus_sym);
   object_assign(root, op_plus_sym, ov); 
   ov = overloaded_new();  object_assign(ov, symbol_new("name"), op_minus_sym);
@@ -263,6 +262,7 @@ object_t core_stub_init(void)
   object_assign(root, not_sym,            builtin_new_prule(&b_not, 2.5));
 
   // infix (for terms)
+  object_assign(root, dot_sym,            builtin_new_prule(&b_dot, 0.5));
   object_assign(root, quest_sym,          builtin_new_prule(&b_quest, 2.0));
   object_assign(root, divide_sym,         builtin_new_prule(&b_divide, 3.0));
   object_assign(root, times_sym,          builtin_new_prule(&b_times, 4.0));
@@ -289,7 +289,6 @@ object_t core_stub_init(void)
   // prefix (loosely binding), similar to statements
   object_assign(root, quote_sym,          builtin_new_prule(&b_quote, 10.0));
   object_assign(root, return_sym,         builtin_new_prule(&b_return, 10.0));
-  object_assign(root, deliver_sym,        builtin_new_prule(&b_deliver, 10.0));
   object_assign(root, break_sym,          builtin_new_prule(&b_break, 10.0));
   object_assign(root, throw_sym,          builtin_new_prule(&b_throw, 10.0));
   object_assign(root, import_sym,         builtin_new_prule(&b_import, 10.0));
@@ -324,6 +323,7 @@ object_t resolve_ctrl_prule(tuple_tr in);
 
 #define LEFT_BIND true
 #define RIGHT_BIND false
+BUILTIN(b_dot) { return resolve_infix_prule(in, op_dot_sym, LEFT_BIND); }
 BUILTIN(b_quest) { return resolve_infix_prule(in, op_quest_sym, LEFT_BIND); }
 BUILTIN(b_plus) { return resolve_infix_prule(in, op_plus_sym, LEFT_BIND); }
 BUILTIN(b_minus) { 
@@ -376,7 +376,6 @@ BUILTIN(b_not)     {
   return result;
 }
 BUILTIN(b_return)  { return resolve_prefix_prule(in, op_return_sym); }
-BUILTIN(b_deliver) { return resolve_prefix_prule(in, op_deliver_sym); }
 BUILTIN(b_break)   { return resolve_prefix_prule(in, op_break_sym); }
 BUILTIN(b_throw)   { return resolve_prefix_prule(in, op_throw_sym); }
 BUILTIN(b_import)  { return resolve_prefix_prule(in, op_import_sym); }
@@ -403,8 +402,7 @@ tuple_tr precall(int narg, ...)
     tuple_set(t, i+1, va_arg(ap, object_t));
   va_end(ap);
 
-  if (narg == 1) tuple_set(t, 0, group_sym);
-  else tuple_set(t, 0, tuplefy_sym);
+  tuple_set(t, 0, tuplefy_sym);
 
   return t;
 }
@@ -412,10 +410,10 @@ tuple_tr precall(int narg, ...)
 
 object_t precall1(object_t f, object_t arg1)
 // this will create:
-//     (f (group arg1))
+//     (f (tuplefy_sym arg1))
 // this expression will be converted in a function call by resolve_prules
 {
-  return tuple_make(2, f, tuple_make(2, group_sym, arg1));
+  return tuple_make(2, f, tuple_make(2, tuplefy_sym, arg1));
 }
 
 
@@ -441,7 +439,6 @@ object_t resolve_prefix_prule(tuple_tr in, symbol_tr fs)
 // e.g. \(17+42)    for the backslash
 {
   assert(tuple_length(in)==3);  // the only arg is the parsetree
-  object_t result = 0;
   // the prule symbol must be the first in the parsetree tuple
   symbol_tr ms = tuple_get(in, 1);  // the symbol of the calling prule
   assert(HAS_TYPE(symbol, ms));
@@ -454,20 +451,21 @@ object_t resolve_prefix_prule(tuple_tr in, symbol_tr fs)
   if (!symbol_equal_symbol(ms, t0))
     rha_error("resolve_prefix_prule: first element must be prule symbol.\n");
   if (tlen == 1) {
-    // e.g. return or break or deliver (to finish a function, returning nothing)
-    result = tuple_make(1, fs);
+    // e.g. return or break (to finish a function, returning nothing)
+    return tuple_make(1, fs);
   }
   else if (tlen > 1) {
-    // e.g. return something
-    // remove the first element and create the call to quote-function
+    // e.g. return 17
+    // remove the first element and create the call to e.g. quote-function
     t = tuple_shiftfirst(t);
-    if (tuple_length(t)==1) t = tuple_get(t, 0);
-    result = tuple_make(2, fs, t);
+    if (tuple_length(t)==1) 
+      t = tuple_get(t, 0);
+    return tuple_make(2, fs, t);
   }
   else
     rha_error("resolve_prefix_prule: parse error.\n");
 
-  return result;
+  assert(1==0);
 }
 
 
@@ -640,7 +638,41 @@ BUILTIN(resolve_assign_prule)
 	  case 5: s = op_divide_sym; break;
 	  }
 	  if (s) 
-	    tuple_set(result, 2, precall2(s, tuple_get(result, 1), tuple_get(result, 2)));
+	    tuple_set(result, 2, precall2(s, tuple_get(result, 1),
+					  tuple_get(result, 2)));
+	  // note that assign has three inputs:
+	  //   scope, symbol, value
+	  result = tuple_make(4, tuple_get(result, 0),
+			      local_sym, 
+			      tuple_get(result, 1),
+			      tuple_get(result, 2));
+	  // note that stuff like:
+	  //     a.b = 17
+	  // becomes
+          //     assign_fn(a, b, 17)
+	  // find the right most dot on the LHS
+	  object_t LHS = tuple_get(result, 2);
+	  if (HAS_TYPE(tuple, LHS)) {
+	    int LHSlen = tuple_length(LHS);
+	    for (int j=LHSlen-1; j>=0; j--) {
+	      object_t LHSj = tuple_get(LHS, j);
+	      if (HAS_TYPE(symbol, LHSj) 
+		  && symbol_equal_symbol(LHSj, dot_sym))
+		{
+		  // split the tuple into two
+		  tuple_tr scope = tuple_new(j);
+		  tuple_tr var = tuple_new(LHSlen-j-1);
+		  for (int k=0; k<j; k++)
+		    tuple_set(scope, k, tuple_get(LHS, k));
+		  for (int k=j+1; k<LHSlen; k++)
+		    tuple_set(var, k-j-1, tuple_get(LHS, k));
+		  // replace the default scope and the var
+		  tuple_set(result, 1, scope);
+		  tuple_set(result, 2, var);
+		  break;
+		}
+	    }
+	  }
 	  return result;
 	}
       }
@@ -687,8 +719,10 @@ object_t resolve_ctrl_prule(tuple_tr in)
   assert(HAS_TYPE(symbol, s));
   CHECK_TYPE(tuple, t);
   list_tr code = tuple_to_list(t);
+  // all above prules have at least three parts
   if (list_length(code) < 3) rha_error("resolve_ctrl_prule error 1.\n");
   object_t o = list_pop(code);
+  // all above prules start with a keyword
   if (!HAS_TYPE(symbol, o) || !symbol_equal_symbol(o, s))
     rha_error("resolve_ctrl_prule error 2.\n");
   object_t cond = list_pop(code);
@@ -698,7 +732,7 @@ object_t resolve_ctrl_prule(tuple_tr in)
   if (symbol_equal_symbol(s, if_sym)) {
     // if (cond) code_then
     // if (cond) code_then else code
-    if (!iscallof(group_sym, cond) || tuple_length(cond) != 2)
+    if (!iscallof(tuplefy_sym, cond) || tuple_length(cond) != 2)
       rha_error("Condition for 'if' must be a single expression in brackets.\n");
     cond = tuple_get(cond, 1);
     // check for else
@@ -729,7 +763,7 @@ object_t resolve_ctrl_prule(tuple_tr in)
     else if (lcode == 1) 
       rha_error("catch-block must have catch variable and catch-code.\n");
     object_t catchvar = list_pop(code);  // the catch variable
-    if (!iscallof(group_sym, catchvar) || tuple_length(catchvar) != 2)
+    if (!iscallof(tuplefy_sym, catchvar) || tuple_length(catchvar) != 2)
       rha_error("'catch' must be followed by a single expression (catch variable) in brackets.\n");
     catchvar = tuple_get(catchvar, 1);
     result = tuple_make(4, op_try_sym,
@@ -739,7 +773,7 @@ object_t resolve_ctrl_prule(tuple_tr in)
   }
   else if (symbol_equal_symbol(s, while_sym)) {
     // while (cond) code
-    if (!iscallof(group_sym, cond) || tuple_length(cond) != 2)
+    if (!iscallof(tuplefy_sym, cond) || tuple_length(cond) != 2)
       rha_error("Condition for 'while' must be a single expression in brackets.\n");
     cond = tuple_get(cond, 1);
     // that's it
@@ -756,7 +790,7 @@ object_t resolve_ctrl_prule(tuple_tr in)
       result = tuple_make(5, op_for_cstyle_sym, init, check, update, 
 			  list_solidify(code));
     }
-    else if (iscallof(group_sym, cond) && tuple_length(cond)==2) {
+    else if (iscallof(tuplefy_sym, cond) && tuple_length(cond)==2) {
       // extract element and container
       cond = tuple_get(cond, 1);
       if (tuple_length(cond)>=3) {
@@ -780,9 +814,9 @@ object_t resolve_ctrl_prule(tuple_tr in)
 
     // note that 'cond' are for 'fn' and 'macro' their args
     // do some checks on the args
-    if (iscallof(group_sym, cond)) {
+    if (iscallof(tuplefy_sym, cond)) {
       if (tuple_length(cond)!=2) 
-	rha_error("group_sym must always take exactly one arg.\n");
+	rha_error("tuplefy_sym must always take exactly one arg.\n");
     }
     else if (iscallof(tuplefy_sym, cond)) {
       int clen = tuple_length(cond);
@@ -923,21 +957,6 @@ BUILTIN(b_op_return)
 {
   int nin = tuple_length(in);
   if (nin==2) {
-    frame_jump(FUNCTION_FRAME, tuple_get(in, 1));
-    // never reaches this point
-  }
-  else if (nin==1) {
-    frame_jump(FUNCTION_FRAME, none_obj);
-    // never reaches this point
-  }
-  return 0;
-}
-
-
-BUILTIN(b_op_deliver)
-{
-  int nin = tuple_length(in);
-  if (nin==2) {
     frame_jump(BLOCK_FRAME, tuple_get(in, 1));
     // never reaches this point
   }
@@ -1013,22 +1032,19 @@ BUILTIN(b_do)
 {
   int nin = tuple_length(in);
   if (nin>0) {  
-    // at least one entries, e.g. (do) // returns the empty inner scope
-    // open a new scope which we return or we forget about when this
-    // function ends with 'return'
-    object_t inner = object_clone(env);
+    // at least one entries, e.g. (do) 
+    // returns void or a return value ('return 17')
+    // doesn't open a new scope
     object_t res = none_obj;
 
     begin_frame(BLOCK_FRAME) {
       // evaluate all
       for (int i = 1; i<nin; i++) {
-        eval(inner, tuple_get(in, i));
+        eval(env, tuple_get(in, i));
       }
-      res = inner;
     }
     end_frame(res);
-
-    // finally, return the inner scope (or the 'delivered' object)
+    // return the result, which might be 'none'
     return res;
   }
   return 0;

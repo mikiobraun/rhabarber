@@ -53,7 +53,7 @@ static list_tr getconverters(object_t o);
 static tuple_tr computekeys(tuple_tr in);
 
 static object_t overloaded_vt_call(object_t env, tuple_tr in);
-static void overloaded_vt_bind(object_t env, object_t this);
+//static void overloaded_vt_bind(object_t env, object_t this);
 
 static object_t overloaded_resolve_failed_hook
                 (overloaded_tr ov, object_t env, tuple_tr t);
@@ -74,7 +74,7 @@ void overloaded_init(void)
     overloaded_type  = primtype_new("overloaded", sizeof(struct overloaded_s));
     overloaded_vt = default_vt;
     overloaded_vt.call = overloaded_vt_call;
-    overloaded_vt.bind = overloaded_vt_bind;
+    //    overloaded_vt.bind = overloaded_vt_bind;
 
     primtype_setvt(overloaded_type, &overloaded_vt);
 
@@ -148,11 +148,11 @@ object_t overloaded_vt_call(object_t env, tuple_tr in)
 		_O ov, _O t);
       return 0;
     } 
-    // set the 'this' pointer if existing
-    if (ov->this) {
-      rha_bind(fn, ov->this);
-      ov->this = 0;
-    }
+    //// set the 'this' pointer if existing
+    //if (ov->this) {
+    //  rha_bind(fn, ov->this);
+    //  ov->this = 0;
+    //}
 
     // next time in 'eval': the resolved function will be called
     tuple_set(in, 0, fn);
@@ -167,12 +167,12 @@ object_t overloaded_vt_call(object_t env, tuple_tr in)
 }
 
 
-static 
-void overloaded_vt_bind(object_t ov, object_t this)
-{
-  CHECK(ov);
-  ((overloaded_tr)ov)->this = this;
-}
+//static 
+//void overloaded_vt_bind(object_t ov, object_t this)
+//{
+//  CHECK(ov);
+//  ((overloaded_tr)ov)->this = this;
+//}
 
 //////////////////////////////////////////////////////////////////////
 //

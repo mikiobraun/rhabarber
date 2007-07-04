@@ -52,9 +52,9 @@ void rha_error(const char *fmt, ...)
 void sayhello()
 {
   printf("Delicious rhabarber!\n"
-	 "--RHA has been conceived by Stefan Harmeling and Mikio Braun.\n"
+	 "--The language has been conceived by Stefan Harmeling and Mikio Braun.\n"
 	 "--This interpreter was written by "
-	 "Mikio Braun and Stefan Harmeling, 2005.\n"
+	 "Mikio Braun and Stefan Harmeling, 2005, 2006, 2007.\n"
 	 "This is build $Revision: 324 $\n"
 	 "              "
 	 "$Date: 2006-08-02 02:04:16 +0200 (Wed, 02 Aug 2006) $\n"

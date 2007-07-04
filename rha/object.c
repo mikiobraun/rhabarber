@@ -32,7 +32,7 @@
 #include "list_tr.h"
 #include "function_tr.h"
 #include "plain_tr.h"
-#include "method_tr.h"
+//#include "method_tr.h"
 
 struct symtable;
 
@@ -193,7 +193,7 @@ object_t object_callslot(object_t o, string_t slotname, int narg, ...)
 
   // construct tuple
   tuple_tr t = tuple_new(narg + 1);
-  tuple_set(t, 0, method_new(o, slot));
+  tuple_set(t, 0, slot);
   va_list ap;
   va_start(ap, narg);
   for (int i = 0; i < narg; i++)

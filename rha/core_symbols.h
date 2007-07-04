@@ -32,8 +32,8 @@
 // e.g.  'if' is a prule (parse rule); 'op_if' is a function/macro
 extern symbol_tr dot_sym;
 extern symbol_tr op_dot_sym;
-extern symbol_tr nobinddot_sym;
-extern symbol_tr op_nobinddot_sym;
+//nobinddot	.!
+//op_nobinddot	op.!
 extern symbol_tr quest_sym;
 extern symbol_tr op_quest_sym;
 extern symbol_tr fn_sym;
@@ -51,8 +51,6 @@ extern symbol_tr op_for_iterator_sym;
 extern symbol_tr op_for_cstyle_sym;
 extern symbol_tr return_sym;
 extern symbol_tr op_return_sym;
-extern symbol_tr deliver_sym;
-extern symbol_tr op_deliver_sym;
 extern symbol_tr break_sym;
 extern symbol_tr op_break_sym;
 extern symbol_tr import_sym;
@@ -91,6 +89,7 @@ extern symbol_tr semic_sym;
 extern symbol_tr colon_sym;
 
 // special objects
+extern symbol_tr local_sym;
 extern symbol_tr from_sym;
 extern symbol_tr parent_sym;
 extern symbol_tr this_sym;
@@ -156,8 +155,8 @@ extern symbol_tr postminusminus_sym;
 // e.g.  'if' is a prule (parse rule); 'op_if' is a function/macro
 symbol_tr dot_sym = 0;
 symbol_tr op_dot_sym = 0;
-symbol_tr nobinddot_sym = 0;
-symbol_tr op_nobinddot_sym = 0;
+//nobinddot	.!
+//op_nobinddot	op.!
 symbol_tr quest_sym = 0;
 symbol_tr op_quest_sym = 0;
 symbol_tr fn_sym = 0;
@@ -175,8 +174,6 @@ symbol_tr op_for_iterator_sym = 0;
 symbol_tr op_for_cstyle_sym = 0;
 symbol_tr return_sym = 0;
 symbol_tr op_return_sym = 0;
-symbol_tr deliver_sym = 0;
-symbol_tr op_deliver_sym = 0;
 symbol_tr break_sym = 0;
 symbol_tr op_break_sym = 0;
 symbol_tr import_sym = 0;
@@ -215,6 +212,7 @@ symbol_tr semic_sym = 0;
 symbol_tr colon_sym = 0;
 
 // special objects
+symbol_tr local_sym = 0;
 symbol_tr from_sym = 0;
 symbol_tr parent_sym = 0;
 symbol_tr this_sym = 0;
@@ -280,8 +278,8 @@ symbol_tr postminusminus_sym = 0;
   // e.g.  'if' is a prule (parse rule); 'op_if' is a function/macro
   dot_sym = symbol_new(".");
   op_dot_sym = symbol_new("op.");
-  nobinddot_sym = symbol_new(".!");
-  op_nobinddot_sym = symbol_new("op.!");
+  //nobinddot	.!
+  //op_nobinddot	op.!
   quest_sym = symbol_new("?");
   op_quest_sym = symbol_new("op?");
   fn_sym = symbol_new("fn");
@@ -299,8 +297,6 @@ symbol_tr postminusminus_sym = 0;
   op_for_cstyle_sym = symbol_new("op_for_cstyle");
   return_sym = symbol_new("return");
   op_return_sym = symbol_new("op_return");
-  deliver_sym = symbol_new("deliver");
-  op_deliver_sym = symbol_new("op_deliver");
   break_sym = symbol_new("break");
   op_break_sym = symbol_new("op_break");
   import_sym = symbol_new("import");
@@ -339,6 +335,7 @@ symbol_tr postminusminus_sym = 0;
   colon_sym = symbol_new("colon");
 
   // special objects
+  local_sym = symbol_new("local");
   from_sym = symbol_new("from");
   parent_sym = symbol_new("parent");
   this_sym = symbol_new("this");
@@ -404,8 +401,8 @@ symbol_tr postminusminus_sym = 0;
   // e.g.  'if' is a prule (parse rule); 'op_if' is a function/macro
   object_assign(root, symbol_new("dot_sym"), dot_sym);
   object_assign(root, symbol_new("op_dot_sym"), op_dot_sym);
-  object_assign(root, symbol_new("nobinddot_sym"), nobinddot_sym);
-  object_assign(root, symbol_new("op_nobinddot_sym"), op_nobinddot_sym);
+  //nobinddot	.!
+  //op_nobinddot	op.!
   object_assign(root, symbol_new("quest_sym"), quest_sym);
   object_assign(root, symbol_new("op_quest_sym"), op_quest_sym);
   object_assign(root, symbol_new("fn_sym"), fn_sym);
@@ -423,8 +420,6 @@ symbol_tr postminusminus_sym = 0;
   object_assign(root, symbol_new("op_for_cstyle_sym"), op_for_cstyle_sym);
   object_assign(root, symbol_new("return_sym"), return_sym);
   object_assign(root, symbol_new("op_return_sym"), op_return_sym);
-  object_assign(root, symbol_new("deliver_sym"), deliver_sym);
-  object_assign(root, symbol_new("op_deliver_sym"), op_deliver_sym);
   object_assign(root, symbol_new("break_sym"), break_sym);
   object_assign(root, symbol_new("op_break_sym"), op_break_sym);
   object_assign(root, symbol_new("import_sym"), import_sym);
@@ -463,6 +458,7 @@ symbol_tr postminusminus_sym = 0;
   object_assign(root, symbol_new("colon_sym"), colon_sym);
 
   // special objects
+  object_assign(root, symbol_new("local_sym"), local_sym);
   object_assign(root, symbol_new("from_sym"), from_sym);
   object_assign(root, symbol_new("parent_sym"), parent_sym);
   object_assign(root, symbol_new("this_sym"), this_sym);

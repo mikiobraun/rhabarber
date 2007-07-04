@@ -49,7 +49,7 @@
 #include "symbol_tr.h"
 #include "plain_tr.h"
 #include "utils.h"
-#include "thisproxy_tr.h"
+//#include "thisproxy_tr.h"
 
 struct function_s
 {
@@ -57,10 +57,9 @@ struct function_s
   int numargs;   // number of arguments
   tuple_tr args; // names of the arguments
   object_t code; // code of the function
-  object_t env;  // syntactic environment
-  
-  object_t this; // the receiver of the next call
-
+  object_t env;  // syntactic environment, the scope where the
+		 // function is defined
+  //object_t this; // the receiver of the next call
   double priority; // if priority>0 the function is a prule
   bool ismacro;    // if true, the args are not evaluated
 };
@@ -71,7 +70,7 @@ primtype_t function_type = 0;
 struct rhavt function_vt;
 
 static object_t    function_vt_call(object_t env, tuple_tr in);
-static void        function_vt_bind(object_t f, object_t this);
+//static void        function_vt_bind(object_t f, object_t this);
 static double      function_vt_priority(object_t f);
 static bool        function_vt_ismacro(object_t f);
 
@@ -84,7 +83,7 @@ void function_init()
     function_type = primtype_new("function", sizeof(struct function_s));
     function_vt = default_vt;
     function_vt.call = &function_vt_call;
-    function_vt.bind = &function_vt_bind;
+    //    function_vt.bind = &function_vt_bind;
     function_vt.priority = &function_vt_priority;
     function_vt.ismacro = &function_vt_ismacro;
     primtype_setvt(function_type, &function_vt);
@@ -216,8 +215,8 @@ string_t function_to_string(function_tr f)
   s = string_plus_string(s, ") and code ");
   object_t code = f->code;
   if (code) s = string_plus_string(s, object_to_string(code));
-  if (f->this) 
-    s = string_plus_string(s, sprint(" bound to object %o", f->this));
+  //  if (f->this) 
+  //     s = string_plus_string(s, sprint(" bound to object %o", f->this));
   s = string_plus_string(s, "]");
   return s;
 }
@@ -242,11 +241,11 @@ bool function_vt_ismacro(object_t o)
 }
 
 
-void function_vt_bind(object_t o, object_t this)
-{
-  CHECK(o);
-  ((function_tr)o)->this = this;
-}
+//void function_vt_bind(object_t o, object_t this)
+//{
+//  CHECK(o);
+//  ((function_tr)o)->this = this;
+//}
 
 /* call a function written in rhabarber
  * 
@@ -270,18 +269,11 @@ object_t function_vt_call(object_t env, tuple_tr t)
     return 0;
   }
 
-  // construct the activation record
-  object_t ar;
-  if (f->this) {
-    object_t tp = thisproxy_new(f->this);
-    ar = plain_new();
-    object_setparent(ar, tp);
-    object_setparent(tp, f->env);
-    printdebug("Bound to %x:%o\n", f->this, f->this);
-    f->this = 0;
-  }
-  else
-    ar = object_clone(f->env);
+  // function are the only way to open a new scope
+  // construct the local scope (also called activation record)
+  object_t local = object_clone(f->env);   // local.parent = "defining scope"
+  object_assign(local, local_sym, local);  // local.local  = local
+  object_assign(local, this_sym, env);     // local.this   = "calling scope"
 
   // call fctcall hook
   t = eval_fctcall_hook(env, t);
@@ -293,18 +285,14 @@ object_t function_vt_call(object_t env, tuple_tr t)
     // note that the scope of the args is only env, not "this" as well
     object_t arg = tuple_get(t, i+1);
     assert(arg);
-    object_assign(ar, o, arg);
+    object_assign(local, o, arg);
   }
-  object_assign(ar, symbol_new("recur"), f);  // for anonymous recursion
-  object_assign(ar, env_sym, env);   // to call eval
+  object_assign(local, symbol_new("recur"), f);  // for anonymous recursion
 
   if (f->code) {
     // execute the code of the par
-    object_t res = none_obj;
-    begin_frame(FUNCTION_FRAME)
-      res = eval(ar, f->code);
-    end_frame(res);
-    return res;
+    object_t retval = eval(local, f->code);
+    return retval ? retval : none_obj;
   }
   rha_error("function has no code.\n");
   return 0;

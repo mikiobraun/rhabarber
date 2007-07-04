@@ -32,7 +32,6 @@ char *escexpand(char *);
 ":-"                    return ENTAILS;
 \\			{ yylval = quote_sym;          return SYMBOL; } /* single back slash */
 "."                     { yylval = dot_sym;            return SYMBOL; }
-".!"                    { yylval = nobinddot_sym;      return SYMBOL; }
 "?"                     { yylval = quest_sym;          return SYMBOL; }
 "="                     { yylval = assign_sym;         return SYMBOL; }
 "+="                    { yylval = plusassign_sym;     return SYMBOL; }

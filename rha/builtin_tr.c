@@ -18,7 +18,7 @@ struct builtin_s
 {
   RHA_OBJECT;
   builtinfct_t *fn;
-  object_t *this;
+  //  object_t *this;
   double priority;  // used for prules, large priority iff low precendence
   bool ismacro;     // flag that decides whether args should be evaluated
 };
@@ -29,7 +29,7 @@ primtype_t builtin_type = 0;
 struct rhavt builtin_vt;
 
 static object_t builtin_vt_call(object_t env, tuple_tr in);
-static void builtin_vt_bind(object_t env, object_t obj);
+//static void builtin_vt_bind(object_t env, object_t obj);
 static double builtin_vt_priority(object_t obj);
 static bool builtin_vt_ismacro(object_t obj);
 
@@ -39,7 +39,7 @@ void builtin_init(void)
     builtin_type = primtype_new("builtin", sizeof(struct builtin_s));
     builtin_vt = default_vt;
     builtin_vt.call = builtin_vt_call;
-    builtin_vt.bind = builtin_vt_bind;
+    //    builtin_vt.bind = builtin_vt_bind;
     builtin_vt.priority = builtin_vt_priority;
     builtin_vt.ismacro = builtin_vt_ismacro;
     primtype_setvt(builtin_type, &builtin_vt);
@@ -53,7 +53,7 @@ builtin_tr builtin_new(builtinfct_t fn)
 {
   builtin_tr b = object_new(builtin_type);
   b->fn = fn;
-  b->this = 0;
+  //b->this = 0;
   b->priority = 0.0;
   b->ismacro = false;
   return b;
@@ -83,24 +83,24 @@ object_t builtin_vt_call(object_t env, tuple_tr t)
   builtin_tr b = tuple_get(t, 0);
   assert(HAS_TYPE(builtin, b));
 
-  // save this pointer first
-  object_t this = b->this;
-  b->this = 0;
+  //// save this pointer first
+  //object_t this = b->this;
+  //b->this = 0;
 
   // call fctcall_hook
   t = eval_fctcall_hook(env, t);
 
   // call builtin-fct
-  object_t retval = (*b->fn)(this, env, t);
+  object_t retval = (*b->fn)(env, t);
   return retval ? retval : none_obj;
 }
 
 
-void builtin_vt_bind(object_t obj, object_t this)
-{
-  CHECK(obj);
-  ((builtin_tr)obj)->this = this;
-}
+//void builtin_vt_bind(object_t obj, object_t this)
+//{
+//  CHECK(obj);
+//  ((builtin_tr)obj)->this = this;
+//}
 
 
 double builtin_vt_priority(object_t obj)
