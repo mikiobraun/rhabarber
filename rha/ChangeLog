@@ -1,5 +1,11 @@
 2007-07-04  Stefan Harmeling  <harmeli@Muensterland.local>
 
+	* eval.h (frame_jump): removed the following bug:  typing 'return'
+	at the rhabarber prompt leads to an uncaught exception.  The
+	reason was, that 'return' calls frame_jump() which empties the
+	whole stack, including the initial frame which comes from the
+	read-eval-loop, which is able to catch the bug.
+
 	* prule.c, core.c: rewrote parts to simplify and implement the
 	grammar and syntax in rhasyn20.pdf.  Simplifications include:
 	+ only function calls need to be dealt with specially

@@ -43,6 +43,13 @@ extern int frame_tos;                           // frame counter
       _result = frame_value[frame_tos--];                       \
     }
 
+
+// note the 'frame_tos = 0;'
+// this is assuming that there is some outer try-catch-block in the
+// read-eval-loop in rhabarber.c
+// without 'frame_tos = 0;' we would miss an exception that is
+// generated in frame_jump by rha_error if we for instance just type
+// 'return' at the prompt.
 #define frame_jump(_type, _expr) do {                           \
     if ((_type) == TRY_FRAME)                                   \
       while ( (frame_tos >= 0)                                  \
@@ -52,6 +59,7 @@ extern int frame_tos;                           // frame counter
             && ((_type) < frame_type[frame_tos]) )              \
 	      frame_tos--;                                      \
     if ((frame_tos < 0) || ((_type) != frame_type[frame_tos])) {\
+      frame_tos = 0;                                            \
       if ((_type == BLOCK_FRAME))                               \
         rha_error("No block to 'return' from.\n");              \
       else if ((_type == LOOP_FRAME))                           \
