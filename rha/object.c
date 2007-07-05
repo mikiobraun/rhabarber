@@ -80,6 +80,7 @@ object_t object_clone(object_t parent)
      // e.g. list(int) is not a subtype of list
 {
   if (object_primtype(parent) != plain_type) {
+    // ???couldn't we inherit it?
     rha_warning("Cloning object of primitive type, content and "
 		"primtype will be not inherited.\n");
   }

@@ -10,7 +10,8 @@
 	at the rhabarber prompt leads to an uncaught exception.  The
 	reason was, that 'return' calls frame_jump() which empties the
 	whole stack, including the initial frame which comes from the
-	read-eval-loop, which is able to catch the bug.
+	read-eval-loop, which is able to catch the bug. Was solved by
+	adding a line 'frame_tos = 0' to the macro in eval.h.
 
 	* prule.c, core.c: rewrote parts to simplify and implement the
 	grammar and syntax in rhasyn20.pdf.  Simplifications include:
@@ -34,6 +35,10 @@
 	* OBSOLETE: method_tr, thisproxy_tr
 
 	TODO:
+	* simplify rha_lookup?  can we get rid of it and always use
+	object_lookup?  do we still need object_replace?  I think now
+	rhabarber is more explicite and thus it is not needed anymore.
+	* dicts and lists should also act like function.
 	* add the prules for
 	          if x>5 then 19;
 	          while x>5 do { ... };
