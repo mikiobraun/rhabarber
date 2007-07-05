@@ -291,8 +291,11 @@ object_t function_vt_call(object_t env, tuple_tr t)
 
   if (f->code) {
     // execute the code of the par
-    object_t retval = eval(local, f->code);
-    return retval ? retval : none_obj;
+    object_t res = none_obj;
+    begin_frame(FUNCTION_FRAME)
+      res = eval(local, f->code);
+    end_frame(res);
+    return res;
   }
   rha_error("function has no code.\n");
   return 0;

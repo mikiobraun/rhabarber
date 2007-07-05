@@ -43,13 +43,17 @@ help(x) = {
 
 // an iterator to use integers in for loops
 fromto(start, end) = {
-  @iter() = {
-    @value = start;
-    @limit = end;
-    @current() = value;
-    @next() = value = value + 1;
-    @done() = value >= limit;
-  }
+  i = new(); // the iterator
+  i.iter() = {
+    j = new();
+    j.value = start;
+    j.limit = end;
+    j.current() = value;
+    j.next() = value = value + 1;
+    j.done() = value >= limit;
+    return j;
+  };
+  return i;
 };
 
 // or, if you're counting up from zero anyway...
@@ -58,11 +62,12 @@ upto(b) = fromto(0, b);
 // iterators for list and tuple
 list.iter() = listit.new(this);
 tuple.iter() = {
-  @i = 0;
-  @t = this;
-  @current() = t.get(i);
-  @next() = i = i + 1;
-  @done() = i >= t.length();
+  j = new;
+  j.i = 0;
+  j.t = this;
+  j.current() = t.get(i);
+  j.next() = i = i + 1;
+  j.done() = i >= t.length();
 };
 
 // More stuff for containers...

@@ -36,7 +36,7 @@
 
 object_t loc(object_t env, object_t expr);
 object_t assign(object_t env, object_t scope, object_t sym, object_t rhs);
-object_t eval_args(object_t env, object_t expr);
+object_t eval_args(object_t env, object_t fn, object_t expr);
 object_t eval_lookupfailed_hook(object_t, object_t);
 object_t eval_fctcall_hook(object_t env, object_t tuple);
 
@@ -54,9 +54,9 @@ object_t resolve_eval_list(object_t env, list_tr exprlist)
   object_t o = 0;
   object_t expr;
   list_foreach(expr, exprlist) {
-    fprint(stdout, "before resolving prules: %o\n", expr);
+    //fprint(stdout, "before resolving prules: %o\n", expr);
     o = resolve_prules(env, expr);
-    fprint(stdout, "after resolving prules:  %o\n", o);
+    //fprint(stdout, "after resolving prules:  %o\n", o);
     o = eval(env, o);
   }
   return o;
@@ -129,7 +129,9 @@ object_t eval(object_t env, object_t expr)
       // do the look up in lhs
       rhs = rha_lookup(lhs, rhs);
       if (!rhs)
-	rha_error("No slot with name \"%o\" in object %o.\n", rhs, lhs);
+	rha_error("No slot with name \"%o\" in object %o.\n",
+		  tuple_get(expr, 2),
+		  tuple_get(expr, 1));
       RETURN( rhs );
     }
     else {
@@ -140,9 +142,9 @@ object_t eval(object_t env, object_t expr)
       if (!HAS_TYPE(symbol, rhs0))
 	rha_error("RHS of dots are not evaluated only looked up.\n");
       // evaluate the symbol in 'lhs'
-      tuple_set(rhs, 0, eval(lhs, rhs0));
+      object_t fn = eval(lhs, rhs0);
       // evaluate the args in the local scope
-      object_t t = eval_args(env, rhs);
+      object_t t = eval_args(env, fn, rhs);
       // call the function in 'lhs' which is 'this'
       RETURN( rha_call(lhs, t) );
     }
@@ -210,9 +212,8 @@ object_t eval(object_t env, object_t expr)
     object_t f = eval(env, tuple_get(expr, 0));
     if (!f)
       rha_error("Can't evaluate the function\n.");
-    tuple_set(expr, 0, f);
     // evaluate the args in the local scope
-    object_t t = eval_args(env, expr);
+    object_t t = eval_args(env, f, expr);
     // call the function
     RETURN( rha_call(env, t) );
   }
@@ -222,14 +223,14 @@ object_t eval(object_t env, object_t expr)
 }
 
 
-object_t eval_args(object_t env, object_t expr)
+object_t eval_args(object_t env, object_t fn, object_t expr)
 {
   // evaluate args
   int exprlen = tuple_length(expr);
   assert(exprlen>0);
   tuple_tr t = tuple_new(exprlen);
-  tuple_set(t, 0, tuple_get(expr, 0));
-  bool ismacro = rha_ismacro(tuple_get(t, 0));
+  tuple_set(t, 0, fn);
+  bool ismacro = rha_ismacro(fn);
   for (int i = 1; i < exprlen; i++) {
     object_t arg = tuple_get(expr, i);
     if (!ismacro)

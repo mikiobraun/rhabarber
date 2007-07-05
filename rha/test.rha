@@ -44,6 +44,8 @@ x == 21
 a * a == 16
 
 "hierarchical slot access"
+x = new();
+x.y = new();
 (x.y.z = 42) == 42
 x.y.z      == 42
 
@@ -91,14 +93,13 @@ g(5) == 20
 
 "methods"
 x = 1;
+a = new();
 a.x = 2;
-a.f(y) = y+x;
-a.g(x) = x*f(x);
+a.f(y) = y + this.x;
+a.g(x) = x * this.f(x);
 x         == 1
 a.f(2)    == 4
 a.g(3)    == 15
-h = a.f;              // a method
-h(17)     == 19
 
 "blocks/scoping"
 x = 17;
@@ -112,7 +113,7 @@ f(x) = { x = 2*x; return x };
 f(42) == 84
 
 "object literal"
-konto(x) = {@s = x; @deposit(x) = s = s+x; @withdraw(x) = s = s-x; @saldo() = s};
+konto(x) = {k = new(); k.s = x; k.deposit(x) = this.s = this.s+x; k.withdraw(x) = this.s = this.s-x; k.saldo() = this.s; return k};
 stefan = konto(100);
 mikio = konto(200);
 stefan.saldo() == 100
@@ -123,22 +124,24 @@ mikio.saldo() == 200
 
 "this"
 a = 17;
-x = 42;
 a.x = 19;
 a.f() = this;
-g() = x;
+g() = this.x;
 a.g = g;
 a.f() == 17
 a.g() == 19
+b = new();
 b.g = g;
+b.x = 42;
 b.g() == 42
 
 
 "bank account/closures"
-account.new(x) = { @a = clone(this); a.s = x; return a; };
-account.deposit(x) = s = s + x;
-account.withdraw(x) = s = s - x;
-account.saldo() = s;
+account = new();
+account.new(x) = { a = clone(this); a.s = x; return a };
+account.deposit(x) = this.s = this.s + x;
+account.withdraw(x) = this.s = this.s - x;
+account.saldo() = this.s;
 alice = account.new(100);
 bob = account.new(200);
 alice.saldo() == 100
@@ -146,7 +149,8 @@ bob.saldo() == 200
 alice.deposit(50);
 alice.saldo() == 150
 bob.saldo() == 200
-baccount = {@new(x) = { @a = clone(this); a.s = x; return a; }; @deposit(x) = s = s + x; @withdraw(x) = s = s - x; @saldo() = s; };
+
+baccount = { ba = new(); ba.new(x) = { a = clone(this); a.s = x; return a }; ba.deposit(x) = this.s = this.s + x; ba.withdraw(x) = this.s = this.s - x; ba.saldo() = this.s; deliver(ba)};
 alice = baccount.new(100);
 bob = baccount.new(200);
 alice.saldo() == 100
@@ -168,10 +172,11 @@ z+1.0 == complex.new(2.0, 2.0);
 
 "lookup"
 a = 5;
+b = new();
 b.c = 6;
 f(x) = a + x;
-b.f(x) = c + x + a;
-b.g(x) = { @n = 4; return c + x + a + n; };
+b.f(x) = this.c + x + a;
+b.g(x) = { n = 4; return this.c + x + a + n };
 d = clone(b);
 d.c = 7;
 a + 3 == 8 // == 5 + 3
@@ -183,10 +188,11 @@ d.g(3) == 19 // == 7 + 3 + 5 + 4
 
 "see which scope comes first"
 x = 1;
+a = new();
 a.x = 2;
 a.f(x) = x;
-a.g() = x;
-a.h() = { @x = 4; return x; };
+a.g() = this.x;
+a.h() = { x = 4; return x };
 f() = x;
 f() == 1 // global x
 a.g() == 2 // x as member of a
@@ -196,10 +202,11 @@ a.h() == 4 // x as local variable
 "local arguments in function call"
 id(x) = x;
 f(x) = id(x);
-g(x) = { @n = x; return id(n); };
+g(x) = { n = x; return id(n); };
+a = new();
 a.f(x) = id(x);
-a.g(x) = { @n = x; return id(n); };
-a.h(x) = { @n = x; return f(n); };
+a.g(x) = { n = x; return id(n); };
+a.h(x) = { n = x; return f(n); };
 f(1) == 1 // argument in function call
 g(2) == 2 // local var in fn call
 a.f(3) == 3 // arg in fc, memfct
@@ -207,8 +214,8 @@ a.g(4) == 4 // loc var in fc, memfct
 a.h(5) == 5 // loc var in fc, called fct also memfct
 
 "local slots"
-// @ local slots
-a = { @x = 17; @y = 42; @f() = y; };
+// local slots
+a = { newa = new(); a.x = 17; a.y = 42; a.f() = this.y; deliver a};
 a.x == 17
 a.f() == 42
 
@@ -218,17 +225,17 @@ x++ == 1
 ++x == 3
 x-- == 3
 --x == 1
-a = (17, 42);
-i=0;
-a(i) = ++i;
-a(0) == 1
-a(1) == 42
+//a = (17, 42);
+//i=0;
+//a(i) = ++i;
+//a(0) == 1
+//a(1) == 42
 
 "return and break and deliver"
-f(x) = { @a=3; if (a<x) { a=a+x; return a } else return 100 };
+f(x) = { a=3; if (a<x) { a=a+x; return a } else return 100 };
 f(5) == 8
 f(1) == 100
-x = { @a=1; @b=42; deliver 17 };
+x = { a=1; b=42; deliver 17 };
 x == 17;
 x = 1;
 while (x<30) if (x++==25) break;
@@ -238,10 +245,8 @@ x == 30
 
 "for loop"
 x = 17;
-for (@x in fromto(3, 6)) print(x);
-x == 17 // because x was local in 'for'
 for (x in fromto(3, 6)) print(x);
-x == 5  // now x is not local in 'for'
+x == 17 // because x was local in 'for'
 for (x in fromto(56, 78)) print(x);
 x == 77 // after the last round we have x==77 which is different from C
 f(x) = { x++; deliver x };

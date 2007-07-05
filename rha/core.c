@@ -76,6 +76,8 @@ BUILTIN(b_macro);
 BUILTIN(b_prule);
 BUILTIN(b_return);
 BUILTIN(b_op_return);
+BUILTIN(b_deliver);
+BUILTIN(b_op_deliver);
 BUILTIN(b_break);
 BUILTIN(b_op_break);
 BUILTIN(b_do);
@@ -158,6 +160,7 @@ object_t core_stub_init(void)
   ADDBUILTINMACRO(root, "op_for_iterator", b_op_for_iterator);
   ADDBUILTINMACRO(root, "op_for_cstyle", b_op_for_cstyle);
   ADDBUILTIN(root, "op_return", b_op_return);
+  ADDBUILTIN(root, "op_deliver", b_op_deliver);
   ADDBUILTIN(root, "op_break", b_op_break);
   ADDBUILTIN(root, "op_throw", b_op_throw);
   ADDBUILTINMACRO(root, "do", b_do);
@@ -236,6 +239,7 @@ object_t core_stub_init(void)
 /*   list_append(keywords, throw_sym); */
 /*   list_append(keywords, fn_sym); */
 /*   list_append(keywords, return_sym); */
+/*   list_append(keywords, deliver_sym); */
 /*   list_append(keywords, break_sym); */
 /*   list_append(keywords, import_sym); */
 /*   list_append(keywords, prule_sym); */
@@ -289,6 +293,7 @@ object_t core_stub_init(void)
   // prefix (loosely binding), similar to statements
   object_assign(root, quote_sym,          builtin_new_prule(&b_quote, 10.0));
   object_assign(root, return_sym,         builtin_new_prule(&b_return, 10.0));
+  object_assign(root, deliver_sym,        builtin_new_prule(&b_deliver, 10.0));
   object_assign(root, break_sym,          builtin_new_prule(&b_break, 10.0));
   object_assign(root, throw_sym,          builtin_new_prule(&b_throw, 10.0));
   object_assign(root, import_sym,         builtin_new_prule(&b_import, 10.0));
@@ -376,6 +381,7 @@ BUILTIN(b_not)     {
   return result;
 }
 BUILTIN(b_return)  { return resolve_prefix_prule(in, op_return_sym); }
+BUILTIN(b_deliver) { return resolve_prefix_prule(in, op_deliver_sym); }
 BUILTIN(b_break)   { return resolve_prefix_prule(in, op_break_sym); }
 BUILTIN(b_throw)   { return resolve_prefix_prule(in, op_throw_sym); }
 BUILTIN(b_import)  { return resolve_prefix_prule(in, op_import_sym); }
@@ -814,16 +820,7 @@ object_t resolve_ctrl_prule(tuple_tr in)
 
     // note that 'cond' are for 'fn' and 'macro' their args
     // do some checks on the args
-    if (iscallof(tuplefy_sym, cond)) {
-      if (tuple_length(cond)!=2) 
-	rha_error("tuplefy_sym must always take exactly one arg.\n");
-    }
-    else if (iscallof(tuplefy_sym, cond)) {
-      int clen = tuple_length(cond);
-      if (clen==2)
-	rha_error("Don't use (x,) singleton form for a single argument.  Use (x).\n");
-    }
-    else 
+    if (!iscallof(tuplefy_sym, cond))
       rha_error("args must be a tuple of symbols or a single grouped symbol.\n");
     if (symbol_equal_symbol(s, fn_sym)) 
       tuple_set(cond, 0, op_fn_sym);
@@ -954,6 +951,21 @@ BUILTIN(b_op_if)  // will be if_fn in rhabarber
 
 
 BUILTIN(b_op_return)
+{
+  int nin = tuple_length(in);
+  if (nin==2) {
+    frame_jump(FUNCTION_FRAME, tuple_get(in, 1));
+    // never reaches this point
+  }
+  else if (nin==1) {
+    frame_jump(FUNCTION_FRAME, none_obj);
+    // never reaches this point
+  }
+  return 0;
+}
+
+
+BUILTIN(b_op_deliver)
 {
   int nin = tuple_length(in);
   if (nin==2) {

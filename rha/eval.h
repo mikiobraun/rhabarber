@@ -23,9 +23,10 @@ extern object_t eval_currentlocation;
 extern jmp_buf frame_stack[FRAME_MAX_NESTING];  // the stacked frames
 extern object_t frame_value[FRAME_MAX_NESTING]; // the value to return
 extern int frame_type[FRAME_MAX_NESTING];       // the type of the frame
-#define BLOCK_FRAME    0
+#define FUNCTION_FRAME 0
 #define LOOP_FRAME     1
-#define TRY_FRAME      2
+#define BLOCK_FRAME    2
+#define TRY_FRAME      3
 extern int frame_tos;                           // frame counter
 // Note, that the frames would be better stored in a dynamic data
 // structure, because recursion can easily reach the maximum nesting.
@@ -60,10 +61,12 @@ extern int frame_tos;                           // frame counter
 	      frame_tos--;                                      \
     if ((frame_tos < 0) || ((_type) != frame_type[frame_tos])) {\
       frame_tos = 0;                                            \
-      if ((_type == BLOCK_FRAME))                               \
-        rha_error("No block to 'return' from.\n");              \
+      if ((_type == FUNCTION_FRAME))                            \
+        rha_error("No function to 'return' from.\n");           \
       else if ((_type == LOOP_FRAME))                           \
         rha_error("No loop to 'break'.\n");                     \
+      else if ((_type == BLOCK_FRAME))                          \
+        rha_error("No block to 'return' from.\n");              \
       else if ((_type == TRY_FRAME)) {                          \
         fprintf(stderr, "Rhabarber failed to catch exception.\n"); \
         exit(EXIT_FAILURE);                                     \

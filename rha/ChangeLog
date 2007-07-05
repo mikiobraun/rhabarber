@@ -1,3 +1,9 @@
+2007-07-05  Stefan Harmeling  <harmeli@Muensterland.local>
+
+	* added 'deliver' back in.  It terminate the current block. Note
+	that 'return' terminates the current function which is slightly
+	different.  Often 'return' is fine.
+
 2007-07-04  Stefan Harmeling  <harmeli@Muensterland.local>
 
 	* eval.h (frame_jump): removed the following bug:  typing 'return'
@@ -53,6 +59,13 @@
 	* get rid of the function_new_prule stuff, prules should be just
 	ordinary functions.
 	* do we need eval_fctcall_hook()?
+	* mysteriour bug: try:
+	      a = new()
+	      a.z
+	this raise an exception but it says:
+              Caught exception: error: No slot with name "z" in object z.
+	instead of "in object a", see eval.c.
+	* iterators and for loops are broken...
 
 	
 2006-08-03  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>

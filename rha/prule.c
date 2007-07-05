@@ -62,7 +62,9 @@ object_t resolve_prules(object_t env, object_t expr)
     // (tuplefy_sym, x)
     // this means that expr wasn't used as arguments, thus the
     // tuplefy_sym was just for grouping purposes
-    assert(tuple_length(expr)==2);
+    if (tuple_length(expr)!=2)
+      // (17, 42)  -> parse error
+      rha_error("Arg list without function, parse error\n");
     return resolve_prules(env, tuple_get(expr, 1));
   }
   else {

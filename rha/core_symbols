@@ -20,6 +20,8 @@ op_for_iterator	op_for_iterator
 op_for_cstyle	op_for_cstyle
 return		return
 op_return	op_return
+deliver		deliver
+op_deliver	op_deliver
 break		break
 op_break	op_break
 import		import
