@@ -15,4 +15,5 @@ typedef int int_t;
 typedef double real_t;
 typedef double *mat_t;
 
-typedef list_t list_t;  // what is the list_t?
+typedef ??? list_t;  // what is the list_t?
+typedef ??? tuple_t;

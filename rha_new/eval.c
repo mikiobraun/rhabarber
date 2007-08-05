@@ -3,11 +3,43 @@
 #include "object.h"
 
 
-object_t eval(object_t env, object_t o)
+object_t eval(object_t env, object_t expr)
 {
-  rha_error("not yet");
+  ENTER;
+  //print("eval(env = %p, expr = %o)\n", env, expr);
+
+  if (HAS_TYPE(symbol, expr))
+    // symbols
+    RETURN( lookup(env, expr) );
+  else if (HAS_TYPE(tuple, expr))
+    // function call
+    RETURN( call_fun(env, expr) );
+  else
+    // literal
+    RETURN( expr );
 }
 
+
+object_t call_fun(object_t env, tuple_t expr)
+{
+  int tlen = tuple_length(expr);
+  assert(tlen>0);  // otherwise repair 'rhaparser.y'
+  object_t f = tuple_get(expr, 0);
+  // deal with quote_fn
+  if (HAS_TYPE(f, symbol) && symbol_equal_symbol(quote_sym, f)) {
+    assert(tlen==2);  // otherwise repair 'rhaparser.y'
+    return tuple_get(expr, 1);
+  }
+  // a usual function
+  for (int i=0; i<tlen; i++)
+    tuple_set(expr, i, eval(env, tuple_get(expr, i)));
+  if (HAS_TYPE(tuple_get(expr, 0), fn_t))
+    // the function is implemented in C
+    return call_C_fun(tlen, expr);
+  else
+    // the function is pure rhabarber
+    return call_rha_fun(tlen, expr);
+}
 
 
 void *get_n_check(object_t o, int_t ptype)
@@ -17,30 +49,31 @@ void *get_n_check(object_t o, int_t ptype)
   return raw(o);
 }
 
-object_t call_C_fun(fn_t f, int narg, ...) 
+
+object_t call_C_fun(int tlen, tuple_t t) 
 {
   // more arguments needed?  increase here!
-  void *arg0, *arg1, *arg2, *arg3, *arg4, *arg5;
-
-  // do the <stdarg.h> magic
-  va_list ap;
-  va_start(ap, narg);
-  if (narg>0) arg0 = get_n_check(va_arg(ap, object_t), f->argtypes[0]);
-  if (narg>1) arg1 = get_n_check(va_arg(ap, object_t), f->argtypes[1]);
-  if (narg>2) arg2 = get_n_check(va_arg(ap, object_t), f->argtypes[2]);
-  if (narg>3) arg3 = get_n_check(va_arg(ap, object_t), f->argtypes[3]);
-  if (narg>4) arg4 = get_n_check(va_arg(ap, object_t), f->argtypes[4]);
-  if (narg>5) arg5 = get_n_check(va_arg(ap, object_t), f->argtypes[5]);
-  if (narg>6) rha_error("not implemented: too many argument");
-  va_end(ap);
+  int maxnargs = 5;
+  void *args[maxnargs];
+  narg = tlen-1;
+  assert(narg<=maxnargs);
+  fn_t f = tuple_get(t, 0);
+  for (int i=0; i<narg; i++)
+    args[i] = get_n_check(tuple_get(t, i+1), f->argtypes[0]);
 
   // finally call 'f'
   switch (narg) {
   case 0: return ((void *(*)()) f->code)();
-  case 1: return ((void *(*)(void *)) f->code)(arg0);
-  case 2: return ((void *(*)(void *, void *)) f->code)(arg0, arg1);
-  case 3: return ((void *(*)(void *, void *, void *)) f->code)(arg0, arg1, arg2);
-  case 4: return ((void *(*)(void *, void *, void *, void *)) f->code)(arg0, arg1, arg2, arg3);
-  case 5: return ((void *(*)(void *, void *, void *, void *, void *)) f->code)(arg0, arg1, arg2, arg3, arg4);
+  case 1: return ((void *(*)(void *)) f->code)(args[0]);
+  case 2: return ((void *(*)(void *, void *)) f->code)(args[0], args[1]);
+  case 3: return ((void *(*)(void *, void *, void *)) f->code)(args[0], args[1], args[2]);
+  case 4: return ((void *(*)(void *, void *, void *, void *)) f->code)(args[0], args[1], args[2], args[3]);
+  case 5: return ((void *(*)(void *, void *, void *, void *, void *)) f->code)(args[0], args[1], args[2], args[3], args[4]);
   }
+}
+
+
+object_t call_rha_fun(int narg, object_t expr)
+{
+  // not yet
 }

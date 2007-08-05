@@ -35,8 +35,12 @@ extern rhafun object_t   clone(object_t parent);
 extern rhafun int_t      ptype(object_t); // primtype
 extern        void      *raw(object_t o);
 
+// 'lookup'
+//     z          -> lookup(local, \z);
+//     a.x        -> lookup(a, \x);
 extern rhafun object_t   lookup(object_t env, symbol_t s);
-// will be accessed via '='
+
+// 'assign_fn'
 //     x = 17;    ->  assign_fn(local_sym, \x, 17);
 //     a.x = 42;  ->  assign_fn(a, \x, 42);
 extern rhafun object_t   assign_fn(object_t obj, symbol_t s, object_t newobj);
