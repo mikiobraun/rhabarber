@@ -5859,7 +5859,11 @@ fi
 
 
 
-for ac_header in inttypes.h libintl.h limits.h malloc.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h
+
+
+
+
+for ac_header in inttypes.h libintl.h limits.h malloc.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h cblas.h clapack.h Python.h gc.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then

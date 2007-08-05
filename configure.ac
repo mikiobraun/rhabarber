@@ -64,7 +64,7 @@ AC_CHECK_LIB([m],[sin])
 # these are taken from autoscan
 AC_FUNC_ALLOCA
 AC_HEADER_STDC
-AC_CHECK_HEADERS([inttypes.h libintl.h limits.h malloc.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([inttypes.h libintl.h limits.h malloc.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h cblas.h clapack.h Python.h gc.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
