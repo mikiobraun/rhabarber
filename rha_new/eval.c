@@ -1,6 +1,7 @@
 
 #include <stdarg.h>
 #include "object.h"
+#include "datatypes.h"
 
 
 object_t eval(object_t env, object_t expr)
