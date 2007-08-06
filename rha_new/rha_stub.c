@@ -4,8 +4,10 @@
 #include "rha_stub.h"
 #include "rha_stub_utils.h"
 
-void rha_stub_init(object_t root)
+object_t rha_stub_init()
 {
+  object_t root = new();
+
   // add datatypes
   add_datatype(root, object_sym, OBJECT_T);
   add_datatype(root, int_sym, INT_T);

@@ -37,3 +37,5 @@ void add_function(object_t root, symbol_t s, int rettype, void *code, int narg, 
   // finally add it to root
   assign(root, s, o);
 }
+
+void saferaw(

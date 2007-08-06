@@ -17,9 +17,7 @@
 // stuff for the perl magic
 #define rhafun
 
-/*
- * The rhabarber object
- */
+/* the rhabarber object */
 struct rha_object {
   int_t ptype;            // primtype (ptype): internal type 
                           // that describes the content
@@ -33,7 +31,7 @@ struct rha_object {
 extern rhafun object_t   new();
 extern rhafun object_t   clone(object_t parent);
 extern rhafun int_t      ptype(object_t); // primtype
-extern        void       setptype(object_t, int_t)
+extern        void       setptype(object_t, int_t);
 extern        void      *raw(object_t o);
 extern        void       setraw(object_t, void *);
 
@@ -56,19 +54,5 @@ extern rhafun void_t     subscribe(object_t dest, object_t interface);
 
 extern rhafun object_t   ls(object_t o);
 extern rhafun object_t   lsall(object_t o);
-
-
-/* macro for explicitly casting to an object_t.
- * This is necessary for passing objects through "..." safely
- */
-#define _O	(object_t)
-
-// inlines
-#ifndef OBJECT_IMPLEMENTATION
-#define INLINE extern inline
-#include "object_inline.c"
-#undef INLINE
-#endif
-
 
 #endif

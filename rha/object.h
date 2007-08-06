@@ -3,8 +3,8 @@
  *
  * This file is part of rhabarber.
  *
- * (c) 2005 by Mikio Braun,        Stefan Harmeling,
- *             mikio@first.fhg.de  harmeling@gmail.com
+ * (c) 2005-2007 by Mikio Braun          & Stefan Harmeling
+ *                  mikiobraun@gmail.com   harmeling@gmail.com
  *                             
  */
 
@@ -33,23 +33,13 @@ struct symbol_s;  // declaration to avoid "symbol_tr.h"
  * The rhabarber object
  */
 struct rha_object {
-  struct rha_object *parent; // parent pointer
-  primtype_t ptype;          // internal type that describes the content
-  struct symtable *table;    // symbol table of slots
-};
-typedef void *object_t;
+  struct symtable *slots;    // symbol table of slots
 
-/*
- * Macro used to declare the head for new builtin-types.
- *
- * If you define a new type, use this as the first entry:
- *
- * struct mytype {
- *    RHA_OBJECT;
- *    ... my entries ...
- * };
- */
-#define RHA_OBJECT struct rha_object rha_object
+  int id;
+  void *content;
+};
+
+typedef void *object_t;
 
 /*
  * Functions

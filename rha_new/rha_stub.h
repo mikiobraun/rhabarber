@@ -10,4 +10,4 @@
 // the intializer
 // its implementation in 'rha_stub.c' will be automatically generated
 // by 'rha_stub.pl'
-extern void rha_stub_init(object_t root);
+extern object_t rha_stub_init();
