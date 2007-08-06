@@ -33,8 +33,9 @@ struct rha_object {
 extern rhafun object_t   new();
 extern rhafun object_t   clone(object_t parent);
 extern rhafun int_t      ptype(object_t); // primtype
-extern        void       setptype(object_t, int_t);
+extern        void       setptype(object_t, int_t)
 extern        void      *raw(object_t o);
+extern        void       setraw(object_t, void *);
 
 // 'lookup'
 //     z          -> lookup(local, \z);

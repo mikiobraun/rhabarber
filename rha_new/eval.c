@@ -49,13 +49,14 @@ object_t call_fun(object_t env, tuple_t expr)
 
 void *get_and_check(object_t o, int_t ptype)
 {
+  if (!o) rha_error("undefined primtype object\n");
   if (primtype(o) != ptype)
     rha_error("argument primtype missmatch\n");
   return raw(o);
 }
 
 
-object_t call_C_fun(int tlen, tuple_t t) 
+void *call_C_fun(int tlen, tuple_t t) 
 {
   // more arguments needed?  increase here!
   int maxnargs = 5;
@@ -64,7 +65,7 @@ object_t call_C_fun(int tlen, tuple_t t)
   assert(narg<=maxnargs);
   fn_t f = tuple_get(t, 0);
   for (int i=0; i<narg; i++)
-    args[i] = get_n_check(tuple_get(t, i+1), f->argtypes[0]);
+    args[i] = get_n_check(tuple_get(t, i+1), f->argtypes[i]);
 
   // finally call 'f'
   // note that f->code must be properly casted before calling.

@@ -2,8 +2,6 @@
 #include "object.h"
 #include "eval.h"
 #include "core.h"
-
-// plug-ins (add more!)
 #include "bool_fn.h"
 #include "int_fn.h"
 #include "real_fn.h"

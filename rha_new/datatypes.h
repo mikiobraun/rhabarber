@@ -9,9 +9,9 @@ typedef void *object_t;
 typedef int symbol_t;
 typedef struct { 
   int_t rettype;     // return type (currently not used)
-  void *code;        // pointer to the code
+  void  *code;       // pointer to the code
   int_t narg;        // number of arguments
-  int_t *argtypes[]; // array of the arg types
+  int_t *argtypes;   // array of the arg types
 } fn_t;
 
 typedef bool bool_t;
