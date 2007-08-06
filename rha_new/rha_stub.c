@@ -13,6 +13,29 @@ object_t rha_stub_init()
   add_datatype(root, int_sym, INT_T);
 
   // add functions
-  add_function(root, new_sym, OBJECT_T, (void *) new, 0);
-  add_function(root, clone_sym, OBJECT_T, (void *) clone, 1, OBJECT_T);
+  add_function(root, b_new_sym, OBJECT_T, (void *) new, 0);
+  add_function(root, b_clone_sym, OBJECT_T, (void *) clone, 1, OBJECT_T);
+}
+
+
+int_t int_plus(int_t, int_t);
+object_t b_int_plus(tuple_t t) {
+  object_t o = new();
+  setptype(o, INT_T);
+  setraw(o, (void *) &int_plus(*RAW(int_t, tuple_get(t, 1)), *RAW(int_t, tuple_get(t, 2))));
+  return o;
+}
+
+
+object_t eval(object_t env, object_t expr);
+object_t b_eval(tuple_t t) {
+  return eval(tuple_get(t, 1), tuple_get(t, 2));
+}
+
+void_t tuple_set(tuple_t t, int_t i, object_t);
+object_t b_tuple_set(tuple_t t) {
+  object_t o = new();
+  setptype(o, VOID_T);
+  tuple_set(*RAW(tuple_t, tuple_get(t, 1)), *RAW(tuple_t, tuple_get(t, 2)), tuple_get(t, 3));
+  return o;
 }

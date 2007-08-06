@@ -70,47 +70,29 @@ object_t call_fun(object_t env, tuple_t expr)
 }
 
 
-void *get_and_check(object_t o, int_t pt)
+void check(object_t o, int_t pt)
 {
-  if (!o) rha_error("undefined primtype object\n");
-  if (ptype(o) != pt)
-    rha_error("argument primtype missmatch\n");
-  return raw(o);
+  if (ptype(o) != pt) rha_error("argument primtype missmatch\n");
+  if (!raw(o)) rha_error("undefined primtype object\n");
 }
 
 
 void *call_C_fun(int tlen, tuple_t t) 
 {
-  // more arguments needed?  increase here!
-  void *args[MAXNARGS];
   int narg = tlen-1;
-  assert(narg<=MAXNARGS);
-  fn_t *f = raw(tuple_get(t, 0));
+  // extract the function
+  object_t t0 = tuple_get(t, 0);
+  assert(t0 && ptype(t0)==FN_T);
+  fn_t *f = RAW(t0);
+  // is the argument number correct?
+  if (f->narg != narg)
+    rha_error("wrong number of arguments\n");
+  // check the types of the args
   for (int i=0; i<narg; i++)
-    args[i] = get_and_check(tuple_get(t, i+1), f->argtypes[i]);
+    check(tuple_get(t, i+1), f->argtypes[i]);
 
   // finally call 'f'
-  // note that f->code must be properly casted before calling.
-  // If someone knows a less ugly way without restricting the total
-  // number of arg please let Mikio and Stefan know!
-  switch (narg) {
-  case 0: 
-    return ((void *(*)()) f->code)();
-  case 1: 
-    return ((void *(*)(void *)) f->code)(args[0]);
-  case 2: 
-    return ((void *(*)(void *, void *)) f->code)(args[0], args[1]);
-  case 3: 
-    return ((void *(*)(void *, void *, void *)) f->code)(args[0], args[1], args[2]);
-  case 4: 
-    return ((void *(*)(void *, void *, void *, void *)) f->code)(args[0], args[1], args[2], args[3]);
-  case 5: 
-    return ((void *(*)(void *, void *, void *, void *, void *)) f->code)(args[0], args[1], args[2], args[3], args[4]);
-  }
-
-  double x = 8.0;
-
-  void *p2 = * (void**) &x;
+  return f(t);
 }
 
 
