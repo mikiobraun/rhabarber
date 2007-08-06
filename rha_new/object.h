@@ -33,6 +33,7 @@ struct rha_object {
 extern rhafun object_t   new();
 extern rhafun object_t   clone(object_t parent);
 extern rhafun int_t      ptype(object_t); // primtype
+extern        void       setptype(object_t, int_t);
 extern        void      *raw(object_t o);
 
 // 'lookup'
@@ -40,17 +41,17 @@ extern        void      *raw(object_t o);
 //     a.x        -> lookup(a, \x);
 extern rhafun object_t   lookup(object_t env, symbol_t s);
 
-// 'assign_fn'
-//     x = 17;    ->  assign_fn(local_sym, \x, 17);
-//     a.x = 42;  ->  assign_fn(a, \x, 42);
-extern rhafun object_t   assign_fn(object_t obj, symbol_t s, object_t newobj);
+// 'assign'
+//     x = 17;    ->  assign(local_sym, \x, 17);
+//     a.x = 42;  ->  assign(a, \x, 42);
+extern rhafun object_t   assign(object_t obj, symbol_t s, object_t newobj);
 extern rhafun void_t     rmslot(object_t, symbol_t s);
 extern rhafun void_t     print(object_t);
 
 // will be called by prule 'include'
-extern rhafun void_t     include_fn(object_t dest, object_t source);
+extern rhafun void_t     include(object_t dest, object_t source);
 // will be called by prule 'subscribe'
-extern rhafun void_t     subscribe_fn(object_t dest, object_t interface);
+extern rhafun void_t     subscribe(object_t dest, object_t interface);
 
 extern rhafun object_t   ls(object_t o);
 extern rhafun object_t   lsall(object_t o);

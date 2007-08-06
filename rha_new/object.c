@@ -82,9 +82,19 @@ int_t ptype(object_t o)
   return OBJ(o)->ptype;
 }
 
+void setptype(object_t o, int_t id)
+{
+  OBJ(o)->ptype = id;
+}
+
 void *raw(object_t o)
 {
   return OBJ(o)->raw;
+}
+
+void setraw(object_t o, void *raw)
+{
+  OBJ(o)->raw = raw;
 }
 
 
