@@ -11,11 +11,13 @@
 
 // CORESYMBOLS
 extern symbol_t quote_sym;
+extern symbol_t this_sym;
+extern symbol_t local_sym;
 
 // forward declarations
 object_t call_fun(object_t env, tuple_t expr);
 void *call_C_fun(int tlen, tuple_t t);
-object_t call_rha_fun(int narg, tuple_t expr);
+object_t call_rha_fun(object_t this, int narg, tuple_t expr);
 
 // some code for bug-tracking
 object_t eval_currentlocation = 0;
@@ -66,7 +68,7 @@ object_t call_fun(object_t env, tuple_t expr)
     return call_C_fun(tlen, expr);
   else
     // the function is pure rhabarber
-    return call_rha_fun(tlen, expr);
+    return call_rha_fun(env, tlen, expr);
 }
 
 
@@ -95,9 +97,29 @@ void *call_C_fun(int tlen, tuple_t t)
   return f(t);
 }
 
-
-object_t call_rha_fun(int narg, tuple_t expr)
+/* Call a rhabarber function 
+ *
+ * Checks if the number of argument matches, constructs the local
+ * environment of the callee and executes the function
+ */
+object_t call_rha_fun(object_t this, int nargs, tuple_t expr)
 {
-  // not yet
-  // this should be done via some slot access
+  object_t fn = tuple_get(expr, 0);
+
+  // check if number of args is the same
+  int_t fnargs = *(int_t*) 
+    get_and_check(lookup(fn, symbol_new("numargs")), SYMBOL_T);
+
+  if (nargs != fnargs) {
+    rha_error("Function called with wrong number of arguments");
+  }
+
+  // construct the inner function
+  object_t local = new();
+  assign(local, local_sym, local);
+  assign(local, this_sym, this);
+
+  // execute the function body
+  object_t fnbody = lookup(fn, symbol_new("fnbody"));
+  return eval(local, fnbody);
 }

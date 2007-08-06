@@ -12,6 +12,7 @@ typedef void void_t;
 typedef int symbol_t;
 typedef int int_t;
 typedef double real_t;
+typedef char *string_t;
 
 typedef struct rha_object *object_t;
 
@@ -45,5 +46,6 @@ typedef struct gtuple *tuple_t;
 // for example, raw(int_t, o)
 #define RAW(tp, o) ((tp*)(o->raw))
 #define ASSERT_RAW_NONZERO(o) assert(raw(o) != 0)
+
 #endif
 
