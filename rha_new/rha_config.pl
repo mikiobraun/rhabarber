@@ -13,9 +13,10 @@
 ### step 1: preliminary stuff ###
 #################################
 
-$dfile = "rha_config.d";
-$hfile = ".h";
-$cfile = "$basename.c";
+$conf_d = "rha_config.d";
+$init_h = "rha_init_test.h";
+$init_c = "rha_init_test.c";
+$type_h = "rha_types_test.h";
 
 $debug = shift @ARGV;
 
@@ -23,23 +24,25 @@ $debug = shift @ARGV;
 $id = '[a-zA-Z_]\w*';
 
 # load def file into one string
-open(DFILE, "<$dfile") or die "Can't open $dfile: $!";
-@input = <DFILE>;
-close(DFILE);
+open(FILE, "<$conf_d") or die "Can't open $conf_d: $!";
+@input = <FILE>;
+close(FILE);
 $input = join '', @input;
 
 # parse the def file
-$input =~ /\/\/INCLUDES(.*)\/\/DATATYPES(.*)/s;
-$includes = $1;
+$input =~ /\/\/INCLUDES(.*)\/\/DATATYPES(.*)\/\/SYMBOLS(.*)/s;
+$includes  = $1;
 $datatypes = $2;
+$symbols   = $3;
 
-# disect the includes
+# (1) disect the includes
 @incls = $includes =~ /include\s+\"($id)\.h\"/gox;
 
-# disect the typedefs
-while ($datatypes =~ /\s+\*?($id)\s*;\s*(\/\/.*)?\s*(typedef|\s)/gox) {
-    print $1, "\n";
-}
+# (2) disect the typedefs
+@tdefs = $datatypes =~ /rhabarber\s+($id)/gox;
+
+# (3) disect the symbols
+@symbs = $symbols =~ 
 exit;
 
 ###############################################

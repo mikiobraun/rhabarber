@@ -2,7 +2,6 @@
 // 'rha_config.pl'
 
 #include "rha_init.h"
-#include "rha_init_utils.h"
 
 // (1) symbols
 symbol_t quote_sym;
@@ -38,24 +37,27 @@ object_t b_tuple_set(tuple_t t) {
 
 // (4) init
 
+#define ADD_TYPE(ttt, TTT)   // ttt ## _t		\
+  object_t ttt ## _obj = new();\
+  ttt ## _proto = new();\
+  setptype(ttt ## _proto, TTT ## _T);\
+  assign(ttt ## _obj, proto_sym, ttt ## _proto);\
+  assign(root, ttt ## _sym, ttt ## _obj);
+
+#define ADD_FUNCTION()
+
 object_t rha_init()
 {
-  object_t global = new();
+  object_t root = new();
 
-  // add prototypes
-  int_proto = new();
+  // (4.1) add datatypes and prototypes
+  ADD_TYPE(int, INT);
 
-  // add datatypes
-  object_t int_obj = new();
-  int_proto = new();
-  setptype(int_proto, INT_T);
-  assign(int_obj, proto_sym, int_proto);
-  assign(global, int_sym, int_obj);
-
-  // add functions
+  // (4.2) add functions
   object_t modules = new();
-  assign(global, modules_sym, modules);
+  assign(root, modules_sym, modules);
   
+  // object.h
   add_function(modules, b_new_sym, OBJECT_T, (void *) new, 0);
   add_function(modules, b_clone_sym, OBJECT_T, (void *) clone, 1, OBJECT_T);
 }
