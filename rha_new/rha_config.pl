@@ -120,20 +120,24 @@ foreach $module (@mods) {
 	}
 	else { 
 	    $ucfntype = uc($fntype);
-	    $init_c_functions .= "  return wrap($ucfntype, $fncall_str);\n"
+	    $ifntype = substr($fntype, 0, -2);
+	    $init_c_functions .= "  return wrap($ucfntype, $ifntype"."_proto, $fncall_str);\n"
 	}
 	$init_c_functions .= "}\n";
 
 	# add code to add functions
 	$init_c_add_modules .= "  add_function(module, $fnname"."_sym";
-	$init_c_add_modules .= ", (void *) $fnname, $narg";
+	$init_c_add_modules .= ", (void *) b_$fnname, $narg";
 	foreach $item (@args) {
 	    $ucitem = uc($item);
 	    $init_c_add_modules .= ", $ucitem";
 	}
 	$init_c_add_modules .= ");\n";
     }
+    $init_c_add_modules .= "\n";
 }
+chop($init_c_add_modules);
+chop($init_c_add_modules);
 
 # after creating a list of symbols, now the easy stuff
 create_ids();
@@ -164,8 +168,9 @@ exit();
 sub create_ids {
     $id = 1;
     foreach $item (@tdefs) {
+	if ($id>1) { $type_h_ids .= ",\n" }
 	$ucitem = uc($item);
-	$type_h_ids .= "#define $ucitem"."_t $id \n";
+	$type_h_ids .= "  $ucitem"."_t = $id";
 	$id++;
     }
 }
@@ -209,13 +214,18 @@ sub create_type_h {
 
 #ifndef DATATYPES_H
 #define DATATYPES_H
+
+// (0) use the keyword to mark the datatypes and function in
+// 'rha_config.d' that should be accessible in Rhabarber
 #define $keyword
 
 // (1) datatypes which are available in Rhabarber
 $type_h_types
-
 // (2) primtype id for all types
+enum ptypes {
 $type_h_ids
+}
+
 
 // (3) prototypes for all types
 $type_h_prototypes
@@ -248,7 +258,7 @@ sub create_init_h {
 
 // (1) includes
 $init_h_modules
-// (2) 
+// (2) 'rha_init' creates the whole object hierarchy
 extern object_t rha_init();
 ENDE
 }
@@ -329,6 +339,7 @@ $init_c_init_typeobjects
   // (5.4) create the void object
   void_obj = new();
   assign(root, void_sym, void_obj);
+
 
   // (5.5) add modules (MODULES, functions)
   object_t modules = new();

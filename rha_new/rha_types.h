@@ -4,6 +4,9 @@
 
 #ifndef DATATYPES_H
 #define DATATYPES_H
+
+// (0) use the keyword to mark the datatypes and function in
+// 'rha_config.d' that should be accessible in Rhabarber
 #define _rha_
 
 // (1) datatypes which are available in Rhabarber
@@ -21,15 +24,16 @@ typedef double _rha_ real_t;
 typedef double * _rha_ mat_t;
 
 
-
 // (2) primtype id for all types
-#define SYMBOL_T_t 1 
-#define OBJECT_T_t 2 
-#define FN_T_t 3 
-#define BOOL_T_t 4 
-#define INT_T_t 5 
-#define REAL_T_t 6 
-#define MAT_T_t 7 
+enum ptypes {
+  SYMBOL_T_t = 1,
+  OBJECT_T_t = 2,
+  FN_T_t = 3,
+  BOOL_T_t = 4,
+  INT_T_t = 5,
+  REAL_T_t = 6,
+  MAT_T_t = 7
+}
 
 
 // (3) prototypes for all types
@@ -56,6 +60,8 @@ extern object_t mat_obj;
 // (5) symbols
 extern symbol_t object_sym;
 extern symbol_t int_sym;
+extern symbol_t bool_fn_sym;
+extern symbol_t bool_not_sym;
 extern symbol_t include_sym;
 extern symbol_t ls_sym;
 extern symbol_t void_sym;
@@ -75,8 +81,10 @@ extern symbol_t symbol_sym;
 extern symbol_t proto_sym;
 extern symbol_t bool_sym;
 extern symbol_t subscribe_sym;
+extern symbol_t bool_equal_sym;
 extern symbol_t lookup_sym;
 extern symbol_t ptype_sym;
+extern symbol_t bool_to_string_sym;
 extern symbol_t assign_sym;
 extern symbol_t mat_sym;
 

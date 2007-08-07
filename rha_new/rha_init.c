@@ -9,6 +9,8 @@
 // (1) symbols
 symbol_t object_sym;
 symbol_t int_sym;
+symbol_t bool_fn_sym;
+symbol_t bool_not_sym;
 symbol_t include_sym;
 symbol_t ls_sym;
 symbol_t void_sym;
@@ -28,8 +30,10 @@ symbol_t symbol_sym;
 symbol_t proto_sym;
 symbol_t bool_sym;
 symbol_t subscribe_sym;
+symbol_t bool_equal_sym;
 symbol_t lookup_sym;
 symbol_t ptype_sym;
+symbol_t bool_to_string_sym;
 symbol_t assign_sym;
 symbol_t mat_sym;
 
@@ -92,6 +96,15 @@ object_t b_lsall(tuple_t t) {
 object_t b_eval(tuple_t t) {
   return eval(tuple_get(t, 1), tuple_get(t, 2));
 }
+object_t b_bool_equal(tuple_t t) {
+  return wrap(BOOL_T, bool_proto, bool_equal(*RAW(bool_t, tuple_get(t, 1)), *RAW(bool_t, tuple_get(t, 2))));
+}
+object_t b_bool_not(tuple_t t) {
+  return wrap(BOOL_T, bool_proto, bool_not(*RAW(bool_t, tuple_get(t, 1))));
+}
+object_t b_bool_to_string(tuple_t t) {
+  return wrap(STRING_T, string_proto, bool_to_string(*RAW(bool_t, tuple_get(t, 1))));
+}
 
 
 // (5) init
@@ -146,6 +159,8 @@ object_t rha_init()
   // (5.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
   object_sym = symbol_new("object");
   int_sym = symbol_new("int");
+  bool_fn_sym = symbol_new("bool_fn");
+  bool_not_sym = symbol_new("bool_not");
   include_sym = symbol_new("include");
   ls_sym = symbol_new("ls");
   void_sym = symbol_new("void");
@@ -165,8 +180,10 @@ object_t rha_init()
   proto_sym = symbol_new("proto");
   bool_sym = symbol_new("bool");
   subscribe_sym = symbol_new("subscribe");
+  bool_equal_sym = symbol_new("bool_equal");
   lookup_sym = symbol_new("lookup");
   ptype_sym = symbol_new("ptype");
+  bool_to_string_sym = symbol_new("bool_to_string");
   assign_sym = symbol_new("assign");
   mat_sym = symbol_new("mat");
 
@@ -185,24 +202,30 @@ object_t rha_init()
   void_obj = new();
   assign(root, void_sym, void_obj);
 
+
   // (5.5) add modules (MODULES, functions)
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;
 
   ADD_MODULE(object);
-  add_function(module, new_sym, (void *) new, 0);
-  add_function(module, clone_sym, (void *) clone, 1, OBJECT_T);
-  add_function(module, ptype_sym, (void *) ptype, 1, OBJECT_T);
-  add_function(module, lookup_sym, (void *) lookup, 2, OBJECT_T, SYMBOL_T);
-  add_function(module, assign_sym, (void *) assign, 3, OBJECT_T, SYMBOL_T, OBJECT_T);
-  add_function(module, rmslot_sym, (void *) rmslot, 2, OBJECT_T, SYMBOL_T);
-  add_function(module, print_sym, (void *) print, 1, OBJECT_T);
-  add_function(module, include_sym, (void *) include, 2, OBJECT_T, OBJECT_T);
-  add_function(module, subscribe_sym, (void *) subscribe, 2, OBJECT_T, OBJECT_T);
-  add_function(module, ls_sym, (void *) ls, 1, OBJECT_T);
-  add_function(module, lsall_sym, (void *) lsall, 1, OBJECT_T);
-  ADD_MODULE(eval);
-  add_function(module, eval_sym, (void *) eval, 2, OBJECT_T, OBJECT_T);
+  add_function(module, new_sym, (void *) b_new, 0);
+  add_function(module, clone_sym, (void *) b_clone, 1, OBJECT_T);
+  add_function(module, ptype_sym, (void *) b_ptype, 1, OBJECT_T);
+  add_function(module, lookup_sym, (void *) b_lookup, 2, OBJECT_T, SYMBOL_T);
+  add_function(module, assign_sym, (void *) b_assign, 3, OBJECT_T, SYMBOL_T, OBJECT_T);
+  add_function(module, rmslot_sym, (void *) b_rmslot, 2, OBJECT_T, SYMBOL_T);
+  add_function(module, print_sym, (void *) b_print, 1, OBJECT_T);
+  add_function(module, include_sym, (void *) b_include, 2, OBJECT_T, OBJECT_T);
+  add_function(module, subscribe_sym, (void *) b_subscribe, 2, OBJECT_T, OBJECT_T);
+  add_function(module, ls_sym, (void *) b_ls, 1, OBJECT_T);
+  add_function(module, lsall_sym, (void *) b_lsall, 1, OBJECT_T);
 
+  ADD_MODULE(eval);
+  add_function(module, eval_sym, (void *) b_eval, 2, OBJECT_T, OBJECT_T);
+
+  ADD_MODULE(bool_fn);
+  add_function(module, bool_equal_sym, (void *) b_bool_equal, 2, BOOL_T, BOOL_T);
+  add_function(module, bool_not_sym, (void *) b_bool_not, 1, BOOL_T);
+  add_function(module, bool_to_string_sym, (void *) b_bool_to_string, 1, BOOL_T);
 }

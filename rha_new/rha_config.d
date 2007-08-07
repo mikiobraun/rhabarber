@@ -4,6 +4,7 @@
 //MODULES
 #include "object.h"
 #include "eval.h"
+#include "bool_fn.h"
 
 //TYPES
 #include <stdbool.h>

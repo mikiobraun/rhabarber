@@ -5,7 +5,8 @@
 // (1) includes
 #include "object.h"
 #include "eval.h"
+#include "bool_fn.h"
 
 
-// (2) 
+// (2) 'rha_init' creates the whole object hierarchy
 extern object_t rha_init();
