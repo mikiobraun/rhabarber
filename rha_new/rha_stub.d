@@ -10,22 +10,22 @@
 #include "real_fn.h"
 #include "mat_fn.h"
 
+
+
 //DATATYPES
 #include <stdbool.h>
-typedef void void_t;
-typedef void *object_t;
-typedef int symbol_t;
+typedef void rhabarber void_t;
+typedef void* rhabarber object_t;
+typedef int rhabarber symbol_t;
 typedef struct { 
   int_t rettype;     // return type (currently not used)
   void *code;        // pointer to the code
   int_t narg;        // number of arguments
   int_t *argtypes[]; // array of the arg types
-} fn_t;
-typedef bool bool_t;
-typedef int int_t;
-typedef double real_t;
-typedef double *mat_t;
+} rhabarber fn_t;
+typedef bool rhabarber bool_t;
+typedef int rhabarber int_t;
+typedef double rhabarber real_t;
+typedef double * rhabarber mat_t;
 
-typedef ??? list_t;  // what is the list_t?
-typedef ??? tuple_t;
 
