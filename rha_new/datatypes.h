@@ -41,6 +41,9 @@ typedef struct gtuple *tuple_t;
 #define MAT_T    7
 #define TUPLE_T   8
 
+//////////////////////////
+extern object_t int_proto;
+
 // get the raw data and convert
 //
 // for example, raw(int_t, o)

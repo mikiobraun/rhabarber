@@ -4,16 +4,6 @@
 #include "alloc.h"
 #include "rha_stub_utils.h"
 
-void add_datatype(object_t root, symbol_t s, int_t type)
-{
-  // create a new object
-  object_t o = new();
-  setptype(o, type);
-  
-  // finally add it to root
-  assign(root, s, o);
-}
-
 void add_function(object_t root, symbol_t s, int rettype, void *code, int narg, ...)
 {
   // create a new object

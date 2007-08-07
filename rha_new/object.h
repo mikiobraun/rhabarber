@@ -29,6 +29,7 @@ struct rha_object {
  * Functions
  */
 extern rhafun object_t   new();
+extern        object_t   new_t();
 extern rhafun object_t   clone(object_t parent);
 extern rhafun int_t      ptype(object_t); // primtype
 extern        void       setptype(object_t, int_t);

@@ -44,6 +44,13 @@ object_t new()
   return o;
 }
 
+object_t new_t(int_t pt, object_t proto)
+{
+  object_t o = new();
+  setptype(o, pt);
+  assign(o, parent_sym, proto);
+  return o;
+}
 
 object_t clone(object_t parent)
      // clones an existing object, which will be 

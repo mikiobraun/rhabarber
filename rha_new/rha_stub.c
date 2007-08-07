@@ -4,24 +4,31 @@
 #include "rha_stub.h"
 #include "rha_stub_utils.h"
 
+object_t int_proto;
+
 object_t rha_stub_init()
 {
-  object_t root = new();
+  object_t global = new();
 
   // add datatypes
-  add_datatype(root, object_sym, OBJECT_T);
-  add_datatype(root, int_sym, INT_T);
+  object_t int_obj = new();
+  int_proto = new();
+  setptype(int_proto, INT_T);
+  assign(int_obj, proto_sym, int_proto);
+  assign(global, int_sym, int_obj);
 
   // add functions
-  add_function(root, b_new_sym, OBJECT_T, (void *) new, 0);
-  add_function(root, b_clone_sym, OBJECT_T, (void *) clone, 1, OBJECT_T);
+  object_t modules = new();
+  assign(global, modules_sym, modules);
+  
+  add_function(modules, b_new_sym, OBJECT_T, (void *) new, 0);
+  add_function(modules, b_clone_sym, OBJECT_T, (void *) clone, 1, OBJECT_T);
 }
 
 
 int_t int_plus(int_t, int_t);
 object_t b_int_plus(tuple_t t) {
-  object_t o = new();
-  setptype(o, INT_T);
+  object_t o = new_t(INT_T, int_proto);
   setraw(o, (void *) &int_plus(*RAW(int_t, tuple_get(t, 1)), *RAW(int_t, tuple_get(t, 2))));
   return o;
 }
