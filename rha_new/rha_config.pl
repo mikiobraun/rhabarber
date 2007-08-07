@@ -194,8 +194,8 @@ sub create_symbols {
     for (@symbs) { $unique{$_} = 1 }
     @unique = keys %unique;
     foreach $item (@unique) {
-	$type_h_symbols .= "extern object_t $item"."_sym;\n";
-	$init_c_symbols .= "object_t $item"."_sym;\n";
+	$type_h_symbols .= "extern symbol_t $item"."_sym;\n";
+	$init_c_symbols .= "symbol_t $item"."_sym;\n";
 	$init_c_init_symbols .= "  $item"."_sym = symbol_new(\"$item\");\n";
     }
 }
