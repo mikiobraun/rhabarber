@@ -1,8 +1,8 @@
-
 #include <stdarg.h>
 #include <assert.h>
+#include <stdio.h>
 #include "object.h"
-#include "datatypes.h"
+#include "rha_types.h"
 #include "messages.h"
 #include "tuple_fn.h"
 #include "symbol_fn.h"
@@ -33,7 +33,7 @@ object_t eval(object_t env, object_t expr)
   case TUPLE_T: 
     // function call
     ASSERT_RAW_NONZERO(expr);
-    RETURN( call_fun(env, *RAW(tuple_t, expr)) );
+    RETURN( call_fun(env, raw(expr)) );
   default:
     // literal
     RETURN( expr );
@@ -51,23 +51,24 @@ object_t call_fun(object_t env, tuple_t expr)
     assert(tlen==2);  // otherwise repair 'rhaparser.y'
     return tuple_get(expr, 1);
   }
+
   // otherwise a usual function
+  tuple_t args = tuple_new(tlen);
   for (int i=0; i<tlen; i++)
-    // does the next line?
-    // or do we have to allocate a new tuple
-    tuple_set(expr, i, eval(env, tuple_get(expr, i)));
-  if (ptype(tuple_get(expr, 0))==FN_T)
+    tuple_set(args, i, eval(env, tuple_get(expr, i)));
+
+  if (ptype(tuple_get(args, 0))==FN_T)
     // the function is implemented in C
-    return call_C_fun(tlen, expr);
+    return call_C_fun(tlen, args);
   else
     // the function is pure rhabarber
-    return call_rha_fun(env, tlen, expr);
+    return call_rha_fun(env, tlen, args);
 }
 
 
 void check(object_t o, int_t pt)
 {
-  if (ptype(o) != pt) rha_error("argument primtype missmatch\n");
+  if (ptype(o) != pt) rha_error("argument primtype missmatch (expected: %d, got: %d)\n", pt, ptype(o));
   if (!raw(o)) rha_error("undefined primtype object\n");
 }
 
@@ -78,16 +79,16 @@ void *call_C_fun(int tlen, tuple_t t)
   // extract the function
   object_t t0 = tuple_get(t, 0);
   assert(t0 && ptype(t0)==FN_T);
-  fn_t *f = RAW(t0);
+  fn_t *f = RAW(fn_t, t0);
   // is the argument number correct?
   if (f->narg != narg)
-    rha_error("wrong number of arguments\n");
+    rha_error("wrong number of arguments (expected %d, got %d)\n", f->narg, narg);
   // check the types of the args
   for (int i=0; i<narg; i++)
     check(tuple_get(t, i+1), f->argtypes[i]);
 
   // finally call 'f'
-  return f(t);
+  return (f->code)(t);
 }
 
 /* Call a rhabarber function 
@@ -95,22 +96,31 @@ void *call_C_fun(int tlen, tuple_t t)
  * Checks if the number of argument matches, constructs the local
  * environment of the callee and executes the function
  */
-object_t call_rha_fun(object_t this, int nargs, tuple_t expr)
+object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
 {
   object_t fn = tuple_get(expr, 0);
 
   // check if number of args is the same
-  int_t fnargs = *(int_t*) 
-    get_and_check(lookup(fn, symbol_new("numargs")), SYMBOL_T);
+  int nargs = tlen - 1;
 
-  if (nargs != fnargs) {
+  tuple_t argnames = raw(lookup(fn, symbol_new("argnames")));
+
+  if (tuple_len(argnames) != nargs) {
     rha_error("Function called with wrong number of arguments");
   }
 
-  // construct the inner function
+  // construct the inner scope
   object_t local = new();
   assign(local, local_sym, local);
   assign(local, this_sym, this);
+  assign(local, parent_sym, lookup(fn, symbol_new("scope")));
+
+  // assign the arguments
+  for(int i = 0; i < nargs; i++) {
+    symbol_t s = *RAW(symbol_t, tuple_get(argnames, i));
+    printf("assigning argument number %d to '%s'\n", i, symbol_name(s));
+    assign(local, s, tuple_get(expr, i+1));
+  }
 
   // execute the function body
   object_t fnbody = lookup(fn, symbol_new("fnbody"));

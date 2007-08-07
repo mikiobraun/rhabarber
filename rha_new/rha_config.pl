@@ -170,7 +170,7 @@ sub create_ids {
     foreach $item (@tdefs) {
 	if ($id>1) { $type_h_ids .= ",\n" }
 	$ucitem = uc($item);
-	$type_h_ids .= "  $ucitem"."_t = $id";
+	$type_h_ids .= "  $ucitem = $id";
 	$id++;
     }
 }
@@ -224,7 +224,7 @@ $type_h_types
 // (2) primtype id for all types
 enum ptypes {
 $type_h_ids
-}
+};
 
 
 // (3) prototypes for all types
@@ -241,7 +241,7 @@ $type_h_symbols
 // get the raw data and convert
 //
 // for example, raw(int_t, o)
-#define RAW(tp, o) ((tp*)(o->raw))
+#define RAW(tp, o) ((tp*)((o)->raw))
 #define ASSERT_RAW_NONZERO(o) assert(raw(o) != 0)
 
 #endif

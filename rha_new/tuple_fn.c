@@ -1,0 +1,35 @@
+/*
+ * tuple_fn - tuple functions
+ *
+ * This file is part of rhabarber.
+ *
+ * (c) 2005-2007 by Mikio Braun          & Stefan Harmeling
+ *                  mikiobraun@gmail.com   harmeling@gmail.com
+ *                             
+ */
+
+#include "tuple_fn.h"
+#include "alloc.h"
+#include "util/gtuple.h"
+
+tuple_t tuple_new(int_t len)
+{
+  tuple_t t = ALLOC_SIZE(sizeof(struct gtuple));
+  gtuple_init(t, len);
+  return t;
+}
+
+int_t tuple_len(tuple_t t)
+{
+  return gtuple_length(t);
+}
+
+object_t tuple_get(tuple_t t, int_t i)
+{
+  return gtuple_getp(t, i);
+}
+
+void tuple_set(tuple_t t, int_t i, object_t s)
+{
+  gtuple_set(t, i, s);
+}

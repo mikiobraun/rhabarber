@@ -11,11 +11,11 @@
 #ifndef TUPLE_FN_H
 #define TUPLE_FN_H
 
-#include "datatypes.h"
+#include "rha_types.h"
 
-extern rhafun object_t tuple_new(int_t len);
-extern rhafun int_t    tuple_len(tuple_t t);
-extern rhafun object_t tuple_get(tuple_t t, int_t i);
-extern rhafun void_t   tuple_set(tuple_t t, int_t i, object_t s);
+extern _rha_ tuple_t  tuple_new(int_t len);
+extern _rha_ int_t    tuple_len(tuple_t t);
+extern _rha_ object_t tuple_get(tuple_t t, int_t i);
+extern _rha_ void     tuple_set(tuple_t t, int_t i, object_t s);
 
 #endif

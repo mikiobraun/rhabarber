@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <assert.h>
 #include "alloc.h"
+#include "symbol_fn.h"
 #include "symtable.h"
 #include "object.h"
 #include "debug.h"
@@ -23,9 +24,6 @@
 //#include "builtin_tr.h"
 
 struct symtable;
-
-// CORESYMBOLS
-extern symbol_t parent_sym;
 
 /*
  *
@@ -48,7 +46,7 @@ object_t new_t(int_t pt, object_t proto)
 {
   object_t o = new();
   setptype(o, pt);
-  assign(o, parent_sym, proto);
+  assign(o, symbol_new("parent"), proto);
   return o;
 }
 
@@ -59,7 +57,7 @@ object_t clone(object_t parent)
   object_t o = new();
   o->ptype = parent->ptype;
   o->raw = parent->raw;
-  symtable_assign( o->table, parent_sym, parent);
+  symtable_assign( o->table, symbol_new("parent"), parent);
   printdebug(" %p.parent -> %p (in object.h->clone)\n", 
 	     (void *) o, (void *) parent);
   return o;
@@ -86,6 +84,15 @@ void setraw(object_t o, void *raw)
   o->raw = raw;
 }
 
+object_t wrap(int ptype, object_t proto, void *raw)
+{
+  object_t o = new();
+  setptype(o, ptype);
+  setraw(o, raw);
+  if (proto)
+    assign(o, symbol_new("parent"), proto);    
+  return o;
+}
 
 /*
  *
@@ -103,12 +110,11 @@ object_t lookup(object_t l, symbol_t s)
   if (o) return o;
   // else
   //   look along the parent hierarchy
-  object_t parent = symtable_lookup(o->table, parent_sym);
+  object_t parent = symtable_lookup(l->table, parent_sym);
   if (parent) return lookup(parent, s);
   // else
   //   there is no parent
-  printdebug("lookup(o=%p, s=\"%s\") failed\n", 
-	     (void *) o, symbol_name(s));
+  printf("lookup for symbol %s failed!\n", symbol_name(s));
   return 0;
 }
 
@@ -128,14 +134,14 @@ void rmslot(object_t o, symbol_t s)
 }
 
 
-void_t include(object_t dest, object_t source)
+void include(object_t dest, object_t source)
 {
   // not implemented
   assert(0);
 }
 
 // will be called by prule 'subscribe'
-void_t subscribe(object_t dest, object_t interface)
+void subscribe(object_t dest, object_t interface)
 {
   // not implemented
   assert(0);

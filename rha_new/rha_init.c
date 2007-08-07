@@ -7,56 +7,63 @@
 #include "rha_init.h"
 
 // (1) symbols
-symbol_t object_sym;
-symbol_t int_sym;
-symbol_t bool_fn_sym;
 symbol_t bool_not_sym;
-symbol_t include_sym;
-symbol_t ls_sym;
-symbol_t void_sym;
+symbol_t string_sym;
 symbol_t print_sym;
 symbol_t rmslot_sym;
-symbol_t local_sym;
 symbol_t clone_sym;
 symbol_t quote_sym;
-symbol_t root_sym;
 symbol_t new_sym;
-symbol_t real_sym;
-symbol_t fn_sym;
-symbol_t eval_sym;
 symbol_t this_sym;
 symbol_t lsall_sym;
 symbol_t symbol_sym;
 symbol_t proto_sym;
+symbol_t parent_sym;
 symbol_t bool_sym;
 symbol_t subscribe_sym;
-symbol_t bool_equal_sym;
-symbol_t lookup_sym;
-symbol_t ptype_sym;
 symbol_t bool_to_string_sym;
 symbol_t assign_sym;
 symbol_t mat_sym;
+symbol_t object_sym;
+symbol_t int_sym;
+symbol_t bool_fn_sym;
+symbol_t include_sym;
+symbol_t void_sym;
+symbol_t ls_sym;
+symbol_t local_sym;
+symbol_t root_sym;
+symbol_t eval_sym;
+symbol_t fn_sym;
+symbol_t real_sym;
+symbol_t bool_equal_sym;
+symbol_t lookup_sym;
+symbol_t ptype_sym;
+symbol_t tuple_sym;
 
 
 // (2) prototypes
 object_t symbol_proto;
 object_t object_proto;
-object_t fn_proto;
-object_t bool_proto;
 object_t int_proto;
+object_t bool_proto;
+object_t tuple_proto;
+object_t fn_proto;
 object_t real_proto;
 object_t mat_proto;
+object_t string_proto;
 
 
 // (3) type objects
 object_t void_obj;
 object_t symbol_obj;
 object_t object_obj;
-object_t fn_obj;
-object_t bool_obj;
 object_t int_obj;
+object_t bool_obj;
+object_t tuple_obj;
+object_t fn_obj;
 object_t real_obj;
 object_t mat_obj;
+object_t string_obj;
 
 
 // (4) functions
@@ -67,7 +74,7 @@ object_t b_clone(tuple_t t) {
   return clone(tuple_get(t, 1));
 }
 object_t b_ptype(tuple_t t) {
-  return ptype(tuple_get(t, 1));
+  return wrap(INT_T, int_proto, ptype(tuple_get(t, 1)));
 }
 object_t b_lookup(tuple_t t) {
   return lookup(tuple_get(t, 1), *RAW(symbol_t, tuple_get(t, 2)));
@@ -149,53 +156,60 @@ object_t rha_init()
   // (5.1) create prototypes (TYPES)
   symbol_proto = new();
   object_proto = new();
-  fn_proto = new();
-  bool_proto = new();
   int_proto = new();
+  bool_proto = new();
+  tuple_proto = new();
+  fn_proto = new();
   real_proto = new();
   mat_proto = new();
+  string_proto = new();
 
 
   // (5.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
-  object_sym = symbol_new("object");
-  int_sym = symbol_new("int");
-  bool_fn_sym = symbol_new("bool_fn");
   bool_not_sym = symbol_new("bool_not");
-  include_sym = symbol_new("include");
-  ls_sym = symbol_new("ls");
-  void_sym = symbol_new("void");
+  string_sym = symbol_new("string");
   print_sym = symbol_new("print");
   rmslot_sym = symbol_new("rmslot");
-  local_sym = symbol_new("local");
   clone_sym = symbol_new("clone");
   quote_sym = symbol_new("quote");
-  root_sym = symbol_new("root");
   new_sym = symbol_new("new");
-  real_sym = symbol_new("real");
-  fn_sym = symbol_new("fn");
-  eval_sym = symbol_new("eval");
   this_sym = symbol_new("this");
   lsall_sym = symbol_new("lsall");
   symbol_sym = symbol_new("symbol");
   proto_sym = symbol_new("proto");
+  parent_sym = symbol_new("parent");
   bool_sym = symbol_new("bool");
   subscribe_sym = symbol_new("subscribe");
-  bool_equal_sym = symbol_new("bool_equal");
-  lookup_sym = symbol_new("lookup");
-  ptype_sym = symbol_new("ptype");
   bool_to_string_sym = symbol_new("bool_to_string");
   assign_sym = symbol_new("assign");
   mat_sym = symbol_new("mat");
+  object_sym = symbol_new("object");
+  int_sym = symbol_new("int");
+  bool_fn_sym = symbol_new("bool_fn");
+  include_sym = symbol_new("include");
+  void_sym = symbol_new("void");
+  ls_sym = symbol_new("ls");
+  local_sym = symbol_new("local");
+  root_sym = symbol_new("root");
+  eval_sym = symbol_new("eval");
+  fn_sym = symbol_new("fn");
+  real_sym = symbol_new("real");
+  bool_equal_sym = symbol_new("bool_equal");
+  lookup_sym = symbol_new("lookup");
+  ptype_sym = symbol_new("ptype");
+  tuple_sym = symbol_new("tuple");
 
 
   // (5.3) create type objects (TYPES)
   ADD_TYPE(symbol, SYMBOL);
   ADD_TYPE(object, OBJECT);
-  ADD_TYPE(fn, FN);
-  ADD_TYPE(bool, BOOL);
   ADD_TYPE(int, INT);
+  ADD_TYPE(bool, BOOL);
+  ADD_TYPE(tuple, TUPLE);
+  ADD_TYPE(fn, FN);
   ADD_TYPE(real, REAL);
   ADD_TYPE(mat, MAT);
+  ADD_TYPE(string, STRING);
 
 
   // (5.4) create the void object

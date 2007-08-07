@@ -11,9 +11,10 @@
 #ifndef SYMBOL_FN_H
 #define SYMBOL_FN_H
 
-#include "datatypes.h"
+#include "rha_types.h"
 
-extern rhafun symbol_t symbol_new(string_t s);
-extern rhafun bool_t symbol_equal(symbol_t s, symbol_t t);
+extern _rha_ symbol_t symbol_new(string_t s);
+extern _rha_ bool_t symbol_equal(symbol_t s, symbol_t t);
+extern _rha_ string_t symbol_name(symbol_t s);
 
 #endif

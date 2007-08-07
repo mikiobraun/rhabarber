@@ -12,14 +12,14 @@
 #define OBJECT_H
 
 #include <stdbool.h>
-#include "datatypes.h"
+#include "rha_types.h"
 
 // stuff for the perl magic
-#define rhafun
+#define rhabarber
 
 /* the rhabarber object */
 struct rha_object {
-  int_t ptype;            // primtype (ptype): internal type 
+  enum ptypes ptype;            // primtype (ptype): internal type 
                           // that describes the content
   struct symtable *table; // symbol table of slots
   void *raw;              // possible raw content
@@ -29,12 +29,14 @@ struct rha_object {
  * Functions
  */
 extern _rha_ object_t   new();
-extern        object_t   new_t();
+extern       object_t   new_t(int_t pt, object_t proto);
 extern _rha_ object_t   clone(object_t parent);
-extern _rha_ object_t      ptype(object_t); // primtype
-extern        void       setptype(object_t, int_t);
-extern        void      *raw(object_t o);
-extern        void       setraw(object_t, void *);
+extern _rha_ int_t      ptype(object_t); // primtype
+extern       void       setptype(object_t, int_t);
+extern       void      *raw(object_t o);
+extern       void       setraw(object_t, void *);
+
+extern       object_t   wrap(int ptype, object_t proto, void *raw);
 
 // 'lookup'
 //     z          -> lookup(local, \z);

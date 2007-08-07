@@ -1,0 +1,43 @@
+
+#include "symbol_fn.h"
+#include "util/gtree.h"
+
+static int symbolcount = 0;
+static struct gtree symbolids;
+static struct gtree symbolnames;
+
+static bool symbol_lessfct(intptr_t a, intptr_t b)
+{
+  return strcmp((void*) a, (void*) b) == -1;
+}
+
+static bool symbol_namelessfct(intptr_t a, intptr_t b)
+{
+  return a < b;
+}
+
+symbol_t symbol_new(string_t s)
+{
+  if (!symbolcount) {
+    gtree_init(&symbolids, symbol_lessfct);
+    gtree_init(&symbolnames, symbol_namelessfct);
+  }
+
+  int i = gtree_searchi(&symbolids, s );
+  if (!i) {
+    i = ++symbolcount;
+    gtree_insert(&symbolids, s, i);
+    gtree_insert(&symbolnames, i, s);
+  }
+  return i;
+}
+
+bool_t symbol_equal(symbol_t s, symbol_t t)
+{
+  return s == t;
+}
+
+string_t symbol_name(symbol_t s)
+{
+  return gtree_searchp(&symbolnames, s);
+}
