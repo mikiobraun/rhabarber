@@ -5,7 +5,7 @@
 #include <setjmp.h>
 #include "object.h"
 
-extern rhafun object_t eval(object_t, object_t);
+extern _rha_ object_t eval(object_t, object_t);
 extern object_t eval_currentlocation;
 
 // some cool macros for 'try' and 'catch' stuff

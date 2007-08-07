@@ -36,7 +36,7 @@ object_t b_eval(tuple_t t) {
 
 //void_t tuple_set(tuple_t t, int_t i, object_t);
 object_t b_tuple_set(tuple_t t) {
-  tuple_set(*RAW(tuple_t, tuple_get(t, 1)), *RAW(tuple_t, tuple_get(t, 2)), tuple_get(t, 3));
+  tuple_set(*RAW(tuple_t, tuple_get(t, 1)), *RAW(int_t, tuple_get(t, 2)), tuple_get(t, 3));
 }
 
 // (4) init
@@ -73,7 +73,7 @@ void add_function(object_t module, symbol_t s, int rettype, void *code, int narg
 
 #define ADD_MODULE(mmm)   // mmm ## .h\
   module = new();\
-  assign(modules, mm ## _sym, module);
+  assign(modules, mmm ## _sym, module);
 
 object_t rha_init()
 {
@@ -92,7 +92,11 @@ object_t rha_init()
   ADD_TYPE(int, INT);
   ADD_TYPE(symbol, SYMBOL);
 
-  // (4.3) add modules (MODULES, functions)
+  // (4.3) create the void object
+  void_obj = new();
+  assign(root, void_sym, void_obj);
+
+  // (4.4) add modules (MODULES, functions)
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;

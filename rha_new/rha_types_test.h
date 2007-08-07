@@ -33,7 +33,7 @@ typedef double * _rha_ mat_t;
 #define MAT_T_t 7 
 
 
-// (3) prototype objects for all types
+// (3) prototypes for all types
 extern object_t symbol_proto;
 extern object_t object_proto;
 extern object_t fn_proto;
@@ -43,17 +43,46 @@ extern object_t real_proto;
 extern object_t mat_proto;
 
 
-// (4) symbols
-extern object_t symbol_sym;
+// (4) type objects
+extern object_t void_obj;
+extern object_t symbol_obj;
+extern object_t object_obj;
+extern object_t fn_obj;
+extern object_t bool_obj;
+extern object_t int_obj;
+extern object_t real_obj;
+extern object_t mat_obj;
+
+
+// (5) symbols
 extern object_t object_sym;
-extern object_t fn_sym;
-extern object_t bool_sym;
 extern object_t int_sym;
+extern object_t include_sym;
+extern object_t ls_sym;
+extern object_t void_sym;
+extern object_t print_sym;
+extern object_t rmslot_sym;
+extern object_t local_sym;
+extern object_t clone_sym;
+extern object_t quote_sym;
+extern object_t root_sym;
+extern object_t new_sym;
 extern object_t real_sym;
+extern object_t fn_sym;
+extern object_t eval_sym;
+extern object_t this_sym;
+extern object_t lsall_sym;
+extern object_t symbol_sym;
+extern object_t proto_sym;
+extern object_t bool_sym;
+extern object_t subscribe_sym;
+extern object_t lookup_sym;
+extern object_t ptype_sym;
+extern object_t assign_sym;
 extern object_t mat_sym;
 
 
-// (5) some useful macros
+// (6) some useful macros
 // get the raw data and convert
 //
 // for example, raw(int_t, o)

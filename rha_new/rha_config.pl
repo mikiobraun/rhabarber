@@ -14,9 +14,9 @@
 #################################
 
 $conf_d_fname = "rha_config.d";
-$init_h_fname = "rha_init_test.h";
-$init_c_fname = "rha_init_test.c";
-$type_h_fname = "rha_types_test.h";
+$init_h_fname = "rha_init.h";
+$init_c_fname = "rha_init.c";
+$type_h_fname = "rha_types.h";
 
 $debug = shift @ARGV;
 
@@ -46,36 +46,10 @@ $symbols = $3;
 # (3) disect the symbols
 @symbs = $symbols =~ /($id)\_sym/gox;
 
-#############################
-# step 2: parse all modules #
-#############################
 
-foreach $module (@mods) {
-    # load the header file
-    $fname = $module.".h";
-    open(FILE, "<$fname") or die "Can't open $fname: $!";
-    @input = <FILE>;
-    close(FILE);
-    $input = join '', @input;
-    # parse it
-    while ($input =~ /$keyword\s+($id)\s+($id)\s*\(([^\)]*)\)\s*;/gox) {
-	$fntype = $1;
-	$fnname = $2;
-	$fnargs = $3;
-	print "matched: $fntype $fnname $fnargs\n" if $debug;
-	
-	# add a symbol
-	
-	# add code
-
-	# add
-    }
-}
-
-
-########################################################
-# step 3: create all other strings for the three files #
-########################################################
+############################
+# step 2: init all strings #
+############################
 
 $type_h_types = $types;
 $type_h_ids = "";
@@ -93,9 +67,80 @@ $init_c_init_symbols = "";
 $init_c_init_typeobjects = "";
 $init_c_add_modules = "";
 
+
+##############################
+# step 3: create all strings #
+##############################
+
+
+# first the more complicated stuff: the functions
+foreach $module (@mods) {
+    # add some stuff
+    $init_c_add_modules .= "  ADD_MODULE($module);\n";
+    # also add a symbol
+    push(@symbs, $module);
+
+    # load the header file
+    $module_fname = $module.".h";
+    open(FILE, "<$module_fname") or die "Can't open $module_fname: $!";
+    @input = <FILE>;
+    close(FILE);
+    $input = join '', @input;
+    # parse it
+    while ($input =~ /$keyword\s+($id)\s+($id)\s*\(([^\)]*)\)\s*;/gox) {
+	$fntype = $1;
+	$fnname = $2;
+	$fnargs = $3;
+	print "matched: $fntype $fnname $fnargs\n" if $debug;
+	
+	# disect the args
+	@args = $fnargs =~ /($id)[^,]*/gox;
+	$narg = $#args + 1;
+	# add a symbol for the function
+	push(@symbs, $fnname);
+	
+	# add wrapper code
+	$init_c_functions .= "object_t b_$fnname(tuple_t t) {\n";
+	$fncall_str = "$fnname(";
+	$i = 1;
+	foreach $item (@args) {
+	    if ($item eq "void") { die "'void' is not allowed as argument" }
+	    if ($i>1) { $fncall_str .= ", " }
+	    $fnarg_str = "tuple_get(t, $i)";
+	    if ($item ne "object_t") { $fnarg_str = "*RAW($item, $fnarg_str)" }
+	    $fncall_str .= $fnarg_str;
+	    $i++;
+	}
+	$fncall_str .= ")";
+	if ($fntype eq "void") { 
+	    $init_c_functions .= "  $fncall_str;\n"
+	}
+	elsif ($fntype eq "object_t") {
+	    $init_c_functions .= "  return $fncall_str;\n" 
+	}
+	else { 
+	    $ucfntype = uc($fntype);
+	    $init_c_functions .= "  return wrap($ucfntype, $fncall_str);\n"
+	}
+	$init_c_functions .= "}\n";
+
+	# add code to add functions
+	$init_c_add_modules .= "  add_function(module, $fnname"."_sym";
+	$ucfntype = uc($fntype);
+	$init_c_add_modules .= ", $ucfntype, (void *) $fnname, $narg";
+	foreach $item (@args) {
+	    $ucitem = uc($item);
+	    $init_c_add_modules .= ", $ucitem";
+	}
+	$init_c_add_modules .= ");\n";
+    }
+}
+
+# after creating a list of symbols, now the easy stuff
 create_ids();
 create_prototypes();
 create_symbols();
+
 
 
 ##################################
@@ -131,6 +176,7 @@ sub create_prototypes {
 	$iitem = substr($item, 0, -2);
 	$uciitem = uc($iitem);
 	$type_h_prototypes .= "extern object_t $iitem"."_proto;\n";
+	$type_h_typeobjects .= "extern object_t $iitem"."_obj;\n";
 	$init_c_prototypes .= "object_t $iitem"."_proto;\n";
 	$init_c_typeobjects .= "object_t $iitem"."_obj;\n";
 	$init_c_init_prototypes .= "  $iitem"."_proto = new();\n";
@@ -139,11 +185,18 @@ sub create_prototypes {
 }
 
 sub create_symbols {
+    # add all @tdefs to @symbs
     foreach $item (@tdefs) {
-	$iitem = substr($item, 0, -2);
-	$type_h_symbols .= "extern object_t $iitem"."_sym;\n";
-	$init_c_symbols .= "object_t $iitem"."_sym;\n";
-	$init_c_init_symbols .= "  $iitem"."_sym = symbol_new(\"$iitem\");\n";
+	push(@symbs, substr($item, 0, -2));
+    }
+
+    # get rid of duplicates
+    for (@symbs) { $unique{$_} = 1 }
+    @unique = keys %unique;
+    foreach $item (@unique) {
+	$type_h_symbols .= "extern object_t $item"."_sym;\n";
+	$init_c_symbols .= "object_t $item"."_sym;\n";
+	$init_c_init_symbols .= "  $item"."_sym = symbol_new(\"$item\");\n";
     }
 }
 
@@ -165,13 +218,17 @@ $type_h_types
 // (2) primtype id for all types
 $type_h_ids
 
-// (3) prototype objects for all types
+// (3) prototypes for all types
 $type_h_prototypes
 
-// (4) symbols
+// (4) type objects
+extern object_t void_obj;
+$type_h_typeobjects
+
+// (5) symbols
 $type_h_symbols
 
-// (5) some useful macros
+// (6) some useful macros
 // get the raw data and convert
 //
 // for example, raw(int_t, o)
@@ -216,6 +273,7 @@ $init_c_symbols
 $init_c_prototypes
 
 // (3) type objects
+object_t void_obj;
 $init_c_typeobjects
 
 // (4) functions
@@ -254,7 +312,7 @@ void add_function(object_t module, symbol_t s, int rettype, void *code, int narg
 
 #define ADD_MODULE(mmm)   // mmm ## .h\
   module = new();\
-  assign(modules, mm ## _sym, module);
+  assign(modules, mmm ## _sym, module);
 
 object_t rha_init()
 {
@@ -269,7 +327,11 @@ $init_c_init_symbols
   // (5.3) create type objects (TYPES)
 $init_c_init_typeobjects
 
-  // (5.4) add modules (MODULES, functions)
+  // (5.4) create the void object
+  void_obj = new();
+  assign(root, void_sym, void_obj);
+
+  // (5.5) add modules (MODULES, functions)
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;
