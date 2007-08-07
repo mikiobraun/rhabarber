@@ -1,20 +1,20 @@
 #!/usr/bin/env perl
 
 # input file:
-#     rha_stub.def
+#     rha_config.d
 #
 # output files:
-#     rha_stub.h
-#     rha_stub.c
+#     rha_init.h
+#     rha_init.c
+#     rha_types.h
 
 
 #################################
 ### step 1: preliminary stuff ###
 #################################
 
-$basename = "rha_stub";
-$dfile = "$basename.d";
-$hfile = "$basename.h";
+$dfile = "rha_config.d";
+$hfile = ".h";
 $cfile = "$basename.c";
 
 $debug = shift @ARGV;

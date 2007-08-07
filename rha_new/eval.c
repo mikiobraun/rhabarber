@@ -7,13 +7,6 @@
 #include "tuple_fn.h"
 #include "symbol_fn.h"
 
-#define MAXNARGS 5
-
-// CORESYMBOLS
-extern symbol_t quote_sym;
-extern symbol_t this_sym;
-extern symbol_t local_sym;
-
 // forward declarations
 object_t call_fun(object_t env, tuple_t expr);
 void *call_C_fun(int tlen, tuple_t t);
