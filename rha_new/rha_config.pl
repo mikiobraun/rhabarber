@@ -23,6 +23,8 @@ $debug = shift @ARGV;
 # C identifier
 $id = '[a-zA-Z_]\w*';
 
+$keyword = "_rha_";
+
 # load def file into one string
 open(FILE, "<$conf_d_fname") or die "Can't open $conf_d_fname: $!";
 @input = <FILE>;
@@ -36,37 +38,68 @@ $types   = $2;
 $symbols = $3;
 
 # (1) disect the includes
-@incls = $modules =~ /include\s+\"($id)\.h\"/gox;
+@mods = $modules =~ /include\s+\"($id)\.h\"/gox;
 
 # (2) disect the typedefs
-@tdefs = $types =~ /rhabarber\s+($id)/gox;
+@tdefs = $types =~ /$keyword\s+($id)/gox;
 
 # (3) disect the symbols
 @symbs = $symbols =~ /($id)\_sym/gox;
 
+#############################
+# step 2: parse all modules #
+#############################
+
+foreach $module (@mods) {
+    # load the header file
+    $fname = $module.".h";
+    open(FILE, "<$fname") or die "Can't open $fname: $!";
+    @input = <FILE>;
+    close(FILE);
+    $input = join '', @input;
+    # parse it
+    while ($input =~ /$keyword\s+($id)\s+($id)\s*\(([^\)]*)\)\s*;/gox) {
+	$fntype = $1;
+	$fnname = $2;
+	$fnargs = $3;
+	print "matched: $fntype $fnname $fnargs\n" if $debug;
+	
+	# add a symbol
+	
+	# add code
+
+	# add
+    }
+}
+
+
 ########################################################
-# step 2: create all other strings for the three files #
+# step 3: create all other strings for the three files #
 ########################################################
 
 $type_h_types = $types;
-$type_h_ids = create_type_h_ids();
-$type_h_prototypes = create_type_prototypes();
-$type_h_all_symbols = create_type_h_all_symbols();
+$type_h_ids = "";
+$type_h_prototypes = "";
+$type_h_symbols = "";
 
 $init_h_modules = $modules;
 
 $init_c_symbols = "";
 $init_c_prototypes = "";
-$init_c_object = "";
+$init_c_typeobject = "";
 $init_c_functions = "";
-$init_c_create_prototypes = "";
-$init_c_create_symbols = "";
-$init_c_create_type_objects = "";
+$init_c_init_prototypes = "";
+$init_c_init_symbols = "";
+$init_c_init_typeobjects = "";
 $init_c_add_modules = "";
+
+create_ids();
+create_prototypes();
+create_symbols();
 
 
 ##################################
-# step 3: create all three files #
+# step 4: create all three files #
 ##################################
 open(FILE, ">$type_h_fname") or die "Can't open $type_h_fname: $!";
 print FILE create_type_h();
@@ -84,28 +117,34 @@ exit();
 
 #########################################
 
-sub create_type_h_ids {
-    $s = "";
+sub create_ids {
     $id = 1;
     foreach $item (@tdefs) {
 	$ucitem = uc($item);
-	$s .= "#define $ucitem $id \n";
+	$type_h_ids .= "#define $ucitem"."_t $id \n";
 	$id++;
     }
-    return $s;
 }
 
-sub create_type_prototypes {
-    $s = "";
+sub create_prototypes {
     foreach $item (@tdefs) {
-	$iitem = $item
-	$s .= "extern symbol_t $item _sym;\n";
+	$iitem = substr($item, 0, -2);
+	$uciitem = uc($iitem);
+	$type_h_prototypes .= "extern object_t $iitem"."_proto;\n";
+	$init_c_prototypes .= "object_t $iitem"."_proto;\n";
+	$init_c_typeobjects .= "object_t $iitem"."_obj;\n";
+	$init_c_init_prototypes .= "  $iitem"."_proto = new();\n";
+	$init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
     }
-    return $s;
 }
 
-sub create_type_h_all_symbols {
-
+sub create_symbols {
+    foreach $item (@tdefs) {
+	$iitem = substr($item, 0, -2);
+	$type_h_symbols .= "extern object_t $iitem"."_sym;\n";
+	$init_c_symbols .= "object_t $iitem"."_sym;\n";
+	$init_c_init_symbols .= "  $iitem"."_sym = symbol_new(\"$iitem\");\n";
+    }
 }
 
 #########################################
@@ -173,14 +212,16 @@ sub create_init_c {
 // (1) symbols
 $init_c_symbols
 
-// (2) prototypes and objects
+// (2) prototypes
 $init_c_prototypes
-$init_c_object
 
-// (3) functions
+// (3) type objects
+$init_c_typeobjects
+
+// (4) functions
 $init_c_functions
 
-// (4) init
+// (5) init
 #define ADD_TYPE(ttt, TTT)   // ttt ## _t\
   setptype(ttt ## _proto, TTT ## _T);\
   ttt ## _obj = new();\
@@ -219,16 +260,16 @@ object_t rha_init()
 {
   object_t root = new();
 
-  // (4.1) create prototypes (TYPES)
-$init_c_create_prototypes
+  // (5.1) create prototypes (TYPES)
+$init_c_init_prototypes
 
-  // (4.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
-$init_c_create_symbols
+  // (5.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
+$init_c_init_symbols
 
-  // (4.2) create type objects (TYPES)
-$init_c_create_type_objects
+  // (5.3) create type objects (TYPES)
+$init_c_init_typeobjects
 
-  // (4.3) add modules (MODULES, functions)
+  // (5.4) add modules (MODULES, functions)
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;

@@ -1,0 +1,32 @@
+
+lookup(x, sym.proto)
+
+global.modules.eval.eval
+global.modules.int.abs
+global.modules.int_fn.abs
+global.modules.object.new
+global.modules.tuple_fn.new
+
+// core stuff
+new = global.modules.object.new;
+
+// symbol stuff
+symbol = new();
+symbol.new = global.modules.symbol_fn.new;
+symbol.proto = symbol.new("");
+
+equal(symbol:s, symbol:t) = global.modules.symbol.equal(s, t);
+
+equal = fn (s, t) {
+    ....
+}
+
+
+// tuple stuff
+tuple = new();
+tuple.new = global.modules.tuple_fn.new;
+tuple.proto = tuple.new(0);
+tuple.proto.len = fn () global.modules.tuple_fn.len(this);
+
+t = tuple.new(5);
+t.len()

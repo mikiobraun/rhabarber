@@ -4,28 +4,21 @@
 //MODULES
 #include "object.h"
 #include "eval.h"
-#include "core.h"
-#include "bool_fn.h"
-#include "int_fn.h"
-#include "real_fn.h"
-#include "mat_fn.h"
-#include "symbol_fn.h"
 
 //TYPES
 #include <stdbool.h>
-typedef int rhabarber symbol_t;
-typedef void rhabarber void_t;
-typedef void* rhabarber object_t;
+typedef int _rha_ symbol_t;
+typedef void* _rha_ object_t;
 typedef struct { 
   int_t rettype;     // return type (currently not used)
   void *code;        // pointer to the code
   int_t narg;        // number of arguments
   int_t *argtypes[]; // array of the arg types
-} rhabarber fn_t;
-typedef bool rhabarber bool_t;
-typedef int rhabarber int_t;
-typedef double rhabarber real_t;
-typedef double * rhabarber mat_t;
+} _rha_ fn_t;
+typedef bool _rha_ bool_t;
+typedef int _rha_ int_t;
+typedef double _rha_ real_t;
+typedef double * _rha_ mat_t;
 
 //SYMBOLS
 extern symbol_t proto_sym;
