@@ -16,13 +16,18 @@ symbol_t symbol_sym;
 symbol_t int_sym;
 symbol_t eval_sym;
 
-// (2) prototypes and objects
+// (2) prototypes
 object_t int_obj;
 object_t int_proto;
 object_t real_obj;
 object_t real_proto;
 
-// (3) functions
+// (3) type objects
+object_t void_obj;
+object_t symbol_obj;
+object_t object_obj;
+
+// (4) functions
 //int_t int_plus(int_t, int_t);
 object_t b_int_plus(tuple_t t) {
   return wrap(INT_T, int_proto, (void *) &int_plus(*RAW(int_t, tuple_get(t, 1)), *RAW(int_t, tuple_get(t, 2))));
@@ -39,7 +44,7 @@ object_t b_tuple_set(tuple_t t) {
   tuple_set(*RAW(tuple_t, tuple_get(t, 1)), *RAW(tuple_t, tuple_get(t, 2)), tuple_get(t, 3));
 }
 
-// (4) init
+// (5) init
 
 #define ADD_TYPE(ttt, TTT)   // ttt ## _t\
   setptype(ttt ## _proto, TTT ## _T);\
@@ -55,7 +60,6 @@ void add_function(object_t module, symbol_t s, int rettype, void *code, int narg
   // create a struct containing all info about the builtin function
   fn_t f = ALLOC_SIZE(size_of(fn_t));
   setraw(o, (void *) f);
-  f->rettype = rettype;
   f->code = code;
   f->narg = narg;
   f->argtypes = ALLOC_SIZE(narg*size_of(int_t));
@@ -73,35 +77,39 @@ void add_function(object_t module, symbol_t s, int rettype, void *code, int narg
 
 #define ADD_MODULE(mmm)   // mmm ## .h\
   module = new();\
-  assign(modules, mm ## _sym, module);
+  assign(modules, mmm ## _sym, module);
 
 object_t rha_init()
 {
   object_t root = new();
 
-  // (4.1) create prototypes (TYPES)
+  // (5.1) create prototypes (TYPES)
   symbol_proto = new();
   int_proto = new();
 
-  // (4.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
+  // (5.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
   proto_sym = symbol_new("proto");
   quote_sym = symbol_new("quote");
   int_sym = symbol_new("int");
 
-  // (4.2) create type objects (TYPES)
+  // (5.3) create type objects (TYPES)
   ADD_TYPE(int, INT);
   ADD_TYPE(symbol, SYMBOL);
 
-  // (4.3) add modules (MODULES, functions)
+  // (5.4) create the void object
+  void_obj = new();
+  assign(root, void_sym, void_obj);
+
+  // (5.5) add modules (MODULES, functions)
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;
 
   ADD_MODULE(object);
-  add_function(module, new_sym, OBJECT_T, (void *) new, 0);
-  add_function(module, clone_sym, OBJECT_T, (void *) clone, 1, OBJECT_T);
+  add_function(module, new_sym, (void *) new, 0);
+  add_function(module, clone_sym, (void *) clone, 1, OBJECT_T);
 
   ADD_MODULE(object);
-  add_function(module, new_sym, OBJECT_T, (void *) new, 0);
-  add_function(module, clone_sym, OBJECT_T, (void *) clone, 1, OBJECT_T);
+  add_function(module, new_sym, (void *) new, 0);
+  add_function(module, clone_sym, (void *) clone, 1, OBJECT_T);
 }

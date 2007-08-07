@@ -4,47 +4,84 @@
 
 #ifndef DATATYPES_H
 #define DATATYPES_H
-#define rhabarber
+#define _rha_
 
 // (1) datatypes which are available in Rhabarber
 #include <stdbool.h>
-typedef bool rhabarber bool_t;
-typedef void void_t;
-typedef int symbol_t;
-typedef int int_t;
-typedef double real_t;
-typedef char *string_t;
-typedef struct rha_object *object_t;
+typedef int _rha_ symbol_t;
+typedef void* _rha_ object_t;
 typedef struct { 
-  int_t rettype;     // return type (currently not used)
-  void  *code;       // pointer to the code
+  void *code;        // pointer to the code
   int_t narg;        // number of arguments
-  int_t *argtypes;   // array of the arg types
-} fn_t;
-typedef double *mat_t;
-typedef struct gtuple *tuple_t;
+  int_t *argtypes[]; // array of the arg types
+} _rha_ fn_t;
+typedef bool _rha_ bool_t;
+typedef int _rha_ int_t;
+typedef double _rha_ real_t;
+typedef double * _rha_ mat_t;
 
-// (2) integer id for all types
-#define VOID_T   0
-#define OBJECT_T 1
-#define SYMBOL_T 2
-#define FN_T     3
-#define BOOL_T   4
-#define INT_T    5
-#define REAL_T   6
-#define MAT_T    7
-#define TUPLE_T  8
 
-// (3) prototype objects for all types
+
+// (2) primtype id for all types
+#define SYMBOL_T_t 1 
+#define OBJECT_T_t 2 
+#define FN_T_t 3 
+#define BOOL_T_t 4 
+#define INT_T_t 5 
+#define REAL_T_t 6 
+#define MAT_T_t 7 
+
+
+// (3) prototypes for all types
+extern object_t symbol_proto;
+extern object_t object_proto;
+extern object_t fn_proto;
+extern object_t bool_proto;
 extern object_t int_proto;
+extern object_t real_proto;
+extern object_t mat_proto;
 
-// (4) symbols
-extern symbol_t quote_sym;
-extern symbol_t this_sym;
-extern symbol_t root_sym;
+
+// (4) type objects
+extern object_t void_obj;
+extern object_t symbol_obj;
+extern object_t object_obj;
+extern object_t fn_obj;
+extern object_t bool_obj;
+extern object_t int_obj;
+extern object_t real_obj;
+extern object_t mat_obj;
+
+
+// (5) symbols
+extern symbol_t object_sym;
+extern symbol_t int_sym;
+extern symbol_t include_sym;
+extern symbol_t ls_sym;
+extern symbol_t void_sym;
+extern symbol_t print_sym;
+extern symbol_t rmslot_sym;
 extern symbol_t local_sym;
+extern symbol_t clone_sym;
+extern symbol_t quote_sym;
+extern symbol_t root_sym;
+extern symbol_t new_sym;
+extern symbol_t real_sym;
+extern symbol_t fn_sym;
+extern symbol_t eval_sym;
+extern symbol_t this_sym;
+extern symbol_t lsall_sym;
+extern symbol_t symbol_sym;
+extern symbol_t proto_sym;
+extern symbol_t bool_sym;
+extern symbol_t subscribe_sym;
+extern symbol_t lookup_sym;
+extern symbol_t ptype_sym;
+extern symbol_t assign_sym;
+extern symbol_t mat_sym;
 
-// (5) some useful macros
+
+// (6) some useful macros
 // get the raw data and convert
 //
 // for example, raw(int_t, o)
@@ -52,4 +89,3 @@ extern symbol_t local_sym;
 #define ASSERT_RAW_NONZERO(o) assert(raw(o) != 0)
 
 #endif
-

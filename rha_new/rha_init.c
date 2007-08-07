@@ -7,44 +7,98 @@
 #include "rha_init.h"
 
 // (1) symbols
-symbol_t quote_sym;
-symbol_t this_sym;
-symbol_t root_sym;
-symbol_t local_sym;
-symbol_t modules_sym;
-symbol_t symbol_sym;
+symbol_t object_sym;
 symbol_t int_sym;
+symbol_t include_sym;
+symbol_t ls_sym;
+symbol_t void_sym;
+symbol_t print_sym;
+symbol_t rmslot_sym;
+symbol_t local_sym;
+symbol_t clone_sym;
+symbol_t quote_sym;
+symbol_t root_sym;
+symbol_t new_sym;
+symbol_t real_sym;
+symbol_t fn_sym;
 symbol_t eval_sym;
+symbol_t this_sym;
+symbol_t lsall_sym;
+symbol_t symbol_sym;
+symbol_t proto_sym;
+symbol_t bool_sym;
+symbol_t subscribe_sym;
+symbol_t lookup_sym;
+symbol_t ptype_sym;
+symbol_t assign_sym;
+symbol_t mat_sym;
 
-// (2) prototypes and objects
-object_t int_obj;
+
+// (2) prototypes
+object_t symbol_proto;
+object_t object_proto;
+object_t fn_proto;
+object_t bool_proto;
 object_t int_proto;
-object_t real_obj;
 object_t real_proto;
+object_t mat_proto;
 
-// (3) functions
-//int_t int_plus(int_t, int_t);
-object_t b_int_plus(tuple_t t) {
-  return wrap(INT_T, int_proto, (void *) &int_plus(*RAW(int_t, tuple_get(t, 1)), *RAW(int_t, tuple_get(t, 2))));
+
+// (3) type objects
+object_t void_obj;
+object_t symbol_obj;
+object_t object_obj;
+object_t fn_obj;
+object_t bool_obj;
+object_t int_obj;
+object_t real_obj;
+object_t mat_obj;
+
+
+// (4) functions
+object_t b_new(tuple_t t) {
+  return new();
 }
-
-
-//object_t eval(object_t env, object_t expr);
+object_t b_clone(tuple_t t) {
+  return clone(tuple_get(t, 1));
+}
+object_t b_ptype(tuple_t t) {
+  return ptype(tuple_get(t, 1));
+}
+object_t b_lookup(tuple_t t) {
+  return lookup(tuple_get(t, 1), *RAW(symbol_t, tuple_get(t, 2)));
+}
+object_t b_assign(tuple_t t) {
+  return assign(tuple_get(t, 1), *RAW(symbol_t, tuple_get(t, 2)), tuple_get(t, 3));
+}
+object_t b_rmslot(tuple_t t) {
+  rmslot(tuple_get(t, 1), *RAW(symbol_t, tuple_get(t, 2)));
+}
+object_t b_print(tuple_t t) {
+  print(tuple_get(t, 1));
+}
+object_t b_include(tuple_t t) {
+  include(tuple_get(t, 1), tuple_get(t, 2));
+}
+object_t b_subscribe(tuple_t t) {
+  subscribe(tuple_get(t, 1), tuple_get(t, 2));
+}
+object_t b_ls(tuple_t t) {
+  return ls(tuple_get(t, 1));
+}
+object_t b_lsall(tuple_t t) {
+  return lsall(tuple_get(t, 1));
+}
 object_t b_eval(tuple_t t) {
   return eval(tuple_get(t, 1), tuple_get(t, 2));
 }
 
-//void_t tuple_set(tuple_t t, int_t i, object_t);
-object_t b_tuple_set(tuple_t t) {
-  tuple_set(*RAW(tuple_t, tuple_get(t, 1)), *RAW(int_t, tuple_get(t, 2)), tuple_get(t, 3));
-}
 
-// (4) init
-
-#define ADD_TYPE(ttt, TTT)   // ttt ## _t\
-  setptype(ttt ## _proto, TTT ## _T);\
-  ttt ## _obj = new();\
-  assign(root, ttt ## _sym, ttt ## _obj);\
+// (5) init
+#define ADD_TYPE(ttt, TTT)   // ttt ## _t
+  setptype(ttt ## _proto, TTT ## _T);
+  ttt ## _obj = new();
+  assign(root, ttt ## _sym, ttt ## _obj);
   assign(ttt ## _obj, proto_sym, ttt ## _proto);
 
 void add_function(object_t module, symbol_t s, int rettype, void *code, int narg, ...)
@@ -71,41 +125,84 @@ void add_function(object_t module, symbol_t s, int rettype, void *code, int narg
   assign(module, s, o);
 }
 
-#define ADD_MODULE(mmm)   // mmm ## .h\
-  module = new();\
+#define ADD_MODULE(mmm)   // mmm ## .h
+  module = new();
   assign(modules, mmm ## _sym, module);
 
 object_t rha_init()
 {
   object_t root = new();
 
-  // (4.1) create prototypes (TYPES)
+  // (5.1) create prototypes (TYPES)
   symbol_proto = new();
+  object_proto = new();
+  fn_proto = new();
+  bool_proto = new();
   int_proto = new();
+  real_proto = new();
+  mat_proto = new();
 
-  // (4.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
-  proto_sym = symbol_new("proto");
-  quote_sym = symbol_new("quote");
+
+  // (5.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
+  object_sym = symbol_new("object");
   int_sym = symbol_new("int");
+  include_sym = symbol_new("include");
+  ls_sym = symbol_new("ls");
+  void_sym = symbol_new("void");
+  print_sym = symbol_new("print");
+  rmslot_sym = symbol_new("rmslot");
+  local_sym = symbol_new("local");
+  clone_sym = symbol_new("clone");
+  quote_sym = symbol_new("quote");
+  root_sym = symbol_new("root");
+  new_sym = symbol_new("new");
+  real_sym = symbol_new("real");
+  fn_sym = symbol_new("fn");
+  eval_sym = symbol_new("eval");
+  this_sym = symbol_new("this");
+  lsall_sym = symbol_new("lsall");
+  symbol_sym = symbol_new("symbol");
+  proto_sym = symbol_new("proto");
+  bool_sym = symbol_new("bool");
+  subscribe_sym = symbol_new("subscribe");
+  lookup_sym = symbol_new("lookup");
+  ptype_sym = symbol_new("ptype");
+  assign_sym = symbol_new("assign");
+  mat_sym = symbol_new("mat");
 
-  // (4.2) create type objects (TYPES)
-  ADD_TYPE(int, INT);
+
+  // (5.3) create type objects (TYPES)
   ADD_TYPE(symbol, SYMBOL);
+  ADD_TYPE(object, OBJECT);
+  ADD_TYPE(fn, FN);
+  ADD_TYPE(bool, BOOL);
+  ADD_TYPE(int, INT);
+  ADD_TYPE(real, REAL);
+  ADD_TYPE(mat, MAT);
 
-  // (4.3) create the void object
+
+  // (5.4) create the void object
   void_obj = new();
   assign(root, void_sym, void_obj);
 
-  // (4.4) add modules (MODULES, functions)
+  // (5.5) add modules (MODULES, functions)
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;
 
   ADD_MODULE(object);
-  add_function(module, new_sym, OBJECT_T, (void *) new, 0);
-  add_function(module, clone_sym, OBJECT_T, (void *) clone, 1, OBJECT_T);
+  add_function(module, new_sym, (void *) new, 0);
+  add_function(module, clone_sym, (void *) clone, 1, OBJECT_T);
+  add_function(module, ptype_sym, (void *) ptype, 1, OBJECT_T);
+  add_function(module, lookup_sym, (void *) lookup, 2, OBJECT_T, SYMBOL_T);
+  add_function(module, assign_sym, (void *) assign, 3, OBJECT_T, SYMBOL_T, OBJECT_T);
+  add_function(module, rmslot_sym, (void *) rmslot, 2, OBJECT_T, SYMBOL_T);
+  add_function(module, print_sym, (void *) print, 1, OBJECT_T);
+  add_function(module, include_sym, (void *) include, 2, OBJECT_T, OBJECT_T);
+  add_function(module, subscribe_sym, (void *) subscribe, 2, OBJECT_T, OBJECT_T);
+  add_function(module, ls_sym, (void *) ls, 1, OBJECT_T);
+  add_function(module, lsall_sym, (void *) lsall, 1, OBJECT_T);
+  ADD_MODULE(eval);
+  add_function(module, eval_sym, (void *) eval, 2, OBJECT_T, OBJECT_T);
 
-  ADD_MODULE(object);
-  add_function(module, new_sym, OBJECT_T, (void *) new, 0);
-  add_function(module, clone_sym, OBJECT_T, (void *) clone, 1, OBJECT_T);
 }

@@ -10,7 +10,6 @@
 typedef int _rha_ symbol_t;
 typedef void* _rha_ object_t;
 typedef struct { 
-  int_t rettype;     // return type (currently not used)
   void *code;        // pointer to the code
   int_t narg;        // number of arguments
   int_t *argtypes[]; // array of the arg types

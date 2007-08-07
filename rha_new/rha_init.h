@@ -5,11 +5,7 @@
 // (1) includes
 #include "object.h"
 #include "eval.h"
-#include "core.h"
-#include "bool_fn.h"
-#include "int_fn.h"
-#include "real_fn.h"
-#include "mat_fn.h"
+
 
 // (2) 
 extern object_t rha_init();
