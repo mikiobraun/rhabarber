@@ -36,12 +36,12 @@ int main(int argc, char **argv)
   while(1) {
     // read line
     sprintf(prompt, "rha[%d]$ ", lineno);
-    char *line = readline(prompt);
+    string_t line = readline(prompt);
     if (!line) break;
     add_history(line);
 
-    object_t p = parse(line);
-    object_t e = eval(p);
+    object_t p = parse(root, line);
+    object_t e = eval(root, p);
     print(p);
   }
 }  

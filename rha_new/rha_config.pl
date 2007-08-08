@@ -107,7 +107,10 @@ foreach $module (@mods) {
 	    if ($item eq "void") { die "'void' is not allowed as argument" }
 	    if ($i>1) { $fncall_str .= ", " }
 	    $fnarg_str = "tuple_get(t, $i)";
-	    if ($item ne "object_t") { $fnarg_str = "*RAW($item, $fnarg_str)" }
+	    if ($item eq "int_t") { $fnarg_str = "RAW_INT($fnarg_str)" }
+	    elsif ($item eq "float_t") { $fnarg_str = "RAW_FLOAT($fnarg_str)" }
+	    elsif ($item eq "double_t") { $fnarg_str = "RAW_DOUBLE($fnarg_str)" }
+	    elsif ($item eq "symbol_t") { $fnarg_str = "RAW_INT($fnarg_str)" }
 	    $fncall_str .= $fnarg_str;
 	    $i++;
 	}

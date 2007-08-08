@@ -5,6 +5,7 @@
 //MODULES
 #include "object.h"
 #include "eval.h"
+#include "parse.h"
 #include "bool_fn.h"
 
 //TYPES
