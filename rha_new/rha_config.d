@@ -5,8 +5,8 @@
 //MODULES
 #include "object.h"
 #include "eval.h"
-#include "parse.h"
-#include "bool_fn.h"
+//#include "parse.h"
+//#include "bool_fn.h"
 
 //TYPES
 #include <stdbool.h>
@@ -34,3 +34,6 @@ extern symbol_t root_sym;
 extern symbol_t local_sym;
 extern symbol_t void_sym;
 extern symbol_t parent_sym;
+
+//MACROS
+#define test

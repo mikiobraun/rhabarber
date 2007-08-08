@@ -32,10 +32,17 @@ close(FILE);
 $input = join '', @input;
 
 # parse the def file
-$input =~ /\/\/MODULES\s*\n(.*)\/\/TYPES\s*\n(.*)\/\/SYMBOLS\s*\n(.*)/s;
+$input =~ /\/\/MODULES\s*\n(.*)\/\/TYPES\s*\n(.*)\/\/SYMBOLS\s*\n(.*)\/\/MACROS\s*\n(.*)/s;
 $modules = $1;
 $types   = $2;
 $symbols = $3;
+$macros  = $4;
+
+# (0) remove comments
+$modules =~ s/\/\/[^\n]*//g;
+$types =~ s/\/\/[^\n]*//g;
+$symbols =~ s/\/\/[^\n]*//g;
+$macros =~ s/\/\/[^\n]*//g;
 
 # (1) disect the includes
 @mods = $modules =~ /include\s+\"($id)\.h\"/gox;
@@ -55,6 +62,7 @@ $type_h_types = $types;
 $type_h_ids = "";
 $type_h_prototypes = "";
 $type_h_symbols = "";
+$type_h_macros = $macros;
 
 $init_h_modules = $modules;
 
@@ -107,25 +115,24 @@ foreach $module (@mods) {
 	    if ($item eq "void") { die "'void' is not allowed as argument" }
 	    if ($i>1) { $fncall_str .= ", " }
 	    $fnarg_str = "tuple_get(t, $i)";
-	    if ($item eq "int_t") { $fnarg_str = "RAW_INT($fnarg_str)" }
-	    elsif ($item eq "float_t") { $fnarg_str = "RAW_FLOAT($fnarg_str)" }
-	    elsif ($item eq "double_t") { $fnarg_str = "RAW_DOUBLE($fnarg_str)" }
-	    elsif ($item eq "symbol_t") { $fnarg_str = "RAW_INT($fnarg_str)" }
+	    if ($item eq "int_t") { $fnarg_str = "UNWRAP_INT($fnarg_str)" }
+	    elsif ($item eq "symbol_t") { $fnarg_str = "UNWRAP_SYMBOL($fnarg_str)" }
+	    elsif ($item eq "float_t") { $fnarg_str = "UNWRAP_FLOAT($fnarg_str)" }
+	    elsif ($item eq "double_t") { $fnarg_str = "UNWRAP_DOUBLE($fnarg_str)" }
+	    elsif ($item ne "object_t") { $fnarg_str = "UNWRAP_PTR($fnarg_str)" }
 	    $fncall_str .= $fnarg_str;
 	    $i++;
 	}
 	$fncall_str .= ")";
-	if ($fntype eq "void") { 
-	    $init_c_functions .= "  $fncall_str;\n"
+	if ($fntype eq "int_t") { $fncall_str = "WRAP_INT($fncall_str)" }
+	elsif ($fntype eq "symbol_t") { $fncall_str = "WRAP_SYMBOL($fncall_str)" }
+	elsif ($fntype eq "float_t") { $fncall_str = "WRAP_FLOAT($fncall_str)" }
+	elsif ($fntype eq "double_t") { $fncall_str = "WRAP_DOUBLE($fncall_str)" }
+	elsif ($fntype ne "object_t" && $fntype ne "void") {
+	    $fncall_str = "WRAP_PTR($fncall_str)" 
 	}
-	elsif ($fntype eq "object_t") {
-	    $init_c_functions .= "  return $fncall_str;\n" 
-	}
-	else { 
-	    $ucfntype = uc($fntype);
-	    $ifntype = substr($fntype, 0, -2);
-	    $init_c_functions .= "  return wrap($ucfntype, $ifntype"."_proto, $fncall_str);\n"
-	}
+	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n" }
+	else { $init_c_functions .= "  return $fncall_str;\n" }
 	$init_c_functions .= "}\n";
 
 	# add code to add functions
@@ -240,13 +247,8 @@ $type_h_typeobjects
 // (5) symbols
 $type_h_symbols
 
-// (6) some useful macros
-// get the raw data and convert
-//
-// for example, raw(int_t, o)
-#define RAW(tp, o) ((tp*)((o)->raw))
-#define ASSERT_RAW_NONZERO(o) assert(raw(o) != 0)
-
+// (6) macros
+$type_h_macros
 #endif
 ENDE
 }
