@@ -28,12 +28,11 @@ object_t eval(object_t env, object_t expr)
   switch (ptype(expr)) {
   case SYMBOL_T: 
     // symbols
-    ASSERT_RAW_NONZERO(expr);
-    RETURN( lookup(env, *RAW(symbol_t, expr)) );
+    RETURN( lookup(env, UNWRAP_SYMBOL(expr)) );
   case TUPLE_T: 
     // function call
-    ASSERT_RAW_NONZERO(expr);
-    RETURN( call_fun(env, raw(expr)) );
+    assert(UNWRAP_PTR(TUPLE_T, expr));
+    RETURN( call_fun(env, UNWRAP_PTR(TUPLE_T, expr)) );
   default:
     // literal
     RETURN( expr );
@@ -47,7 +46,7 @@ object_t call_fun(object_t env, tuple_t expr)
   assert(tlen>0);  // otherwise repair 'rhaparser.y'
   object_t f = tuple_get(expr, 0);
   // deal with 'quote'
-  if ((ptype(f)==SYMBOL_T) && symbol_equal(quote_sym, *RAW(symbol_t, f))) {
+  if ((ptype(f)==SYMBOL_T) && symbol_equal(quote_sym, UNWRAP_SYMBOL(f))) {
     assert(tlen==2);  // otherwise repair 'rhaparser.y'
     return tuple_get(expr, 1);
   }
@@ -69,7 +68,7 @@ object_t call_fun(object_t env, tuple_t expr)
 void check(object_t o, int_t pt)
 {
   if (ptype(o) != pt) rha_error("argument primtype missmatch (expected: %d, got: %d)\n", pt, ptype(o));
-  if (!raw(o)) rha_error("undefined primtype object\n");
+  //if (!raw(o)) rha_error("undefined primtype object\n");
 }
 
 
@@ -79,7 +78,7 @@ void *call_C_fun(int tlen, tuple_t t)
   // extract the function
   object_t t0 = tuple_get(t, 0);
   assert(t0 && ptype(t0)==FN_T);
-  fn_t *f = RAW(fn_t, t0);
+  fn_t *f = UNWRAP_PTR(FN_T, t0);
   // is the argument number correct?
   if (f->narg != narg)
     rha_error("wrong number of arguments (expected %d, got %d)\n", f->narg, narg);
@@ -103,7 +102,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   // check if number of args is the same
   int nargs = tlen - 1;
 
-  tuple_t argnames = raw(lookup(fn, symbol_new("argnames")));
+  tuple_t argnames = UNWRAP_PTR(TUPLE_T, lookup(fn, symbol_new("argnames")));
 
   if (tuple_len(argnames) != nargs) {
     rha_error("Function called with wrong number of arguments");
@@ -117,7 +116,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
 
   // assign the arguments
   for(int i = 0; i < nargs; i++) {
-    symbol_t s = *RAW(symbol_t, tuple_get(argnames, i));
+    symbol_t s = UNWRAP_SYMBOL(tuple_get(argnames, i));
     printf("assigning argument number %d to '%s'\n", i, symbol_name(s));
     assign(local, s, tuple_get(expr, i+1));
   }

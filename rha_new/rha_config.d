@@ -36,4 +36,14 @@ extern symbol_t void_sym;
 extern symbol_t parent_sym;
 
 //MACROS
-#define test
+#define UNWRAP_INT(o)    (unwrap_int(INT_T, o))
+#define UNWRAP_SYMBOL(o) (unwrap_int(SYMBOL_T, o))
+#define UNWRAP_FLOAT(o)  (unwrap_float(FLOAT_T, o))
+#define UNWRAP_DOUBLE(o) (unwrap_double(DOUBLE_T, o))
+#define UNWRAP_PTR(pt, o)    (unwrap_ptr(pt, o))
+
+#define WRAP_INT(i)    (wrap_int(INT_T, int_proto, i))
+#define WRAP_SYMBOL(s) (wrap_int(SYMBOL_T, symbol_proto, s))
+#define WRAP_FLOAT(f)  (wrap_float(FLOAT_F, float_proto, f))
+#define WRAP_DOUBLE(d) (wrap_double(DOUBLE_F, double_proto, d))
+#define WRAP_PTR(pt, proto, p)    (wrap_ptr(pt, proto, p))

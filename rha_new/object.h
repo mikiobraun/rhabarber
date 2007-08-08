@@ -22,7 +22,12 @@ struct rha_object {
   enum ptypes ptype;            // primtype (ptype): internal type 
                           // that describes the content
   struct symtable *table; // symbol table of slots
-  void *raw;              // possible raw content
+  union {
+    int i;
+    float f;
+    double d;
+    void *p;              // possible raw content
+  } raw;
 };
 
 /*
@@ -33,10 +38,15 @@ extern       object_t   new_t(int_t pt, object_t proto);
 extern _rha_ object_t   clone(object_t parent);
 extern _rha_ int_t      ptype(object_t); // primtype
 extern       void       setptype(object_t, int_t);
-extern       void      *raw(object_t o);
-extern       void       setraw(object_t, void *);
 
-extern       object_t   wrap(int ptype, object_t proto, void *raw);
+extern       object_t   wrap_int(int ptype, object_t proto, int i);
+extern       object_t   wrap_float(int ptype, object_t proto, float f);
+extern       object_t   wrap_double(int ptype, object_t proto, double d);
+extern       object_t   wrap_ptr(int ptype, object_t proto, void *p);
+extern       int        unwrap_int(int ptype, object_t o);
+extern       float      unwrap_float(int ptype, object_t o);
+extern       double     unwrap_double(int ptype, object_t o);
+extern       void      *unwrap_ptr(int ptype, object_t o);
 
 // 'lookup'
 //     z          -> lookup(local, \z);

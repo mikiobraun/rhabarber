@@ -37,7 +37,6 @@ object_t new()
   object_t o = ALLOC_SIZE(sizeof(struct rha_object));
   o->ptype = 0;
   o->table = symtable_new();
-  o->raw = 0;
   printdebug(" %p created by object.h->new.\n", (void *) o);
   return o;
 }
@@ -74,24 +73,68 @@ void setptype(object_t o, int_t id)
   o->ptype = id;
 }
 
-void *raw(object_t o)
-{
-  return o->raw;
-}
-
-void setraw(object_t o, void *raw)
-{
-  o->raw = raw;
-}
-
-object_t wrap(int ptype, object_t proto, void *raw)
+object_t wrap_int(int ptype, object_t proto, int i)
 {
   object_t o = new();
   setptype(o, ptype);
-  setraw(o, raw);
+  o->raw.i = i;
   if (proto)
     assign(o, symbol_new("parent"), proto);    
   return o;
+}
+
+object_t wrap_float(int ptype, object_t proto, float f)
+{
+  object_t o = new();
+  setptype(o, ptype);
+  o->raw.f = f;
+  if (proto)
+    assign(o, symbol_new("parent"), proto);    
+  return o;
+}
+
+object_t wrap_double(int ptype, object_t proto, double d)
+{
+  object_t o = new();
+  setptype(o, ptype);
+  o->raw.d = d;
+  if (proto)
+    assign(o, symbol_new("parent"), proto);    
+  return o;
+}
+
+object_t wrap_ptr(int ptype, object_t proto, void *p)
+{
+  object_t o = new();
+  setptype(o, ptype);
+  o->raw.p = p;
+  if (proto)
+    assign(o, symbol_new("parent"), proto);    
+  return o;
+}
+
+int unwrap_int(int pt, object_t o)
+{
+  assert(!pt || ptype(o) == pt);
+  return o->raw.i;
+}
+
+float unwrap_float(int pt, object_t o)
+{
+  assert(!pt || ptype(o) == pt);
+  return o->raw.f;
+}
+
+double unwrap_double(int pt, object_t o)
+{
+  assert(!pt || ptype(o) == pt);
+  return o->raw.d;
+}
+
+void* unwrap_ptr(int pt, object_t o)
+{
+  assert(!pt || ptype(o) == pt);
+  return o->raw.p;
 }
 
 /*
@@ -158,7 +201,14 @@ void print(object_t o)
     fprintf(stdout, "nil");
   }
   else {
-    fprintf(stdout, "[ ptype=%d, raw=%08x\n ]", ptype(o), raw(o));
+    switch (ptype(o)) {
+    case INT_T: fprintf(stdout, "%d", o->raw.i); break;
+    case SYMBOL_T: fprintf(stdout, "%s", symbol_name(o->raw.i)); break;
+      //case FLOAT_T: fprintf(stdout, "%f", symbol_name(o->raw.f)); break;
+    case REAL_T: fprintf(stdout, "%f", symbol_name(o->raw.d)); break;
+    default:
+      fprintf(stdout, "[ ptype=%d, raw=%08x\n ]", ptype(o), o->raw.p);
+    }
   }
 }
 

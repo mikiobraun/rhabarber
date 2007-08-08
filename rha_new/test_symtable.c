@@ -4,6 +4,7 @@
 #include "symbol_fn.h"
 
 symbol_t parent_sym;
+object_t symbol_proto;
 
 BEGIN_CASE(symtable)
      parent_sym = symbol_new("parent");
@@ -11,7 +12,7 @@ BEGIN_CASE(symtable)
      symtable_t s = symtable_new();
 
      symbol_t xsym = symbol_new("x");
-     object_t x = wrap(SYMBOL_T, NULL, &xsym);
+     object_t x = WRAP_SYMBOL(xsym);
      
      mu_assert_equal_ptr("trying to look up non-existent symbol:\n", symtable_lookup(s, xsym), NULL);
 

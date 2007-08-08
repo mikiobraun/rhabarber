@@ -4,6 +4,7 @@
 #include "object.h"
 
 symbol_t parent_sym;
+object_t symbol_proto;
 
 /* construct a tuple, check the size, put some things into the tuple and retrieve them later */
 BEGIN_CASE(tuple)
@@ -15,9 +16,9 @@ BEGIN_CASE(tuple)
      symbol_t bar = symbol_new("bar"); mu_assert_equal("bar should be 3", bar, 3);
      symbol_t baz = symbol_new("baz"); mu_assert_equal("baz should be 4", baz, 4);
      
-     tuple_set(t, 0, wrap(SYMBOL_T, NULL, &foo)); mu_assert_equal("tuple position 0 should be foo (i.e. 2)", *RAW(symbol_t, tuple_get(t, 0)), 2);
-     tuple_set(t, 1, wrap(SYMBOL_T, NULL, &bar)); mu_assert_equal("tuple position 1 should be bar (i.e. 3)", *RAW(symbol_t, tuple_get(t, 1)), 3);
-     tuple_set(t, 2, wrap(SYMBOL_T, NULL, &baz)); mu_assert_equal("tuple position 2 should be baz (i.e. 4)", *RAW(symbol_t, tuple_get(t, 2)), 4);
+     tuple_set(t, 0, WRAP_SYMBOL(foo)); mu_assert_equal("tuple position 0 should be foo (i.e. 2)", UNWRAP_SYMBOL(tuple_get(t, 0)), 2);
+     tuple_set(t, 1, WRAP_SYMBOL(bar)); mu_assert_equal("tuple position 1 should be bar (i.e. 3)", UNWRAP_SYMBOL(tuple_get(t, 1)), 3);
+     tuple_set(t, 2, WRAP_SYMBOL(baz)); mu_assert_equal("tuple position 2 should be baz (i.e. 4)", UNWRAP_SYMBOL(tuple_get(t, 2)), 4);
 END_CASE
 
 BEGIN_TESTS
