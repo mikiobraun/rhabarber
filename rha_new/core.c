@@ -12,8 +12,12 @@
 
 #include <stdlib.h>
 #include <setjmp.h>
+#include <stdio.h>
 #include "rha_types.h"
+#include "messages.h"
 
+#include "eval.h"
+#include "tuple_fn.h"
 
 object_t if_fn(object_t this, bool_t cond, object_t then_code, object_t else_code)
 {
@@ -49,7 +53,7 @@ void break_fn(object_t retval)
 }
 
 
-void throw_fn(object_t excp);
+void throw_fn(object_t excp)
 {
   // thow_fn does not return!
   throw(excp);
@@ -87,8 +91,8 @@ object_t while_fn(object_t this, object_t cond, object_t body)
   object_t res = void_obj; // must be initialized for "cond==false"
   begin_frame(LOOP_FRAME)
     while (1) {
-      if (UNWRAP_BOOL(eval(env, tuple_get(in, 1))))
-	res = eval(env, body);
+      if (UNWRAP_BOOL(eval(this, cond)))
+	res = eval(this, body);
       else
 	break;
     }
@@ -113,7 +117,7 @@ object_t for_fn(object_t this, symbol_t var, object_t container, object_t code)
 
 addr_t addr_fn(object_t o)
 {
-  return (addr_t) &o;
+  return (addr_t) o;
 }
 
 
@@ -140,7 +144,7 @@ void tic_fn()
   tic_saved_time = tv.tv_usec * 1e-6;
 }
 
-double toc_fn
+double toc_fn()
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);

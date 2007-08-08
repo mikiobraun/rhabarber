@@ -28,10 +28,10 @@ test_cases: $(TESTCASES)
 run_tests: test_cases
 	for i in $$(find . -name "test_*" -perm +a+x); do echo -e "---Test: $$i\n"; $$i; done
 
-rha_lexer.c : rha_parser.tab.h
-	flex rha_lexer.l
+rha_lexer.c : rha_parser_tab.h
+	flex -o$@ rha_lexer.l
 
-rha_parser_tab.h rha_parser_tab.c : rha_lexer.l rha_parser.y
+rha_parser_tab.h rha_parser_tab.c : rha_lexer.l rha_parser.y rha_types.h
 	bison -d rha_parser.y
 
 clean:
@@ -40,7 +40,7 @@ clean:
 	rm -f rha_parser_tab.h rha_parser_tab.c rha_lexer.c
 
 depend: rha_types.h
-	$(CC) $(CFLAGS) -M $(SOURCES) >.depend
+	$(CC) $(CFLAGS) -M $(SOURCES) rha_types.l rha_parser.y >.depend
 
 ifeq (.depend,$(wildcard .depend))
 include .depend

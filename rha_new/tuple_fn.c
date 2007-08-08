@@ -9,8 +9,9 @@
  */
 
 #include "tuple_fn.h"
+#include <stdarg.h>
 #include "alloc.h"
-#include "util/gtuple.h"
+#include "gtuple.h"
 
 tuple_t tuple_new(int_t len)
 {
@@ -32,4 +33,16 @@ object_t tuple_get(tuple_t t, int_t i)
 void tuple_set(tuple_t t, int_t i, object_t s)
 {
   gtuple_set(t, i, s);
+}
+
+tuple_t tuple_make(int narg, ...)
+{
+  va_list ap;
+  tuple_t t = tuple_new(narg);
+  va_start(ap, narg);
+  for (int i = 0; i < narg; i++)
+    tuple_set(t, i, va_arg(ap, object_t));
+  va_end(ap);
+
+  return t;
 }
