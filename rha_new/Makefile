@@ -30,7 +30,7 @@ test_symtable : test_symtable.o symtable.o object.o symbol_fn.o
 testcases: $(TESTCASES)
 
 run_tests: testcases
-	for i in $$(find . -name "test_*" -perm /+x); do echo -e "---Test: $$i\n"; $$i; done
+	for i in $$(find . -name "test_*" -perm +a+x); do echo -e "---Test: $$i\n"; $$i; done
 
 clean:
 	rm -f *.o
