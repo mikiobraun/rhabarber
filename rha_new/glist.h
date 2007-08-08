@@ -41,11 +41,12 @@ extern void glist_prepend_(glist_t *l, intptr_t data);
 extern void glist_appendlist(glist_t *l1, glist_t *l2);
 
 // removing elements from head and tail
-extern intptr_t glist_pop(glist_t *l);
-extern intptr_t glist_remove(glist_t *l);
+extern intptr_t glist_pop_(glist_t *l);
+extern intptr_t glist_remove_(glist_t *l);
 
 // getting the element from the head
-extern intptr_t glist_front(glist_t *l);
+extern intptr_t glist_front_(glist_t *l);
+extern intptr_t glist_back_(glist_t *l);
 
 // check sizes
 extern bool glist_isempty(glist_t *l);
@@ -69,6 +70,8 @@ extern intptr_t glist_get_(glist_iterator_t *i);
 #define glist_removep(l) ((void*) glist_remove_(l))
 #define glist_fronti(l) ((int) glist_front_(l))
 #define glist_frontp(l) ((void*) glist_front_(l))
+#define glist_backi(l) ((int) glist_back_(l))
+#define glist_backp(l) ((void*) glist_back_(l))
 #define glist_geti(l) ((int) glist_get_(l))
 #define glist_getp(l) ((void*) glist_get_(l))
 

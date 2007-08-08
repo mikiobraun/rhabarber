@@ -34,3 +34,23 @@ tuple_t list_to_tuple(list_t l)
   for (it = glist_begin(l), i; glist_done(&it); glist_next(&it), i++)
     tuple_set(t, i, glist_getp(&it)); 
 }
+
+object_t list_first(list_t l)
+{
+  return glist_frontp(l);
+}
+
+object_t list_last(list_t l)
+{
+  return glist_backp(l);
+}
+
+object_t list_popfirst(list_t l)
+{
+  return glist_popp(l);
+}
+
+object_t list_poplast(list_t l)
+{
+  return glist_removep(l);
+}

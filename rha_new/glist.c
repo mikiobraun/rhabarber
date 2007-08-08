@@ -126,6 +126,14 @@ intptr_t glist_front_(glist_t *l)
     return l->first->data;
 }
 
+intptr_t glist_back_(glist_t *l)
+{
+  if(!l->last)
+    return 0;
+  else
+    return l->last->data;
+}
+
 bool glist_isempty(glist_t *l)
 {
   return l->first == 0 && l->last == 0;
