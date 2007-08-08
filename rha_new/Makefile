@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include
 LDFLAGS=-L../util
-LOADLIBES=-lutil -lgc
+LOADLIBES=-lutil -lgc -lfl
 
 SOURCES=$(wildcard *.c)
 TESTCASES=$(subst .c,,$(wildcard test_*.c))
@@ -32,6 +32,9 @@ testcases: $(TESTCASES)
 
 run_tests: testcases
 	for i in $$(find . -name "test_*" -perm +a+x); do echo -e "---Test: $$i\n"; $$i; done
+
+rha_lexer.c : rha_lexer.l
+	flex -orha_lexer.c rha_lexer.l
 
 clean:
 	rm -f *.o
