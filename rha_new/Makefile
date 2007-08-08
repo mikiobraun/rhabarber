@@ -39,7 +39,7 @@ clean:
 	rm -f rha_types.h rha_init.h rha_init.c
 	rm -f rha_parser_tab.h rha_parser_tab.c rha_lexer.c
 
-depend:
+depend: rha_types.h
 	$(CC) $(CFLAGS) -M $(SOURCES) >.depend
 
 ifeq (.depend,$(wildcard .depend))
