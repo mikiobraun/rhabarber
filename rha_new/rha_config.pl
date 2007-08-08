@@ -116,20 +116,23 @@ foreach $module (@mods) {
 	    if ($i>1) { $fncall_str .= ", " }
 	    $fnarg_str = "tuple_get(t, $i)";
 	    if ($item eq "int_t") { $fnarg_str = "UNWRAP_INT($fnarg_str)" }
+	    elsif ($item eq "bool_t") { $fnarg_str = "UNWRAP_BOOL($fnarg_str)" }
 	    elsif ($item eq "symbol_t") { $fnarg_str = "UNWRAP_SYMBOL($fnarg_str)" }
-	    elsif ($item eq "float_t") { $fnarg_str = "UNWRAP_FLOAT($fnarg_str)" }
-	    elsif ($item eq "double_t") { $fnarg_str = "UNWRAP_DOUBLE($fnarg_str)" }
+	    elsif ($item eq "real_t") { $fnarg_str = "UNWRAP_REAL($fnarg_str)" }
 	    elsif ($item ne "object_t") { $fnarg_str = "UNWRAP_PTR($fnarg_str)" }
 	    $fncall_str .= $fnarg_str;
 	    $i++;
 	}
 	$fncall_str .= ")";
 	if ($fntype eq "int_t") { $fncall_str = "WRAP_INT($fncall_str)" }
+	elsif ($fntype eq "bool_t") { $fncall_str = "WRAP_BOOL($fncall_str)" }
 	elsif ($fntype eq "symbol_t") { $fncall_str = "WRAP_SYMBOL($fncall_str)" }
-	elsif ($fntype eq "float_t") { $fncall_str = "WRAP_FLOAT($fncall_str)" }
-	elsif ($fntype eq "double_t") { $fncall_str = "WRAP_DOUBLE($fncall_str)" }
+	elsif ($fntype eq "real_t") { $fncall_str = "WRAP_REAL($fncall_str)" }
 	elsif ($fntype ne "object_t" && $fntype ne "void") {
-	    $fncall_str = "WRAP_PTR($fncall_str)" 
+	    $ucfntype = uc($fntype);
+	    $ifntype = 	substr($fntype, 0, -2);
+
+	    $fncall_str = "WRAP_PTR($ucfntype, $ifntype"."_proto, $fncall_str)" 
 	}
 	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n" }
 	else { $init_c_functions .= "  return $fncall_str;\n" }
