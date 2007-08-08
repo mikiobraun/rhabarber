@@ -295,18 +295,17 @@ $init_c_functions
   assign(root, ttt ## _sym, ttt ## _obj);\
   assign(ttt ## _obj, proto_sym, ttt ## _proto);
 
-void add_function(object_t module, symbol_t s, int rettype, void *code, int narg, ...)
+void add_function(object_t module, symbol_t s, void *code, int narg, ...)
 {
   // create a new object
   object_t o = new_t(FN_T, fn_proto);
 
   // create a struct containing all info about the builtin function
-  fn_t f = ALLOC_SIZE(size_of(fn_t));
+  fn_t f = ALLOC_SIZE(sizeof(fn_t));
   setraw(o, (void *) f);
-  f->rettype = rettype;
   f->code = code;
   f->narg = narg;
-  f->argtypes = ALLOC_SIZE(narg*size_of(int_t));
+  f->argtypes = ALLOC_SIZE(narg*sizeof(int_t));
 
   // read out the argument types
   va_list ap;

@@ -1,8 +1,9 @@
 CC=gcc
-CFLAGS=-std=c99 -I../ -ggdb
+CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include
 LDFLAGS=-L../util
 LOADLIBES=-lutil -lgc
 
+SOURCES=$(wildcard *.c)
 TESTCASES=$(subst .c,,$(wildcard test_*.c))
 
 rha_types.h rha_init.c rha_init.h : rha_config.d rha_config.pl
@@ -35,3 +36,6 @@ run_tests: testcases
 clean:
 	rm -f *.o
 	rm rha_types.h rha_init.h rha_init.c
+
+depend:
+	gcc -E $(CFLAGS) x$(SOURCES) >.depend
