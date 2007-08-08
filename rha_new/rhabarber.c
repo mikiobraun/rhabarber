@@ -14,7 +14,7 @@
 #include <readline/history.h>
 #include <gc/gc.h>
 
-#include "rha_stub.h"
+#include "rha_init.h"
 
 int main(int argc, char **argv)
 {
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
   using_history();
 
   // set up root object
-  object_t root = rha_stub_init(root);
+  object_t root = rha_init(root);
   
   int lineno = 0;
 
