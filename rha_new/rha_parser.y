@@ -35,8 +35,8 @@ static object_t solidify(symbol_t s, list_t t);
 }
 
 %token <obj> BOOL INT REAL STRING SYMBOL LRP RRP LSP RSP LCP RCP
-%type <obj> prog expr
-%type <lis> wslist
+%type <obj> expr
+%type <lis> prog wslist
 
 %% /* Grammar rules and actions follow.  */
 prog        : wslist          { solidify(curlied_sym, $1); }
@@ -63,7 +63,7 @@ int numerrors;
 object_t solidify(symbol_t s, list_t l)
 {
   list_prepend(l, WRAP_SYMBOL(s));
-  return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(l));
+  return WRAP_PTR(LIST_T, list_proto, l);
 }
 
 
