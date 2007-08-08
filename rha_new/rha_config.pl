@@ -8,6 +8,11 @@
 #     rha_init.c
 #     rha_types.h
 
+# TODO:
+# *   some .h files are ignored
+# *   allow core_init(root), eval_init(root) to be added to rha_init.c
+#     e.g. for adding a prule type to parse.c
+
 
 #################################
 ### step 1: preliminary stuff ###
