@@ -8,7 +8,7 @@ static struct gtree symbolnames;
 
 static bool symbol_lessfct(intptr_t a, intptr_t b)
 {
-  return strcmp((void*) a, (void*) b) == -1;
+  return strcmp((void*) a, (void*) b) < 0;
 }
 
 static bool symbol_namelessfct(intptr_t a, intptr_t b)

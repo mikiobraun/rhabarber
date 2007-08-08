@@ -1,36 +1,29 @@
 CC=gcc
 CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include
-LDFLAGS=-L../util
-LOADLIBES=-lutil -lgc -lfl
+LDFLAGS=-L/opt/local/lib
+LOADLIBES=-lgc
 
 SOURCES=$(wildcard *.c)
+UTILOBJ=gtree.o utilalloc.o gtuple.o
+
 TESTCASES=$(subst .c,,$(wildcard test_*.c))
 
 rha_types.h rha_init.c rha_init.h : rha_config.d rha_config.pl
 	./rha_config.pl
 
-test_symbol_fn.o : test_symbol_fn.c symbol_fn.h minunit.h
+test_symbol_fn : test_symbol_fn.o symbol_fn.o $(UTILOBJ)
 
-test_symbol_fn : test_symbol_fn.o symbol_fn.o
+test_tuple : test_tuple.o tuple_fn.o symbol_fn.o object.o symtable.o $(UTILOBJ)
 
-# tuple
-test_tuple_fn.o : test_tuple_fn.c test_tuple_fn.h minunit.h symbol_fn.h object.h
+test_eval : test_eval.o eval.o symbol_fn.o object.o symtable.o tuple_fn.o test_eval.o $(UTILOBJ)
 
-test_tuple : test_tuple.o tuple_fn.o symbol_fn.o object.o symtable.o
+test_symtable : test_symtable.o symtable.o object.o symbol_fn.o $(UTILOBJ) 
 
-# eval
-test_eval.o : test_eval.c eval.h symbol_fn.h rha_types.h
+test_gtree : test_gtree.o $(UTILOBJ)
 
-test_eval : test_eval.o eval.o symbol_fn.o object.o symtable.o tuple_fn.o test_eval.o
+test_cases: $(TESTCASES)
 
-# symtable
-test_symtable.o : test_symtable.c object.h symbol_fn.h
-
-test_symtable : test_symtable.o symtable.o object.o symbol_fn.o
-
-testcases: $(TESTCASES)
-
-run_tests: testcases
+run_tests: test_cases
 	for i in $$(find . -name "test_*" -perm +a+x); do echo -e "---Test: $$i\n"; $$i; done
 
 rha_lexer.c : rha_lexer.l
@@ -41,4 +34,8 @@ clean:
 	rm rha_types.h rha_init.h rha_init.c
 
 depend:
-	gcc -E $(CFLAGS) x$(SOURCES) >.depend
+	$(CC) $(CFLAGS) -M $(SOURCES) >.depend
+
+ifeq (.depend,$(wildcard .depend))
+include .depend
+endif
