@@ -6,7 +6,7 @@ LOADLIBES=-lutil -lgc
 TESTCASES=$(subst .c,,$(wildcard test_*.c))
 
 rha_types.h rha_init.c rha_init.h : rha_config.d rha_config.pl
-	rha_config.pl
+	./rha_config.pl
 
 test_symbol_fn.o : test_symbol_fn.c symbol_fn.h minunit.h
 
