@@ -8,6 +8,8 @@ UTILOBJ=gtree.o utilalloc.o gtuple.o
 
 TESTCASES=$(subst .c,,$(wildcard test_*.c))
 
+default : run_tests
+
 rha_types.h rha_init.c rha_init.h : rha_config.d rha_config.pl
 	./rha_config.pl
 
@@ -26,12 +28,16 @@ test_cases: $(TESTCASES)
 run_tests: test_cases
 	for i in $$(find . -name "test_*" -perm +a+x); do echo -e "---Test: $$i\n"; $$i; done
 
-rha_lexer.c : rha_lexer.l
-	flex -orha_lexer.c rha_lexer.l
+rha_lexer.c : rha_parser.tab.h
+	flex rha_lexer.l
+
+rha_parser_tab.h rha_parser_tab.c : rha_lexer.l rha_parser.y
+	bison -d rha_parser.y
 
 clean:
 	rm -f *.o
-	rm rha_types.h rha_init.h rha_init.c
+	rm -f rha_types.h rha_init.h rha_init.c
+	rm -f rha_parser_tab.h rha_parser_tab.c rha_lexer.c
 
 depend:
 	$(CC) $(CFLAGS) -M $(SOURCES) >.depend

@@ -3,15 +3,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "rhalexer.h"
-#include "core.h"
-#include "symbol_tr.h"
-#include "bool_tr.h"
-#include "int_tr.h"
-#include "real_tr.h"
-#include "string_tr.h"
+#include "rha_types.h"
+  //#include "rhalexer.h"
+  //#include "rhaparser.h"
 #define YYSTYPE object_t /* is this really correct? */
-#include "rhaparser.h"
+#include "rha_parser.tab.h"
 
 char *escexpand(char *);
 %}

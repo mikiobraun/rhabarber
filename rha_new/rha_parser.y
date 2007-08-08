@@ -1,19 +1,12 @@
 /* context free grammar for rhabarber */
 %{
-#define YYSTYPE object_t
+  //#define YYSTYPE object_t
 #include <stdio.h>
 #include <stdbool.h>
-#include "rhalexer.h"
-#include "object.h"
-#include "core.h"
-#include "none_tr.h"
-#include "tuple_tr.h"
-#include "int_tr.h"
-#include "list_tr.h"
-#include "string_tr.h"
+#include "rha_lexer.h"
+#include "rha_types.h"
 #include "utils.h"
 #include "messages.h"
-#include "none_tr.h"
 
 extern  int yylex (void);
 void yyerror (char const *);
