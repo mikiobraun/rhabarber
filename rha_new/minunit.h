@@ -8,6 +8,8 @@
      assert_failed++; } else assert_passed++; } while (0)
 #define mu_assert_equal_ptr(message, test, val) do { void* e = (test); if (e != val) { printf("%s:%d:%s: %s, expected %08x != got %08x\n", __FILE__, __LINE__, mu_name, message, val, e); \
      assert_failed++; } else assert_passed++; } while (0)
+#define mu_assert_equal_str(message, test, val) do { char* e = (test); if (strcmp(e, val) != 0) { printf("%s:%d:%s: %s, expected %s != got %s\n", __FILE__, __LINE__, mu_name, message, val, e); \
+     assert_failed++; } else assert_passed++; } while (0)
 #define mu_run_test(test) do { int old_assert_failed = assert_failed; \
                                test_ ## test(); tests_run++; } while (0)
 

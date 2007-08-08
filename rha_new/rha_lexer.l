@@ -18,8 +18,8 @@ char *escexpand(char *);
 %}
 
 %%
-"false"                 { yylval = WRAP_BOOL(false);    return BOOL; }
-"true"                  { yylval = WRAP_BOOL(true);     return BOOL; }
+"false"                 { yylval.obj = WRAP_BOOL(false);    return BOOL; }
+"true"                  { yylval.obj = WRAP_BOOL(true);     return BOOL; }
 
 "("			return LRP;     /* round paren */
 ")"			return RRP;
@@ -30,16 +30,16 @@ char *escexpand(char *);
 "["			return LSP;     /* squared paren */
 "]"			return RSP;
 
-[a-zA-Z_][a-zA-Z0-9_]* { yylval = WRAP_SYMBOL(symbol_new(yytext)); return SYMBOL; }
+[a-zA-Z_][a-zA-Z0-9_]* { yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); return SYMBOL; }
 \"[^\"]*\"		{ 
                            yytext[strlen(yytext) - 1] = 0;
-                           yylval = WRAP_PTR(STRING_T, string_proto, escexpand(yytext + 1));
+                           yylval.obj = WRAP_PTR(STRING_T, string_proto, escexpand(yytext + 1));
                            return STRING;
                         }
-[0-9]+			{ yylval = WRAP_INT(atoi(yytext)); return INT; }
-([0-9]+\.[0-9])|([0-9]*\.[0-9]+) { yylval = WRAP_REAL(atof(yytext)); return REAL; }
+[0-9]+			{ yylval.obj = WRAP_INT(atoi(yytext)); return INT; }
+([0-9]+\.[0-9])|([0-9]*\.[0-9]+) { yylval.obj = WRAP_REAL(atof(yytext)); return REAL; }
 ([+\-*/<>^!=.]+|"&&"|"||"|"\\"|"?"|"#") {
-                          yylval = WRAP_SYMBOL(symbol_new(yytext)); return SYMBOL; 
+                          yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); return SYMBOL; 
                         }
 [ \t]+			/* eat up white spaces */
 \n			yylineno++;

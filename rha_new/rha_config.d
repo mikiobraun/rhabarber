@@ -47,7 +47,7 @@ extern symbol_t rounded_sym;
 #define UNWRAP_INT(o)    (unwrap_int(INT_T, o))
 #define UNWRAP_BOOL(o)   (unwrap_int(BOOL_T, o))
 #define UNWRAP_SYMBOL(o) (unwrap_int(SYMBOL_T, o))
-#define UNWRAP_REAL(o) (unwrap_double(DOUBLE_T, o))
+#define UNWRAP_REAL(o) (unwrap_double(REAL_T, o))
 #define UNWRAP_PTR(pt, o)    (unwrap_ptr(pt, o))
 
 #define WRAP_INT(i)    (wrap_int(INT_T, int_proto, i))

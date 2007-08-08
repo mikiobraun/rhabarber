@@ -23,6 +23,8 @@ test_symtable : test_symtable.o symtable.o object.o symbol_fn.o $(UTILOBJ)
 
 test_gtree : test_gtree.o $(UTILOBJ)
 
+test_rha_lexer : test_rha_lexer.o rha_lexer.o object.o symbol_fn.o symtable.o $(UTILOBJ) 
+
 test_cases: $(TESTCASES)
 
 run_tests: test_cases
