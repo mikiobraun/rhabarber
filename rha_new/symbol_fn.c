@@ -25,7 +25,8 @@ symbol_t symbol_new(string_t s)
 
   int i = gtree_searchi(&symbolids, s );
   if (!i) {
-    i = ++symbolcount;
+    symbolcount++;
+    i = symbolcount;
     gtree_insert(&symbolids, s, i);
     gtree_insert(&symbolnames, i, s);
   }
