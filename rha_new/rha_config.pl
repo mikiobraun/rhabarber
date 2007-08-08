@@ -51,8 +51,6 @@ $macros =~ s/\/\/[^\n]*//g;
 
 # (1) disect the includes
 @mods = $modules =~ /include\s+\"($id)\.h\"/gox;
-print @mods;
-exit();
 
 # (2) disect the typedefs
 @tdefs = $types =~ /$keyword\s+($id)/gox;
