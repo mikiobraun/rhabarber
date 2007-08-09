@@ -7,24 +7,36 @@
 #include "symbol_fn.h"
 #include "tuple_fn.h"
 #include "eval.h"
+#include "messages.h"
 
 //----------------------------------------------------------------------
 // helper functions for the parsing
 
-object_t split(list_t source, symbol_t) {
-  rha_error("not yet");
+object_t split(list_t source, symbol_t head) {
+  list_t sink = list_new();
+  while (list_len(source) > 0) {
+    object_t next = list_popfirst(source);
+    if (ptype(next) == SYMBOL_T) {
+      symbol_t s = UNWRAP_SYMBOL(next);
+      if ((head==curlied_sym && s==symbol_new(";"))
+	  || (head==rounded_sym && s==symbol_new(",")))
+	continue;
+    }
+    list_append(sink, next);
+  }
+  return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
 }
 
 bool is_rounded(object_t item) {
   object_t lfn = 0;
   return (ptype(item) == LIST_T)
-    && (ptype(lfn=list_first(item)) == SYMBOL_T)
+    && (ptype(lfn=list_first(UNWRAP_PTR(LIST_T, item))) == SYMBOL_T)
     && (UNWRAP_SYMBOL(lfn) == rounded_sym);
 }
 
 bool is_args(object_t item) {
   tuple_t up = 0;
-  object_t lfs = 0;
+  object_t lfn = 0;
   return (ptype(item) == TUPLE_T)
     && (tuple_len(up=UNWRAP_PTR(TUPLE_T, item)) > 0)
     && (ptype(lfn=tuple_get(up, 0)) == SYMBOL_T)
@@ -103,20 +115,27 @@ static void opstack_resolve_till(object_t env, list_t sink, real_t precedence)
 
 //----------------------------------------------------------------------
 
+object_t resolve(object_t root, object_t source);
 object_t parse(object_t root, string_t s)
 {
   // (0) run bison code
   list_t source = rhaparsestring(s);
   
   // (1) resolve function calls and prules
-  return resolve(source);
+  return resolve(root, WRAP_PTR(LIST_T, list_proto, source));
 }
 
-object_t resolve(list_t source) 
+object_t resolve(object_t root, object_t obj) 
 {
+  // (-1) do we have a non-list?
+  if (ptype(obj)!=LIST_T)
+    return obj;
+  // we have list!
+  list_t source = UNWRAP_PTR(LIST_T, obj);
+
   // (0) pop off the head, which is in (3) used
   // to decide how to split
-  symbol_t head = list_popfirst(source);
+  symbol_t head = UNWRAP_SYMBOL(list_popfirst(source));
   assert((head == rounded_sym)
 	 || (head == curlied_sym)
 	 || (head == squared_sym));
@@ -126,6 +145,7 @@ object_t resolve(list_t source)
   // if there is a keyword, ignore depending on its arity
   // otherwise built function call
   object_t keywords = lookup(root, symbol_new("keywords"));
+  object_t prules = lookup(root, symbol_new("prules"));
   list_t sink = list_new();
   int ignore = 0;
   object_t lfn = 0;
@@ -137,10 +157,11 @@ object_t resolve(list_t source)
       assert(fncall==0);
 
       // 'next' can be ignored for function calls 
-      // but it must be 'rounded'
-      if (!is_rounded(next))
-	rha_error("parse error, rounded expr expected");
-      list_append(sink, resolve(next));
+      // but it must be 'grouped', i.e. a rounded singleton
+      object_t next_resolved = resolve(root, next);
+      if (!is_grouped(next_resolved))
+	rha_error("parse error, rounded singleton");
+      list_append(sink, next_resolved);
     }
     else if (ptype(next)==SYMBOL_T) {
       // is it a keyword?
@@ -183,7 +204,7 @@ object_t resolve(list_t source)
     else {
       // now we can assume it is a list_t, otherwise the parser did
       // something wrong, this is checked in the next call
-      object_t next_resolved = resolve(next);
+      object_t next_resolved = resolve(root, next);
 
       // did we already start to built the next function call?
       if (fncall) {
@@ -200,14 +221,14 @@ object_t resolve(list_t source)
 	// however, if it is a rounded singleton, we need to remove
 	// the brackets
 	if (is_grouped(next_resolved))
-	  next_resolved = tuple_get(next_resolved, 1);
+	  next_resolved = tuple_get(UNWRAP_PTR(TUPLE_T, next_resolved), 1);
 	fncall = next_resolved;
       }
     }
   }
   
   if (fncall) {
-    //??? clean up pending function call
+    list_append(sink, fncall);
   }
 
   source = sink;
@@ -215,9 +236,6 @@ object_t resolve(list_t source)
   // (2) resolve prule from inside out
   // go from right to left
   // use a stack and some magic
-
-  object_t keywords = lookup(root, symbol_new("keywords"));
-  object_t prules = lookup(root, symbol_new("prules"));
 
   sink = list_new();
 
@@ -261,20 +279,7 @@ object_t resolve(list_t source)
   opstack_resolve_till(root, sink, -1.0);
 
   // (3) split depending on the initial head
-  source = sink;
-  
-  switch (head) {
-  case curlied_sym: 
-    return split(source, symbol_new(';')); 
-  case rounded_sym: 
-    return split(source, symbol_new(',')); 
-  case squared_sym: 
-    // don't split!
-    rha_error("squared brackets not yet implemented");
-    break;
-  default:
-    assert(false);
-  }
+  return split(sink, head);
 }
 
 object_t keyword(string_t s, int_t a) {

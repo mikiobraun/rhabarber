@@ -10,7 +10,7 @@ extern _rha_ object_t keyword(string_t, int_t);
 extern _rha_ object_t macrofix_prule(string_t, object_t);
 extern _rha_ object_t postfix_prule(string_t, object_t);
 extern _rha_ object_t prefix_prule(string_t, object_t);
-extern _rha_ object_t infix_prule(string_t, object_t, double_t prec, int_t bind);
+extern _rha_ object_t infix_prule(string_t, object_t, real_t prec, int_t bind);
 extern _rha_ object_t freefix_prule(string_t, object_t, tuple_t parts);
 
 #define LEFT_BIND -1
