@@ -15,6 +15,7 @@
 
 extern int fileno(FILE*);
 char *escexpand(char *);
+extern int yylineno;
 %}
 %option noyywrap
 %%
