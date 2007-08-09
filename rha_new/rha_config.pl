@@ -301,10 +301,10 @@ $init_c_typeobjects
 $init_c_functions
 
 // (5) init
-#define ADD_TYPE(ttt, TTT)   // ttt ## _t\
-  setptype(ttt ## _proto, TTT ## _T);\
-  ttt ## _obj = new();\
-  assign(root, ttt ## _sym, ttt ## _obj);\
+#define ADD_TYPE(ttt, TTT)   // ttt ## _t\\
+  setptype(ttt ## _proto, TTT ## _T);\\
+  ttt ## _obj = new();\\
+  assign(root, ttt ## _sym, ttt ## _obj);\\
   assign(ttt ## _obj, proto_sym, ttt ## _proto);
 
 void add_function(object_t module, symbol_t s, void *code, int narg, ...)
@@ -330,8 +330,8 @@ void add_function(object_t module, symbol_t s, void *code, int narg, ...)
   assign(module, s, o);
 }
 
-#define ADD_MODULE(mmm)   // mmm ## .h\
-  module = new();\
+#define ADD_MODULE(mmm)   // mmm ## .h\\
+  module = new();\\
   assign(modules, mmm ## _sym, module);
 
 object_t rha_init()
