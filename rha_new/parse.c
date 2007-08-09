@@ -28,7 +28,19 @@ bool is_args(object_t item) {
   return (ptype(item) == TUPLE_T)
     && (tuple_len(up=UNWRAP_PTR(TUPLE_T, item)) > 0)
     && (ptype(lfn=tuple_get(up, 0)) == SYMBOL_T)
-    && (UNWRAP_SYMBOL(lfn) == args_sym);
+    && (UNWRAP_SYMBOL(lfn) == rounded_sym);
+}
+
+bool is_grouped(object_t item) {
+  if (ptype(item) != TUPLE_T)
+    return false;
+  tuple_t t = UNWRAP_PTR(TUPLE_T, item);
+  assert(tuple_len(t)>0);
+  if (UNWRAP_SYMBOL(tuple_get(t, 0)) != rounded_sym)
+    return false;
+  if (tuple_len(t) > 2)
+    rha_error("parse error, not a comma separated rounded tuple expected");
+  return true;
 }
 
 //
@@ -164,7 +176,10 @@ object_t resolve(list_t source)
 	fncall = next;
       }
     }
-    else --- LITERALS! --- ???
+    else if (ptype(next) != LIST_T) {
+      // literals
+      list_append(sink, next);
+    }
     else {
       // now we can assume it is a list_t, otherwise the parser did
       // something wrong, this is checked in the next call
@@ -177,12 +192,15 @@ object_t resolve(list_t source)
 	  rha_error("parse error, expecting a rounded expression for function call");
 	
 	// prepend the functioncall-so-far
-	??? richtig so?
 	tuple_set(UNWRAP_PTR(TUPLE_T, next_resolved), 0, fncall);
 	fncall = next_resolved;
       }
       else {
 	// we start over, so it can be anything
+	// however, if it is a rounded singleton, we need to remove
+	// the brackets
+	if (is_grouped(next_resolved))
+	  next_resolved = tuple_get(next_resolved, 1);
 	fncall = next_resolved;
       }
     }
