@@ -119,11 +119,12 @@ foreach $module (@mods) {
 	    if ($item eq "void") { die "'void' is not allowed as argument" }
 	    if ($i>1) { $fncall_str .= ", " }
 	    $fnarg_str = "tuple_get(t, $i)";
+	    $ucitem = uc($item);
 	    if ($item eq "int_t") { $fnarg_str = "UNWRAP_INT($fnarg_str)" }
 	    elsif ($item eq "bool_t") { $fnarg_str = "UNWRAP_BOOL($fnarg_str)" }
 	    elsif ($item eq "symbol_t") { $fnarg_str = "UNWRAP_SYMBOL($fnarg_str)" }
 	    elsif ($item eq "real_t") { $fnarg_str = "UNWRAP_REAL($fnarg_str)" }
-	    elsif ($item ne "object_t") { $fnarg_str = "UNWRAP_PTR($fnarg_str)" }
+	    elsif ($item ne "object_t") { $fnarg_str = "UNWRAP_PTR($ucitem, $fnarg_str)" }
 	    $fncall_str .= $fnarg_str;
 	    $i++;
 	}
