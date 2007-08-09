@@ -98,6 +98,7 @@ foreach $module (@mods) {
     @input = <FILE>;
     close(FILE);
     $input = join '', @input;
+    $input =~ s/\/\/[^\n]*//g;  # remove comments
     # parse it
     while ($input =~ /$keyword\s+($id)\s+($id)\s*\(([^\)]*)\)\s*;/gox) {
 	$fntype = $1;
