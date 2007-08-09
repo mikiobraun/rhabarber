@@ -12,7 +12,7 @@
 // helper functions for the parsing
 
 object_t split(list_t source, symbol_t) {
-  rha_error("note yet");
+  rha_error("not yet");
 }
 
 bool is_rounded(object_t item) {
