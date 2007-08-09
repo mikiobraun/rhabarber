@@ -136,8 +136,7 @@ foreach $module (@mods) {
 	elsif ($fntype ne "object_t" && $fntype ne "void") {
 	    $ucfntype = uc($fntype);
 	    $ifntype = 	substr($fntype, 0, -2);
-
-	    $fncall_str = "WRAP_PTR($ucfntype, $ifntype"."_proto, $fncall_str)" 
+	    $fncall_str = "WRAP_PTR($ucfntype, $ifntype"."_proto, $fncall_str)";
 	}
 	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n" }
 	else { $init_c_functions .= "  return $fncall_str;\n" }
