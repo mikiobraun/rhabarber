@@ -42,6 +42,7 @@ extern symbol_t parent_sym;
 extern symbol_t curlied_sym;
 extern symbol_t squared_sym;
 extern symbol_t rounded_sym;
+extern symbol_t args_sym;
 
 //MACROS
 #define UNWRAP_INT(o)    (unwrap_int(INT_T, o))
