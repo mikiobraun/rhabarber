@@ -1,10 +1,19 @@
+#include <assert.h>
+
 #include "parse.h"
 #include "rha_parser.h" // the link to BISON
+#include "rha_types.h"
+#include "object.h"
+#include "symbol_fn.h"
+#include "tuple_fn.h"
+#include "eval.h"
 
-list_t split(list_t source, symbol_t) {
+//----------------------------------------------------------------------
+// helper functions for the parsing
+
+object_t split(list_t source, symbol_t) {
   rha_error("note yet");
 }
-
 
 bool is_rounded(object_t item) {
   object_t lfn = 0;
@@ -22,8 +31,68 @@ bool is_args(object_t item) {
     && (UNWRAP_SYMBOL(lfn) == args_sym);
 }
 
-object_t parse(object_t root, string_t s) {
+//
 
+#define OPSTACK_SIZE 256
+static struct
+{
+  object_t prule;
+  real_t precedence;
+} opstack[OPSTACK_SIZE];
+static int ops = -1;
+
+// push an operator on the stack
+static void opstack_push(object_t prule, real_t precedence)
+{
+  ops++; assert(ops < OPSTACK_SIZE);
+  opstack[ops].prule = prule;
+  opstack[ops].precedence = precedence;
+}
+
+// pop an operator from the stack
+static void opstack_pop()
+{
+  ops--; assert(ops >= 0);
+}
+
+// get the tos
+static object_t tos_prule()
+{
+  return opstack[ops].prule;
+}
+
+static real_t tos_precedence()
+{
+  return opstack[ops].precedence;
+}
+
+// actually call the prule with the arguments on the sink and the right arity
+static object_t call_prule(object_t env, list_t sink, object_t prule)
+{
+  int arity = UNWRAP_INT(lookup(prule, symbol_new("arity")));
+
+  // construct the function call
+  tuple_t fncall = tuple_new(arity + 1);
+  tuple_set(fncall, 0, lookup(prule, symbol_new("code")));
+  for(int i = 0; i < arity; i++)
+    tuple_set(fncall, i+1, list_popfirst(sink));
+
+  return eval(env, WRAP_PTR(TUPLE_T, tuple_proto, fncall));
+}
+
+// now, the next functions actually "do something" ;)
+static void opstack_resolve_till(object_t env, list_t sink, real_t precedence)
+{
+  while(tos_precedence() > precedence) {
+    list_prepend(sink, call_prule(env, sink, tos_prule()));
+    opstack_pop();
+  }
+}
+
+//----------------------------------------------------------------------
+
+object_t parse(object_t root, string_t s)
+{
   // (0) run bison code
   list_t source = rhaparsestring(s);
   
@@ -31,8 +100,8 @@ object_t parse(object_t root, string_t s) {
   return resolve(source);
 }
 
-object_t resolve(list_t source) {
-
+object_t resolve(list_t source) 
+{
   // (0) pop off the head, which is in (3) used
   // to decide how to split
   symbol_t head = list_popfirst(source);
@@ -50,7 +119,7 @@ object_t resolve(list_t source) {
   object_t lfn = 0;
   object_t fncall = 0;
   while (list_len(source)>0) {
-    object_t next = list_popfirst(l);
+    object_t next = list_popfirst(source);
     if (ignore-- > 0) {
       // here can't be any pending 'fncall'
       assert(fncall==0);
@@ -73,7 +142,7 @@ object_t resolve(list_t source) {
 	ignore--;  // ignore == arity-1
 	// is there a pending 'fncall'?
 	if (fncall) {
-	  list_append(fncall);
+	  list_append(sink, fncall);
 	  fncall = 0;
 	}
 	list_append(sink, next);
@@ -95,6 +164,7 @@ object_t resolve(list_t source) {
 	fncall = next;
       }
     }
+    else --- LITERALS! --- ???
     else {
       // now we can assume it is a list_t, otherwise the parser did
       // something wrong, this is checked in the next call
@@ -107,8 +177,9 @@ object_t resolve(list_t source) {
 	  rha_error("parse error, expecting a rounded expression for function call");
 	
 	// prepend the functioncall-so-far
-        list_popfirst(next_resolved);
-	list_prepend(next_resolved, fncall);
+	??? richtig so?
+	tuple_set(UNWRAP_PTR(TUPLE_T, next_resolved), 0, fncall);
+	fncall = next_resolved;
       }
       else {
 	// we start over, so it can be anything
@@ -116,89 +187,134 @@ object_t resolve(list_t source) {
       }
     }
   }
+  
+  if (fncall) {
+    //??? clean up pending function call
+  }
+
   source = sink;
   
   // (2) resolve prule from inside out
   // go from right to left
   // use a stack and some magic
 
+  object_t keywords = lookup(root, symbol_new("keywords"));
+  object_t prules = lookup(root, symbol_new("prules"));
+
+  sink = list_new();
+
+  while(list_len(source) > 0) {
+    object_t o = list_poplast(source);
+    object_t k, p;
+
+    // is the symbol an operator or a keyword?
+    if (ptype(o) == SYMBOL_T) {
+      if ( p = lookup(prules, UNWRAP_SYMBOL(o)) ) {
+	int_t style = UNWRAP_INT(lookup(p, symbol_new("style")));
+	real_t prec = UNWRAP_INT(lookup(p, symbol_new("precedence")));
+	
+	switch (style) {
+	case POSTFIX: 
+	  // no competition with other operators, just push prule on the stack
+	  opstack_push(p, prec);
+	  break;
+	case INFIX:
+	  // compete for other operators, push ourselves on the stack
+	  if (prec < tos_precedence())
+	    opstack_resolve_till(root, sink, prec);
+	  opstack_push(p, prec);
+	  break;
+	case PREFIX: 
+	case FREEFIX:
+	  // take care of the others, then directly apply the prule
+	  if (prec < tos_precedence())
+	    opstack_resolve_till(root, sink, prec);
+	  list_prepend(sink, call_prule(root, sink, p));
+	  break;
+	}	
+      } // end if "it is a prule"
+    } 
+    else {
+      list_prepend(sink, o);
+    }
+  }
+
+  // clean up at the end
+  opstack_resolve_till(root, sink, -1.0);
 
   // (3) split depending on the initial head
+  source = sink;
+  
   switch (head) {
   case curlied_sym: 
-    source = split(source, symbol_new(';')); 
-    break;
+    return split(source, symbol_new(';')); 
   case rounded_sym: 
-    source = split(source, symbol_new(',')); 
-    break;
+    return split(source, symbol_new(',')); 
   case squared_sym: 
     // don't split!
     rha_error("squared brackets not yet implemented");
     break;
-  otherwise:
+  default:
     assert(false);
   }
 }
 
-object_t add_keyword(string_t s, int_t a) {
+object_t keyword(string_t s, int_t a) {
   object_t o = new();
-  assign(o, symbol_new("token"), symbol_new(s));
-  assign(o, symbol_new("arity"), a);
+  assign(o, symbol_new("token"), WRAP_SYMBOL(symbol_new(s)));
+  assign(o, symbol_new("arity"), WRAP_INT(a));
   return o;
 }
 
-#define MACROFIX 0
-#define POSTFIX  1
-#define PREFIX   2
-#define INFIX    3
-#define FREEFIX  4
-
-#define MACROPREC   1.0
-#define POSTPREC    2.0
-#define PREPREC     3.0
-// INFIX should be between 3.0 and 5.0 for numerical infix operators
-#define FREEPREC    5.0
-// INFIX should be larger than 5.0 for assignments
-// INFIX for comma, semicolon even larger
 
 #define MAKE_PRULE(ttt)\
   object_t o = new();\
-  assign(o, symbol_new("token"), symbol_new(s));\
+  assign(o, symbol_new("token"), WRAP_SYMBOL(symbol_new(s)));\
   assign(o, symbol_new("code"), f);\
-  assign(o, symbol_new("precedence"), ttt ## PREC);\
-  assign(o, symbol_new("style"), ttt ## FIX);
+  assign(o, symbol_new("precedence"), WRAP_REAL(ttt ## PREC));\
+  assign(o, symbol_new("style"), WRAP_INT(ttt ## FIX));
 
-object_t add_macrofix_prule(string_t s, object_t f) {
+object_t macrofix_prule(string_t s, object_t f) {
   MAKE_PRULE(MACRO);
   return o;
 }
 
 
-object_t add_postfix_prule(string_t s, object_t f) {
+object_t postfix_prule(string_t s, object_t f) {
   MAKE_PRULE(POST);
+  assign(o, symbol_new("arity"), WRAP_INT(1));
   return o;
 }
 
 
-object_t add_prefix_prule(string_t s, object_t f) {
+object_t prefix_prule(string_t s, object_t f) {
   MAKE_PRULE(PRE);
+  assign(o, symbol_new("arity"), WRAP_INT(1));
   return o;
 }
 
 
-object_t add_infix_prule(string_t s, object_t f, double_t prec, int_t bind) {
+object_t infix_prule(string_t s, object_t f, real_t prec, int_t bind) {
   object_t o = new();
-  assign(o, symbol_new("token"), symbol_new(s));
-  assign(o, symbol_new("precedence"), prec);
-  assign(o, symbol_new("style"), INFIX);
-  assign(o, symbol_new("bind"), bind);
+  assign(o, symbol_new("token"), WRAP_SYMBOL(symbol_new(s)));
+  assign(o, symbol_new("precedence"), WRAP_REAL(prec));
+  assign(o, symbol_new("style"), WRAP_INT(INFIX));
+  assign(o, symbol_new("bind"), WRAP_INT(bind));
+  assign(o, symbol_new("arity"), WRAP_INT(2));
   return o;
 }
 
 
-object_t add_freefix_prule(string_t s, object_t f, tuple_t parts) {
+object_t freefix_prule(string_t s, object_t f, tuple_t parts) {
   MAKE_PRULE(FREE);
-  assign(o, symbol_new("parts"), parts);
+  assign(o, symbol_new("parts"), WRAP_PTR(TUPLE_T, tuple_proto, parts));
+
+  // compute total arity
+  int_t arity = 0;
+  for(int i = 0; i < tuple_len(parts); i++)
+    arity += UNWRAP_INT(lookup(tuple_get(parts, i), symbol_new("arity"))) + 1;
+  assign(o, symbol_new("arity"), WRAP_INT(arity));
+
   return o;
 }
 
