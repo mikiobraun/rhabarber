@@ -189,7 +189,7 @@ void print_fn(object_t o)
     switch (ptype(o)) {
     case INT_T: fprintf(stdout, "%d", o->raw.i); break;
     case SYMBOL_T: fprintf(stdout, "%s", symbol_name(o->raw.i)); break;
-    case REAL_T: fprintf(stdout, "%f", symbol_name(o->raw.d)); break;
+    case REAL_T: fprintf(stdout, "%f", o->raw.d); break;
     case TUPLE_T: {
       tuple_t t = UNWRAP_PTR(TUPLE_T, o);
       fprintf(stdout, "(");

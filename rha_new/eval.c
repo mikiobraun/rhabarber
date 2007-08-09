@@ -115,6 +115,8 @@ void *call_C_fun(int tlen, tuple_t t)
  *
  * Checks if the number of argument matches, constructs the local
  * environment of the callee and executes the function
+ *
+ * callable objects must have slots "argnames", "scope", and "fnbody".
  */
 object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
 {

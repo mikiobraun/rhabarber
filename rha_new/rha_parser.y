@@ -14,7 +14,7 @@
 extern  int yylex (void);
 void yyerror (char const *);
 
-static object_t parsetree;   /* global var -> funny name */
+static list_t parsetree;   /* global var -> funny name */
 
 static object_t wl(object_t t); /* with location: adds location to parsetree */
 
@@ -39,7 +39,7 @@ static object_t solidify(symbol_t s, list_t t);
 %type <lis> prog wslist
 
 %% /* Grammar rules and actions follow.  */
-prog        : wslist          { solidify(curlied_sym, $1); }
+prog        : wslist          { parsetree = UNWRAP_PTR(LIST_T, solidify(curlied_sym, $1)); }
             ;
 wslist      : expr            { $$ = list_new(); list_append($$, $1); }    // white-spaced list
             | wslist expr     { $$ = $1; list_append($$, $2); }
@@ -88,7 +88,7 @@ void initparserstate(char *name)
 
 /* define functions here */
 
-object_t rhaparsestring(char *str)
+list_t rhaparsestring(char *str)
 {
   parsetree = 0;
   initparserstate(NULL);
@@ -102,7 +102,7 @@ object_t rhaparsestring(char *str)
 }
 
 
-object_t rhaparsefile(char *str)
+list_t rhaparsefile(char *str)
 {
   parsetree = 0;
   FILE *f = fopen(str, "r");

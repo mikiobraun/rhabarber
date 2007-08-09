@@ -30,3 +30,32 @@ tuple.proto.len = fn () global.modules.tuple_fn.len(this);
 
 t = tuple.new(5);
 t.len()
+
+
+// some random ideas...
+fib(0) = 1
+fib(1) = 1
+fib(n) = fib(n-1) + fib(n-2)
+
+f = new()
+f += fn (x) 2*x;
+
+assign_mc(local, \x, 17)    -> assign
+assign_mc(local, \f(x), 17) -> assign_fn(local, \f(x), 17)
+assign_mc(local, \a.x, 17)  -> assign_mc(a, \x, 17)
+assign_mc(local, \a.f(x), 17) -> assign_mc(a, \f(x), 17)
+
+
+a = array(10)
+a(1) = 7
+
+f(x) = 2 * x;
+
+is equivalent to:
+
+f.call_rhs = new();
+f.call_rhs.argnames = (\x,);
+f.call_rhs.scope = local;
+f.call_rhs.fnbody = \2*x;
+
+f.call_lhs = magic_fct_extend;

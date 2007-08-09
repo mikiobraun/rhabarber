@@ -302,7 +302,7 @@ $init_c_typeobjects
 $init_c_functions
 
 // (5) init
-#define ADD_TYPE(ttt, TTT)   // ttt ## _t\\
+#define ADD_TYPE(ttt, TTT)   \\
   setptype(ttt ## _proto, TTT ## _T);\\
   ttt ## _obj = new();\\
   assign(root, ttt ## _sym, ttt ## _obj);\\
@@ -330,7 +330,7 @@ void add_function(object_t module, symbol_t s, void *code, int narg, ...)
   assign(module, s, o);
 }
 
-#define ADD_MODULE(mmm)   // mmm ## .h\\
+#define ADD_MODULE(mmm)   \\
   module = new();\\
   assign(modules, mmm ## _sym, module);
 

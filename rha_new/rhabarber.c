@@ -43,5 +43,6 @@ int main(int argc, char **argv)
     object_t p = parse(root, line);
     object_t e = eval(root, p);
     print_fn(p);
+    printf("\n");
   }
 }  

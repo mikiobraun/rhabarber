@@ -146,6 +146,12 @@ object_t resolve(object_t root, object_t obj)
   // otherwise built function call
   object_t keywords = lookup(root, symbol_new("keywords"));
   object_t prules = lookup(root, symbol_new("prules"));
+
+  if(!prules) {
+    list_prepend(source, WRAP_SYMBOL(head));
+    return WRAP_PTR(LIST_T, list_proto, source);
+  }
+
   list_t sink = list_new();
   int ignore = 0;
   object_t lfn = 0;
