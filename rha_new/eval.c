@@ -124,8 +124,12 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
 
   // check if number of args is the same
   int nargs = tlen - 1;
-
-  tuple_t argnames = UNWRAP_PTR(TUPLE_T, lookup(fn, symbol_new("argnames")));
+  object_t _argnames = lookup(fn, symbol_new("argnames"));
+  if (!_argnames) {
+    printf("the object is not callable\n");
+    return 0;
+  }
+  tuple_t argnames = UNWRAP_PTR(TUPLE_T, _argnames);
 
   if (tuple_len(argnames) != nargs) {
     rha_error("Function called with wrong number of arguments");

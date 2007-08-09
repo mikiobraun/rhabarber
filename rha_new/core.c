@@ -183,12 +183,24 @@ void print_fn(object_t o)
      // be done via symbol lookup :)
 {
   if (!o) {
-    fprintf(stdout, "nil");
+    fprintf(stdout, "NULL (which means: evaluation failed)\n");
+  }
+  else if (o==void_obj) {
+    fprintf(stdout, "void");
   }
   else {
     switch (ptype(o)) {
     case INT_T: fprintf(stdout, "%d", o->raw.i); break;
-    case SYMBOL_T: fprintf(stdout, "%s", symbol_name(o->raw.i)); break;
+    case SYMBOL_T: {
+      symbol_t s = UNWRAP_SYMBOL(o);
+      fprintf(stdout, "%s (sym%d)", symbol_name(s), s); 
+      break;
+    }
+    case STRING_T: {
+      string_t s = UNWRAP_PTR(STRING_T, o);
+      fprintf(stdout, "\"%s\"", s); 
+      break;
+    }
     case REAL_T: fprintf(stdout, "%f", o->raw.d); break;
     case TUPLE_T: {
       tuple_t t = UNWRAP_PTR(TUPLE_T, o);
@@ -206,17 +218,17 @@ void print_fn(object_t o)
       int c; 
 
       printf("[");
-      for(list_begin(l, i), c = 0; !list_done(i); list_next(i), c++) {
+      for(list_begin(l, &i), c = 0; !list_done(&i); list_next(&i), c++) {
 	if(c > 0)
 	  printf(", ");
-	print_fn(list_get(i));
+	print_fn(list_get(&i));
       }
       printf("]");
       break;
     }
     case FN_T: {
       fn_t f = UNWRAP_PTR(FN_T, o);
-      fprintf(stdout, "[ fn narg=%d, ");
+      fprintf(stdout, "[ fn narg=%d, ", f->narg);
       for(int i = 0; i < f->narg; i++) {
 	if (i > 1)
 	  printf(", ");
@@ -225,7 +237,7 @@ void print_fn(object_t o)
       break;
     }
     default:
-      fprintf(stdout, "[ ptype=%d, raw=%08x\n ]", ptype(o), o->raw.p);
+      fprintf(stdout, "[ ptype=%d, raw=%8p\n ]", ptype(o), o->raw.p);
     }
   }
 }

@@ -5,6 +5,8 @@
 
 extern _rha_ object_t parse(object_t root, string_t s);
 
+extern object_t parse_init(object_t root);
+
 extern _rha_ object_t keyword(string_t, int_t);
 
 extern _rha_ object_t macrofix_prule(string_t, object_t);

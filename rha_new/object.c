@@ -105,6 +105,10 @@ object_t wrap_double(int ptype, object_t proto, double d)
 
 object_t wrap_ptr(int ptype, object_t proto, void *p)
 {
+  assert(ptype!=BOOL_T);
+  assert(ptype!=INT_T);
+  assert(ptype!=REAL_T);
+  assert(ptype!=SYMBOL_T);
   object_t o = new();
   setptype(o, ptype);
   o->raw.p = p;

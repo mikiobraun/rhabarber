@@ -3,6 +3,7 @@
   //#define YYSTYPE object_t
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include "rha_lexer.h"
 #include "rha_types.h"
   //#include "utils.h"
@@ -16,7 +17,7 @@ void yyerror (char const *);
 
 static list_t parsetree;   /* global var -> funny name */
 
-static object_t wl(object_t t); /* with location: adds location to parsetree */
+//static object_t wl(object_t t); /* with location: adds location to parsetree */
 
 static object_t solidify(symbol_t s, list_t t);
 %}

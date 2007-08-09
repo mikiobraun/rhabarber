@@ -1,4 +1,4 @@
-CC=gcc
+CC=gcc -Wall -pedantic
 CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include
 LDFLAGS=-L/opt/local/lib
 LOADLIBES=-lgc -lreadline

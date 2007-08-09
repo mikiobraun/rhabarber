@@ -14,6 +14,7 @@
 #include <readline/history.h>
 #include <gc/gc.h>
 
+#include "messages.h"
 #include "rha_init.h"
 
 int main(int argc, char **argv)
@@ -25,6 +26,9 @@ int main(int argc, char **argv)
 
   // use history for the shell
   using_history();
+
+  // be polite
+  sayhello();
 
   // set up root object
   object_t root = rha_init(root);
@@ -41,8 +45,13 @@ int main(int argc, char **argv)
     add_history(line);
 
     object_t p = parse(root, line);
-    object_t e = eval(root, p);
     print_fn(p);
     printf("\n");
+    object_t e = eval(root, p);
+    print_fn(e);
+    printf("\n");
   }
+  
+  // so long
+  saybye();
 }  

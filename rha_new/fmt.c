@@ -16,6 +16,7 @@ static fmt_f *table[256];
 #include <config.h>
 #endif
 
+#define HAVE_STRDUP
 #ifndef HAVE_STRDUP
 static char *strdup(const char *s);
 #endif

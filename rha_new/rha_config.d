@@ -52,11 +52,14 @@ extern symbol_t rounded_sym;
 #define UNWRAP_INT(o)    (unwrap_int(INT_T, o))
 #define UNWRAP_BOOL(o)   (unwrap_int(BOOL_T, o))
 #define UNWRAP_SYMBOL(o) (unwrap_int(SYMBOL_T, o))
-#define UNWRAP_REAL(o) (unwrap_double(REAL_T, o))
-#define UNWRAP_PTR(pt, o)    (unwrap_ptr(pt, o))
+#define UNWRAP_REAL(o)   (unwrap_double(REAL_T, o))
+#define UNWRAP_PTR(pt, o) (unwrap_ptr(pt, o))
 
 #define WRAP_INT(i)    (wrap_int(INT_T, int_proto, i))
 #define WRAP_BOOL(b)   (wrap_int(BOOL_T, bool_proto, b))
 #define WRAP_SYMBOL(s) (wrap_int(SYMBOL_T, symbol_proto, s))
 #define WRAP_REAL(d)   (wrap_double(REAL_T, real_proto, d))
 #define WRAP_PTR(pt, proto, p)    (wrap_ptr(pt, proto, p))
+
+//PRULES
+//postfix_prule("++", void_obj);

@@ -36,17 +36,19 @@ close(FILE);
 $input = join '', @input;
 
 # parse the def file
-$input =~ /\/\/MODULES\s*\n(.*)\/\/TYPES\s*\n(.*)\/\/SYMBOLS\s*\n(.*)\/\/MACROS\s*\n(.*)/s;
+$input =~ /\/\/MODULES\s*\n(.*)\/\/TYPES\s*\n(.*)\/\/SYMBOLS\s*\n(.*)\/\/MACROS\s*\n(.*)\/\/PRULES\s*\n(.*)/s;
 $modules = $1;
 $types   = $2;
 $symbols = $3;
 $macros  = $4;
+$prules  = $5;
 
 # (0) remove comments
 $modules =~ s/\/\/[^\n]*//g;
 $types =~ s/\/\/[^\n]*//g;
 $symbols =~ s/\/\/[^\n]*//g;
 $macros =~ s/\/\/[^\n]*//g;
+$prules =~ s/\/\/[^\n]*//g;
 
 # (1) disect the includes
 @mods = $modules =~ /include\s+\"($id)\.h\"/gox;
@@ -56,6 +58,9 @@ $macros =~ s/\/\/[^\n]*//g;
 
 # (3) disect the symbols
 @symbs = $symbols =~ /($id)\_sym/gox;
+
+# (4) create a hash of types
+%typeset = map { $_ => 1 } @tdefs;
 
 
 ############################
@@ -78,6 +83,7 @@ $init_c_init_prototypes = "";
 $init_c_init_symbols = "";
 $init_c_init_typeobjects = "";
 $init_c_add_modules = "";
+$init_c_add_modules = $prules;
 
 
 ##############################
@@ -99,6 +105,18 @@ foreach $module (@mods) {
     close(FILE);
     $input = join '', @input;
     $input =~ s/\/\/[^\n]*//g;  # remove comments
+
+    # check for $module_init function
+    if ($input =~ /$module\_init/) {
+	if ($input =~ /object_t\s+$module\_init\(object_t\s*(\s$id\s*)?\)/) {
+	    print $module, "_init() found\n" if $debug;
+	    $init_c_add_modules .= "  root = $module"."_init(root);\n";
+	}
+	else {
+	    die "type error, '$module"."_init' has wrong signature";
+	}
+    }
+
     # parse it
     while ($input =~ /$keyword\s+($id)\s+($id)\s*\(([^\)]*)\)\s*;/gox) {
 	$fntype = $1;
@@ -109,6 +127,16 @@ foreach $module (@mods) {
 	# disect the args
 	@args = $fnargs =~ /($id)[^,]*/gox;
 	$narg = $#args + 1;
+
+	# check whether all types appear in '%typeset'
+	if (!$typeset{$fntype} && ($fntype ne "void")) {
+	    die "type error: return type '$fntype' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
+	}
+	foreach $arg (@args) {
+	    if (!$typeset{$arg}) {
+		die "type error: arg type '$arg' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
+	    }
+	}
 	# add a symbol for the function
 	push(@symbs, $fnname);
 	
@@ -139,13 +167,13 @@ foreach $module (@mods) {
 	    $ifntype = 	substr($fntype, 0, -2);
 	    $fncall_str = "WRAP_PTR($ucfntype, $ifntype"."_proto, $fncall_str)";
 	}
-	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n" }
+	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n  return void_obj;\n" }
 	else { $init_c_functions .= "  return $fncall_str;\n" }
 	$init_c_functions .= "}\n";
 
 	# add code to add functions
 	$init_c_add_modules .= "  add_function(module, $fnname"."_sym";
-	$init_c_add_modules .= ", (void *) b_$fnname, $narg";
+	$init_c_add_modules .= ", b_$fnname, $narg";
 	foreach $item (@args) {
 	    $ucitem = uc($item);
 	    $init_c_add_modules .= ", $ucitem";
@@ -308,7 +336,7 @@ $init_c_functions
   assign(root, ttt ## _sym, ttt ## _obj);\\
   assign(ttt ## _obj, proto_sym, ttt ## _proto);
 
-void add_function(object_t module, symbol_t s, void *code, int narg, ...)
+void add_function(object_t module, symbol_t s, object_t (*code)(tuple_t), int narg, ...)
 {
   // create a struct containing all info about the builtin function
   fn_t f = ALLOC_SIZE(sizeof(fn_t));
@@ -356,8 +384,16 @@ $init_c_init_typeobjects
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;
-
 $init_c_add_modules
+
+  // (5.6) add keywords and prules
+  //object_t prules = new();
+  //assign(root, prules_sym, prules);
+  //object_t keywords = new();
+  //assign(root, keywords_sym, keywords);
+$init_c_add_prules
+
+  return root;
 }
 ENDE
 }

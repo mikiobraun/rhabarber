@@ -7,7 +7,14 @@
 #include "symbol_fn.h"
 #include "tuple_fn.h"
 #include "eval.h"
+#include "core.h"
 #include "messages.h"
+
+object_t parse_init(object_t root) {
+  // nothing yet
+  // we could put here some types for keywords and prules
+  return root;
+}
 
 //----------------------------------------------------------------------
 // helper functions for the parsing
@@ -107,7 +114,7 @@ static object_t call_prule(object_t env, list_t sink, object_t prule)
 // now, the next functions actually "do something" ;)
 static void opstack_resolve_till(object_t env, list_t sink, real_t precedence)
 {
-  while(tos_precedence() > precedence) {
+  while((ops>-1) && (tos_precedence() > precedence)) {
     list_prepend(sink, call_prule(env, sink, tos_prule()));
     opstack_pop();
   }
@@ -140,21 +147,20 @@ object_t resolve(object_t root, object_t obj)
 	 || (head == curlied_sym)
 	 || (head == squared_sym));
 
+
+  // note if there are no 'keywords' and/or no 'prules' slot we still
+  // run the code but for 'keywords==void_obj' and/or 'prules==void_obj'
+  object_t keywords = lookup(root, symbol_new("keywords"));
+  if (!keywords) keywords = void_obj;
+  object_t prules = lookup(root, symbol_new("prules"));
+  if (!prules) prules = void_obj;
+
   // (1) resolve function calls
   // go from left to right
   // if there is a keyword, ignore depending on its arity
   // otherwise built function call
-  object_t keywords = lookup(root, symbol_new("keywords"));
-  object_t prules = lookup(root, symbol_new("prules"));
-
-  if(!prules) {
-    list_prepend(source, WRAP_SYMBOL(head));
-    return WRAP_PTR(LIST_T, list_proto, source);
-  }
-
   list_t sink = list_new();
   int ignore = 0;
-  object_t lfn = 0;
   object_t fncall = 0;
   while (list_len(source)>0) {
     object_t next = list_popfirst(source);
@@ -232,26 +238,22 @@ object_t resolve(object_t root, object_t obj)
       }
     }
   }
-  
   if (fncall) {
     list_append(sink, fncall);
   }
-
   source = sink;
   
   // (2) resolve prule from inside out
   // go from right to left
   // use a stack and some magic
-
   sink = list_new();
-
   while(list_len(source) > 0) {
     object_t o = list_poplast(source);
-    object_t k, p;
+    object_t p;
 
     // is the symbol an operator or a keyword?
     if (ptype(o) == SYMBOL_T) {
-      if ( p = lookup(prules, UNWRAP_SYMBOL(o)) ) {
+      if ( (p = lookup(prules, UNWRAP_SYMBOL(o))) ) {
 	int_t style = UNWRAP_INT(lookup(p, symbol_new("style")));
 	real_t prec = UNWRAP_INT(lookup(p, symbol_new("precedence")));
 	

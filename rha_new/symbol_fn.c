@@ -1,4 +1,4 @@
-
+#include <assert.h>
 #include "symbol_fn.h"
 #include "util/gtree.h"
 
@@ -27,6 +27,7 @@ symbol_t symbol_new(string_t s)
   if (!i) {
     symbolcount++;
     i = symbolcount;
+    s = strdup(s);
     gtree_insert(&symbolids, s, i);
     gtree_insert(&symbolnames, i, s);
   }
@@ -40,5 +41,7 @@ bool_t symbol_equal(symbol_t s, symbol_t t)
 
 string_t symbol_name(symbol_t s)
 {
-  return gtree_searchp(&symbolnames, s);
+  string_t n = gtree_searchp(&symbolnames, s);
+  assert(n);
+  return n;
 }
