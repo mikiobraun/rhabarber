@@ -54,3 +54,27 @@ object_t list_poplast(list_t l)
 {
   return glist_removep(l);
 }
+
+/*
+ * Iteration - so far only in C (unfortunately)
+ */ 
+
+void list_begin(list_t l, list_it i)
+{
+  *i = glist_begin(l);
+}
+
+bool list_done(list_it i)
+{
+  return glist_done(i);
+}
+
+void list_next(list_it i)
+{
+  glist_next(i);
+}
+
+object_t list_get(list_it i)
+{
+  return glist_getp(i);
+}

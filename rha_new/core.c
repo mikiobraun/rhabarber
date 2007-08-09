@@ -18,6 +18,8 @@
 
 #include "eval.h"
 #include "tuple_fn.h"
+#include "symbol_fn.h"
+#include "list_fn.h"
 
 object_t if_fn(object_t this, bool_t cond, object_t then_code, object_t else_code)
 {
@@ -144,7 +146,7 @@ void tic_fn()
   tic_saved_time = tv.tv_usec * 1e-6;
 }
 
-double toc_fn()
+real_t toc_fn()
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -154,3 +156,77 @@ double toc_fn()
 
   return now - tic_saved_time;
 }
+
+/**********************************************************************
+ * 
+ * Printing objects
+ *
+ **********************************************************************/
+
+static void _print_ptype(int_t p)
+{
+  static char *ptype_names[] = {
+    "NONE", "SYMBOL", "OBJECT", "INT", "BOOL",
+    "TUPLE", "FN", "REAL", "MAT", "STRING", "ADDR",
+    "LIST"
+  };
+  static int maxptype = 11;
+
+  if (p <= maxptype)
+    printf(ptype_names[p]);
+  else
+    printf("%d", p);
+}
+
+void print_fn(object_t o)
+     // right now, this is a big switch, but eventually, this should
+     // be done via symbol lookup :)
+{
+  if (!o) {
+    fprintf(stdout, "nil");
+  }
+  else {
+    switch (ptype(o)) {
+    case INT_T: fprintf(stdout, "%d", o->raw.i); break;
+    case SYMBOL_T: fprintf(stdout, "%s", symbol_name(o->raw.i)); break;
+    case REAL_T: fprintf(stdout, "%f", symbol_name(o->raw.d)); break;
+    case TUPLE_T: {
+      tuple_t t = UNWRAP_PTR(TUPLE_T, o);
+      fprintf(stdout, "(");
+      for(int i = 0; i < tuple_len(t); i++) {
+	if (i > 1) fprintf(stdout, ", ");
+	print_fn(tuple_get(t, i));
+      }
+      fprintf(stdout, ")");
+      break;
+    }
+    case LIST_T: {
+      list_t l = UNWRAP_PTR(LIST_T, o);
+      list_it i;
+      int c; 
+
+      printf("[");
+      for(list_begin(l, i), c = 0; !list_done(i); list_next(i), c++) {
+	if(c > 0)
+	  printf(", ");
+	print_fn(list_get(i));
+      }
+      printf("]");
+      break;
+    }
+    case FN_T: {
+      fn_t f = UNWRAP_PTR(FN_T, o);
+      fprintf(stdout, "[ fn narg=%d, ");
+      for(int i = 0; i < f->narg; i++) {
+	if (i > 1)
+	  printf(", ");
+	_print_ptype(f->argtypes[i]);
+      }
+      break;
+    }
+    default:
+      fprintf(stdout, "[ ptype=%d, raw=%08x\n ]", ptype(o), o->raw.p);
+    }
+  }
+}
+

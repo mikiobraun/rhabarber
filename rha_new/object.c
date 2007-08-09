@@ -193,23 +193,5 @@ void subscribe(object_t dest, object_t interface)
 
 
 
-void print(object_t o)
-     // right now, this is a big switch, but eventually, this should
-     // be done via symbol lookup :)
-{
-  if (!o) {
-    fprintf(stdout, "nil");
-  }
-  else {
-    switch (ptype(o)) {
-    case INT_T: fprintf(stdout, "%d", o->raw.i); break;
-    case SYMBOL_T: fprintf(stdout, "%s", symbol_name(o->raw.i)); break;
-      //case FLOAT_T: fprintf(stdout, "%f", symbol_name(o->raw.f)); break;
-    case REAL_T: fprintf(stdout, "%f", symbol_name(o->raw.d)); break;
-    default:
-      fprintf(stdout, "[ ptype=%d, raw=%08x\n ]", ptype(o), o->raw.p);
-    }
-  }
-}
 
 

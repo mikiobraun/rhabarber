@@ -58,14 +58,13 @@ extern _rha_ object_t   lookup(object_t env, symbol_t s);
 //     a.x = 42;  ->  assign(a, \x, 42);
 extern _rha_ object_t   assign(object_t obj, symbol_t s, object_t newobj);
 extern _rha_ void       rmslot(object_t, symbol_t s);
-extern _rha_ void       print(object_t);
 
 // will be called by prule 'include'
 extern _rha_ void       include(object_t dest, object_t source);
 // will be called by prule 'subscribe'
 extern _rha_ void       subscribe(object_t dest, object_t interface);
 
-extern _rha_ object_t   ls(object_t o);
-extern _rha_ object_t   lsall(object_t o);
+//extern object_t   ls(object_t o);
+//extern object_t   lsall(object_t o);
 
 #endif

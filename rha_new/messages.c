@@ -14,7 +14,6 @@
 #include "utils.h"
 //#define DEBUG
 #include "debug.h"
-#include "exception_tr.h"
 #include "core.h"
 #include "eval.h"
 
@@ -35,17 +34,8 @@ void rha_error(const char *fmt, ...)
   char *msg = vsprint(fmt, ap);
   va_end(ap);
 
-  if (eval_currentlocation) {
-    object_t loc = rha_lookup(eval_currentlocation, rha_location_sym);
-    if(loc) {
-      msg = sprint("%o: %s", loc, msg);
-      //      throw(_O exception_new(msg));
-      throw(exception_new(msg));
-    }
-  }
   msg = sprint("error: %s", msg);
-  //  throw(_O exception_new(msg));
-  throw(exception_new(msg));
+  throw(WRAP_PTR(STRING_T, string_proto, msg));
 }
 
  

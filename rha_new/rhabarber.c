@@ -30,7 +30,7 @@ int main(int argc, char **argv)
   object_t root = rha_init(root);
   
   int lineno = 0;
-
+  char prompt[1024];
   // the read eval print loop (REPL)
   // never returns
   while(1) {
@@ -42,6 +42,6 @@ int main(int argc, char **argv)
 
     object_t p = parse(root, line);
     object_t e = eval(root, p);
-    print(p);
+    print_fn(p);
   }
 }  

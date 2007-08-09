@@ -1,6 +1,8 @@
 #include <stdarg.h>
 #include <assert.h>
 #include <stdio.h>
+#include <setjmp.h>
+#include "eval.h"
 #include "object.h"
 #include "rha_types.h"
 #include "messages.h"
@@ -19,6 +21,25 @@ object_t eval_currentlocation = 0;
 #define RETURN(x) do { object_t retval = (x); \
                            eval_currentlocation = savedloc; \
                            return retval; } while(0)
+
+/*************************************************************
+ *
+ * Frames for 'return', 'break'
+ *
+ ************************************************************/
+
+// Frames can be opened by functions, loops.  The keyword
+// 'return' finishes the most recent function and returns its
+// argument, 'break' the most recent loop
+
+jmp_buf frame_stack[FRAME_MAX_NESTING];
+object_t frame_value[FRAME_MAX_NESTING];
+int frame_type[FRAME_MAX_NESTING];
+int frame_tos = -1;
+
+// Note, that these stacks must be only changed via the macros defined
+// in eval.h.
+
 
 object_t eval(object_t env, object_t expr)
 {
@@ -78,7 +99,7 @@ void *call_C_fun(int tlen, tuple_t t)
   // extract the function
   object_t t0 = tuple_get(t, 0);
   assert(t0 && ptype(t0)==FN_T);
-  fn_t *f = UNWRAP_PTR(FN_T, t0);
+  fn_t f = UNWRAP_PTR(FN_T, t0);
   // is the argument number correct?
   if (f->narg != narg)
     rha_error("wrong number of arguments (expected %d, got %d)\n", f->narg, narg);

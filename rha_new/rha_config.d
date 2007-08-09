@@ -7,6 +7,8 @@
 #include "eval.h"
 #include "parse.h"
 #include "core.h"
+#include "symbol_fn.h"
+#include "tuple_fn.h"
 //#include "bool_fn.h"
 
 //TYPES
@@ -22,13 +24,13 @@ typedef struct {
   object_t (*code)(tuple_t t);        // pointer to the code
   int_t narg;        // number of arguments
   int_t *argtypes; // array of the arg types
-} _rha_ fn_t;
+}* _rha_ fn_t;
 typedef double _rha_ real_t;
 typedef double * _rha_ mat_t;
 typedef char * _rha_ string_t;
 typedef void * _rha_ addr_t;
 #include "glist.h"
-typedef struct glist * _rha_ list_t;
+typedef struct glist* _rha_ list_t;
 
 //SYMBOLS
 extern symbol_t proto_sym;
@@ -38,6 +40,9 @@ extern symbol_t root_sym;
 extern symbol_t local_sym;
 extern symbol_t void_sym;
 extern symbol_t parent_sym;
+extern symbol_t modules_sym;
+extern symbol_t keywords_sym;
+extern symbol_t prules_sym;
 
 extern symbol_t curlied_sym;
 extern symbol_t squared_sym;

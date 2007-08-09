@@ -16,7 +16,7 @@
 extern int fileno(FILE*);
 char *escexpand(char *);
 %}
-
+%option noyywrap
 %%
 "false"                 { yylval.obj = WRAP_BOOL(false);    return BOOL; }
 "true"                  { yylval.obj = WRAP_BOOL(true);     return BOOL; }

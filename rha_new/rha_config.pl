@@ -310,15 +310,14 @@ $init_c_functions
 
 void add_function(object_t module, symbol_t s, void *code, int narg, ...)
 {
-  // create a new object
-  object_t o = new_t(FN_T, fn_proto);
-
   // create a struct containing all info about the builtin function
   fn_t f = ALLOC_SIZE(sizeof(fn_t));
-  setraw(o, (void *) f);
   f->code = code;
   f->narg = narg;
   f->argtypes = ALLOC_SIZE(narg*sizeof(int_t));
+
+  // create a new object
+  object_t o = wrap_ptr(FN_T, fn_proto, f);
 
   // read out the argument types
   va_list ap;
