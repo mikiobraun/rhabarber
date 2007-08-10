@@ -10,7 +10,7 @@
 
 #include "messages.h"
 
-
+#include "rha_types.h"
 #include "utils.h"
 //#define DEBUG
 #include "debug.h"
@@ -31,7 +31,7 @@ void rha_error(const char *fmt, ...)
 {
   va_list ap;
   va_start(ap, fmt);
-  char *msg = vsprint(fmt, ap);
+  string_t msg = vsprint(fmt, ap);
   va_end(ap);
 
   msg = sprint("error: %s", msg);

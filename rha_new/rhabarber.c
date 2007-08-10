@@ -44,13 +44,20 @@ int main(int argc, char **argv)
     if (!line) break;
     add_history(line);
 
-    object_t p = parse(root, line);
-    print_fn(p);
-    printf("\n");
-    object_t e = eval(root, p);
-    print_fn(e);
-    printf("\n");
-  }
+    object_t excp;   // exception object
+    try {
+      object_t p = parse(root, line);
+      print_fn(p);
+      fprintf(stdout, "\n");
+      object_t e = eval(root, p);
+      print_fn(e);
+      fprintf(stdout, "\n");
+    }
+    catch(excp) {
+      string_t msg = UNWRAP_PTR(STRING_T, excp);
+      fprintf(stderr, "Caught exception: %s\n", msg);
+    }
+  }    
   
   // so long
   saybye();

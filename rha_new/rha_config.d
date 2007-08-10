@@ -13,24 +13,24 @@
 
 //TYPES
 #include <stdbool.h>
-typedef int _rha_ symbol_t;
-struct rha_object;
-typedef struct rha_object * _rha_ object_t;
-typedef int _rha_ int_t; 
-typedef bool _rha_ bool_t;
 #include "gtuple.h"
-typedef struct gtuple* _rha_ tuple_t;
-typedef struct { 
-  object_t (*code)(tuple_t t);        // pointer to the code
-  int_t narg;        // number of arguments
-  int_t *argtypes; // array of the arg types
-}* _rha_ fn_t;
-typedef double _rha_ real_t;
-typedef double * _rha_ mat_t;
-typedef char * _rha_ string_t;
-typedef void * _rha_ addr_t;
 #include "glist.h"
-typedef struct glist* _rha_ list_t;
+struct rha_object;
+typedef int                 _rha_ symbol_t;
+typedef struct rha_object * _rha_ object_t;
+typedef int                 _rha_ int_t; 
+typedef bool                _rha_ bool_t;
+typedef struct gtuple*      _rha_ tuple_t;
+typedef struct { 
+  object_t (*code)(tuple_t t);        
+  int_t narg;        
+  int_t *argtypes; 
+}*                          _rha_ fn_t;
+typedef double              _rha_ real_t;
+typedef double *            _rha_ mat_t;
+typedef char *              _rha_ string_t;
+typedef void *              _rha_ addr_t;
+typedef struct glist*       _rha_ list_t;
 
 //SYMBOLS
 extern symbol_t proto_sym;
