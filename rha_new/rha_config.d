@@ -6,10 +6,11 @@
 #include "object.h"
 #include "eval.h"
 #include "parse.h"
+#include "prules.h"
 #include "core.h"
 #include "symbol_fn.h"
 #include "tuple_fn.h"
-//#include "bool_fn.h"
+#include "int_fn.h"
 
 //TYPES
 #include <stdbool.h>
@@ -33,6 +34,7 @@ typedef void *              _rha_ addr_t;
 typedef struct glist*       _rha_ list_t;
 
 //SYMBOLS
+// the most basic symbols
 extern symbol_t proto_sym;
 extern symbol_t quote_sym;
 extern symbol_t this_sym;
@@ -40,10 +42,20 @@ extern symbol_t root_sym;
 extern symbol_t local_sym;
 extern symbol_t void_sym;
 extern symbol_t parent_sym;
+extern symbol_t do_sym;
+
+// special slots in root
 extern symbol_t modules_sym;
 extern symbol_t keywords_sym;
 extern symbol_t prules_sym;
 
+// special slots elsewhere
+extern symbol_t scope_sym;
+extern symbol_t argnames_sym;
+extern symbol_t fnbody_sym;
+extern symbol_t priority_sym;
+
+// special symbols for parsing
 extern symbol_t curlied_sym;
 extern symbol_t squared_sym;
 extern symbol_t rounded_sym;
@@ -62,4 +74,3 @@ extern symbol_t rounded_sym;
 #define WRAP_PTR(pt, proto, p)    (wrap_ptr(pt, proto, p))
 
 //PRULES
-//postfix_prule("++", void_obj);

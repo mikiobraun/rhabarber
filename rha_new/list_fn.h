@@ -23,4 +23,10 @@ extern bool list_done(list_it *i);
 extern void list_next(list_it *i);
 extern object_t list_get(list_it *i);
 
+// only for parse.c and prules.c
+extern list_t list_chop_first(list_t l, symbol_t s);
+extern list_t list_chop_first_list(list_t l, glist_t *sym_list);
+extern list_t list_chop_last(list_t l, symbol_t s);
+extern list_t list_chop_last_list(list_t l, glist_t *sym_list);
+
 #endif

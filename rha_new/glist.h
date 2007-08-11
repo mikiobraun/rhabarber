@@ -60,6 +60,8 @@ extern bool glist_done(glist_iterator_t *i);
 extern void glist_next(glist_iterator_t *i);
 extern intptr_t glist_get_(glist_iterator_t *i);
 
+extern bool glist_iselement_(glist_t *l, intptr_t data);
+
 // macros with implicit casting
 #define glist_append(l, d) glist_append_(l, (intptr_t) (d) )
 #define glist_prepend(l, d) glist_prepend_(l, (intptr_t) (d) )
@@ -74,5 +76,7 @@ extern intptr_t glist_get_(glist_iterator_t *i);
 #define glist_backp(l) ((void*) glist_back_(l))
 #define glist_geti(l) ((int) glist_get_(l))
 #define glist_getp(l) ((void*) glist_get_(l))
+#define glist_iselementi(l, d) ((int) glist_iselement_(l, (intptr_t) (d)))
+#define glist_iselementp(l, d) ((void*) glist_iselement_(l, (intptr_t) (d)))
 
 #endif

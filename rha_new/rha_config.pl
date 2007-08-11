@@ -83,7 +83,7 @@ $init_c_init_prototypes = "";
 $init_c_init_symbols = "";
 $init_c_init_typeobjects = "";
 $init_c_add_modules = "";
-$init_c_add_modules = $prules;
+$init_c_add_prules = $prules;
 
 
 ##############################
@@ -105,17 +105,6 @@ foreach $module (@mods) {
     close(FILE);
     $input = join '', @input;
     $input =~ s/\/\/[^\n]*//g;  # remove comments
-
-    # check for $module_init function
-    if ($input =~ /$module\_init/) {
-	if ($input =~ /object_t\s+$module\_init\(object_t\s*(\s$id\s*)?\)/) {
-	    print $module, "_init() found\n" if $debug;
-	    $init_c_add_modules .= "  root = $module"."_init(root);\n";
-	}
-	else {
-	    die "type error, '$module"."_init' has wrong signature";
-	}
-    }
 
     # parse it
     while ($input =~ /$keyword\s+($id)\s+($id)\s*\(([^\)]*)\)\s*;/gox) {
@@ -179,6 +168,17 @@ foreach $module (@mods) {
 	    $init_c_add_modules .= ", $ucitem";
 	}
 	$init_c_add_modules .= ");\n";
+    }
+
+    # check for $module_init function
+    if ($input =~ /$module\_init/) {
+	if ($input =~ /object_t\s+$module\_init\(object_t\s*(\s$id\s*)?,\s*object_t\s*(\s$id\s*)?\)/) {
+	    print $module, "_init(object_t, object_t) found\n" if $debug;
+	    $init_c_add_modules .= "  root = $module"."_init(root, module);\n";
+	}
+	else {
+	    die "type error, correct signature: 'object_t $module"."_init(object_t, object_t)'";
+	}
     }
     $init_c_add_modules .= "\n";
 }

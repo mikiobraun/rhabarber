@@ -124,7 +124,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
 
   // check if number of args is the same
   int nargs = tlen - 1;
-  object_t _argnames = lookup(fn, symbol_new("argnames"));
+  object_t _argnames = lookup(fn, argnames_sym);
   if (!_argnames) {
     printf("the object is not callable\n");
     return 0;
@@ -139,7 +139,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   object_t local = new();
   assign(local, local_sym, local);
   assign(local, this_sym, this);
-  assign(local, parent_sym, lookup(fn, symbol_new("scope")));
+  assign(local, parent_sym, lookup(fn, scope_sym));
 
   // assign the arguments
   for(int i = 0; i < nargs; i++) {
@@ -149,6 +149,6 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   }
 
   // execute the function body
-  object_t fnbody = lookup(fn, symbol_new("fnbody"));
+  object_t fnbody = lookup(fn, fnbody_sym);
   return eval(local, fnbody);
 }

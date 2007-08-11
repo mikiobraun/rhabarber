@@ -10,342 +10,327 @@
 #include "core.h"
 #include "messages.h"
 
-object_t parse_init(object_t root) {
-  // nothing yet
-  // we could put here some types for keywords and prules
+// let's require for now that all expressions must be separated by
+// semicolon, otherwise we could make a list of keywords which are
+// allowed to extend expression also after a 'curlied' expression
+
+symbol_t semicolon_sym = 0;
+symbol_t comma_sym = 0;
+
+object_t parse_init(object_t root, object_t module) {
+
+  // the following symbols are only used in 'parse.c'
+  semicolon_sym = symbol_new(";");
+  comma_sym = symbol_new(",");
   return root;
 }
 
-//----------------------------------------------------------------------
-// helper functions for the parsing
+////////////////////////////////////////////
+// parsing from the outside to the inside //
+////////////////////////////////////////////
 
-object_t split(list_t source, symbol_t head) {
-  list_t sink = list_new();
-  while (list_len(source) > 0) {
-    object_t next = list_popfirst(source);
-    if (ptype(next) == SYMBOL_T) {
-      symbol_t s = UNWRAP_SYMBOL(next);
-      if ((head==curlied_sym && s==symbol_new(";"))
-	  || (head==rounded_sym && s==symbol_new(",")))
-	continue;
-    }
-    list_append(sink, next);
-  }
-  return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
-}
+object_t resolve(object_t env, object_t expr);
+object_t resolve_list_by_head(object_t env, list_t source);
+object_t resolve_list_by_prules(object_t env, list_t source);
+object_t replace_macro(object_t env, tuple_t t);
 
-bool is_rounded(object_t item) {
-  object_t lfn = 0;
-  return (ptype(item) == LIST_T)
-    && (ptype(lfn=list_first(UNWRAP_PTR(LIST_T, item))) == SYMBOL_T)
-    && (UNWRAP_SYMBOL(lfn) == rounded_sym);
-}
 
-bool is_args(object_t item) {
-  tuple_t up = 0;
-  object_t lfn = 0;
-  return (ptype(item) == TUPLE_T)
-    && (tuple_len(up=UNWRAP_PTR(TUPLE_T, item)) > 0)
-    && (ptype(lfn=tuple_get(up, 0)) == SYMBOL_T)
-    && (UNWRAP_SYMBOL(lfn) == rounded_sym);
-}
-
-bool is_grouped(object_t item) {
-  if (ptype(item) != TUPLE_T)
-    return false;
-  tuple_t t = UNWRAP_PTR(TUPLE_T, item);
-  assert(tuple_len(t)>0);
-  if (UNWRAP_SYMBOL(tuple_get(t, 0)) != rounded_sym)
-    return false;
-  if (tuple_len(t) > 2)
-    rha_error("parse error, not a comma separated rounded tuple expected");
-  return true;
-}
-
-//
-
-#define OPSTACK_SIZE 256
-static struct
-{
-  object_t prule;
-  real_t precedence;
-} opstack[OPSTACK_SIZE];
-static int ops = -1;
-
-// push an operator on the stack
-static void opstack_push(object_t prule, real_t precedence)
-{
-  ops++; assert(ops < OPSTACK_SIZE);
-  opstack[ops].prule = prule;
-  opstack[ops].precedence = precedence;
-}
-
-// pop an operator from the stack
-static void opstack_pop()
-{
-  ops--; assert(ops >= 0);
-}
-
-// get the tos
-static object_t tos_prule()
-{
-  return opstack[ops].prule;
-}
-
-static real_t tos_precedence()
-{
-  return opstack[ops].precedence;
-}
-
-// actually call the prule with the arguments on the sink and the right arity
-static object_t call_prule(object_t env, list_t sink, object_t prule)
-{
-  int arity = UNWRAP_INT(lookup(prule, symbol_new("arity")));
-
-  // construct the function call
-  tuple_t fncall = tuple_new(arity + 1);
-  tuple_set(fncall, 0, lookup(prule, symbol_new("code")));
-  for(int i = 0; i < arity; i++)
-    tuple_set(fncall, i+1, list_popfirst(sink));
-
-  return eval(env, WRAP_PTR(TUPLE_T, tuple_proto, fncall));
-}
-
-// now, the next functions actually "do something" ;)
-static void opstack_resolve_till(object_t env, list_t sink, real_t precedence)
-{
-  while((ops>-1) && (tos_precedence() > precedence)) {
-    list_prepend(sink, call_prule(env, sink, tos_prule()));
-    opstack_pop();
-  }
-}
-
-//----------------------------------------------------------------------
-
-object_t resolve(object_t root, object_t source);
 object_t parse(object_t root, string_t s)
 {
   // (0) run bison code
   list_t source = rhaparsestring(s);
   
-  // (1) resolve function calls and prules
-  return resolve(root, WRAP_PTR(LIST_T, list_proto, source));
+  // (1) resolve prules and macros creating a big function call
+  return resolve_list_by_head(root, source);
 }
 
-object_t resolve(object_t root, object_t obj) 
+
+bool list_with_head(symbol_t a_symbol, object_t expr) {
+  object_t lf = 0;
+  list_t l;
+  return (ptype(expr) == LIST_T)
+    && (list_len(l=UNWRAP_PTR(LIST_T, expr)) > 0)
+    && (ptype(lf=list_first(l)) == SYMBOL_T)
+    && (UNWRAP_SYMBOL(lf) == a_symbol);
+}
+
+bool tuple_with_head(symbol_t a_symbol, object_t expr) {
+  object_t lf = 0;
+  tuple_t l;
+  return (ptype(expr) == TUPLE_T)
+    && (tuple_len(l=UNWRAP_PTR(TUPLE_T, expr)) > 0)
+    && (ptype(lf=tuple_get(l, 0)) == SYMBOL_T)
+    && (UNWRAP_SYMBOL(lf) == a_symbol);
+}
+
+bool is_symbol(symbol_t a_symbol, object_t expr) {
+  return (ptype(expr) == SYMBOL_T)
+    && (UNWRAP_SYMBOL(expr) == a_symbol);
+}
+
+
+object_t resolve(object_t env, object_t expr)
 {
-  // (-1) do we have a non-list?
-  if (ptype(obj)!=LIST_T)
-    return obj;
-  // we have list!
-  list_t source = UNWRAP_PTR(LIST_T, obj);
+  if (ptype(expr) == LIST_T)
+    return resolve_list_by_head(env, UNWRAP_PTR(LIST_T, expr));
+  else
+    return expr;
+}
 
-  // (0) pop off the head, which is in (3) used
-  // to decide how to split
-  symbol_t head = UNWRAP_SYMBOL(list_popfirst(source));
-  assert((head == rounded_sym)
-	 || (head == curlied_sym)
-	 || (head == squared_sym));
+object_t resolve_list_by_head(object_t env, list_t source)
+{
+  // take the list 'source'
+  // built a list 'sink'
+  // finally return the 'sink' transformed into a tuple
 
+  // preliminaries
+  if (list_len(source) == 0)
+    return void_obj;
+  object_t l0 = list_first(source);
+  symbol_t head;
+  if ((ptype(l0) != SYMBOL_T)
+      || (((head = UNWRAP_SYMBOL(l0)) != curlied_sym)
+	  && (head != rounded_sym)
+	  && (head != squared_sym)))
+    return resolve_list_by_prules(env, source);
 
-  // note if there are no 'keywords' and/or no 'prules' slot we still
-  // run the code but for 'keywords==void_obj' and/or 'prules==void_obj'
-  object_t keywords = lookup(root, symbol_new("keywords"));
-  if (!keywords) keywords = void_obj;
-  object_t prules = lookup(root, symbol_new("prules"));
-  if (!prules) prules = void_obj;
-
-  // (1) resolve function calls
-  // go from left to right
-  // if there is a keyword, ignore depending on its arity
-  // otherwise built function call
+  // (0) The list 'source' is headed by the bracket type, which will
+  // trigger different behavior
+  assert(list_len(source) > 0);
+  assert((head==rounded_sym)||(head==squared_sym)||(head==curlied_sym));
   list_t sink = list_new();
-  int ignore = 0;
-  object_t fncall = 0;
-  while (list_len(source)>0) {
-    object_t next = list_popfirst(source);
-    if (ignore-- > 0) {
-      // here can't be any pending 'fncall'
-      assert(fncall==0);
-
-      // 'next' can be ignored for function calls 
-      // but it must be 'grouped', i.e. a rounded singleton
-      object_t next_resolved = resolve(root, next);
-      if (!is_grouped(next_resolved))
-	rha_error("parse error, rounded singleton");
-      list_append(sink, next_resolved);
-    }
-    else if (ptype(next)==SYMBOL_T) {
-      // is it a keyword?
-      symbol_t token = UNWRAP_SYMBOL(next);
-      object_t keyword = lookup(keywords, token);
-      if (keyword) {
-	// yes, it is a keyword, thus we can ignore that expressions
-	if (ignore > 0) 
-	  rha_error("parse error, not yet a keyword expected");
-	ignore = UNWRAP_INT(lookup(keyword, symbol_new("arity")));
-	ignore--;  // ignore == arity-1
-	// is there a pending 'fncall'?
-	if (fncall) {
-	  list_append(sink, fncall);
-	  fncall = 0;
-	}
-	list_append(sink, next);
+  // split 'source' into sublist which are collected in 'sink'
+  if (head==curlied_sym) {
+    // code blocks
+    // { x = 1; y = 7; deliver 5; { a=5; } x=5 }
+    // split by semicolon
+    //
+    // extend this later to split also after a curlied expression
+    list_append(sink, WRAP_SYMBOL(do_sym));
+    list_t part = list_new();
+    object_t obj = 0;
+    while ((obj = list_popfirst(source))) {
+      if (is_symbol(semicolon_sym, obj)) {
+	// split here and ignore the semicolon
+	list_append(sink, resolve_list_by_prules(env, part));
+	part = list_new();
+	continue;
       }
-      else if (lookup(prules, token)) {
-	// another operator found, thus:
-	if (fncall) {
-	  list_append(sink, fncall);
-	  fncall = 0;
-	}
-	list_append(sink, next);
+      else if (is_symbol(comma_sym, obj)) {
+	// this is not allowed
+	rha_error("parse error: in a 'curlied' expression no comma allowed\n");
+	assert(1==0);
       }
+      //////////////
+      // the next case does not work since after a 'curlied'
+      // expression there might be an 'else' which continues the
+      // expression
+//    else if (list_with_headed(curlied_sym, obj)) {
+//	list_append(part, obj);
+//	// split here
+//	list_append(sink, list_to_tuple(resolve_by_prules(part)));
+//	part = list_new();
+//    }
       else {
-	// no, it is not a keyword and not an operator, 
-	// but still it is a symbol
-	// so we need to start a new 'fncall'
-	if (!fncall)
-	  rha_error("parse error, not another symbol expected");
-	fncall = next;
+	list_append(part, obj);
       }
     }
-    else if (ptype(next) != LIST_T) {
-      // literals
-      list_append(sink, next);
+    return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
+  }
+  else if (head == rounded_sym) {
+    // grouped expression and argument lists
+    // (x+1)*4 or (x, y, z)
+    // split only by comma, no semiclon is allowed
+    list_append(sink, WRAP_SYMBOL(rounded_sym));  // let's keep the rounded_sym
+    list_t part = list_new();
+    object_t obj = 0;
+    while ((obj = list_popfirst(source))) {
+      if (is_symbol(comma_sym, obj)) {
+	// split here and ignore the comma
+	list_append(sink, resolve_list_by_prules(env, part));
+	part = list_new();
+	continue;
+      }
+      else if (is_symbol(semicolon_sym, obj)) {
+	// this is not allowed
+	rha_error("parse error: in a 'rounded' expression no semicolon allowed\n");
+	assert(1==0);
+      }
+      list_append(part, obj);
     }
-    else {
-      // now we can assume it is a list_t, otherwise the parser did
-      // something wrong, this is checked in the next call
-      object_t next_resolved = resolve(root, next);
+    if (list_len(sink) == 2)
+      // this is just a grouped expression
+      return list_last(sink);
+    else
+      return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
+  }
+  else if (head == squared_sym) {
+    // complex literals
+    // [x, 17] or [ 2*x for x in [1,2,3]]
+    
+    // the idea here is that to define a complex literal
+    // a type must define a list of separator, which determines the
+    // order of subexpressions, and a constructor, which constructs
+    // the object from the preprocessed list
 
-      // did we already start to built the next function call?
-      if (fncall) {
-	// let's extend the fncall, which requires an 'fnargs' expressions
-	if (!is_args(next_resolved))
-	  rha_error("parse error, expecting a rounded expression for function call");
-	
-	// prepend the functioncall-so-far
-	tuple_set(UNWRAP_PTR(TUPLE_T, next_resolved), 0, fncall);
-	fncall = next_resolved;
+    // for now let's hardwire a comma-separated list
+    list_t part = list_new();
+    object_t obj = 0;
+    while ((obj = list_popfirst(source))) {
+      if (is_symbol(comma_sym, obj)) {
+	// split here and ignore the comma
+	list_append(sink, resolve_list_by_prules(env, part));
+	part = list_new();
+	continue;
       }
-      else {
-	// we start over, so it can be anything
-	// however, if it is a rounded singleton, we need to remove
-	// the brackets
-	if (is_grouped(next_resolved))
-	  next_resolved = tuple_get(UNWRAP_PTR(TUPLE_T, next_resolved), 1);
-	fncall = next_resolved;
-      }
+      list_append(part, obj);
     }
+    return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
   }
-  if (fncall) {
-    list_append(sink, fncall);
-  }
-  source = sink;
+  else 
+    // never reach this point
+    assert(1==0);
+}
+ 
+ 
+object_t resolve_list_by_prules(object_t env, list_t source)
+{
+  // it is a tuple containing a white-spaced list
+  // without any particular heading symbol
   
-  // (2) resolve prule from inside out
-  // go from right to left
-  // use a stack and some magic
-  sink = list_new();
-  while(list_len(source) > 0) {
-    object_t o = list_poplast(source);
-    object_t p;
-
-    // is the symbol an operator or a keyword?
-    if (ptype(o) == SYMBOL_T) {
-      if ( (p = lookup(prules, UNWRAP_SYMBOL(o))) ) {
-	int_t style = UNWRAP_INT(lookup(p, symbol_new("style")));
-	real_t prec = UNWRAP_INT(lookup(p, symbol_new("precedence")));
-	
-	switch (style) {
-	case POSTFIX: 
-	  // no competition with other operators, just push prule on the stack
-	  opstack_push(p, prec);
-	  break;
-	case INFIX:
-	  // compete for other operators, push ourselves on the stack
-	  if (prec < tos_precedence())
-	    opstack_resolve_till(root, sink, prec);
-	  opstack_push(p, prec);
-	  break;
-	case PREFIX: 
-	case FREEFIX:
-	  // take care of the others, then directly apply the prule
-	  if (prec < tos_precedence())
-	    opstack_resolve_till(root, sink, prec);
-	  list_prepend(sink, call_prule(root, sink, p));
-	  break;
-	}	
-      } // end if "it is a prule"
-    } 
-    else {
-      list_prepend(sink, o);
+  // (1) find the prule with the lowest precendence
+  // loop over all entries and check the symbols whether they are prules
+  double best_priority = 0.0;   // initially the priority is like functions
+  object_t best_prule_obj = 0;  // initially none
+  object_t best_symbol_obj = 0; // the symbol that had the highest priority
+  glist_iterator_t it;
+  for (list_begin(source, &it); !list_done(&it); glist_next(&it)) {
+    object_t symbol_obj = list_get(&it);
+    if (ptype(symbol_obj) == SYMBOL_T) {
+      object_t prule_obj = lookup(env, UNWRAP_SYMBOL(symbol_obj));
+      object_t prior = lookup(prule_obj, priority_sym);
+      if (prior && (ptype(prior) == REAL_T)) {
+	double priority = UNWRAP_REAL(prior);
+	// did we find a prule with a higher priority?
+	if (priority > best_priority) {
+	  // note that 'f' might not be a prule but since it has a
+	  // priority it looks like one, then we will crash later
+	  best_priority = priority;
+	  best_prule_obj = prule_obj;
+	  best_symbol_obj = symbol_obj;
+	}
+      }
     }
   }
-
-  // clean up at the end
-  opstack_resolve_till(root, sink, -1.0);
-
-  // (3) split depending on the initial head
-  return split(sink, head);
+  // did we find a prule?
+  if (best_priority > 0.0) {
+    // resolve prule by constructing a call to that prule
+    tuple_t prule_call = tuple_new(3);
+    tuple_set(prule_call, 0, best_prule_obj);
+    tuple_set(prule_call, 1, best_symbol_obj);
+    tuple_set(prule_call, 2, WRAP_PTR(LIST_T, list_proto, source));
+	                     // the list containing the parse tree
+    // run the prule itself to resolve it
+    object_t expr = call_fun(env, prule_call);
+    if (ptype(expr) == TUPLE_T) {
+      tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
+      // check the resulting tuple
+      if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=SYMBOL_T))
+	rha_error("prule must create function call with function symbol\n");
+      // resolve the arguments
+      for (int i = 1; i<tuple_len(t); i++)
+	tuple_set(t, i, resolve(env, tuple_get(t, i)));
+      // finally resolve a possible macro that we got
+      // note that even if the macro contains further macros in its
+      // definition, we need to do resolve macros here only once,
+      // since all other macros in the macro have already been
+      // resolved when it was parsed
+      expr = replace_macro(env, t);
+    }
+    return expr;
+  }
+  else {
+    // otherwise build function calls and trigger a possible macro
+    if (list_len(source) == 0)
+      rha_error("parse error: missing expression\n");
+    object_t fncall = 0;
+    object_t obj = 0;
+    while ((obj = list_popfirst(source))) {
+      if (ptype(obj) == LIST_T)
+	obj = resolve(env, UNWRAP_PTR(LIST_T, obj));
+      if (!fncall) {
+	fncall = obj;
+	continue;
+      }
+      if (ptype(obj) != TUPLE_T)
+	rha_error("argument list expected (1)\n");
+      tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
+      object_t t0 = tuple_get(t, 0);
+      if (ptype(t0) != SYMBOL_T)
+	rha_error("argument list expected (2)\n");
+      symbol_t s = UNWRAP_SYMBOL(t0);
+      if (s != rounded_sym)
+	rha_error("argument list expected (3)\n");
+      // replace the rounded_sym with the function call so far
+      tuple_set(t, 0, fncall);
+      fncall = replace_macro(env, t);
+    }
+    return fncall;
+  }
+  assert(1==0);  // never reach this point
 }
 
-object_t keyword(string_t s, int_t a) {
-  object_t o = new();
-  assign(o, symbol_new("token"), WRAP_SYMBOL(symbol_new(s)));
-  assign(o, symbol_new("arity"), WRAP_INT(a));
-  return o;
+
+object_t replace_expr(object_t expr, symbol_t s, object_t sub)
+{
+  // replace all occurences of 's' in 'expr' by 'sub'
+  if (ptype(expr) == SYMBOL_T) {
+    symbol_t sy = UNWRAP_SYMBOL(expr);
+    if (sy == s)
+      return sub;
+  }
+  else if (ptype(expr) == TUPLE_T) {
+    tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
+    // create a new tuple
+    int tlen = tuple_len(t);
+    tuple_t newt = tuple_new(tlen);
+    for (int i=0; i<tuple_len(t); i++)
+      tuple_set(newt, i, replace_expr(tuple_get(t, i), s, sub));
+    return WRAP_PTR(TUPLE_T, tuple_proto, newt);
+  }
+  return expr;
 }
 
 
-#define MAKE_PRULE(ttt)\
-  object_t o = new();\
-  assign(o, symbol_new("token"), WRAP_SYMBOL(symbol_new(s)));\
-  assign(o, symbol_new("code"), f);\
-  assign(o, symbol_new("precedence"), WRAP_REAL(ttt ## PREC));\
-  assign(o, symbol_new("style"), WRAP_INT(ttt ## FIX));
-
-object_t macrofix_prule(string_t s, object_t f) {
-  MAKE_PRULE(MACRO);
-  return o;
+object_t replace_macro(object_t env, tuple_t t)
+{
+  int tlen = tuple_len(t);
+  if (tlen == 0) 
+    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+  object_t t0 = tuple_get(t, 0);
+  if (ptype(t0) != SYMBOL_T)
+    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+  symbol_t s = UNWRAP_SYMBOL(t0);
+  object_t macro = lookup(env, s);
+  if (!macro)
+    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+  if (!lookup(macro, symbol_new("ismacro")))
+    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+  object_t macro_body = lookup(macro, symbol_new("fnbody"));
+  if (!macro_body)
+    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+  object_t _macro_args = lookup(macro, symbol_new("argnames"));
+  if (!_macro_args)
+    rha_error("macro found but args are missing");
+  tuple_t macro_args = UNWRAP_PTR(TUPLE_T, _macro_args);
+  if (tuple_len(macro_args) != tlen-1)
+    rha_error("wrong macro arc number");
+  for (int i=1; i<tlen; i++) {
+    // go through the 'macro_body' and replace all occurences of
+    // macro_args
+    macro_body = replace_expr(macro_body, 
+			      UNWRAP_SYMBOL(tuple_get(macro_args, i-1)),
+			      tuple_get(t, i));
+  }
+  return macro_body;
 }
-
-
-object_t postfix_prule(string_t s, object_t f) {
-  MAKE_PRULE(POST);
-  assign(o, symbol_new("arity"), WRAP_INT(1));
-  return o;
-}
-
-
-object_t prefix_prule(string_t s, object_t f) {
-  MAKE_PRULE(PRE);
-  assign(o, symbol_new("arity"), WRAP_INT(1));
-  return o;
-}
-
-
-object_t infix_prule(string_t s, object_t f, real_t prec, int_t bind) {
-  object_t o = new();
-  assign(o, symbol_new("token"), WRAP_SYMBOL(symbol_new(s)));
-  assign(o, symbol_new("precedence"), WRAP_REAL(prec));
-  assign(o, symbol_new("style"), WRAP_INT(INFIX));
-  assign(o, symbol_new("bind"), WRAP_INT(bind));
-  assign(o, symbol_new("arity"), WRAP_INT(2));
-  return o;
-}
-
-
-object_t freefix_prule(string_t s, object_t f, tuple_t parts) {
-  MAKE_PRULE(FREE);
-  assign(o, symbol_new("parts"), WRAP_PTR(TUPLE_T, tuple_proto, parts));
-
-  // compute total arity
-  int_t arity = 0;
-  for(int i = 0; i < tuple_len(parts); i++)
-    arity += UNWRAP_INT(lookup(tuple_get(parts, i), symbol_new("arity"))) + 1;
-  assign(o, symbol_new("arity"), WRAP_INT(arity));
-
-  return o;
-}
-

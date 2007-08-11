@@ -11,6 +11,8 @@
 #include "tuple_fn.h"
 #include <stdarg.h>
 #include "alloc.h"
+#include "list_fn.h"
+
 #include "gtuple.h"
 
 tuple_t tuple_new(int_t len)
@@ -45,4 +47,13 @@ tuple_t tuple_make(int narg, ...)
   va_end(ap);
 
   return t;
+}
+
+list_t tuple_to_list(tuple_t t)
+{
+  list_t l = list_new();
+  int tlen = tuple_len(t);
+  for (int i=0; i<tlen; i++)
+    list_append(l, tuple_get(t, i));
+  return l;
 }

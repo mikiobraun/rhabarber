@@ -32,6 +32,34 @@ t = tuple.new(5);
 t.len()
 
 
+// problem with curlied brackets:
+// we want that there is no ';' necessary at the end of some
+// expressions, e.g.
+f(x) = {
+  return 2*x;
+}
+if (x>0) { 
+  deliver f(17)
+}
+else f(42);
+
+// however, the problem is that in this example we can't decide
+// whether the expression for 'f' goes on with keyword 'if' or not.
+// Only if we know that 'if' starts a new one we would.  
+
+
+//PRULES
+// how to check whether something is a prule
+prule.check = fn (x) hasslot(x, \priority);
+// we assume that a prule translates an expression into a function
+// call
+
+//MACROS
+m = macro (x, y) y*x;
+// a macro is a function with the additional slot 'ismacro', which can
+// contain anything...
+
+
 // some random ideas...
 fib(0) = 1
 fib(1) = 1
@@ -40,9 +68,9 @@ fib(n) = fib(n-1) + fib(n-2)
 f = new()
 f += fn (x) 2*x;
 
-assign_mc(local, \x, 17)    -> assign
-assign_mc(local, \f(x), 17) -> assign_fn(local, \f(x), 17)
-assign_mc(local, \a.x, 17)  -> assign_mc(a, \x, 17)
+assign_mc(local, \x, 17)      -> assign
+assign_mc(local, \f(x), 17)   -> assign_fn(local, \f(x), 17)
+assign_mc(local, \a.x, 17)    -> assign_mc(a, \x, 17)
 assign_mc(local, \a.f(x), 17) -> assign_mc(a, \f(x), 17)
 
 

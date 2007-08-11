@@ -2,6 +2,7 @@
 #include "glist.h"
 #include "tuple_fn.h"
 #include "alloc.h"
+#include "object.h"
 
 list_t list_new()
 {
@@ -80,4 +81,66 @@ void list_next(list_it *i)
 object_t list_get(list_it *i)
 {
   return glist_getp(i);
+}
+
+
+list_t list_chop_first(list_t l, symbol_t s)
+// splits a list into the part before the first appearance of symbol s
+// and after it, the symbol itself in the initial list will be lost
+{
+  list_t part = list_new();
+  object_t head;
+  while ((head = list_popfirst(l))) {
+    if (ptype(head) == SYMBOL_T)
+      if (s == UNWRAP_SYMBOL(head))
+	break;
+    list_append(part, head);
+  }
+  return part;
+}
+
+
+list_t list_chop_first_list(list_t l, glist_t *sym_list)
+// generalizes list_chop_first() to multiple symbols given in sym_list
+{
+  list_t part = list_new();
+  object_t head;
+  while ((head = list_popfirst(l))) {
+    if (ptype(head) == SYMBOL_T)
+      if (glist_iselementi(sym_list, UNWRAP_SYMBOL(head)))
+	return part;
+    list_append(part, head);
+  }
+  return part;
+}
+
+
+list_t list_chop_last(list_t l, symbol_t s)
+// splits a list into the part before the last appearance of symbol s
+// and after it, the symbol itself in the initial list will be lost
+{
+  list_t part = list_new();
+  object_t tail;
+  while ((tail = list_poplast(l))) {
+    if (ptype(tail) == SYMBOL_T)
+      if (s == UNWRAP_SYMBOL(tail))
+	break;
+    list_prepend(part, tail);
+  }
+  return part;
+}
+
+
+list_t list_chop_last_list(list_t l, glist_t *sym_list)
+// generalizes list_chop_last() to multiple symbols given in sym_list
+{
+  list_t part = list_new();
+  object_t tail;
+  while ((tail = list_poplast(l))) {
+    if (ptype(tail) == SYMBOL_T)
+      if (glist_iselementi(sym_list, UNWRAP_SYMBOL(tail)))
+	return part;
+    list_prepend(part, tail);
+  }
+  return part;
 }

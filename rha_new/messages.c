@@ -21,8 +21,7 @@ void rha_warning(const char *fmt, ...)
 {
   va_list ap;
   va_start(ap, fmt);
-  print("warning: ");
-  vprint(fmt, ap);
+  fprintf(stderr, "warning: %s", vsprint(fmt, ap));
   va_end(ap);
 }
 

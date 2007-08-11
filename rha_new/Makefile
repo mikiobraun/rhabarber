@@ -7,7 +7,8 @@ ALLSOURCES=$(wildcard *.c)
 SOURCES=alloc.o eval.o core.o \
 	glist.o gtree.o gtuple.o list_fn.o messages.o object.o \
 	parse.o rha_init.o rha_lexer.o rha_parser.tab.o symbol_fn.o \
-	symtable.o tuple_fn.o utils.o utilalloc.o fmt.o cstream.o
+	symtable.o tuple_fn.o utils.o utilalloc.o fmt.o cstream.o \
+	int_fn.o prules.o
 UTILOBJ=gtree.o utilalloc.o gtuple.o
 
 TESTCASES=$(subst .c,,$(wildcard test_*.c))
@@ -48,7 +49,7 @@ endif
 #
 # rule for stubs from rha_config.d
 #
-rha_types.h rha_init.c rha_init.h : rha_config.d rha_config.pl object.h eval.h parse.h core.h
+rha_types.h rha_init.c rha_init.h : rha_config.d rha_config.pl object.h eval.h parse.h core.h int_fn.h
 	./rha_config.pl
 
 rha_lexer.c : rha_parser_tab.h

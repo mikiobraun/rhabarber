@@ -178,3 +178,14 @@ intptr_t glist_get_(glist_iterator_t *i)
 }
 
 
+bool glist_iselement_(glist_t *l, intptr_t data)
+{
+  for (glist_iterator_t i = glist_begin(l);
+       !glist_done(&i);
+       glist_next(&i))
+    if (glist_geti(&i) == data)
+      // found
+      return true;
+  // not found
+  return false;
+}
