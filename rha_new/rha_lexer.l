@@ -43,6 +43,7 @@ extern int yylineno;
                           yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); return SYMBOL; 
                         }
 [ \t]+			/* eat up white spaces */
+\n[ \t]*\n              { yylval.obj = WRAP_SYMBOL(symbol_new(";")); return SYMBOL; }
 \n			yylineno++;
 "//".*                  /* eat up comment */
 .			printf("Warning: Unrecognized character \"%s\"\n", yytext);
