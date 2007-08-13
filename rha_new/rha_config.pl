@@ -78,6 +78,7 @@ $init_h_modules = $modules;
 $init_c_symbols = "";
 $init_c_prototypes = "";
 $init_c_typeobject = "";
+$init_c_ptypenames = "";
 $init_c_functions = "";
 $init_c_init_prototypes = "";
 $init_c_init_symbols = "";
@@ -214,9 +215,14 @@ exit();
 sub create_ids {
     $id = 1;
     foreach $item (@tdefs) {
-	if ($id>1) { $type_h_ids .= ",\n" }
+	if ($id>1) { 
+	    $type_h_ids .= ",\n";
+	    $init_c_ptypenames .= ",\n";
+	}
 	$ucitem = uc($item);
+	$iucitem = substr($ucitem, 0, -2);
 	$type_h_ids .= "  $ucitem = $id";
+	$init_c_ptypenames .= "    \"$iucitem\"";
 	$id++;
     }
 }
@@ -273,17 +279,21 @@ $type_h_ids
 };
 
 
-// (3) prototypes for all types
+// (3) 'ptype_name' gives back a name for a ptype
+// 'ptype_name' is impemented in 'rha_init.c'
+extern string_t ptype_name(enum ptypes);
+
+// (4) prototypes for all types
 $type_h_prototypes
 
-// (4) type objects
+// (5) type objects
 extern object_t void_obj;
 $type_h_typeobjects
 
-// (5) symbols
+// (6) symbols
 $type_h_symbols
 
-// (6) macros
+// (7) macros
 $type_h_macros
 #endif
 ENDE
@@ -313,6 +323,7 @@ sub create_init_c {
 // Instead edit 'rha_config.d'.
 
 #include <stdarg.h>
+#include <string.h>
 #include "alloc.h"
 #include "rha_init.h"
 
@@ -326,10 +337,19 @@ $init_c_prototypes
 object_t void_obj;
 $init_c_typeobjects
 
-// (4) functions
+// (4) ptype names
+string_t ptype_name(enum ptypes ptype)
+{
+  static char *name[] = {
+$init_c_ptypenames
+  };
+  return name[ptype];
+}
+
+// (5) functions
 $init_c_functions
 
-// (5) init
+// (6) init
 #define ADD_TYPE(ttt, TTT)   \\
   setptype(ttt ## _proto, TTT ## _T);\\
   ttt ## _obj = new();\\
@@ -342,17 +362,17 @@ void add_function(object_t module, symbol_t s, object_t (*code)(tuple_t), int na
   fn_t f = ALLOC_SIZE(sizeof(fn_t));
   f->code = code;
   f->narg = narg;
-  f->argtypes = ALLOC_SIZE(narg*sizeof(int_t));
-
-  // create a new object
-  object_t o = wrap_ptr(FN_T, fn_proto, f);
+  f->argptypes = ALLOC_SIZE(narg*sizeof(int_t));
 
   // read out the argument types
   va_list ap;
   va_start(ap, narg);
   for (int i=0; i<narg; i++)
-    f->argtypes[i] = va_arg(ap, int_t);
+    f->argptypes[i] = va_arg(ap, int_t);
   va_end(ap);
+
+  // create a new object
+  object_t o = wrap_ptr(FN_T, fn_proto, f);
 
   // finally add it to module
   assign(module, s, o);
@@ -366,27 +386,27 @@ object_t rha_init()
 {
   object_t root = new();
 
-  // (5.1) create prototypes (TYPES)
+  // (6.1) create prototypes (TYPES)
 $init_c_init_prototypes
 
-  // (5.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
+  // (6.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
 $init_c_init_symbols
 
-  // (5.3) create type objects (TYPES)
+  // (6.3) create type objects (TYPES)
 $init_c_init_typeobjects
 
-  // (5.4) create the void object
+  // (6.4) create the void object
   void_obj = new();
   assign(root, void_sym, void_obj);
 
 
-  // (5.5) add modules (MODULES, functions)
+  // (6.5) add modules (MODULES, functions)
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;
 $init_c_add_modules
 
-  // (5.6) add keywords and prules
+  // (6.6) add keywords and prules
   //object_t prules = new();
   //assign(root, prules_sym, prules);
   //object_t keywords = new();

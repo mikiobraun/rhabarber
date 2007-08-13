@@ -35,8 +35,14 @@ tuple_t plus(list_t parsetree) {
 object_t prules_init(object_t root, object_t module) {
 
   // add priority slots for all prules
-  assign(lookup(module, dot_sym), priority_sym, WRAP_REAL(0.5));
-  assign(lookup(module, plus_sym), priority_sym, WRAP_REAL(6.0));
+  // and add those prules also as symbols
+  object_t f = 0;
+  f = lookup(module, dot_sym);
+  assign(f, priority_sym, WRAP_REAL(0.5));
+  assign(module, symbol_new("."), f);
+  f = lookup(module, plus_sym);
+  assign(f, priority_sym, WRAP_REAL(6.0));
+  assign(module, symbol_new("+"), f);
 
   return root;
 }

@@ -16,8 +16,8 @@ extern _rha_ object_t list_last(list_t);
 extern _rha_ object_t list_popfirst(list_t);
 extern _rha_ object_t list_poplast(list_t);
 
+// iterator stuff for use in C with MACRO
 typedef glist_iterator_t list_it;
-
 extern void list_begin(list_t l, list_it *i);
 extern bool list_done(list_it *i);
 extern void list_next(list_it *i);

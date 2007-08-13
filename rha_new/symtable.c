@@ -1,8 +1,10 @@
 #include "symtable.h"
 #include <assert.h>
 #include "alloc.h"
+#include "list_fn.h"
+#include "utils.h"
 
-#include "util/gtree.h"
+#include "gtree.h"
 
 struct symtable
 {
@@ -38,5 +40,16 @@ object_t symtable_delete(symtable_t st, symbol_t s)
   return gtree_deletep(&st->tree, s);
 }
 
+list_t symtable_tolist(symtable_t st)
+{
+  list_t l = list_new();
+  gtree_iterator_t it;
+  for (gtree_begin(&it, &st->tree); !gtree_done(&it); gtree_next(&it)) {
+    print("%o\n", gtree_get_value_(&it));
+
+    //    list_append(l, (object_t) glist_get_(&it));
+  }
+  return l;
+}
 
 

@@ -9,7 +9,6 @@ extern _rha_ void      return_fn(object_t);
 extern _rha_ void      deliver_fn(object_t);
 extern _rha_ void      break_fn(object_t);
 extern _rha_ void      throw_fn(object_t);
-extern _rha_ object_t  do_fn(object_t this, tuple_t code);
 extern _rha_ object_t  while_fn(object_t this, object_t cond, object_t code);
 extern _rha_ object_t  for_fn(object_t this, symbol_t var, object_t container, object_t code);
 extern _rha_ object_t  try_fn(object_t this, object_t tryblock, symbol_t catchvar, object_t catchblock);
@@ -17,7 +16,6 @@ extern _rha_ addr_t    addr_fn(object_t);
 extern _rha_ void      tic_fn();
 extern _rha_ real_t    toc_fn();
 extern _rha_ void      exit_fn(int_t);
-extern _rha_ void      print_fn(object_t);
 
 extern tuple_t resolve_infix_prule(list_t parsetree, symbol_t prule_sym, symbol_t fun_sym, bool_t left_binding);
 

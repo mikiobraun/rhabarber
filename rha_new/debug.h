@@ -13,16 +13,18 @@
 
 #ifndef DEBUG
 // if you want to have debugging information, uncomment this
-//#define DEBUG
+#define DEBUG
 #endif
 
-/* printdebug is like printf but will be suppressed if DEBUG is not
+/* 'debug' is like printf but will be suppressed if DEBUG is not
    defined. */
 #ifdef DEBUG
 extern void _printdebug(const char *fmt, ...);
 #define printdebug(fmt, ...) _printdebug("%s:%d: " fmt, __func__, __LINE__, __VA_ARGS__);
+#define debug(fmt, ...) _printdebug(fmt, __VA_ARGS__);
 #else
 #define printdebug(...) /* nothing */
+#define debug(...) /* nothing */
 #endif
 
 #endif

@@ -21,8 +21,10 @@
 #include "eval.h"
 #include "tuple_fn.h"
 #include "symbol_fn.h"
+#include "string_fn.h"
 #include "list_fn.h"
-
+#include "utils.h"
+#include "alloc.h"
 
 object_t fn_fn(object_t this, tuple_t argnames, object_t fnbody)
 {
@@ -87,23 +89,6 @@ void throw_fn(object_t excp)
   // never reaches this point
 }
 
-
-object_t do_fn(object_t this, tuple_t code)
-{
-  // 'do_fn' returns 'void' or a return value ('return 17')
-  // 'do_fn' doesn't open a new scope
-  object_t res = void_obj;
-  int tlen = tuple_len(code);
-  begin_frame(BLOCK_FRAME) {
-    // evaluate all
-    for (int i = 0; i<tlen; i++) {
-      eval(this, tuple_get(code, i));
-    }
-  }
-  end_frame(res);
-  // return the result, which might be 'void'
-  return res;
-}
 
 
 void exit_fn(int_t exit_code)
@@ -198,91 +183,6 @@ real_t toc_fn()
   double now = tv.tv_sec + tv.tv_usec*1e-6;
 
   return now - tic_saved_time;
-}
-
-/**********************************************************************
- * 
- * Printing objects
- *
- **********************************************************************/
-
-static void _print_ptype(int_t p)
-{
-  static char *ptype_names[] = {
-    "NONE", "SYMBOL", "OBJECT", "INT", "BOOL",
-    "TUPLE", "FN", "REAL", "MAT", "STRING", "ADDR",
-    "LIST"
-  };
-  static int maxptype = 11;
-
-  if (p <= maxptype)
-    printf(ptype_names[p]);
-  else
-    printf("%d", p);
-}
-
-void print_fn(object_t o)
-     // right now, this is a big switch, but eventually, this should
-     // be done via symbol lookup :)
-{
-  if (!o) {
-    fprintf(stdout, "NULL (which means: evaluation failed)\n");
-  }
-  else if (o==void_obj) {
-    fprintf(stdout, "void");
-  }
-  else {
-    switch (ptype(o)) {
-    case INT_T: fprintf(stdout, "%d", o->raw.i); break;
-    case SYMBOL_T: {
-      symbol_t s = UNWRAP_SYMBOL(o);
-      fprintf(stdout, "%s (sym%d)", symbol_name(s), s); 
-      break;
-    }
-    case STRING_T: {
-      string_t s = UNWRAP_PTR(STRING_T, o);
-      fprintf(stdout, "\"%s\"", s); 
-      break;
-    }
-    case REAL_T: fprintf(stdout, "%f", o->raw.d); break;
-    case TUPLE_T: {
-      tuple_t t = UNWRAP_PTR(TUPLE_T, o);
-      fprintf(stdout, "(");
-      for(int i = 0; i < tuple_len(t); i++) {
-	if (i > 1) fprintf(stdout, ", ");
-	print_fn(tuple_get(t, i));
-      }
-      fprintf(stdout, ")");
-      break;
-    }
-    case LIST_T: {
-      list_t l = UNWRAP_PTR(LIST_T, o);
-      list_it i;
-      int c; 
-
-      printf("[");
-      for(list_begin(l, &i), c = 0; !list_done(&i); list_next(&i), c++) {
-	if(c > 0)
-	  printf(", ");
-	print_fn(list_get(&i));
-      }
-      printf("]");
-      break;
-    }
-    case FN_T: {
-      fn_t f = UNWRAP_PTR(FN_T, o);
-      fprintf(stdout, "[ fn narg=%d, ", f->narg);
-      for(int i = 0; i < f->narg; i++) {
-	if (i > 1)
-	  printf(", ");
-	_print_ptype(f->argtypes[i]);
-      }
-      break;
-    }
-    default:
-      fprintf(stdout, "[ ptype=%d, raw=%8p\n ]", ptype(o), o->raw.p);
-    }
-  }
 }
 
 
@@ -407,7 +307,7 @@ BUILTIN(resolve_cmp_prule)  // the only arg we are using is 'in'
   assert(tuple_length(in)==3);
   tuple_tr parsetreetuple = tuple_get(in, 2);
   list_tr parsetree = tuple_to_list(parsetreetuple);
-  printdebug("%o\n", parsetree);
+  debug("%o\n", parsetree);
   object_t lhs = list_chop_first_list(parsetree, cmp_list);
   object_t rhs = list_chop_first_list(parsetree, cmp_list);
   int op_pos = list_length(lhs);

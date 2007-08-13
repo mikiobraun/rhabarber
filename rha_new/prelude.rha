@@ -87,3 +87,8 @@ f.call_rhs.scope = local;
 f.call_rhs.fnbody = \2*x;
 
 f.call_lhs = magic_fct_extend;
+
+
+
+     // lists and tuples and all that
+     // do return the value of the last expression

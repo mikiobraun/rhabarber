@@ -6,10 +6,12 @@
 #include "object.h"
 #include "rha_types.h"
 #include "messages.h"
+#include "list_fn.h"
 #include "tuple_fn.h"
 #include "symbol_fn.h"
 
 // forward declarations
+object_t eval_sequence(object_t env, list_t source);
 object_t call_fun(object_t env, tuple_t expr);
 void *call_C_fun(int tlen, tuple_t t);
 object_t call_rha_fun(object_t this, int narg, tuple_t expr);
@@ -46,18 +48,42 @@ object_t eval(object_t env, object_t expr)
   ENTER;
   //print("eval(env = %p, expr = %o)\n", env, expr);
 
+  object_t value;
   switch (ptype(expr)) {
-  case SYMBOL_T: 
+  case SYMBOL_T:
     // symbols
-    RETURN( lookup(env, UNWRAP_SYMBOL(expr)) );
+    value = lookup(env, UNWRAP_SYMBOL(expr));
+    if (!value) rha_error("lookup of symbol '%o' failed\n", expr);
+    RETURN( value ); 
   case TUPLE_T: 
     // function call
     assert(UNWRAP_PTR(TUPLE_T, expr));
     RETURN( call_fun(env, UNWRAP_PTR(TUPLE_T, expr)) );
+  case LIST_T:
+    // sequence of expressions, e.g. { x=17; y=42 }
+    assert(UNWRAP_PTR(LIST_T, expr));
+    RETURN( eval_sequence(env, UNWRAP_PTR(LIST_T, expr)) );
   default:
     // literal
     RETURN( expr );
   }
+}
+
+
+object_t eval_sequence(object_t env, list_t source)
+{
+  // either the value of the last expression is delivered
+  // or the value following 'deliver'
+  // eval_squence does not open a new scope
+  object_t res = void_obj;
+  glist_iterator_t it;
+  begin_frame(BLOCK_FRAME)
+    // evaluate all, or stop earlier via 'deliver', 'break', 'return'
+    for (list_begin(source, &it); !list_done(&it); list_next(&it))
+      res = eval(env, list_get(&it));
+  end_frame(res);
+  // return the result
+  return res;
 }
 
 
@@ -105,7 +131,7 @@ void *call_C_fun(int tlen, tuple_t t)
     rha_error("wrong number of arguments (expected %d, got %d)\n", f->narg, narg);
   // check the types of the args
   for (int i=0; i<narg; i++)
-    check(tuple_get(t, i+1), f->argtypes[i]);
+    check(tuple_get(t, i+1), f->argptypes[i]);
 
   // finally call 'f'
   return (f->code)(t);

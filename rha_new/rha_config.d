@@ -11,6 +11,7 @@
 #include "symbol_fn.h"
 #include "tuple_fn.h"
 #include "int_fn.h"
+#include "string_fn.h"
 
 //TYPES
 #include <stdbool.h>
@@ -25,13 +26,17 @@ typedef struct gtuple*      _rha_ tuple_t;
 typedef struct { 
   object_t (*code)(tuple_t t);        
   int_t narg;        
-  int_t *argtypes; 
+  int_t *argptypes; 
 }*                          _rha_ fn_t;
 typedef double              _rha_ real_t;
 typedef double *            _rha_ mat_t;
 typedef char *              _rha_ string_t;
 typedef void *              _rha_ addr_t;
 typedef struct glist*       _rha_ list_t;
+
+// for eval
+typedef list_t              _rha_ call_t;
+
 
 //SYMBOLS
 // the most basic symbols
@@ -42,7 +47,7 @@ extern symbol_t root_sym;
 extern symbol_t local_sym;
 extern symbol_t void_sym;
 extern symbol_t parent_sym;
-extern symbol_t do_sym;
+extern symbol_t literal_sym;
 
 // special slots in root
 extern symbol_t modules_sym;

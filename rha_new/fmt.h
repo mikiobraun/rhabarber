@@ -34,7 +34,7 @@ struct fmt_spec
    parsefmtspec to parse C-style formatting options. */
 typedef void fmt_f(STREAM *out,
 		 char *spec,
-		 va_list ap);
+		 va_list *ap);
 
 /*
  * the basic printing functions
@@ -55,7 +55,7 @@ extern void fprtfmt(FILE *f, const char *fmt, ...);
 extern void strprtfmt(STREAM *s, const char *fmt, ...);
 
 /* print to a STREAM using va's */
-extern void vprtfmt(STREAM *s, const char *fmt, va_list ap);
+extern void vprtfmt(STREAM *s, const char *fmt, va_list *ap);
 
 
 /*

@@ -39,7 +39,7 @@ extern int yylineno;
                         }
 [0-9]+			{ yylval.obj = WRAP_INT(atoi(yytext)); return INT; }
 ([0-9]+\.[0-9])|([0-9]*\.[0-9]+) { yylval.obj = WRAP_REAL(atof(yytext)); return REAL; }
-([+\-*/<>^!=.]+|"&&"|"||"|"\\"|"?"|"#") {
+([+\-*/<>^!=.]+|"&&"|"||"|"\\"|"?"|"#"|";"|",") {
                           yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); return SYMBOL; 
                         }
 [ \t]+			/* eat up white spaces */

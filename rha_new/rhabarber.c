@@ -15,6 +15,7 @@
 #include <gc/gc.h>
 
 #include "messages.h"
+#include "utils.h"
 #include "rha_init.h"
 
 int main(int argc, char **argv)
@@ -32,7 +33,7 @@ int main(int argc, char **argv)
 
   // set up root object
   object_t root = rha_init(root);
-  
+
   int lineno = 0;
   char prompt[1024];
   // the read eval print loop (REPL)
@@ -49,9 +50,13 @@ int main(int argc, char **argv)
       object_t p = parse(root, line);
       print_fn(p);
       fprintf(stdout, "\n");
-      object_t e = eval(root, p);
-      print_fn(e);
-      fprintf(stdout, "\n");
+      if (p) {
+	object_t e = eval(root, p);
+	print_fn(e);
+	fprintf(stdout, "\n");
+      }
+      else
+	fprintf(stdout, "parse returned ZERO\n");
     }
     catch(excp) {
       string_t msg = UNWRAP_PTR(STRING_T, excp);

@@ -9,6 +9,7 @@
 #include "eval.h"
 #include "core.h"
 #include "messages.h"
+#include "debug.h"
 
 // let's require for now that all expressions must be separated by
 // semicolon, otherwise we could make a list of keywords which are
@@ -16,12 +17,14 @@
 
 symbol_t semicolon_sym = 0;
 symbol_t comma_sym = 0;
+symbol_t tuple_forced_sym = 0;
 
 object_t parse_init(object_t root, object_t module) {
 
   // the following symbols are only used in 'parse.c'
   semicolon_sym = symbol_new(";");
   comma_sym = symbol_new(",");
+  tuple_forced_sym = symbol_new("tuple_forced");
   return root;
 }
 
@@ -32,7 +35,10 @@ object_t parse_init(object_t root, object_t module) {
 object_t resolve(object_t env, object_t expr);
 object_t resolve_list_by_head(object_t env, list_t source);
 object_t resolve_list_by_prules(object_t env, list_t source);
-object_t replace_macro(object_t env, tuple_t t);
+object_t resolve_code_block(object_t env, list_t source);
+object_t resolve_tuple(object_t env, list_t source);
+object_t resolve_complex_literal(list_t source);
+object_t resolve_macro(object_t env, tuple_t t);
 
 
 object_t parse(object_t root, string_t s)
@@ -45,24 +51,6 @@ object_t parse(object_t root, string_t s)
 }
 
 
-bool list_with_head(symbol_t a_symbol, object_t expr) {
-  object_t lf = 0;
-  list_t l;
-  return (ptype(expr) == LIST_T)
-    && (list_len(l=UNWRAP_PTR(LIST_T, expr)) > 0)
-    && (ptype(lf=list_first(l)) == SYMBOL_T)
-    && (UNWRAP_SYMBOL(lf) == a_symbol);
-}
-
-bool tuple_with_head(symbol_t a_symbol, object_t expr) {
-  object_t lf = 0;
-  tuple_t l;
-  return (ptype(expr) == TUPLE_T)
-    && (tuple_len(l=UNWRAP_PTR(TUPLE_T, expr)) > 0)
-    && (ptype(lf=tuple_get(l, 0)) == SYMBOL_T)
-    && (UNWRAP_SYMBOL(lf) == a_symbol);
-}
-
 bool is_symbol(symbol_t a_symbol, object_t expr) {
   return (ptype(expr) == SYMBOL_T)
     && (UNWRAP_SYMBOL(expr) == a_symbol);
@@ -71,6 +59,7 @@ bool is_symbol(symbol_t a_symbol, object_t expr) {
 
 object_t resolve(object_t env, object_t expr)
 {
+  debug("resolve(%o, %o)\n", env, expr);
   if (ptype(expr) == LIST_T)
     return resolve_list_by_head(env, UNWRAP_PTR(LIST_T, expr));
   else
@@ -79,14 +68,15 @@ object_t resolve(object_t env, object_t expr)
 
 object_t resolve_list_by_head(object_t env, list_t source)
 {
+  debug("resolve_list_by_head(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
   // take the list 'source'
   // built a list 'sink'
   // finally return the 'sink' transformed into a tuple
 
-  // preliminaries
-  if (list_len(source) == 0)
-    return void_obj;
-  object_t l0 = list_first(source);
+  // The list 'source' is headed by the bracket type, which will
+  // trigger different behavior
+  assert(list_len(source) > 0);
+  object_t l0 = list_popfirst(source);
   symbol_t head;
   if ((ptype(l0) != SYMBOL_T)
       || (((head = UNWRAP_SYMBOL(l0)) != curlied_sym)
@@ -94,107 +84,147 @@ object_t resolve_list_by_head(object_t env, list_t source)
 	  && (head != squared_sym)))
     return resolve_list_by_prules(env, source);
 
-  // (0) The list 'source' is headed by the bracket type, which will
-  // trigger different behavior
-  assert(list_len(source) > 0);
+  // so we have a specially marked up list
   assert((head==rounded_sym)||(head==squared_sym)||(head==curlied_sym));
-  list_t sink = list_new();
   // split 'source' into sublist which are collected in 'sink'
   if (head==curlied_sym) {
-    // code blocks
-    // { x = 1; y = 7; deliver 5; { a=5; } x=5 }
-    // split by semicolon
-    //
-    // extend this later to split also after a curlied expression
-    list_append(sink, WRAP_SYMBOL(do_sym));
-    list_t part = list_new();
-    object_t obj = 0;
-    while ((obj = list_popfirst(source))) {
-      if (is_symbol(semicolon_sym, obj)) {
-	// split here and ignore the semicolon
-	list_append(sink, resolve_list_by_prules(env, part));
-	part = list_new();
-	continue;
-      }
-      else if (is_symbol(comma_sym, obj)) {
-	// this is not allowed
-	rha_error("parse error: in a 'curlied' expression no comma allowed\n");
-	assert(1==0);
-      }
-      //////////////
-      // the next case does not work since after a 'curlied'
-      // expression there might be an 'else' which continues the
-      // expression
-//    else if (list_with_headed(curlied_sym, obj)) {
-//	list_append(part, obj);
-//	// split here
-//	list_append(sink, list_to_tuple(resolve_by_prules(part)));
-//	part = list_new();
-//    }
-      else {
-	list_append(part, obj);
-      }
-    }
-    return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
+    return resolve_code_block(env, source);
   }
   else if (head == rounded_sym) {
-    // grouped expression and argument lists
-    // (x+1)*4 or (x, y, z)
-    // split only by comma, no semiclon is allowed
-    list_append(sink, WRAP_SYMBOL(rounded_sym));  // let's keep the rounded_sym
-    list_t part = list_new();
-    object_t obj = 0;
-    while ((obj = list_popfirst(source))) {
-      if (is_symbol(comma_sym, obj)) {
-	// split here and ignore the comma
-	list_append(sink, resolve_list_by_prules(env, part));
-	part = list_new();
-	continue;
-      }
-      else if (is_symbol(semicolon_sym, obj)) {
-	// this is not allowed
-	rha_error("parse error: in a 'rounded' expression no semicolon allowed\n");
-	assert(1==0);
-      }
-      list_append(part, obj);
-    }
-    if (list_len(sink) == 2)
-      // this is just a grouped expression
-      return list_last(sink);
-    else
-      return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
+    return resolve_tuple(env, source);
   }
   else if (head == squared_sym) {
-    // complex literals
-    // [x, 17] or [ 2*x for x in [1,2,3]]
-    
-    // the idea here is that to define a complex literal
-    // a type must define a list of separator, which determines the
-    // order of subexpressions, and a constructor, which constructs
-    // the object from the preprocessed list
-
-    // for now let's hardwire a comma-separated list
-    list_t part = list_new();
-    object_t obj = 0;
-    while ((obj = list_popfirst(source))) {
-      if (is_symbol(comma_sym, obj)) {
-	// split here and ignore the comma
-	list_append(sink, resolve_list_by_prules(env, part));
-	part = list_new();
-	continue;
-      }
-      list_append(part, obj);
-    }
-    return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
+    return resolve_complex_literal(source);
   }
   else 
     // never reach this point
     assert(1==0);
 }
  
+object_t resolve_code_block(object_t env, list_t source)
+{
+  debug("resolve_code_block(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  // code blocks  -->  returns a list_t
+  // { x = 1; y = 7; deliver 5; { a=5; } x=5 }
+  // split by semicolon, comma is not allowed
+  if (list_len(source) == 0) {
+    return WRAP_PTR(LIST_T, list_proto, list_new());
+  }
+  list_t sink = list_new();
+  list_t part = list_new();
+  object_t obj = 0;
+  while ((obj = list_popfirst(source))) {
+    if (is_symbol(semicolon_sym, obj)) {
+      // split here and ignore the semicolon
+      list_append(sink, resolve_list_by_prules(env, part));
+      part = list_new();
+      continue;
+    }
+    else if (is_symbol(comma_sym, obj)) {
+      // this is not allowed
+      rha_error("parse error: in a 'curlied' expression no comma allowed\n");
+      assert(1==0);
+    }
+    else {
+      list_append(part, obj);
+    }
+  }
+  if (list_len(part)>0)
+    list_append(sink, resolve_list_by_prules(env, part));
+  return WRAP_PTR(LIST_T, list_proto, sink);  // a list!
+}
+
+
+object_t resolve_tuple(object_t env, list_t source)
+{
+  debug("resolve_tuple(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  // grouped expression and argument lists
+  // (x+1)*4 or (x, y, z) or (17,)
+  // split only by comma, no semiclon is allowed
+  if (list_len(source) == 0) {
+    tuple_t t = tuple_new(1);
+    tuple_set(t, 0, WRAP_SYMBOL(rounded_sym));
+    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+  }
+  list_t sink = list_new();
+  list_t part = list_new();
+  object_t obj = 0;
+  bool last_was_comma = false;
+  while ((obj = list_popfirst(source))) {
+    if (is_symbol(comma_sym, obj)) {
+      // split here and ignore the comma
+      list_append(sink, resolve_list_by_prules(env, part));
+      part = list_new();
+      last_was_comma = true;
+      continue;
+    }
+    else if (is_symbol(semicolon_sym, obj)) {
+      // this is not allowed
+      rha_error("parse error: in a 'rounded' expression no semicolon allowed\n");
+      assert(1==0);
+    }
+    list_append(part, obj);
+    last_was_comma = false;
+  }
+  if (list_len(part) > 0)
+    list_append(sink, resolve_list_by_prules(env, part));
+  // three cases:
+  // (1) stuff like: (17,42,)
+  if (last_was_comma)
+    if (list_len(sink)!=2) {
+      assert(list_len(part) == 0);
+      rha_error("parse error: trailing comma only allowed for singleton tuple\n");
+    }
+    else {
+      // (2) stuff like: (17,)
+      list_prepend(sink, WRAP_SYMBOL(tuple_forced_sym));
+    }
+  else {
+    // (3) stuff like: (17, 42)   (17)
+    // comma wasn't the last symbol
+    list_prepend(sink, WRAP_SYMBOL(rounded_sym));
+  }
+  return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
+}
+
+
+object_t resolve_complex_literal(list_t source)
+{
+  debug("resolve_complex_literal(%o)\n", WRAP_PTR(LIST_T, list_proto, source));
+  // complex literals
+  // [x, 17] or [ 2*x for x in [1,2,3]]
+  
+  // the idea here is that to define a complex literal
+  // a type must define a list of separators, which determines the
+  // order of subexpressions, and a constructor, which constructs
+  // the object from the preprocessed list
+  
+  // problem:
+  // * we need to call 'resolve' for each part
+  // * we only can decide on the parts when we have splitted 
+  
+  // solution:
+  // * we allow types to give a list of separators and types
+  // * then there is some magic function (this one) which does the
+  // work and tries all different literals as specified 
+  // * this only works for default behavior.
+
+  // for now: we delay the resolution of complex literals until 'eval'
+  // time and create:
+  //  [1,2,3] ==>  (literal_sym (tuple_sym [1,2,3]))
+  tuple_t t1 = tuple_new(2);
+  tuple_set(t1, 0, WRAP_SYMBOL(quote_sym));
+  tuple_set(t1, 1, WRAP_PTR(LIST_T, list_proto, source));
+  tuple_t t = tuple_new(2);
+  tuple_set(t, 0, WRAP_SYMBOL(squared_sym));
+  tuple_set(t, 1, WRAP_PTR(TUPLE_T, tuple_proto, t1));
+  return WRAP_PTR(TUPLE_T, tuple_proto, source);
+}
+
  
 object_t resolve_list_by_prules(object_t env, list_t source)
 {
+  debug("resolve_prules(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
   // it is a tuple containing a white-spaced list
   // without any particular heading symbol
   
@@ -204,10 +234,13 @@ object_t resolve_list_by_prules(object_t env, list_t source)
   object_t best_prule_obj = 0;  // initially none
   object_t best_symbol_obj = 0; // the symbol that had the highest priority
   glist_iterator_t it;
+  object_t prules = lookup(env, symbol_new("prules"));
+  if (!prules) prules = void_obj;
   for (list_begin(source, &it); !list_done(&it); glist_next(&it)) {
     object_t symbol_obj = list_get(&it);
     if (ptype(symbol_obj) == SYMBOL_T) {
-      object_t prule_obj = lookup(env, UNWRAP_SYMBOL(symbol_obj));
+      object_t prule_obj = lookup(prules, UNWRAP_SYMBOL(symbol_obj));
+      if (!prule_obj) continue;
       object_t prior = lookup(prule_obj, priority_sym);
       if (prior && (ptype(prior) == REAL_T)) {
 	double priority = UNWRAP_REAL(prior);
@@ -245,7 +278,7 @@ object_t resolve_list_by_prules(object_t env, list_t source)
       // definition, we need to do resolve macros here only once,
       // since all other macros in the macro have already been
       // resolved when it was parsed
-      expr = replace_macro(env, t);
+      expr = resolve_macro(env, t);
     }
     return expr;
   }
@@ -257,8 +290,21 @@ object_t resolve_list_by_prules(object_t env, list_t source)
     object_t obj = 0;
     while ((obj = list_popfirst(source))) {
       if (ptype(obj) == LIST_T)
-	obj = resolve(env, UNWRAP_PTR(LIST_T, obj));
+	obj = resolve(env, obj);
       if (!fncall) {
+	// deal here with the singleton case
+	if (ptype(obj) == TUPLE_T) {
+	  tuple_t tt = UNWRAP_PTR(TUPLE_T, obj);
+	  if (tuple_len(tt) == 2) {
+	    object_t tt0 = tuple_get(tt, 0);
+	    if (ptype(tt0) == SYMBOL_T) {
+	      symbol_t tts = UNWRAP_SYMBOL(tt0);
+	      if (tts != tuple_forced_sym) {
+		obj = tuple_get(tt, 1);
+	      }
+	    }
+	  }
+	}
 	fncall = obj;
 	continue;
       }
@@ -273,7 +319,7 @@ object_t resolve_list_by_prules(object_t env, list_t source)
 	rha_error("argument list expected (3)\n");
       // replace the rounded_sym with the function call so far
       tuple_set(t, 0, fncall);
-      fncall = replace_macro(env, t);
+      fncall = resolve_macro(env, t);
     }
     return fncall;
   }
@@ -302,7 +348,7 @@ object_t replace_expr(object_t expr, symbol_t s, object_t sub)
 }
 
 
-object_t replace_macro(object_t env, tuple_t t)
+object_t resolve_macro(object_t env, tuple_t t)
 {
   int tlen = tuple_len(t);
   if (tlen == 0) 

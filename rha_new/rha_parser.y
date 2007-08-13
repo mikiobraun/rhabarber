@@ -40,7 +40,8 @@ static object_t solidify(symbol_t s, list_t t);
 %type <lis> prog wslist
 
 %% /* Grammar rules and actions follow.  */
-prog        : wslist          { parsetree = UNWRAP_PTR(LIST_T, solidify(curlied_sym, $1)); }
+prog        : /* empty */     { parsetree = 0; }
+            | wslist          { parsetree = UNWRAP_PTR(LIST_T, solidify(curlied_sym, $1)); }
             ;
 wslist      : expr            { $$ = list_new(); list_append($$, $1); }    // white-spaced list
             | wslist expr     { $$ = $1; list_append($$, $2); }
