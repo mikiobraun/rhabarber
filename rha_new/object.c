@@ -29,8 +29,8 @@ struct symtable;
 
 object_t object_init(object_t root, object_t module)
 {
-  object_t f = lookup(module, ls_sym);
-  assign(root, ls_sym, f);
+  assign(root, ls_sym, lookup(module, ls_sym));
+
   return root;
 }
 
@@ -45,7 +45,7 @@ object_t new()
      // creates a new primitive object
 {
   object_t o = ALLOC_SIZE(sizeof(struct rha_object));
-  o->ptype = 0;
+  o->ptype = OBJECT_T;
   o->table = symtable_new();
   // debug(" %p created by object.h->new.\n", (void *) o);
   return o;
@@ -271,13 +271,13 @@ string_t to_string(object_t o)
     }
     case FN_T: {
       fn_t f = UNWRAP_PTR(FN_T, o);
-      s = sprint("<fn narg=%d, ", f->narg);
+      s = sprint("<fn (");
       for(int i = 0; i < f->narg; i++) {
 	if (i > 0)
 	  s = sprint(s, ", ");
-	s = string_append(s, ptype_name(f->argptypes[i]));
+	s = string_append(s, ptype_names[f->argptypes[i]]);
       }
-      return string_append(s, ">");
+      return string_append(s, ")>");
     }
     default:
       return sprint("<addr=%p>", (void*) o);

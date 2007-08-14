@@ -99,23 +99,25 @@ object_t call_fun(object_t env, tuple_t expr)
   }
 
   // otherwise a usual function
-  tuple_t args = tuple_new(tlen);
+  tuple_t values = tuple_new(tlen);
   for (int i=0; i<tlen; i++)
-    tuple_set(args, i, eval(env, tuple_get(expr, i)));
+    tuple_set(values, i, eval(env, tuple_get(expr, i)));
 
-  if (ptype(tuple_get(args, 0))==FN_T)
+  if (ptype(tuple_get(values, 0))==FN_T)
     // the function is implemented in C
-    return call_C_fun(tlen, args);
+    return call_C_fun(tlen, values);
   else
     // the function is pure rhabarber
-    return call_rha_fun(env, tlen, args);
+    return call_rha_fun(env, tlen, values);
 }
 
 
-void check(object_t o, int_t pt)
+void check_ptypes(object_t o, enum ptypes pt)
 {
-  if (ptype(o) != pt) rha_error("argument primtype missmatch (expected: %d, got: %d)\n", pt, ptype(o));
-  //if (!raw(o)) rha_error("undefined primtype object\n");
+  // note that OBJECT_T matches anything!
+  if ((pt != OBJECT_T) && (ptype(o) != pt))
+    rha_error("argument primtype missmatch (expected: %s, got: %s)\n",
+	      ptype_names[pt], ptype_names[ptype(o)]);
 }
 
 
@@ -131,7 +133,7 @@ void *call_C_fun(int tlen, tuple_t t)
     rha_error("wrong number of arguments (expected %d, got %d)\n", f->narg, narg);
   // check the types of the args
   for (int i=0; i<narg; i++)
-    check(tuple_get(t, i+1), f->argptypes[i]);
+    check_ptypes(tuple_get(t, i+1), f->argptypes[i]);
 
   // finally call 'f'
   return (f->code)(t);

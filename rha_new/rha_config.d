@@ -23,7 +23,7 @@ typedef struct rha_object * _rha_ object_t;
 typedef int                 _rha_ int_t; 
 typedef bool                _rha_ bool_t;
 typedef struct gtuple*      _rha_ tuple_t;
-typedef struct { 
+typedef struct _fn_t_ { 
   object_t (*code)(tuple_t t);        
   int_t narg;        
   int_t *argptypes; 
@@ -33,10 +33,6 @@ typedef double *            _rha_ mat_t;
 typedef char *              _rha_ string_t;
 typedef void *              _rha_ addr_t;
 typedef struct glist*       _rha_ list_t;
-
-// for eval
-typedef list_t              _rha_ call_t;
-
 
 //SYMBOLS
 // the most basic symbols

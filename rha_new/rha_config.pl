@@ -213,9 +213,10 @@ exit();
 #########################################
 
 sub create_ids {
-    $id = 1;
+    $start = 0;
+    $id = $start;
     foreach $item (@tdefs) {
-	if ($id>1) { 
+	if ($id>$start) { 
 	    $type_h_ids .= ",\n";
 	    $init_c_ptypenames .= ",\n";
 	}
@@ -279,16 +280,15 @@ $type_h_ids
 };
 
 
-// (3) 'ptype_name' gives back a name for a ptype
-// 'ptype_name' is impemented in 'rha_init.c'
-extern string_t ptype_name(enum ptypes);
-
-// (4) prototypes for all types
+// (3) prototypes for all types
 $type_h_prototypes
 
-// (5) type objects
+// (4) type objects
 extern object_t void_obj;
 $type_h_typeobjects
+
+// (5) ptype names
+extern string_t ptype_names[];
 
 // (6) symbols
 $type_h_symbols
@@ -324,6 +324,7 @@ sub create_init_c {
 
 #include <stdarg.h>
 #include <string.h>
+#include <stdio.h>
 #include "alloc.h"
 #include "rha_init.h"
 
@@ -338,13 +339,9 @@ object_t void_obj;
 $init_c_typeobjects
 
 // (4) ptype names
-string_t ptype_name(enum ptypes ptype)
-{
-  static char *name[] = {
+string_t ptype_names[] = {
 $init_c_ptypenames
-  };
-  return name[ptype];
-}
+};
 
 // (5) functions
 $init_c_functions
@@ -359,10 +356,10 @@ $init_c_functions
 void add_function(object_t module, symbol_t s, object_t (*code)(tuple_t), int narg, ...)
 {
   // create a struct containing all info about the builtin function
-  fn_t f = ALLOC_SIZE(sizeof(fn_t));
+  fn_t f = ALLOC_SIZE(sizeof(struct _fn_t_));
   f->code = code;
   f->narg = narg;
-  f->argptypes = ALLOC_SIZE(narg*sizeof(int_t));
+  f->argptypes = ALLOC_SIZE(narg*sizeof(enum ptypes));
 
   // read out the argument types
   va_list ap;
