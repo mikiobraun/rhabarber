@@ -1,4 +1,2 @@
 // first pull some of the functions to the global scope
 new = modules.object.new;
-ls  = modules.object.ls;
-
