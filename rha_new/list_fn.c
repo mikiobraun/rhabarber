@@ -11,6 +11,15 @@ list_t list_new()
   return l;
 }
 
+list_t list_copy(list_t other)
+{
+  list_t l = list_new();
+  glist_iterator_t it;
+  for (it=glist_begin(other); !glist_done(&it); glist_next(&it))
+    list_append(l, glist_getp(&it));
+  return l;
+}
+
 int_t list_len(list_t l)
 {
   return glist_length(l);

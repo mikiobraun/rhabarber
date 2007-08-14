@@ -9,8 +9,8 @@
 #     rha_types.h
 
 # TODO:
-# *   allow core_init(root), eval_init(root) to be added to rha_init.c
-#     e.g. for adding a prule type to parse.c
+# *   automatically ensure the right order of modules
+# *   remove the module name from the beginning of function names (MAYBE)
 
 
 #################################
@@ -173,12 +173,12 @@ foreach $module (@mods) {
 
     # check for $module_init function
     if ($input =~ /$module\_init/) {
-	if ($input =~ /object_t\s+$module\_init\(object_t\s*(\s$id\s*)?,\s*object_t\s*(\s$id\s*)?\)/) {
+	if ($input =~ /void\s+$module\_init\(object_t\s*(\s$id\s*)?,\s*object_t\s*(\s$id\s*)?\)/) {
 	    print $module, "_init(object_t, object_t) found\n" if $debug;
-	    $init_c_add_modules .= "  root = $module"."_init(root, module);\n";
+	    $init_c_add_modules .= "  $module"."_init(root, module);\n";
 	}
 	else {
-	    die "type error, correct signature: 'object_t $module"."_init(object_t, object_t)'";
+	    die "type error, correct signature: 'void $module"."_init(object_t, object_t)'";
 	}
     }
     $init_c_add_modules .= "\n";
@@ -381,13 +381,15 @@ void add_function(object_t module, symbol_t s, object_t (*code)(tuple_t), int na
 
 object_t rha_init()
 {
-  object_t root = new();
-
   // (6.1) create prototypes (TYPES)
 $init_c_init_prototypes
 
   // (6.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
 $init_c_init_symbols
+
+  object_t root = new();
+  assign(root, root_sym, root);
+  assign(root, local_sym, root); // the outer-most local scope
 
   // (6.3) create type objects (TYPES)
 $init_c_init_typeobjects

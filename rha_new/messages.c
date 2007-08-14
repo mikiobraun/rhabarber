@@ -21,7 +21,7 @@ void rha_warning(const char *fmt, ...)
 {
   va_list ap;
   va_start(ap, fmt);
-  fprintf(stderr, "warning: %s", vsprint(fmt, ap));
+  fprintf(stderr, "[warning] %s", vsprint(fmt, ap));
   va_end(ap);
 }
 
@@ -33,7 +33,7 @@ void rha_error(const char *fmt, ...)
   string_t msg = vsprint(fmt, ap);
   va_end(ap);
 
-  msg = sprint("error: %s", msg);
+  msg = sprint("[error] %s", msg);
   throw(WRAP_PTR(STRING_T, string_proto, msg));
 }
 

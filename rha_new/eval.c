@@ -6,13 +6,15 @@
 #include "object.h"
 #include "rha_types.h"
 #include "messages.h"
+#include "utils.h"
 #include "list_fn.h"
 #include "tuple_fn.h"
 #include "symbol_fn.h"
 
 // forward declarations
 object_t eval_sequence(object_t env, list_t source);
-object_t call_fun(object_t env, tuple_t expr);
+object_t eval_args_and_call_fun(object_t env, tuple_t expr);
+object_t call_fun(object_t env, int_t tlen, tuple_t expr);
 void *call_C_fun(int tlen, tuple_t t);
 object_t call_rha_fun(object_t this, int narg, tuple_t expr);
 
@@ -42,11 +44,12 @@ int frame_tos = -1;
 // Note, that these stacks must be only changed via the macros defined
 // in eval.h.
 
-
+#define IGNORE
+#ifndef IGNORE
 object_t eval(object_t env, object_t expr)
 {
   ENTER;
-  //print("eval(env = %p, expr = %o)\n", env, expr);
+  print("eval(env = %p, expr = %o)\n", env, expr);
 
   object_t value;
   switch (ptype(expr)) {
@@ -58,7 +61,7 @@ object_t eval(object_t env, object_t expr)
   case TUPLE_T: 
     // function call
     assert(UNWRAP_PTR(TUPLE_T, expr));
-    RETURN( call_fun(env, UNWRAP_PTR(TUPLE_T, expr)) );
+    RETURN( eval_args_and_call_fun(env, UNWRAP_PTR(TUPLE_T, expr)) );
   case LIST_T:
     // sequence of expressions, e.g. { x=17; y=42 }
     assert(UNWRAP_PTR(LIST_T, expr));
@@ -66,6 +69,32 @@ object_t eval(object_t env, object_t expr)
   default:
     // literal
     RETURN( expr );
+  }
+}
+#endif
+
+object_t eval(object_t env, object_t expr)
+{
+  print("eval(env = %p, expr = %o)\n", env, expr);
+
+  object_t value;
+  switch (ptype(expr)) {
+  case SYMBOL_T:
+    // symbols
+    value = lookup(env, UNWRAP_SYMBOL(expr));
+    if (!value) rha_error("lookup of symbol '%o' failed\n", expr);
+    return value;
+  case TUPLE_T: 
+    // function call
+    assert(UNWRAP_PTR(TUPLE_T, expr));
+    return eval_args_and_call_fun(env, UNWRAP_PTR(TUPLE_T, expr));
+  case LIST_T:
+    // sequence of expressions, e.g. { x=17; y=42 }
+    assert(UNWRAP_PTR(LIST_T, expr));
+    return eval_sequence(env, UNWRAP_PTR(LIST_T, expr));
+  default:
+    // literal
+    return expr;
   }
 }
 
@@ -87,7 +116,7 @@ object_t eval_sequence(object_t env, list_t source)
 }
 
 
-object_t call_fun(object_t env, tuple_t expr)
+object_t eval_args_and_call_fun(object_t env, tuple_t expr)
 {
   int tlen = tuple_len(expr);
   assert(tlen>0);  // otherwise repair 'rhaparser.y'
@@ -103,6 +132,12 @@ object_t call_fun(object_t env, tuple_t expr)
   for (int i=0; i<tlen; i++)
     tuple_set(values, i, eval(env, tuple_get(expr, i)));
 
+  // finally call the function
+  return call_fun(env, tlen, values);
+}
+
+object_t call_fun(object_t env, int_t tlen, tuple_t values)
+{
   if (ptype(tuple_get(values, 0))==FN_T)
     // the function is implemented in C
     return call_C_fun(tlen, values);
@@ -154,7 +189,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   int nargs = tlen - 1;
   object_t _argnames = lookup(fn, argnames_sym);
   if (!_argnames) {
-    printf("the object is not callable\n");
+    rha_error("the object %o is not callable\n", tuple_get(expr, 0));
     return 0;
   }
   tuple_t argnames = UNWRAP_PTR(TUPLE_T, _argnames);

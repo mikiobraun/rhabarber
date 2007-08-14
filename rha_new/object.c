@@ -27,11 +27,11 @@
 
 struct symtable;
 
-object_t object_init(object_t root, object_t module)
+void object_init(object_t root, object_t module)
 {
   assign(root, ls_sym, lookup(module, ls_sym));
-
-  return root;
+  assign(root, lookup_sym, lookup(module, lookup_sym));
+  assign(root, assign_sym, lookup(module, assign_sym));
 }
 
 
@@ -280,7 +280,7 @@ string_t to_string(object_t o)
       return string_append(s, ")>");
     }
     default:
-      return sprint("<addr=%p>", (void*) o);
+      return sprint("<addr=%p>", (void *) o);
     }
   }
 }
@@ -292,7 +292,7 @@ void print_fn(object_t o)
 
 
 
-list_t ls(object_t o)
+void ls(object_t o)
 {
-  return symtable_tolist(o->table);
+  symtable_print(o->table);
 }

@@ -2,6 +2,10 @@
 #include <assert.h>
 #include "alloc.h"
 #include "list_fn.h"
+#include "object.h"
+#include "tuple_fn.h"
+#include "symbol_fn.h"
+#include "string_fn.h"
 #include "utils.h"
 
 #include "gtree.h"
@@ -40,16 +44,17 @@ object_t symtable_delete(symtable_t st, symbol_t s)
   return gtree_deletep(&st->tree, s);
 }
 
-list_t symtable_tolist(symtable_t st)
+void symtable_print(symtable_t st)
 {
-  list_t l = list_new();
+  string_t s = gc_strdup("");
   gtree_iterator_t it;
-  for (gtree_begin(&it, &st->tree); !gtree_done(&it); gtree_next(&it)) {
-    print("%o\n", gtree_get_value_(&it));
-
-    //    list_append(l, (object_t) glist_get_(&it));
+  for (gtree_begin(&it, &st->tree); !gtree_done(&it); gtree_next(&it))
+    {
+      s = string_append(s, sprint("%s==%o\n", 
+				  symbol_name((symbol_t) gtree_get_key_(&it)), 
+				  (object_t) gtree_get_value_(&it)));
   }
-  return l;
+  fprint(stdout, "%s", s);
 }
 
 

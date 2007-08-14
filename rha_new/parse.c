@@ -9,6 +9,7 @@
 #include "eval.h"
 #include "core.h"
 #include "messages.h"
+#include "utils.h"
 #include "debug.h"
 
 // let's require for now that all expressions must be separated by
@@ -19,13 +20,31 @@ symbol_t semicolon_sym = 0;
 symbol_t comma_sym = 0;
 symbol_t tuple_forced_sym = 0;
 
-object_t parse_init(object_t root, object_t module) {
+object_t prules = 0;  // the object containing all prules
 
+void parse_init(object_t root, object_t module)
+{
   // the following symbols are only used in 'parse.c'
   semicolon_sym = symbol_new(";");
   comma_sym = symbol_new(",");
   tuple_forced_sym = symbol_new("tuple_forced");
-  return root;
+
+  // the object 'prules' is used to lookup the prules
+  // its location should be changed here
+  object_t modules = lookup(root, modules_sym);
+  if (!modules) {
+    fprint(stderr, "WARNING (parse_init):\n");
+    fprint(stderr, "    Lookup of 'root.modules' failed.\n");
+    fprint(stderr, "    We won't use any prules!\n");
+  }
+  prules = lookup(modules, symbol_new("prules"));
+  if (!prules) {
+    fprint(stderr, "WARNING (parse_init):\n");
+    fprint(stderr, "    Lookup of 'root.modules.prules' failed.\n");
+    fprint(stderr, "    We won't use any prules!\n");
+    fprint(stderr, "    Try to change module order in 'rha_config.d'\n");
+    prules = void_obj;
+  }
 }
 
 ////////////////////////////////////////////
@@ -76,7 +95,7 @@ object_t resolve_list_by_head(object_t env, list_t source)
   // The list 'source' is headed by the bracket type, which will
   // trigger different behavior
   assert(list_len(source) > 0);
-  object_t l0 = list_popfirst(source);
+  object_t l0 = list_first(source);
   symbol_t head;
   if ((ptype(l0) != SYMBOL_T)
       || (((head = UNWRAP_SYMBOL(l0)) != curlied_sym)
@@ -86,6 +105,8 @@ object_t resolve_list_by_head(object_t env, list_t source)
 
   // so we have a specially marked up list
   assert((head==rounded_sym)||(head==squared_sym)||(head==curlied_sym));
+  // let's chop the head off
+  list_popfirst(source);
   // split 'source' into sublist which are collected in 'sink'
   if (head==curlied_sym) {
     return resolve_code_block(env, source);
@@ -122,7 +143,7 @@ object_t resolve_code_block(object_t env, list_t source)
     }
     else if (is_symbol(comma_sym, obj)) {
       // this is not allowed
-      rha_error("parse error: in a 'curlied' expression no comma allowed\n");
+      rha_error("(parsing) in a 'curlied' expression no comma allowed\n");
       assert(1==0);
     }
     else {
@@ -160,7 +181,7 @@ object_t resolve_tuple(object_t env, list_t source)
     }
     else if (is_symbol(semicolon_sym, obj)) {
       // this is not allowed
-      rha_error("parse error: in a 'rounded' expression no semicolon allowed\n");
+      rha_error("(parsing) in a 'rounded' expression no semicolon allowed\n");
       assert(1==0);
     }
     list_append(part, obj);
@@ -173,7 +194,7 @@ object_t resolve_tuple(object_t env, list_t source)
   if (last_was_comma)
     if (list_len(sink)!=2) {
       assert(list_len(part) == 0);
-      rha_error("parse error: trailing comma only allowed for singleton tuple\n");
+      rha_error("(parsing) trailing comma only allowed for singleton tuple\n");
     }
     else {
       // (2) stuff like: (17,)
@@ -230,18 +251,15 @@ object_t resolve_list_by_prules(object_t env, list_t source)
   
   // (1) find the prule with the lowest precendence
   // loop over all entries and check the symbols whether they are prules
-  double best_priority = 0.0;   // initially the priority is like functions
-  object_t best_prule_obj = 0;  // initially none
-  object_t best_symbol_obj = 0; // the symbol that had the highest priority
+  double best_priority = 0.0;  // initially the priority is like functions
+  object_t best_prule  = 0;    // the object containing the best prule
   glist_iterator_t it;
-  object_t prules = lookup(env, symbol_new("prules"));
-  if (!prules) prules = void_obj;
   for (list_begin(source, &it); !list_done(&it); glist_next(&it)) {
     object_t symbol_obj = list_get(&it);
     if (ptype(symbol_obj) == SYMBOL_T) {
-      object_t prule_obj = lookup(prules, UNWRAP_SYMBOL(symbol_obj));
-      if (!prule_obj) continue;
-      object_t prior = lookup(prule_obj, priority_sym);
+      object_t prule = lookup(prules, UNWRAP_SYMBOL(symbol_obj));
+      if (!prule) continue;
+      object_t prior = lookup(prule, priority_sym);
       if (prior && (ptype(prior) == REAL_T)) {
 	double priority = UNWRAP_REAL(prior);
 	// did we find a prule with a higher priority?
@@ -249,8 +267,7 @@ object_t resolve_list_by_prules(object_t env, list_t source)
 	  // note that 'f' might not be a prule but since it has a
 	  // priority it looks like one, then we will crash later
 	  best_priority = priority;
-	  best_prule_obj = prule_obj;
-	  best_symbol_obj = symbol_obj;
+	  best_prule = prule;
 	}
       }
     }
@@ -258,18 +275,18 @@ object_t resolve_list_by_prules(object_t env, list_t source)
   // did we find a prule?
   if (best_priority > 0.0) {
     // resolve prule by constructing a call to that prule
-    tuple_t prule_call = tuple_new(3);
-    tuple_set(prule_call, 0, best_prule_obj);
-    tuple_set(prule_call, 1, best_symbol_obj);
-    tuple_set(prule_call, 2, WRAP_PTR(LIST_T, list_proto, source));
+    int tlen = 2;
+    tuple_t prule_call = tuple_new(tlen);
+    tuple_set(prule_call, 0, best_prule);
+    tuple_set(prule_call, 1, WRAP_PTR(LIST_T, list_proto, source));
 	                     // the list containing the parse tree
     // run the prule itself to resolve it
-    object_t expr = call_fun(env, prule_call);
+    object_t expr = call_fun(env, tlen, prule_call);
     if (ptype(expr) == TUPLE_T) {
       tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
       // check the resulting tuple
       if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=SYMBOL_T))
-	rha_error("prule must create function call with function symbol\n");
+	rha_error("(parsing) prule must create function call with function symbol\n");
       // resolve the arguments
       for (int i = 1; i<tuple_len(t); i++)
 	tuple_set(t, i, resolve(env, tuple_get(t, i)));
@@ -285,7 +302,7 @@ object_t resolve_list_by_prules(object_t env, list_t source)
   else {
     // otherwise build function calls and trigger a possible macro
     if (list_len(source) == 0)
-      rha_error("parse error: missing expression\n");
+      rha_error("(parsing) missing expression\n");
     object_t fncall = 0;
     object_t obj = 0;
     while ((obj = list_popfirst(source))) {
@@ -309,14 +326,14 @@ object_t resolve_list_by_prules(object_t env, list_t source)
 	continue;
       }
       if (ptype(obj) != TUPLE_T)
-	rha_error("argument list expected (1)\n");
+	rha_error("(parsing) argument list expected (1)\n");
       tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
       object_t t0 = tuple_get(t, 0);
       if (ptype(t0) != SYMBOL_T)
-	rha_error("argument list expected (2)\n");
+	rha_error("(parsing) argument list expected (2)\n");
       symbol_t s = UNWRAP_SYMBOL(t0);
       if (s != rounded_sym)
-	rha_error("argument list expected (3)\n");
+	rha_error("(parsing) argument list expected (3)\n");
       // replace the rounded_sym with the function call so far
       tuple_set(t, 0, fncall);
       fncall = resolve_macro(env, t);
@@ -367,10 +384,10 @@ object_t resolve_macro(object_t env, tuple_t t)
     return WRAP_PTR(TUPLE_T, tuple_proto, t);
   object_t _macro_args = lookup(macro, symbol_new("argnames"));
   if (!_macro_args)
-    rha_error("macro found but args are missing");
+    rha_error("(parsing) macro found but args are missing");
   tuple_t macro_args = UNWRAP_PTR(TUPLE_T, _macro_args);
   if (tuple_len(macro_args) != tlen-1)
-    rha_error("wrong macro arc number");
+    rha_error("(parsing) wrong macro arc number");
   for (int i=1; i<tlen; i++) {
     // go through the 'macro_body' and replace all occurences of
     // macro_args

@@ -10,7 +10,7 @@ extern _rha_ object_t eval(object_t, object_t);
 
 // used by parse.c
 // using call_fun instead of "wraping, eval, unwrapping" saves some time
-extern object_t call_fun(object_t env, tuple_t expr);
+extern object_t call_fun(object_t env, int_t tlen, tuple_t expr);
 
 //////////////////
 extern object_t eval_currentlocation;

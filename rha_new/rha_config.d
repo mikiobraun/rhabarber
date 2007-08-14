@@ -5,9 +5,9 @@
 //MODULES
 #include "object.h"
 #include "eval.h"
+#include "core.h"   // must go before prules.h, see prules_init()
+#include "prules.h" // must go before parse.h, see parse_init()
 #include "parse.h"
-#include "prules.h"
-#include "core.h"
 #include "symbol_fn.h"
 #include "tuple_fn.h"
 #include "int_fn.h"

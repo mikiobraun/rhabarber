@@ -33,7 +33,7 @@ struct rha_object {
 /*
  * Functions
  */
-extern object_t object_init(object_t root, object_t module);
+extern       void       object_init(object_t root, object_t module);
 
 extern _rha_ object_t   new();
 extern       object_t   new_t(int_t pt, object_t proto);
@@ -44,7 +44,7 @@ extern       void       setptype(object_t, int_t);
 extern _rha_ void       print_fn(object_t);
 extern _rha_ string_t   to_string(object_t);
 
-extern _rha_ list_t     ls(object_t);
+extern _rha_ void       ls(object_t);
 
 extern       object_t   wrap_int(int ptype, object_t proto, int i);
 extern       object_t   wrap_float(int ptype, object_t proto, float f);
