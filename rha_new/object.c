@@ -29,7 +29,7 @@ struct symtable;
 
 void object_init(object_t root, object_t module)
 {
-  assign(root, ls_sym, lookup(module, ls_sym));
+  // the only two function we need to pull by hand (and not in prelude.rha)
   assign(root, lookup_sym, lookup(module, lookup_sym));
   assign(root, assign_sym, lookup(module, assign_sym));
 }

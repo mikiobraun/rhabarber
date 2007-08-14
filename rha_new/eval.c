@@ -75,7 +75,7 @@ object_t eval(object_t env, object_t expr)
 
 object_t eval(object_t env, object_t expr)
 {
-  print("eval(env = %p, expr = %o)\n", env, expr);
+  print("eval(env=%p, expr=%o)\n", env, expr);
 
   object_t value;
   switch (ptype(expr)) {

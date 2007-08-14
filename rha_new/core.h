@@ -17,6 +17,7 @@ extern _rha_ addr_t    addr_fn(object_t);
 extern _rha_ void      tic_fn();
 extern _rha_ real_t    toc_fn();
 extern _rha_ void      exit_fn(int_t);
+extern _rha_ object_t  run(object_t root, string_t fname);
 
 
 #endif

@@ -55,8 +55,8 @@ void prules_init(object_t root, object_t module)
 
   // add priority slots for all prules
   // and add those prules also as symbols
+  // note that 'dot' is not a prule!
   object_t f = 0;
-  MAKE_PRULES(dot, 0.5);
   MAKE_PRULES(plus, 6.0);
   MAKE_PRULES(equal, 10.0);
   MAKE_PRULES(plusequal, 10.0);
@@ -74,10 +74,6 @@ tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, glist_t *assi
 
 tuple_t quote(list_t parsetree) {
   return resolve_prefix_prule(parsetree, quote_sym);
-}
-
-tuple_t dot(list_t parsetree) {
-  return resolve_infix_prule(parsetree, the_dot_sym, lookup_sym, LEFT_BIND);
 }
 
 tuple_t plus(list_t parsetree) {
@@ -201,7 +197,7 @@ tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, glist_t *assi
     assert(list_len(lhs) > 0); // this has been checked in 'resolve_infix_prule'
     // the dot must be the second last in that list
     // since we do not allow anything else than symbols as the last
-    object_t lhs_obj = list_poplast(lhs);
+    lhs_obj = list_poplast(lhs);
     if (ptype(lhs_obj) != SYMBOL_T)
       rha_error("(parsing) the assign sign must be preceeded by a symbol\n");
     if (list_len(lhs) > 0) {
@@ -209,6 +205,7 @@ tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, glist_t *assi
       // this must be a "DOT"
       if ((ptype(a_dot) != SYMBOL_T) || (UNWRAP_SYMBOL(a_dot)!=the_dot_sym))
 	rha_error("(parsing) preceeding the symbol must be a dot\n");
+      // now, 'lhs' contains the LHS of the dot
       tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, lhs));
     }
   }

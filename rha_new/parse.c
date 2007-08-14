@@ -18,6 +18,7 @@
 
 symbol_t semicolon_sym = 0;
 symbol_t comma_sym = 0;
+symbol_t dot_sym = 0;
 symbol_t tuple_forced_sym = 0;
 
 object_t prules = 0;  // the object containing all prules
@@ -27,6 +28,7 @@ void parse_init(object_t root, object_t module)
   // the following symbols are only used in 'parse.c'
   semicolon_sym = symbol_new(";");
   comma_sym = symbol_new(",");
+  dot_sym = symbol_new(".");
   tuple_forced_sym = symbol_new("tuple_forced");
 
   // the object 'prules' is used to lookup the prules
@@ -68,6 +70,17 @@ object_t parse(object_t root, string_t s)
   // (1) resolve prules and macros creating a big function call
   return resolve_list_by_head(root, source);
 }
+
+object_t parse_file(object_t root, string_t fname)
+{
+  // (0) run bison code
+  list_t source = rhaparsefile(fname);
+  
+  // (1) resolve prules and macros creating a big function call
+  return resolve_list_by_head(root, source);
+}
+
+
 
 
 bool is_symbol(symbol_t a_symbol, object_t expr) {
@@ -300,12 +313,14 @@ object_t resolve_list_by_prules(object_t env, list_t source)
     return expr;
   }
   else {
-    // otherwise build function calls and trigger a possible macro
+    // otherwise build function calls and deal with dots, which bind
+    // less than function calls
     if (list_len(source) == 0)
       rha_error("(parsing) missing expression\n");
     object_t fncall = 0;
     object_t obj = 0;
     while ((obj = list_popfirst(source))) {
+      
       if (ptype(obj) == LIST_T)
 	obj = resolve(env, obj);
       if (!fncall) {
@@ -322,7 +337,26 @@ object_t resolve_list_by_prules(object_t env, list_t source)
 	    }
 	  }
 	}
+	if ((ptype(obj)==SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym)
+	  rha_error("(parsing) something else than dot expected\n");
 	fncall = obj;
+	continue;
+      }
+      if ((ptype(obj) == SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym) {
+	// ok we have a dotted expression
+	// get the next object
+	obj = list_popfirst(source);
+	if (!obj || (ptype(obj) != SYMBOL_T))
+	  rha_error("(parsing) a dot is always followed by a symbol\n");
+	// make dotted expression
+	tuple_t dot_rhs = tuple_new(2);
+	tuple_set(dot_rhs, 0, WRAP_SYMBOL(quote_sym));
+	tuple_set(dot_rhs, 1, obj);
+	tuple_t t = tuple_new(3);
+	tuple_set(t, 0, WRAP_SYMBOL(lookup_sym));
+	tuple_set(t, 1, fncall);
+	tuple_set(t, 2, WRAP_PTR(TUPLE_T, tuple_proto, dot_rhs));
+	fncall = WRAP_PTR(TUPLE_T, tuple_proto, t);
 	continue;
       }
       if (ptype(obj) != TUPLE_T)

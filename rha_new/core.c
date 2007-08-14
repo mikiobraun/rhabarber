@@ -25,6 +25,7 @@
 #include "list_fn.h"
 #include "utils.h"
 #include "alloc.h"
+#include "parse.h"
 
 
 object_t fn_fn(object_t this, tuple_t argnames, object_t fnbody)
@@ -187,6 +188,21 @@ real_t toc_fn()
 }
 
 
+/************************************************************
+ *
+ * Importing and running files
+ *
+ *************************************************************/
 
-
+object_t run(object_t root, string_t fname)
+{
+  fprint(stdout, "--loading \"%s\"\n", fname);
+  object_t p = parse_file(root, fname);
+  if (p) {
+    return eval(root, p);
+  }
+  else
+    fprintf(stdout, "parse returned ZERO\n");
+  return 0;
+}
 

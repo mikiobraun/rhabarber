@@ -34,8 +34,10 @@ int main(int argc, char **argv)
   // set up root object
   object_t root = rha_init(root);
 
+  // for the prompt
   int lineno = 0;
   char prompt[1024];
+
   // the read eval print loop (REPL)
   // never returns
   while(1) {
