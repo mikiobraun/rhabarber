@@ -1,2 +1,11 @@
-// first pull some of the functions to the global scope
+// (1) first pull some of the functions to the global scope
+
+// the only stuff that exists in 'root' is:
+
+// (1.1) right now we can't even do assignments like 'x=1'
+modules.object.assign(root, \assign, modules.object.assign);
+
+// (1.2) let's get more stuff
+new = modules.object.new;
+ls = modules.object.ls;
 new = modules.object.new;

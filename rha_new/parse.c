@@ -66,7 +66,8 @@ object_t parse(object_t root, string_t s)
 {
   // (0) run bison code
   list_t source = rhaparsestring(s);
-  
+  if (!source) return void_obj;
+
   // (1) resolve prules and macros creating a big function call
   return resolve_list_by_head(root, source);
 }
@@ -149,9 +150,11 @@ object_t resolve_code_block(object_t env, list_t source)
   object_t obj = 0;
   while ((obj = list_popfirst(source))) {
     if (is_symbol(semicolon_sym, obj)) {
-      // split here and ignore the semicolon
-      list_append(sink, resolve_list_by_prules(env, part));
-      part = list_new();
+      if (list_len(part)>0) {
+	// split here and ignore the semicolon
+	list_append(sink, resolve_list_by_prules(env, part));
+	part = list_new();
+      }
       continue;
     }
     else if (is_symbol(comma_sym, obj)) {
@@ -353,7 +356,11 @@ object_t resolve_list_by_prules(object_t env, list_t source)
 	tuple_set(dot_rhs, 0, WRAP_SYMBOL(quote_sym));
 	tuple_set(dot_rhs, 1, obj);
 	tuple_t t = tuple_new(3);
-	tuple_set(t, 0, WRAP_SYMBOL(lookup_sym));
+	// note that we use 'eval_sym' instead of 'lookup_sym', the
+	// reason is that the later doesn't issue a 'lookup failed'
+	// exception and returns NULL in that case, while 'eval' does
+	// issue an exception and return 'void_obj'.
+	tuple_set(t, 0, WRAP_SYMBOL(eval_sym));
 	tuple_set(t, 1, fncall);
 	tuple_set(t, 2, WRAP_PTR(TUPLE_T, tuple_proto, dot_rhs));
 	fncall = WRAP_PTR(TUPLE_T, tuple_proto, t);

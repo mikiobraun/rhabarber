@@ -5,6 +5,7 @@
 #include <setjmp.h>
 #include "object.h"
 
+extern       void     eval_init(object_t root, object_t module);
 extern _rha_ object_t eval(object_t, object_t);
 
 

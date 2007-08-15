@@ -19,35 +19,42 @@ extern int yylineno;
 %}
 %option noyywrap
 %%
-"false"                 { yylval.obj = WRAP_BOOL(false);    return BOOL; }
-"true"                  { yylval.obj = WRAP_BOOL(true);     return BOOL; }
+"//".*           /* eat up comment (THE ORDER OF THE RULES MATTERS!!!) */
+[ \t]+           /* eat up white spaces */
+"false"          { yylval.obj = WRAP_BOOL(false);    return BOOL; }
+"true"           { yylval.obj = WRAP_BOOL(true);     return BOOL; }
 
-"("			return LRP;     /* round paren */
-")"			return RRP;
+"("		 return LRP;     /* round paren */
+")"		 return RRP;
 
-"{"			return LCP;     /* curly paren */
-"}"			return RCP;
+"{"		 return LCP;     /* curly paren */
+"}"		 return RCP;
 
-"["			return LSP;     /* squared paren */
-"]"			return RSP;
+"["		 return LSP;     /* squared paren */
+"]"		 return RSP;
 
-[a-zA-Z_][a-zA-Z0-9_]* { yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); return SYMBOL; }
-\"[^\"]*\"		{ 
-                           yytext[strlen(yytext) - 1] = 0;
-                           yylval.obj = WRAP_PTR(STRING_T, string_proto, escexpand(yytext + 1));
-                           return STRING;
-                        }
-[0-9]+			{ yylval.obj = WRAP_INT(atoi(yytext)); return INT; }
-([0-9]+\.[0-9])|([0-9]*\.[0-9]+) { yylval.obj = WRAP_REAL(atof(yytext)); return REAL; }
+[a-zA-Z_][a-zA-Z0-9_]* { 
+                   yylval.obj = WRAP_SYMBOL(symbol_new(yytext));
+                   return SYMBOL; 
+                 }
+\"[^\"]*\"	 { 
+                   yytext[strlen(yytext) - 1] = 0;
+                   yylval.obj = WRAP_PTR(STRING_T, string_proto, escexpand(yytext + 1));
+                   return STRING;
+                 }
+[0-9]+		 { yylval.obj = WRAP_INT(atoi(yytext)); return INT; }
+([0-9]+\.[0-9])|([0-9]*\.[0-9]+) { 
+                   yylval.obj = WRAP_REAL(atof(yytext)); 
+		   return REAL; 
+                 }
 ([+\-*/<>^!=.]+|"&&"|"||"|"\\"|"?"|"#"|";"|",") {
-                          yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); return SYMBOL; 
-                        }
-[ \t]+			/* eat up white spaces */
-\n[ \t]*\n              { yylval.obj = WRAP_SYMBOL(symbol_new(";")); return SYMBOL; }
-\n			yylineno++;
-"//".*                  /* eat up comment */
-.			printf("Warning: Unrecognized character \"%s\"\n", yytext);
-<<EOF>>			yyterminate();
+                   yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); 
+		   return SYMBOL; 
+                 }
+\n[ \t]*\n       { yylval.obj = WRAP_SYMBOL(symbol_new(";")); return SYMBOL; }
+\n		 yylineno++;
+.		 printf("Warning: Unrecognized character \"%s\"\n", yytext);
+<<EOF>>		 yyterminate();
 %%
 YY_BUFFER_STATE currentbuffer;
 int yylineno;

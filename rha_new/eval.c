@@ -11,6 +11,15 @@
 #include "tuple_fn.h"
 #include "symbol_fn.h"
 
+
+void eval_init(object_t root, object_t module)
+{
+  // the only two function we need to pull by hand (and not in prelude.rha)
+  assign(root, eval_sym, lookup(module, eval_sym));
+}
+
+
+
 // forward declarations
 object_t eval_sequence(object_t env, list_t source);
 object_t eval_args_and_call_fun(object_t env, tuple_t expr);

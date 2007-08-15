@@ -29,10 +29,11 @@ struct symtable;
 
 void object_init(object_t root, object_t module)
 {
-  // the only two function we need to pull by hand (and not in prelude.rha)
-  assign(root, lookup_sym, lookup(module, lookup_sym));
-  assign(root, assign_sym, lookup(module, assign_sym));
-  assign(root, ls_sym, lookup(module, ls_sym));
+  // do we have to pull in any function here?
+  // isn't 'eval' enough?
+  //  assign(root, lookup_sym, lookup(module, lookup_sym));
+  //  assign(root, assign_sym, lookup(module, assign_sym));
+  //  assign(root, ls_sym, lookup(module, ls_sym));
 }
 
 
@@ -274,8 +275,7 @@ string_t to_string(object_t o)
       fn_t f = UNWRAP_PTR(FN_T, o);
       s = sprint("<fn (");
       for(int i = 0; i < f->narg; i++) {
-	if (i > 0)
-	  s = sprint(s, ", ");
+	if (i > 0) s = string_append(s, ", ");
 	s = string_append(s, ptype_names[f->argptypes[i]]);
       }
       return string_append(s, ")>");
