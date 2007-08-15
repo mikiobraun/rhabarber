@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     }
     catch(excp) {
       string_t msg = UNWRAP_PTR(STRING_T, excp);
-      rha_error("Caught exception: %s\n", msg);
+      fprintf(stderr, "Caught exception: %s\n", msg);
     }
   }
 
