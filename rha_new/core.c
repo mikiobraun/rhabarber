@@ -129,13 +129,6 @@ object_t for_fn(object_t this, symbol_t var, object_t container, object_t code)
 }
 
 
-addr_t addr_fn(object_t o)
-{
-  return (addr_t) o;
-}
-
-
-
 
 /************************************************************
  *

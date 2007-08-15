@@ -10,95 +10,210 @@
 // prules take a white-space list and return a function call!
 // prules must not return a macro call!
 
-// the symbols as they appear
-symbol_t the_quote_sym = 0;
-symbol_t the_dot_sym = 0;
-symbol_t the_plus_sym = 0;
-symbol_t the_minus_sym = 0;
-symbol_t the_times_sym = 0;
-symbol_t the_divide_sym = 0;
-symbol_t the_equal_sym = 0;
-symbol_t the_plusequal_sym = 0;
-symbol_t the_minusequal_sym = 0;
-symbol_t the_timesequal_sym = 0;
-symbol_t the_divideequal_sym = 0;
+// the prule symbols as they appear in Rhabarber
+symbol_t plusplus_sym = 0;
+symbol_t minusminus_sym = 0;
+symbol_t not_sym = 0;
+symbol_t divide_sym = 0;
+symbol_t times_sym = 0;
+symbol_t minus_sym = 0;
+symbol_t plus_sym = 0;
+symbol_t less_sym = 0;
+symbol_t lessequal_sym = 0;
+symbol_t greater_sym = 0;
+symbol_t greaterequal_sym = 0;
+symbol_t equalequal_sym = 0;
+symbol_t notequal_sym = 0;
+symbol_t and_sym = 0;
+symbol_t or_sym = 0;
+symbol_t return_sym = 0;
+symbol_t deliver_sym = 0;
+symbol_t break_sym = 0;
+symbol_t throw_sym = 0;
+symbol_t run_sym = 0;
+symbol_t if_sym = 0;
+symbol_t try_sym = 0;
+symbol_t while_sym = 0;
+symbol_t for_sym = 0;
+symbol_t fn_sym = 0;
+symbol_t equal_sym = 0;
+symbol_t plusequal_sym = 0;
+symbol_t minusequal_sym = 0;
+symbol_t timesequal_sym = 0;
+symbol_t divideequal_sym = 0;
+symbol_t quote_sym = 0;
+
 
 static glist_t assign_sym_list; // a list with = += -= *= /=
 
-#define MAKE_PRULES(ttt, prio) f = lookup(module, ttt ## _sym);	\
-  assign(f, priority_sym, WRAP_REAL(prio));			\
-  assign(module, the_ ## ttt ## _sym, f);
+#define MAKE_PRULES(ttt, prio) f = lookup(module, ttt ## _pr_sym);	\
+  assign(f, priority_sym, WRAP_REAL(prio));				\
+  assign(module, ttt ## _sym, f);
 
 
 void prules_init(object_t root, object_t module)
 {
-  // initialize local symbols
-  the_quote_sym = symbol_new("\\");
-  the_dot_sym = symbol_new(".");
-  the_plus_sym = symbol_new("+");
-  the_minus_sym = symbol_new("-");
-  the_times_sym = symbol_new("*");
-  the_divide_sym = symbol_new("/");
-  the_equal_sym = symbol_new("=");
-  the_plusequal_sym = symbol_new("+=");
-  the_minusequal_sym = symbol_new("-=");
-  the_timesequal_sym = symbol_new("*=");
-  the_divideequal_sym = symbol_new("/=");
+  // initialize prule symbols
+  // the string must show the form that appears in Rhabarber
+  // and can be different from the function name in C
+  plusplus_sym     = symbol_new("++");
+  minusminus_sym   = symbol_new("--");
+  not_sym          = symbol_new("!");
+  divide_sym       = symbol_new("/");
+  times_sym        = symbol_new("*");
+  minus_sym        = symbol_new("-");
+  plus_sym         = symbol_new("+");
+  less_sym         = symbol_new("<");
+  lessequal_sym    = symbol_new("<=");
+  greater_sym      = symbol_new(">");
+  greaterequal_sym = symbol_new(">=");
+  equalequal_sym   = symbol_new("==");
+  notequal_sym     = symbol_new("!=");
+  and_sym          = symbol_new("&&");
+  or_sym           = symbol_new("||");
+  return_sym       = symbol_new("return");
+  deliver_sym      = symbol_new("deliver");
+  break_sym        = symbol_new("break");
+  throw_sym        = symbol_new("throw");
+  run_sym          = symbol_new("run");
+  if_sym           = symbol_new("if");
+  try_sym          = symbol_new("try");
+  while_sym        = symbol_new("while");
+  for_sym          = symbol_new("for");
+  fn_sym           = symbol_new("fn");
+  equal_sym        = symbol_new("=");
+  plusequal_sym    = symbol_new("+=");
+  minusequal_sym   = symbol_new("-=");
+  timesequal_sym   = symbol_new("*=");
+  divideequal_sym  = symbol_new("/=");
+  quote_sym        = symbol_new("\\");  // note the quoted slash!
 
   // make a list of the assign prule symbols
   glist_init(&assign_sym_list);
-  glist_append(&assign_sym_list, the_equal_sym);
-  glist_append(&assign_sym_list, the_plusequal_sym);
-  glist_append(&assign_sym_list, the_minusequal_sym);
-  glist_append(&assign_sym_list, the_timesequal_sym);
-  glist_append(&assign_sym_list, the_divideequal_sym);
+  glist_append(&assign_sym_list, equal_sym);
+  glist_append(&assign_sym_list, plusequal_sym);
+  glist_append(&assign_sym_list, minusequal_sym);
+  glist_append(&assign_sym_list, timesequal_sym);
+  glist_append(&assign_sym_list, divideequal_sym);
 
   // add priority slots for all prules
   // and add those prules also as symbols
-  // note that 'dot' is not a prule!
+  // the strongest binding is the one with the smallest number!
+  // note that 'dot' is the strongest binding and it is not a prule!
+  // the second strongest is function call which are not a prule
+  // either.  Both 'dots' and 'fncall' are dealt with by hand in
+  // 'resolve_list_by_prule'
   object_t f = 0;
+  MAKE_PRULES(plusplus, 1.0);   // increment, decrement
+  MAKE_PRULES(minusminus, 1.0);
+  MAKE_PRULES(not, 2.5);        // logics
+  MAKE_PRULES(divide, 3.0);     // arithemics
+  MAKE_PRULES(times, 4.0);
+  MAKE_PRULES(minus, 5.0);
   MAKE_PRULES(plus, 6.0);
-  MAKE_PRULES(equal, 10.0);
-  MAKE_PRULES(plusequal, 10.0);
-  MAKE_PRULES(minusequal, 10.0);
-  MAKE_PRULES(timesequal, 10.0);
-  MAKE_PRULES(divideequal, 10.0);
-  MAKE_PRULES(quote, 15.0);
+  MAKE_PRULES(less, 7.0);       // comparison
+  MAKE_PRULES(lessequal, 7.0);
+  MAKE_PRULES(greater, 7.0);
+  MAKE_PRULES(greaterequal, 7.0);
+  MAKE_PRULES(equalequal, 7.0);
+  MAKE_PRULES(notequal, 7.0);
+  MAKE_PRULES(and, 8.0);        // logics
+  MAKE_PRULES(or, 9.0);
+  MAKE_PRULES(return, 10.0);
+  MAKE_PRULES(deliver, 10.0);
+  MAKE_PRULES(break, 10.0);
+  MAKE_PRULES(throw, 10.0);
+  MAKE_PRULES(run, 10.0);
+  MAKE_PRULES(if, 10.0);
+  MAKE_PRULES(try, 10.0);
+  MAKE_PRULES(while, 10.0);
+  MAKE_PRULES(for, 10.0);
+  MAKE_PRULES(fn, 10.0);
+  MAKE_PRULES(equal, 11.0);     // assignments
+  MAKE_PRULES(plusequal, 11.0);
+  MAKE_PRULES(minusequal, 11.0);
+  MAKE_PRULES(timesequal, 11.0);
+  MAKE_PRULES(divideequal, 11.0);
+  MAKE_PRULES(quote, 15.0);     // quote
 }
 
+
+// forward declaration of helper functions
 tuple_t resolve_prefix_prule(list_t parsetree, symbol_t fun_sym);
-tuple_t resolve_infix_prule(list_t parsetree, symbol_t prule_sym, symbol_t fun_sym, bool_t left_binding);
-tuple_t resolve_infix_prule_list(list_t parsetree, glist_t *prule_sym_list, symbol_t fun_sym, bool_t left_binding);
-tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, glist_t *assign_sym_list);
+tuple_t resolve_infix_prule(list_t parsetree, symbol_t prule_sym, 
+			    symbol_t fun_sym, bool_t left_binding);
+tuple_t resolve_infix_prule_list(list_t parsetree, 
+				 glist_t *prule_sym_list, 
+				 symbol_t fun_sym, bool_t left_binding);
+tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, 
+			     glist_t *assign_sym_list);
 
 
-tuple_t quote(list_t parsetree) {
+// all prules defined in C
+// here they should end on '_pr'
+//
+// the reason is to allow some prule-names in C to be different from
+// their name in rhabarber.  this is important for, e.g.:
+//
+//    RHA-NAME C-NAME     C-IMPLEMENTATION
+//    *        times_pr   int_times
+//    /        divide_pr  int_divide
+//    return   return_pr  return_fn
+//
+// the keyword case is the reason why '_pr' is necessary
+// also 
+tuple_t plusplus_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t minusminus_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t not_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t divide_pr(list_t parsetree) {
+  return resolve_infix_prule(parsetree, divide_sym, int_divide_sym, LEFT_BIND);
+}
+tuple_t times_pr(list_t parsetree) {
+  return resolve_infix_prule(parsetree, times_sym, int_times_sym, LEFT_BIND);
+}
+tuple_t minus_pr(list_t parsetree) {
+  return resolve_infix_prule(parsetree, minus_sym, int_minus_sym, LEFT_BIND);
+}
+tuple_t plus_pr(list_t parsetree) {
+  return resolve_infix_prule(parsetree, plus_sym, int_plus_sym, LEFT_BIND);
+}
+tuple_t less_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t lessequal_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t greater_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t greaterequal_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t equalequal_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t notequal_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t and_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t or_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t return_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t deliver_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t break_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t throw_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t run_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t if_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t try_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t while_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t for_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t fn_pr(list_t parsetree) { return tuple_new(0); }
+tuple_t equal_pr(list_t parsetree) {
+  return resolve_assign_prule(parsetree, equal_sym, &assign_sym_list);
+}
+tuple_t plusequal_pr(list_t parsetree) {
+  return resolve_assign_prule(parsetree, plusequal_sym, &assign_sym_list);
+}
+tuple_t minusequal_pr(list_t parsetree) {
+  return resolve_assign_prule(parsetree, minusequal_sym, &assign_sym_list);
+}
+tuple_t timesequal_pr(list_t parsetree) {
+  return resolve_assign_prule(parsetree, timesequal_sym, &assign_sym_list);
+}
+tuple_t divideequal_pr(list_t parsetree) {
+  return resolve_assign_prule(parsetree, divideequal_sym, &assign_sym_list);
+}
+tuple_t quote_pr(list_t parsetree) {
   return resolve_prefix_prule(parsetree, quote_sym);
 }
 
-tuple_t plus(list_t parsetree) {
-  return resolve_infix_prule(parsetree, the_plus_sym, int_plus_sym, LEFT_BIND);
-}
-
-tuple_t equal(list_t parsetree) {
-  return resolve_assign_prule(parsetree, the_equal_sym, &assign_sym_list);
-}
-
-tuple_t plusequal(list_t parsetree) {
-  return resolve_assign_prule(parsetree, the_plusequal_sym, &assign_sym_list);
-}
-
-tuple_t minusequal(list_t parsetree) {
-  return resolve_assign_prule(parsetree, the_minusequal_sym, &assign_sym_list);
-}
-
-tuple_t timesequal(list_t parsetree) {
-  return resolve_assign_prule(parsetree, the_timesequal_sym, &assign_sym_list);
-}
-
-tuple_t divideequal(list_t parsetree) {
-  return resolve_assign_prule(parsetree, the_divideequal_sym, &assign_sym_list);
-}
 
 
 
@@ -203,7 +318,7 @@ tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, glist_t *assi
     if (list_len(lhs) > 0) {
       object_t a_dot = list_poplast(lhs);
       // this must be a "DOT"
-      if ((ptype(a_dot) != SYMBOL_T) || (UNWRAP_SYMBOL(a_dot)!=the_dot_sym))
+      if ((ptype(a_dot) != SYMBOL_T) || (UNWRAP_SYMBOL(a_dot)!=dot_sym))
 	rha_error("(parsing) preceeding the symbol must be a dot\n");
       // now, 'lhs' contains the LHS of the dot
       tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, lhs));
@@ -219,24 +334,24 @@ tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, glist_t *assi
   list_append(quote_call, lhs_obj);
   tuple_set(t, 2, WRAP_PTR(LIST_T, list_proto, quote_call));
   // (2) to build the RHS we check whether the 'prule_sym' was
-  // something else than 'the_equal_sym'
+  // something else than 'equal_sym'
   object_t rhs_obj = tuple_get(pre_t, 2);
-  if (prule_sym != the_equal_sym) {
-    assert((prule_sym==the_plusequal_sym) 
-	   || (prule_sym==the_minusequal_sym)
-	   || (prule_sym==the_timesequal_sym)
-	   || (prule_sym==the_divideequal_sym));
+  if (prule_sym != equal_sym) {
+    assert((prule_sym==plusequal_sym) 
+	   || (prule_sym==minusequal_sym)
+	   || (prule_sym==timesequal_sym)
+	   || (prule_sym==divideequal_sym));
     tuple_t rhs = tuple_new(3);
     tuple_set(rhs, 0, lhs_obj);
     tuple_set(rhs, 2, tuple_get(pre_t, 2));
-    if (prule_sym==the_plusequal_sym) 
-      tuple_set(rhs, 1, WRAP_SYMBOL(the_plus_sym));
-    else if (prule_sym==the_minusequal_sym) 
-      tuple_set(rhs, 1, WRAP_SYMBOL(the_minus_sym));
-    else if (prule_sym==the_timesequal_sym) 
-      tuple_set(rhs, 1, WRAP_SYMBOL(the_times_sym));
-    else if (prule_sym==the_divideequal_sym) 
-      tuple_set(rhs, 1, WRAP_SYMBOL(the_divide_sym));
+    if (prule_sym==plusequal_sym) 
+      tuple_set(rhs, 1, WRAP_SYMBOL(plus_sym));
+    else if (prule_sym==minusequal_sym) 
+      tuple_set(rhs, 1, WRAP_SYMBOL(minus_sym));
+    else if (prule_sym==timesequal_sym) 
+      tuple_set(rhs, 1, WRAP_SYMBOL(times_sym));
+    else if (prule_sym==divideequal_sym) 
+      tuple_set(rhs, 1, WRAP_SYMBOL(divide_sym));
     else
       assert(1==0);
     rhs_obj = WRAP_PTR(TUPLE_T, tuple_proto, rhs);

@@ -84,7 +84,6 @@ $init_c_init_prototypes = "";
 $init_c_init_symbols = "";
 $init_c_init_typeobjects = "";
 $init_c_add_modules = "";
-$init_c_add_prules = $prules;
 
 
 ##############################
@@ -404,13 +403,6 @@ $init_c_init_typeobjects
   assign(root, modules_sym, modules);
   object_t module = 0;
 $init_c_add_modules
-
-  // (6.6) add keywords and prules
-  //object_t prules = new();
-  //assign(root, prules_sym, prules);
-  //object_t keywords = new();
-  //assign(root, keywords_sym, keywords);
-$init_c_add_prules
 
   return root;
 }

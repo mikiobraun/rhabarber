@@ -37,6 +37,7 @@ extern       void       object_init(object_t root, object_t module);
 
 extern _rha_ object_t   new();
 extern       object_t   new_t(int_t pt, object_t proto);
+extern _rha_ address_t  addr(object_t o);
 extern _rha_ object_t   clone(object_t parent);
 extern _rha_ int_t      ptype(object_t); // primtype
 extern       void       setptype(object_t, int_t);

@@ -61,6 +61,11 @@ object_t new_t(int_t pt, object_t proto)
   return o;
 }
 
+address_t addr(object_t o)
+{
+  return (address_t) o;
+}
+
 object_t clone(object_t parent)
      // clones an existing object, which will be 
      // the parent of the new object.
@@ -280,8 +285,11 @@ string_t to_string(object_t o)
       }
       return string_append(s, ")>");
     }
+    case ADDRESS_T: {
+      return sprint("%p", (void *) UNWRAP_PTR(ADDRESS_T, o));
+    }
     default:
-      return sprint("<addr=%p>", (void *) o);
+      return sprint("<addr=%p>", (void *) addr(o));
     }
   }
 }

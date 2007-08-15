@@ -198,7 +198,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   int nargs = tlen - 1;
   object_t _argnames = lookup(fn, argnames_sym);
   if (!_argnames) {
-    rha_error("the object %o is not callable\n", tuple_get(expr, 0));
+    rha_error("the object %o is not callable\n", fn);
     return 0;
   }
   tuple_t argnames = UNWRAP_PTR(TUPLE_T, _argnames);

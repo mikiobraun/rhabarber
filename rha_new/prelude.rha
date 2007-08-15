@@ -7,5 +7,5 @@ modules.object.assign(root, \assign, modules.object.assign);
 
 // (1.2) let's get more stuff
 new = modules.object.new;
-ls = modules.object.ls;
+ls  = modules.object.ls;
 new = modules.object.new;

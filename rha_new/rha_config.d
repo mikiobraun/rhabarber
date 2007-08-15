@@ -31,7 +31,7 @@ typedef struct _fn_t_ {
 typedef double              _rha_ real_t;
 typedef double *            _rha_ mat_t;
 typedef char *              _rha_ string_t;
-typedef void *              _rha_ addr_t;
+typedef void *              _rha_ address_t;
 typedef struct glist*       _rha_ list_t;
 
 //SYMBOLS
