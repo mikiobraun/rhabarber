@@ -41,6 +41,9 @@ ifeq (.depend,$(wildcard .depend))
 include .depend
 endif
 
+TAGS: $(ALLSOURCES)
+	etags $^
+
 ######################################################################
 #
 # AUTOMATIC FILE GENERATIONS
@@ -84,3 +87,5 @@ test_gtree : test_gtree.o $(UTILOBJ)
 test_rha_lexer : test_rha_lexer.o rha_lexer.o object.o symbol_fn.o symtable.o $(UTILOBJ) 
 
 test_cases: $(TESTCASES)
+
+test_fmt : test_fmt.o fmt.o cstream.o

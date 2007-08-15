@@ -8,6 +8,6 @@ void _printdebug(const char *fmt, ...)
 {
   va_list ap;
   va_start(ap, fmt);
-  vfprint(stderr, fmt, ap);
+  vfprint(stderr, fmt, &ap);
 }
 

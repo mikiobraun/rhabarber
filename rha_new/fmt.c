@@ -16,7 +16,7 @@ static fmt_f *table[256];
 #include <config.h>
 #endif
 
-#define HAVE_STRDUP
+//#define HAVE_STRDUP
 #ifndef HAVE_STRDUP
 static char *strdup(const char *s);
 #endif
@@ -94,19 +94,6 @@ void prtfmt(const char *fmt, ...)
 }
 
 
-void fprtfmt(FILE *f, const char *fmt, ...)
-{
-  STREAM *s = fstropen(f);
-
-  va_list ap;
-  va_start(ap, fmt);
-  vprtfmt(s, fmt, &ap);
-  va_end(ap);
-
-  strclose(s);
-}
-
-
 void snprtfmt(char *buffer, int len, const char *fmt, ...)
 {
   STREAM *s = sstropen(buffer, len);
@@ -132,6 +119,26 @@ void sprtfmt(char **buffer, const char *fmt, ...)
   *buffer = strdup(sstrbuffer(s));
 
   strclose(s);
+}
+
+void fprtfmt(FILE *f, const char *fmt, ...)
+{
+  STREAM *s = fstropen(f);
+
+  va_list ap;
+  va_start(ap, fmt);
+  vprtfmt(s, fmt, &ap);
+  va_end(ap);
+
+  strclose(s);
+}
+
+void strprtfmt(STREAM *s, const char *fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  vprtfmt(s, fmt, &ap);
+  va_end(ap);  
 }
 
 

@@ -15,11 +15,11 @@
 #include <stdarg.h>
 
 extern void print(const char *fmt, ...);
-extern void vprint(const char *fmt, va_list ap);
+extern void vprint(const char *fmt, va_list *ap);
 extern void fprint(FILE *f, const char *fmt, ...);
-extern void vfprint(FILE *f, const char *fmt, va_list ap);
+extern void vfprint(FILE *f, const char *fmt, va_list *ap);
 extern char *sprint(const char *fmt, ...);
-extern char *vsprint(const char *fmt, va_list ap);
+extern char *vsprint(const char *fmt, va_list *ap);
 
 extern void printusage(char *str);
 

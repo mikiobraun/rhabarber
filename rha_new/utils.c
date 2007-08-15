@@ -25,10 +25,10 @@ void print(const char *fmt, ...)
   va_end(ap);
 }
 
-void vprint(const char *fmt, va_list ap)
+void vprint(const char *fmt, va_list *ap)
 {
   addfmt('o', fmt_object);
-  vprtfmt(cout, fmt, &ap);
+  vprtfmt(cout, fmt, ap);
 }
 
 void fprint(FILE *f, const char *fmt, ...)
@@ -42,11 +42,11 @@ void fprint(FILE *f, const char *fmt, ...)
   strclose(s);
 }
 
-void vfprint(FILE * f, const char *fmt, va_list ap)
+void vfprint(FILE * f, const char *fmt, va_list *ap)
 {
   addfmt('o', fmt_object);
   STREAM *s = fstropen(f);
-  vprtfmt(s, fmt, &ap);
+  vprtfmt(s, fmt, ap);
   strclose(s);
 }
 
@@ -68,13 +68,13 @@ char *sprint(const char *fmt, ...)
   return retval;
 }
 
-char *vsprint(const char *fmt, va_list ap)
+char *vsprint(const char *fmt, va_list *ap)
 {
   char *retval;
   addfmt('o', fmt_object);
   STREAM *str = sstropen(NULL, 0);
 
-  vprtfmt(str, fmt, &ap);
+  vprtfmt(str, fmt, ap);
 
   retval = gc_strdup(sstrbuffer(str));
   
