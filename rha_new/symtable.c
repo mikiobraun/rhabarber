@@ -29,6 +29,16 @@ symtable_t symtable_new()
   return s;
 }
 
+symtable_t symtable_copy(symtable_t other)
+{
+  symtable_t s = symtable_new();
+  gtree_iterator_t it;
+  for (gtree_begin(&it, &other->tree); !gtree_done(&it); gtree_next(&it))
+    gtree_insert_(&s->tree, gtree_get_key_(&it), gtree_get_value_(&it));
+  return s;
+}
+
+
 object_t symtable_lookup(symtable_t st, symbol_t s)
 {
   return gtree_searchp(&st->tree, s);

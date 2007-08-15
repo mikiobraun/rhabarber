@@ -9,6 +9,8 @@ extern _rha_ list_t   list_copy(list_t l);
 extern _rha_ int_t    list_len(list_t l);
 extern _rha_ void     list_append(list_t, object_t o);
 extern _rha_ void     list_prepend(list_t, object_t o);
+extern _rha_ void     list_extend(list_t, list_t);
+
 extern _rha_ tuple_t  list_to_tuple(list_t);
 
 extern _rha_ object_t list_first(list_t);

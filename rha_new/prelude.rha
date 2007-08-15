@@ -5,7 +5,16 @@
 // (1.1) right now we can't even do assignments like 'x=1'
 modules.object.assign(root, \assign, modules.object.assign);
 
-// (1.2) let's get more stuff
-new = modules.object.new;
-ls  = modules.object.ls;
-new = modules.object.new;
+// (1.2) let's get more stuff from the object module
+new  = modules.object.new;
+ls   = modules.object.ls;
+new  = modules.object.new;
+addr = modules.object.addr;
+
+// temporarily for testing purposes (as long as we have to overloaded)
+inc = modules.object.inc;
+dec = modules.object.dec;
+inc_copy = modules.object.inc_copy;
+dec_copy = modules.object.dec_copy;
+and_fn = modules.core.and_fn;
+or_fn = modules.core.or_fn;

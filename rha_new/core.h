@@ -16,7 +16,9 @@ extern _rha_ object_t  try_fn(object_t this, object_t tryblock, symbol_t catchva
 extern _rha_ void      tic_fn();
 extern _rha_ real_t    toc_fn();
 extern _rha_ void      exit_fn(int_t);
-extern _rha_ object_t  run(object_t root, string_t fname);
+extern _rha_ object_t  run_fn(object_t root, string_t fname);
 
+extern _rha_ bool_t    and_fn(tuple_t t);
+extern _rha_ bool_t    or_fn(tuple_t t);   // all other args: bool_t
 
 #endif

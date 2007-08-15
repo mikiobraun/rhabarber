@@ -190,7 +190,12 @@ object_t resolve_tuple(object_t env, list_t source)
   while ((obj = list_popfirst(source))) {
     if (is_symbol(comma_sym, obj)) {
       // split here and ignore the comma
-      list_append(sink, resolve_list_by_prules(env, part));
+      switch (list_len(part)) {
+      case 0: rha_error("can't start tuple with COMMA\n");
+      case 1: list_append(sink, resolve(env, list_first(part))); break;
+      default:
+	list_append(sink, resolve_list_by_prules(env, part));
+      }
       part = list_new();
       last_was_comma = true;
       continue;
@@ -221,6 +226,7 @@ object_t resolve_tuple(object_t env, list_t source)
     // comma wasn't the last symbol
     list_prepend(sink, WRAP_SYMBOL(rounded_sym));
   }
+  print("return (resolve_tuple): %o\n", WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink)));
   return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
 }
 
@@ -301,11 +307,14 @@ object_t resolve_list_by_prules(object_t env, list_t source)
     if (ptype(expr) == TUPLE_T) {
       tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
       // check the resulting tuple
+      print("hello %o\n", expr);
       if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=SYMBOL_T))
 	rha_error("(parsing) prule must create function call with function symbol\n");
       // resolve the arguments
-      for (int i = 1; i<tuple_len(t); i++)
+      for (int i = 1; i<tuple_len(t); i++) {
 	tuple_set(t, i, resolve(env, tuple_get(t, i)));
+	print("arg%d %o\n", i, WRAP_PTR(TUPLE_T, tuple_proto, t));
+      }
       // finally resolve a possible macro that we got
       // note that even if the macro contains further macros in its
       // definition, we need to do resolve macros here only once,
@@ -313,6 +322,7 @@ object_t resolve_list_by_prules(object_t env, list_t source)
       // resolved when it was parsed
       expr = resolve_macro(env, t);
     }
+    debug("return (prules) %o\n", expr);
     return expr;
   }
   else {
@@ -323,7 +333,6 @@ object_t resolve_list_by_prules(object_t env, list_t source)
     object_t fncall = 0;
     object_t obj = 0;
     while ((obj = list_popfirst(source))) {
-      
       if (ptype(obj) == LIST_T)
 	obj = resolve(env, obj);
       if (!fncall) {
@@ -379,6 +388,7 @@ object_t resolve_list_by_prules(object_t env, list_t source)
       tuple_set(t, 0, fncall);
       fncall = resolve_macro(env, t);
     }
+    debug("return (prules) %o\n", fncall);
     return fncall;
   }
   assert(1==0);  // never reach this point

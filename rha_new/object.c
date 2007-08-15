@@ -21,6 +21,7 @@
 #include "object.h"
 #include "debug.h"
 #include "utils.h"
+#include "messages.h"
 #include "tuple_fn.h"
 #include "list_fn.h"
 #include "string_fn.h"
@@ -49,6 +50,7 @@ object_t new()
   object_t o = ALLOC_SIZE(sizeof(struct rha_object));
   o->ptype = OBJECT_T;
   o->table = symtable_new();
+  o->raw.p = 0;
   // debug(" %p created by object.h->new.\n", (void *) o);
   return o;
 }
@@ -58,6 +60,15 @@ object_t new_t(int_t pt, object_t proto)
   object_t o = new();
   setptype(o, pt);
   assign(o, symbol_new("parent"), proto);
+  return o;
+}
+
+object_t copy(object_t other)
+{
+  object_t o = new();
+  o->ptype = other->ptype;
+  o->table = symtable_copy(other->table);
+  o->raw   = other->raw;
   return o;
 }
 
@@ -305,3 +316,96 @@ void ls(object_t o)
 {
   symtable_print(o->table);
 }
+
+object_t inc(object_t o)
+{
+  if (ptype(o) == INT_T) {
+    o->raw.i++;
+    return o;
+  }
+  rha_error("'inc' is currently only implemented for integers\n");
+  assert(1==0);
+}
+
+object_t dec(object_t o)
+{
+  if (ptype(o) == INT_T) {
+    o->raw.i--;
+    return o;
+  }
+  rha_error("'dec' is currently only implemented for integers\n");
+  assert(1==0);
+}
+
+object_t inc_copy(object_t o)
+{
+  if (ptype(o) == INT_T) {
+    object_t other = copy(o);
+    o->raw.i++;
+    return other;
+  }
+  rha_error("'inc_copy' is currently only implemented for integers\n");
+  assert(1==0);
+}
+
+object_t dec_copy(object_t o)
+{
+  if (ptype(o) == INT_T) {
+    object_t other = copy(o);
+    o->raw.i--;
+    return other;
+  }
+  rha_error("'dec_copy' is currently only implemented for integers\n");
+  assert(1==0);
+}
+
+
+
+bool_t equalequal_fn(object_t a, object_t b)
+{
+  if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
+    return UNWRAP_INT(a) == UNWRAP_INT(b);
+  else
+    return a == b;
+}
+
+bool_t notequal_fn(object_t a, object_t b)
+{
+  if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
+    return UNWRAP_INT(a) != UNWRAP_INT(b);
+  else
+    return a != b;
+}
+
+bool_t less_fn(object_t a, object_t b)
+{
+  if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
+    return UNWRAP_INT(a) < UNWRAP_INT(b);
+  rha_error("'less_fn' is currently only implemented for integers\n");
+  assert(1==0);
+}
+
+bool_t lessequal_fn(object_t a, object_t b)
+{
+  if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
+    return UNWRAP_INT(a) <= UNWRAP_INT(b);
+  rha_error("'less_equal_fn' is currently only implemented for integers\n");
+  assert(1==0);
+}
+
+bool_t greater_fn(object_t a, object_t b)
+{
+  if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
+    return UNWRAP_INT(a) > UNWRAP_INT(b);
+  rha_error("'greater_fn' is currently only implemented for integers\n");
+  assert(1==0);
+}
+
+bool_t greaterequal_fn(object_t a, object_t b)
+{
+  if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
+    return UNWRAP_INT(a) >= UNWRAP_INT(b);
+  rha_error("'greaterequal_fn' is currently only implemented for integers\n");
+  assert(1==0);
+}
+

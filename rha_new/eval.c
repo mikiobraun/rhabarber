@@ -114,7 +114,7 @@ object_t eval_sequence(object_t env, list_t source)
   // or the value following 'deliver'
   // eval_squence does not open a new scope
   object_t res = void_obj;
-  glist_iterator_t it;
+  list_it it;
   begin_frame(BLOCK_FRAME)
     // evaluate all, or stop earlier via 'deliver', 'break', 'return'
     for (list_begin(source, &it); !list_done(&it); list_next(&it))
@@ -135,6 +135,16 @@ object_t eval_args_and_call_fun(object_t env, tuple_t expr)
     assert(tlen==2);  // otherwise repair 'rhaparser.y'
     return tuple_get(expr, 1);
   }
+  // deal with 'tuples'
+  // later on this should not be allowed,
+  // instead we have to use [...] stuff for tuples also in
+  // resolve_cmp_prules()
+  if ((ptype(f)==SYMBOL_T) && symbol_equal(rounded_sym, UNWRAP_SYMBOL(f))) {
+    list_t l = tuple_to_list(expr);
+    list_popfirst(l);
+    return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(l));
+  }
+  
 
   // otherwise a usual function
   tuple_t values = tuple_new(tlen);

@@ -116,6 +116,12 @@ foreach $module (@mods) {
 	# disect the args
 	@args = $fnargs =~ /($id)[^,]*/gox;
 	$narg = $#args + 1;
+	
+        # find C elipses '...'
+	$elispes = false;
+	if ($fnargs =~ /\.\.\.\s*/gox) {
+	    $elipses = true;
+	}
 
 	# check whether all types appear in '%typeset'
 	if (!$typeset{$fntype} && ($fntype ne "void")) {

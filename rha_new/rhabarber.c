@@ -37,13 +37,13 @@ int main(int argc, char **argv)
   // load 'prelude.rha'
   object_t excp;   // exception object
   try { 
-    object_t e = run(root, "prelude.rha"); 
+    object_t e = run_fn(root, "prelude.rha"); 
     if (!e) rha_error("can't load 'prelude.rha'\n"); 
     fprint(stdout, "%o\n", e); 
   } 
   catch(excp) { 
     string_t msg = UNWRAP_PTR(STRING_T, excp); 
-    rha_error("caught exception '%s' while loading 'prelude.rha'\n", msg); 
+    fprintf(stderr, "Caught exception (while loading 'prelude.rha'): %s\n", msg);
   } 
 
   // for the prompt

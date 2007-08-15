@@ -187,7 +187,7 @@ real_t toc_fn()
  *
  *************************************************************/
 
-object_t run(object_t root, string_t fname)
+object_t run_fn(object_t root, string_t fname)
 {
   fprint(stdout, "--loading \"%s\"\n", fname);
   object_t p = parse_file(root, fname);
@@ -197,5 +197,37 @@ object_t run(object_t root, string_t fname)
   else
     fprintf(stdout, "parse returned ZERO\n");
   return 0;
+}
+
+/************************************************************
+ *
+ * Lazy logic
+ *
+ *************************************************************/
+
+bool and_fn(tuple_t t)
+{
+  int tlen = tuple_len(t);
+  for (int i=0; i<tlen; i++) {
+    object_t e = tuple_get(t, i);
+    if (!ptype(e) == BOOL_T)
+      rha_error("'and' can only be called with BOOL arguments\n");
+    bool_t b = UNWRAP_BOOL(e);
+    if (!b) return false;
+  }
+  return true;
+}
+
+bool or_fn(tuple_t t)
+{
+  int tlen = tuple_len(t);
+  for (int i=0; i<tlen; i++) {
+    object_t e = tuple_get(t, i);
+    if (!ptype(e) == BOOL_T)
+      rha_error("'and' can only be called with BOOL arguments\n");
+    bool_t b = UNWRAP_BOOL(e);
+    if (b) return true;
+  }
+  return false;
 }
 

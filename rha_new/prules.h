@@ -25,7 +25,6 @@ extern _rha_ tuple_t return_pr(list_t parsetree);
 extern _rha_ tuple_t deliver_pr(list_t parsetree);
 extern _rha_ tuple_t break_pr(list_t parsetree);
 extern _rha_ tuple_t throw_pr(list_t parsetree);
-extern _rha_ tuple_t run_pr(list_t parsetree);
 extern _rha_ tuple_t if_pr(list_t parsetree);
 extern _rha_ tuple_t try_pr(list_t parsetree);
 extern _rha_ tuple_t while_pr(list_t parsetree);

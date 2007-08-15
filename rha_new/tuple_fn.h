@@ -18,6 +18,8 @@ extern _rha_ int_t    tuple_len(tuple_t t);
 extern _rha_ object_t tuple_get(tuple_t t, int_t i);
 extern _rha_ void     tuple_set(tuple_t t, int_t i, object_t s);
 
+extern _rha_ list_t   tuple_to_list(tuple_t t);
+
 extern tuple_t tuple_make(int, ...);
 
 #endif

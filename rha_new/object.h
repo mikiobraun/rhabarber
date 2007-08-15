@@ -37,6 +37,7 @@ extern       void       object_init(object_t root, object_t module);
 
 extern _rha_ object_t   new();
 extern       object_t   new_t(int_t pt, object_t proto);
+extern _rha_ object_t   copy(object_t o);
 extern _rha_ address_t  addr(object_t o);
 extern _rha_ object_t   clone(object_t parent);
 extern _rha_ int_t      ptype(object_t); // primtype
@@ -46,6 +47,18 @@ extern _rha_ void       print_fn(object_t);
 extern _rha_ string_t   to_string(object_t);
 
 extern _rha_ void       ls(object_t);
+
+extern _rha_ object_t   inc(object_t);
+extern _rha_ object_t   dec(object_t);
+extern _rha_ object_t   inc_copy(object_t);
+extern _rha_ object_t   dec_copy(object_t);
+
+extern _rha_ bool_t     equalequal_fn(object_t a, object_t b);
+extern _rha_ bool_t     notequal_fn(object_t a, object_t b);
+extern _rha_ bool_t     less_fn(object_t a, object_t b);
+extern _rha_ bool_t     lessequal_fn(object_t a, object_t b);
+extern _rha_ bool_t     greater_fn(object_t a, object_t b);
+extern _rha_ bool_t     greaterequal_fn(object_t a, object_t b);
 
 extern       object_t   wrap_int(int ptype, object_t proto, int i);
 extern       object_t   wrap_float(int ptype, object_t proto, float f);

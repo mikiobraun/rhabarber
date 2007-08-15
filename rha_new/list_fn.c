@@ -35,6 +35,13 @@ void list_prepend(list_t l, object_t o)
   glist_prepend(l, o);
 }
 
+void list_extend(list_t l, list_t other)
+{
+  glist_iterator_t it;
+  for (it=glist_begin(other); !glist_done(&it); glist_next(&it))
+    list_append(l, glist_getp(&it));
+}
+
 tuple_t list_to_tuple(list_t l)
 {
   tuple_t t = tuple_new(list_len(l));
