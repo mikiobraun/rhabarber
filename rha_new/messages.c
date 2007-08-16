@@ -16,6 +16,7 @@
 #include "debug.h"
 #include "core.h"
 #include "eval.h"
+#include "excp.h"
 
 void rha_warning(const char *fmt, ...)
 {
@@ -34,7 +35,7 @@ void rha_error(const char *fmt, ...)
   va_end(ap);
 
   msg = sprint("[error] %s", msg);
-  throw(WRAP_PTR(STRING_T, string_proto, msg));
+  throw(excp_new(msg));
 }
 
  

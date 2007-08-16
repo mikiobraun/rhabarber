@@ -54,9 +54,6 @@ static glist_t cmp_sym_list;    // a list with < <= > >= == !=
   assign(f, priority_sym, WRAP_REAL(prio));				\
   assign(module, ttt ## _sym, f);
 
-#define MAKE_PRULES_RESOLVING(ttt, prio) MAKE_PRULES(ttt, prio)		\
-  assign(f, resolving_sym, void_obj);
-
 void prules_init(object_t root, object_t module)
 {
   // additional symbols
@@ -127,14 +124,14 @@ void prules_init(object_t root, object_t module)
   MAKE_PRULES(not, 2.5);        // logics
   MAKE_PRULES(divide, 3.0);     // arithemics
   MAKE_PRULES(times, 4.0);
-  MAKE_PRULES_RESOLVING(minus, 5.0);
+  MAKE_PRULES(minus, 5.0);
   MAKE_PRULES(plus, 6.0);
   MAKE_PRULES(less, 7.0);       // comparison
-  MAKE_PRULES_RESOLVING(lessequal, 7.0);
-  MAKE_PRULES_RESOLVING(greater, 7.0);
-  MAKE_PRULES_RESOLVING(greaterequal, 7.0);
-  MAKE_PRULES_RESOLVING(equalequal, 7.0);
-  MAKE_PRULES_RESOLVING(notequal, 7.0);
+  MAKE_PRULES(lessequal, 7.0);
+  MAKE_PRULES(greater, 7.0);
+  MAKE_PRULES(greaterequal, 7.0);
+  MAKE_PRULES(equalequal, 7.0);
+  MAKE_PRULES(notequal, 7.0);
   MAKE_PRULES(and, 8.0);        // logics
   MAKE_PRULES(or, 9.0);
   MAKE_PRULES(return, 10.0);
@@ -402,7 +399,7 @@ tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, glist_t *assi
 {
   // (0) let's find the first appearance (left-most) of an assignment
   tuple_t pre_t = resolve_infix_prule_list(parsetree, assign_sym_list,
-				       assign_sym, LEFT_BIND);
+					   assign_sym, RIGHT_BIND);
   // now we got something like (= x 18)
   // however, we need (= local x 18)
   // or from (= (x . a) 18) we need (= x a 18)

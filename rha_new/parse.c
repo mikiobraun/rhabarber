@@ -21,7 +21,6 @@ symbol_t semicolon_sym = 0;
 symbol_t comma_sym = 0;
 symbol_t dot_sym = 0;
 symbol_t tuple_forced_sym = 0;
-symbol_t resolving_sym = 0;
 
 object_t prule_failed_excp = 0; // exception
 
@@ -36,7 +35,6 @@ void parse_init(object_t root, object_t module)
   comma_sym = symbol_new(",");
   dot_sym = symbol_new(".");
   tuple_forced_sym = symbol_new("tuple_forced");
-  resolving_sym = symbol_new("resolving");
 
   // the object 'prules' is used to lookup the prules
   // its location should be changed here
@@ -99,6 +97,9 @@ bool is_symbol(symbol_t a_symbol, object_t expr) {
 
 object_t resolve(object_t env, object_t expr)
 {
+  // note that tuples are not resolved anymore, 
+  // that way we can distinguish whether we need to go deeper 
+
   debug("resolve(%o, %o)\n", env, expr);
   if (ptype(expr) == LIST_T)
     return resolve_list_by_head(env, UNWRAP_PTR(LIST_T, expr));
@@ -332,11 +333,10 @@ object_t resolve_prule(object_t env, list_t source, object_t prule)
     if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=SYMBOL_T))
       rha_error("(parsing) prule must create function call with function symbol\n");
 
-    // do we need to resolve the args, or did the prule do the work?
-    if (!has(prule, resolving_sym))
-      // resolve the arguments
-      print("resolving arguments %o", wrap_ptr(TUPLE_T, 0, t));
-      resolve_args(env, t);
+    // note that we can always resolve the arguments, since they are
+    // only resolve if they are lists (see resolve()), thus if a prule
+    // does resolve the args itself, they become tuples are fixed then...
+    resolve_args(env, t);
     
     // finally resolve a possible macro that we got
     // note that even if the macro contains further macros in its

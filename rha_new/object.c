@@ -34,7 +34,7 @@ object_t object_empty_excp = 0;
 
 void object_init(object_t root, object_t module)
 {
-  object_empty_excp = excp_new("object empty. are you accessing a primitive prototype?\n");
+  object_empty_excp = excp_new("accessing a primitive prototype is not allowed\n");
 }
 
 
@@ -235,7 +235,6 @@ string_t to_string(object_t o)
      // right now, this is a big switch, but eventually, this should
      // be done via symbol lookup :)
 {
-  object_t excp;
   string_t s = 0;
   if (!o) {
     // this means: undefined, i.e. evaluation failed
@@ -245,28 +244,34 @@ string_t to_string(object_t o)
     return sprint("%s", "<void>");
   }
   else {
-    try {
+    switch (ptype(o)) {
+    case BOOL_T: {
+      if (UNWRAP_BOOL(o))
+	return sprint("true");
+      else
+	return sprint("false");
+    }
+    case INT_T: {
+      return sprint("%d", UNWRAP_INT(o));
+    }
+    case SYMBOL_T: {
+      symbol_t s = UNWRAP_SYMBOL(o);
+      //      return sprint("%s (sym%d)", symbol_name(s), s);
+      return sprint("%s", symbol_name(s));
+    }
+    case REAL_T: {
+      return sprint("%f", UNWRAP_REAL(o));
+    }
+    default:
+      // content is stored in o->raw.p
+      if (!o->raw.p)
+	// we are accessing a protoype
+	return "<primitive prototype>";
+      // we can safely access the raw content
       switch (ptype(o)) {
-      case BOOL_T: {
-	if (UNWRAP_BOOL(o))
-	  return sprint("true");
-	else
-	  return sprint("false");
-      }
-      case INT_T: {
-	return sprint("%d", UNWRAP_INT(o));
-      }
-      case SYMBOL_T: {
-	symbol_t s = UNWRAP_SYMBOL(o);
-	//      return sprint("%s (sym%d)", symbol_name(s), s);
-	return sprint("%s", symbol_name(s));
-      }
       case STRING_T: {
 	s = UNWRAP_PTR(STRING_T, o);
 	return sprint("\"%s\"", s); 
-      }
-      case REAL_T: {
-	return sprint("%f", UNWRAP_REAL(o));
       }
       case TUPLE_T: {
 	tuple_t t = UNWRAP_PTR(TUPLE_T, o);
@@ -305,15 +310,9 @@ string_t to_string(object_t o)
 	return sprint("<addr=%p>", (void *) addr(o));
       }
     }
-    catch (excp) {
-      if (excp == object_empty_excp) {
-	return sprint("<prototype of primitive type>");
-      }
-      throw(excp);
-    }
   }
-  assert(1==0);
 }
+
 
 void print_fn(object_t o)
 {
