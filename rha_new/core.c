@@ -205,29 +205,17 @@ object_t run_fn(object_t root, string_t fname)
  *
  *************************************************************/
 
-bool and_fn(tuple_t t)
+bool_t and_fn(bool_t a, bool_t b)
 {
-  int tlen = tuple_len(t);
-  for (int i=0; i<tlen; i++) {
-    object_t e = tuple_get(t, i);
-    if (!ptype(e) == BOOL_T)
-      rha_error("'and' can only be called with BOOL arguments\n");
-    bool_t b = UNWRAP_BOOL(e);
-    if (!b) return false;
-  }
+  if (!a) return false;
+  if (!b) return false;
   return true;
 }
 
-bool or_fn(tuple_t t)
+bool_t or_fn(bool_t a, bool_t b)
 {
-  int tlen = tuple_len(t);
-  for (int i=0; i<tlen; i++) {
-    object_t e = tuple_get(t, i);
-    if (!ptype(e) == BOOL_T)
-      rha_error("'and' can only be called with BOOL arguments\n");
-    bool_t b = UNWRAP_BOOL(e);
-    if (b) return true;
-  }
+  if (a) return true;
+  if (b) return true;
   return false;
 }
 

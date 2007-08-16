@@ -135,16 +135,6 @@ object_t eval_args_and_call_fun(object_t env, tuple_t expr)
     assert(tlen==2);  // otherwise repair 'rhaparser.y'
     return tuple_get(expr, 1);
   }
-  // deal with 'tuples'
-  // later on this should not be allowed,
-  // instead we have to use [...] stuff for tuples also in
-  // resolve_cmp_prules()
-  if ((ptype(f)==SYMBOL_T) && symbol_equal(rounded_sym, UNWRAP_SYMBOL(f))) {
-    list_t l = tuple_to_list(expr);
-    list_popfirst(l);
-    return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(l));
-  }
-  
 
   // otherwise a usual function
   tuple_t values = tuple_new(tlen);

@@ -307,13 +307,11 @@ object_t resolve_list_by_prules(object_t env, list_t source)
     if (ptype(expr) == TUPLE_T) {
       tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
       // check the resulting tuple
-      print("hello %o\n", expr);
       if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=SYMBOL_T))
 	rha_error("(parsing) prule must create function call with function symbol\n");
       // resolve the arguments
       for (int i = 1; i<tuple_len(t); i++) {
 	tuple_set(t, i, resolve(env, tuple_get(t, i)));
-	print("arg%d %o\n", i, WRAP_PTR(TUPLE_T, tuple_proto, t));
       }
       // finally resolve a possible macro that we got
       // note that even if the macro contains further macros in its

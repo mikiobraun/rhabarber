@@ -441,7 +441,7 @@ object_t get_cmp_obj(symbol_t cmp_s)
 }
 
 
-object_t built_cmp_call(symbol_t cmp_s, list_t part1, list_t part2)
+list_t built_call(object_t fn_obj, list_t part1, list_t part2)
 {
   // built arguments
   list_t rounded_l = list_new();
@@ -449,12 +449,11 @@ object_t built_cmp_call(symbol_t cmp_s, list_t part1, list_t part2)
   list_extend(rounded_l, part1);
   list_append(rounded_l, WRAP_SYMBOL(comma_sym));
   list_extend(rounded_l, part2);
-  print("built_cmp_call: %o\n", WRAP_PTR(LIST_T, list_proto, rounded_l));
   // built comparison call
   list_t call = list_new();
-  list_append(call, get_cmp_obj(cmp_s));
+  list_append(call, fn_obj);
   list_append(call, WRAP_PTR(LIST_T, list_proto, rounded_l));
-  return WRAP_PTR(LIST_T, list_proto, call);
+  return call;
 }
 
 object_t copy_expr(object_t expr)
@@ -485,75 +484,58 @@ object_t copy_expr(object_t expr)
 tuple_t resolve_cmp_prule(list_t parsetree)
 // resolve stuff like a == b == c < d
 {
-  // chop the parsetree into pieces
-  list_t sink = list_new();
-  symbol_t last_cmp_s = 0;
-  list_t part1 = list_new();
-  // preparation of part1: wait for the first cmp sym
+  // (1) chop the parsetree into pieces
+  list_t pieces = list_new();
+  list_t parts = list_new();
+  list_t cmp_l = list_new();
   object_t head;
   while ((head = list_popfirst(parsetree))) {
     if (ptype(head) == SYMBOL_T) {
       symbol_t s = UNWRAP_SYMBOL(head);
       if (glist_iselementi(&cmp_sym_list, s)) {
-	if (list_len(part1) == 0)
+	if (list_len(parts) == 0)
 	  rha_error("cmp symbols must not be at the beginning of an expression\n");
-	last_cmp_s = s;
-	break;
-      }
-    }
-    list_append(part1, head);
-  }
-  // grow two lists in parallel
-  list_t part2 = list_new();
-  while ((head = list_popfirst(parsetree))) {
-    if (ptype(head) == SYMBOL_T) {
-      symbol_t s = UNWRAP_SYMBOL(head);
-      if (glist_iselementi(&cmp_sym_list, s)) {
-	if (list_len(part2)==0)
-	  rha_error("cmp symbols must follow each other directly\n");
-	last_cmp_s = s;
-	list_append(sink, built_cmp_call(last_cmp_s, part1, part2));
-	part1 = UNWRAP_PTR(LIST_T, copy_expr(WRAP_PTR(LIST_T, list_proto, part2)));  // part2 becomes part1
-	part2 = list_new();        // part2 starts over
+	list_append(cmp_l, head);
+	list_append(pieces, WRAP_PTR(LIST_T, list_proto, parts));
+	parts = list_new();
 	continue;
       }
     }
-    list_append(part2, head);
+    list_append(parts, head);
   }
-  if (list_len(part2)==0)
-    rha_error("cmp symbols must be at the end of expression\n");
-  // finish up
-  list_append(sink, built_cmp_call(last_cmp_s, part1, part2));
-  if (list_len(sink) == 1) {
-    // ok there is only a single comparison operator
-    // let's build it again
-    sink = UNWRAP_PTR(LIST_T, list_first(sink));
+  if (list_len(parts)==0)
+    rha_error("cmp symbols must not be at the end of expression\n");
+  list_append(pieces, WRAP_PTR(LIST_T, list_proto, parts));
+
+  // (2) built the expression
+  list_t part1 = UNWRAP_PTR(LIST_T, list_popfirst(pieces));
+  list_t part2 = UNWRAP_PTR(LIST_T, list_popfirst(pieces));
+  symbol_t cmp_s = UNWRAP_SYMBOL(list_popfirst(cmp_l));
+  if (list_len(cmp_l)==0) {
     tuple_t t = tuple_new(3);
-    tuple_set(t, 0, list_popfirst(sink));
-    sink = UNWRAP_PTR(LIST_T, list_first(sink));
-    list_popfirst(sink);
-    tuple_set(t, 1, list_popfirst(sink));
-    list_popfirst(sink);
-    tuple_set(t, 2, list_popfirst(sink));
+    tuple_set(t, 0, get_cmp_obj(cmp_s));
+    tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, part1));
+    tuple_set(t, 2, WRAP_PTR(LIST_T, list_proto, part2));
     return t;
   }
-  else {
-    print("HERE: %o\n", WRAP_PTR(LIST_T, list_proto, sink));
-    list_t tuple_l = list_new();
-    list_append(tuple_l, WRAP_SYMBOL(rounded_sym));
-    list_it it;
-    int i = 0;
-    for (list_begin(sink, &it); !list_done(&it); list_next(&it), i++)
-    {
-      if (i>0) list_append(tuple_l, WRAP_SYMBOL(comma_sym));
-      list_extend(tuple_l, UNWRAP_PTR(LIST_T, list_get(&it)));
+  list_t call = built_call(get_cmp_obj(cmp_s), part1, part2);
+  while (1) {
+    head = list_popfirst(cmp_l);
+    part1 = UNWRAP_PTR(LIST_T, copy_expr(WRAP_PTR(LIST_T, list_proto, part2)));
+    part2 = UNWRAP_PTR(LIST_T, list_popfirst(pieces));
+    cmp_s = UNWRAP_SYMBOL(head);
+    if (list_len(cmp_l) > 0)
+      call = built_call(WRAP_SYMBOL(and_fn_sym), 
+			call, 
+			built_call(get_cmp_obj(cmp_s), part1, part2));
+    else {
+      // last round, thus create a tuple
+      tuple_t t = tuple_new(3);
+      tuple_set(t, 0, WRAP_SYMBOL(and_fn_sym));
+      tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, call));
+      tuple_set(t, 2, WRAP_PTR(LIST_T, list_proto, built_call(get_cmp_obj(cmp_s), part1, part2)));
+      return t;
     }
-    print("HERE tuple_l: %o\n", WRAP_PTR(LIST_T, list_proto, tuple_l));
-    list_t and_l = list_new();
-    list_append(and_l, WRAP_SYMBOL(and_fn_sym));
-    list_append(and_l, WRAP_PTR(LIST_T, list_proto, tuple_l));
-    print("HERE and_l: %o\n", WRAP_PTR(LIST_T, list_proto, and_l));
-    return list_to_tuple(and_l);
   }
 }
 
