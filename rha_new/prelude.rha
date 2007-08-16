@@ -43,7 +43,6 @@ or_fn           = modules.core.or_fn;
 //     if (!has(x, \priority)) return false;
 //     return true;
 //   }
-// an optinal slot is: 'resolving'
 
 // what is a function?
 // note that builtin functions should also have their stuff available
