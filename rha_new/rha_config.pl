@@ -9,6 +9,8 @@
 #     rha_types.h
 
 # TODO:
+# *   allow header files to define besides functions also variables
+#     e.g. for exceptions
 # *   automatically ensure the right order of modules
 # *   remove the module name from the beginning of function names (MAYBE)
 
@@ -226,23 +228,26 @@ sub create_ids {
 	    $init_c_ptypenames .= ",\n";
 	}
 	$ucitem = uc($item);
-	$iucitem = substr($ucitem, 0, -2);
+	$iitem = substr($item, 0, -2);
 	$type_h_ids .= "  $ucitem = $id";
-	$init_c_ptypenames .= "    \"$iucitem\"";
+	$init_c_ptypenames .= "    \"$iitem\"";
 	$id++;
     }
 }
 
 sub create_prototypes {
     foreach $item (@tdefs) {
-	$iitem = substr($item, 0, -2);
-	$uciitem = uc($iitem);
-	$type_h_prototypes .= "extern object_t $iitem"."_proto;\n";
-	$type_h_typeobjects .= "extern object_t $iitem"."_obj;\n";
-	$init_c_prototypes .= "object_t $iitem"."_proto;\n";
-	$init_c_typeobjects .= "object_t $iitem"."_obj;\n";
-	$init_c_init_prototypes .= "  $iitem"."_proto = new();\n";
-	$init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
+	if ($item ne "object_t") {
+	    $ucitem = uc($item);
+	    $iitem = substr($item, 0, -2);
+	    $uciitem = uc($iitem);
+	    $type_h_prototypes .= "extern object_t $iitem"."_proto;\n";
+	    $type_h_typeobjects .= "extern object_t $iitem"."_obj;\n";
+	    $init_c_prototypes .= "object_t $iitem"."_proto;\n";
+	    $init_c_typeobjects .= "object_t $iitem"."_obj;\n";
+	    $init_c_init_prototypes .= "  $iitem"."_proto = new_t($ucitem, 0);\n";
+	    $init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
+	}
     }
 }
 
@@ -353,7 +358,6 @@ $init_c_functions
 
 // (6) init
 #define ADD_TYPE(ttt, TTT)   \\
-  setptype(ttt ## _proto, TTT ## _T);\\
   ttt ## _obj = new();\\
   assign(root, ttt ## _sym, ttt ## _obj);\\
   assign(ttt ## _obj, proto_sym, ttt ## _proto);
@@ -361,7 +365,7 @@ $init_c_functions
 void add_function(object_t module, symbol_t s, object_t (*code)(tuple_t), int narg, ...)
 {
   // create a struct containing all info about the builtin function
-  fn_t f = ALLOC_SIZE(sizeof(struct _fn_t_));
+  function_t f = ALLOC_SIZE(sizeof(struct _function_t_));
   f->code = code;
   f->narg = narg;
   f->argptypes = ALLOC_SIZE(narg*sizeof(enum ptypes));
@@ -374,7 +378,7 @@ void add_function(object_t module, symbol_t s, object_t (*code)(tuple_t), int na
   va_end(ap);
 
   // create a new object
-  object_t o = wrap_ptr(FN_T, fn_proto, f);
+  object_t o = wrap_ptr(FUNCTION_T, function_proto, f);
 
   // finally add it to module
   assign(module, s, o);

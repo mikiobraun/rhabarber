@@ -69,7 +69,7 @@ BEGIN_CASE(eval)
 
      // test for C function calls
      int_t times_two_args[1] = { INT_T };
-     fn_t times_two_fn = { times_two_fct, 1, times_two_args };
+     function_t times_two_fn = { times_two_fct, 1, times_two_args };
      symbol_t times_two = symbol_new("times_two");
 
      assign(root, times_two, WRAP_PTR(FN_T, NULL, &times_two_fn));

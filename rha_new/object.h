@@ -30,6 +30,8 @@ struct rha_object {
   } raw;
 };
 
+extern object_t object_empty_excp;
+
 /*
  * Functions
  */
@@ -60,6 +62,12 @@ extern _rha_ bool_t     lessequal_fn(object_t a, object_t b);
 extern _rha_ bool_t     greater_fn(object_t a, object_t b);
 extern _rha_ bool_t     greaterequal_fn(object_t a, object_t b);
 
+extern _rha_ int_t      plus_fn(object_t a, object_t b);
+extern _rha_ int_t      minus_fn(object_t a, object_t b);
+extern _rha_ int_t      times_fn(object_t a, object_t b);
+extern _rha_ int_t      divide_fn(object_t a, object_t b);
+extern _rha_ int_t      neg_fn(object_t a);
+
 extern       object_t   wrap_int(int ptype, object_t proto, int i);
 extern       object_t   wrap_float(int ptype, object_t proto, float f);
 extern       object_t   wrap_double(int ptype, object_t proto, double d);
@@ -78,6 +86,10 @@ extern _rha_ object_t   lookup(object_t env, symbol_t s);
 //     x = 17;    ->  assign(local_sym, \x, 17);
 //     a.x = 42;  ->  assign(a, \x, 42);
 extern _rha_ object_t   assign(object_t obj, symbol_t s, object_t newobj);
+
+// 'has'
+extern _rha_ bool_t     has(object_t obj, symbol_t s);
+
 extern _rha_ void       rmslot(object_t, symbol_t s);
 
 // will be called by prule 'include'

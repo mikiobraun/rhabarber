@@ -23,11 +23,11 @@ typedef struct rha_object * _rha_ object_t;
 typedef int                 _rha_ int_t; 
 typedef bool                _rha_ bool_t;
 typedef struct gtuple*      _rha_ tuple_t;
-typedef struct _fn_t_ { 
+typedef struct _function_t_ { 
   object_t (*code)(tuple_t t);        
   int_t narg;        
   int_t *argptypes; 
-}*                          _rha_ fn_t;
+}*                          _rha_ function_t;
 typedef double              _rha_ real_t;
 typedef double *            _rha_ mat_t;
 typedef char *              _rha_ string_t;

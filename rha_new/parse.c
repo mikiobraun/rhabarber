@@ -11,6 +11,7 @@
 #include "messages.h"
 #include "utils.h"
 #include "debug.h"
+#include "excp.h"
 
 // let's require for now that all expressions must be separated by
 // semicolon, otherwise we could make a list of keywords which are
@@ -20,16 +21,22 @@ symbol_t semicolon_sym = 0;
 symbol_t comma_sym = 0;
 symbol_t dot_sym = 0;
 symbol_t tuple_forced_sym = 0;
+symbol_t resolving_sym = 0;
+
+object_t prule_failed_excp = 0; // exception
 
 object_t prules = 0;  // the object containing all prules
 
 void parse_init(object_t root, object_t module)
 {
+  prule_failed_excp = excp_new("prule failed");
+
   // the following symbols are only used in 'parse.c'
   semicolon_sym = symbol_new(";");
   comma_sym = symbol_new(",");
   dot_sym = symbol_new(".");
   tuple_forced_sym = symbol_new("tuple_forced");
+  resolving_sym = symbol_new("resolving");
 
   // the object 'prules' is used to lookup the prules
   // its location should be changed here
@@ -265,13 +272,9 @@ object_t resolve_complex_literal(list_t source)
 }
 
  
-object_t resolve_list_by_prules(object_t env, list_t source)
+object_t find_best_prule(object_t env, list_t source)
 {
-  debug("resolve_prules(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
-  // it is a tuple containing a white-spaced list
-  // without any particular heading symbol
-  
-  // (1) find the prule with the lowest precendence
+  // find the prule with the lowest precendence
   // loop over all entries and check the symbols whether they are prules
   double best_priority = 0.0;  // initially the priority is like functions
   object_t best_prule  = 0;    // the object containing the best prule
@@ -295,101 +298,157 @@ object_t resolve_list_by_prules(object_t env, list_t source)
     }
   }
   // did we find a prule?
-  if (best_priority > 0.0) {
-    // resolve prule by constructing a call to that prule
-    int tlen = 2;
-    tuple_t prule_call = tuple_new(tlen);
-    tuple_set(prule_call, 0, best_prule);
-    tuple_set(prule_call, 1, WRAP_PTR(LIST_T, list_proto, source));
-	                     // the list containing the parse tree
-    // run the prule itself to resolve it
-    object_t expr = call_fun(env, tlen, prule_call);
-    if (ptype(expr) == TUPLE_T) {
-      tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
-      // check the resulting tuple
-      if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=SYMBOL_T))
-	rha_error("(parsing) prule must create function call with function symbol\n");
+  if (best_priority > 0.0)
+    return best_prule;
+  else
+    return 0;
+}
+
+void resolve_args(object_t env, tuple_t t)
+{
+  // resolve the arguments
+  int tlen = tuple_len(t);
+  for (int i = 1; i<tlen; i++)
+    tuple_set(t, i, resolve(env, tuple_get(t, i)));
+}
+
+object_t resolve_prule(object_t env, list_t source, object_t prule)
+{
+  // resolve prule by constructing a call to that prule
+  int tlen = 3;
+  tuple_t prule_call = tuple_new(tlen);
+  tuple_set(prule_call, 0, prule);
+  tuple_set(prule_call, 1, env);
+  tuple_set(prule_call, 2, WRAP_PTR(LIST_T, list_proto, source));
+
+  // the list containing the parse tree
+  // run the prule itself to resolve it
+  object_t expr = call_fun(env, tlen, prule_call);
+
+  // check what we got
+  if (ptype(expr) == TUPLE_T) {
+    tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
+    // check the resulting tuple
+    if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=SYMBOL_T))
+      rha_error("(parsing) prule must create function call with function symbol\n");
+
+    // do we need to resolve the args, or did the prule do the work?
+    if (!has(prule, resolving_sym))
       // resolve the arguments
-      for (int i = 1; i<tuple_len(t); i++) {
-	tuple_set(t, i, resolve(env, tuple_get(t, i)));
-      }
-      // finally resolve a possible macro that we got
-      // note that even if the macro contains further macros in its
-      // definition, we need to do resolve macros here only once,
-      // since all other macros in the macro have already been
-      // resolved when it was parsed
-      expr = resolve_macro(env, t);
-    }
-    debug("return (prules) %o\n", expr);
-    return expr;
+      print("resolving arguments %o", wrap_ptr(TUPLE_T, 0, t));
+      resolve_args(env, t);
+    
+    // finally resolve a possible macro that we got
+    // note that even if the macro contains further macros in its
+    // definition, we need to do resolve macros here only once,
+    // since all other macros in the macro have already been
+    // resolved when it was parsed
+    expr = resolve_macro(env, t);
   }
-  else {
-    // otherwise build function calls and deal with dots, which bind
-    // less than function calls
-    if (list_len(source) == 0)
-      rha_error("(parsing) missing expression\n");
-    object_t fncall = 0;
-    object_t obj = 0;
-    while ((obj = list_popfirst(source))) {
-      if (ptype(obj) == LIST_T)
-	obj = resolve(env, obj);
-      if (!fncall) {
-	// deal here with the singleton case
-	if (ptype(obj) == TUPLE_T) {
-	  tuple_t tt = UNWRAP_PTR(TUPLE_T, obj);
-	  if (tuple_len(tt) == 2) {
-	    object_t tt0 = tuple_get(tt, 0);
-	    if (ptype(tt0) == SYMBOL_T) {
-	      symbol_t tts = UNWRAP_SYMBOL(tt0);
-	      if (tts != tuple_forced_sym) {
-		obj = tuple_get(tt, 1);
-	      }
+  debug("return (prules) %o\n", expr);
+  return expr;
+}
+
+object_t resolve_dots_and_fn_calls(object_t env, list_t source)
+{
+  // otherwise build function calls and deal with dots, which bind
+  // even stronger than function calls
+  if (list_len(source) == 0)
+    rha_error("(parsing) missing expression\n");
+  object_t fncall = 0;
+  object_t obj = 0;
+  while ((obj = list_popfirst(source))) {
+    if (ptype(obj) == LIST_T)
+      obj = resolve(env, obj);
+    if (!fncall) {
+      // deal here with the singleton case
+      if (ptype(obj) == TUPLE_T) {
+	tuple_t tt = UNWRAP_PTR(TUPLE_T, obj);
+	if (tuple_len(tt) == 2) {
+	  object_t tt0 = tuple_get(tt, 0);
+	  if (ptype(tt0) == SYMBOL_T) {
+	    symbol_t tts = UNWRAP_SYMBOL(tt0);
+	    if (tts != tuple_forced_sym) {
+	      obj = tuple_get(tt, 1);
 	    }
 	  }
 	}
-	if ((ptype(obj)==SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym)
-	  rha_error("(parsing) something else than dot expected\n");
-	fncall = obj;
-	continue;
       }
-      if ((ptype(obj) == SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym) {
-	// ok we have a dotted expression
-	// get the next object
-	obj = list_popfirst(source);
-	if (!obj || (ptype(obj) != SYMBOL_T))
-	  rha_error("(parsing) a dot is always followed by a symbol\n");
-	// make dotted expression
-	tuple_t dot_rhs = tuple_new(2);
-	tuple_set(dot_rhs, 0, WRAP_SYMBOL(quote_sym));
-	tuple_set(dot_rhs, 1, obj);
-	tuple_t t = tuple_new(3);
-	// note that we use 'eval_sym' instead of 'lookup_sym', the
-	// reason is that the later doesn't issue a 'lookup failed'
-	// exception and returns NULL in that case, while 'eval' does
-	// issue an exception and return 'void_obj'.
-	tuple_set(t, 0, WRAP_SYMBOL(eval_sym));
-	tuple_set(t, 1, fncall);
-	tuple_set(t, 2, WRAP_PTR(TUPLE_T, tuple_proto, dot_rhs));
-	fncall = WRAP_PTR(TUPLE_T, tuple_proto, t);
-	continue;
-      }
-      if (ptype(obj) != TUPLE_T)
-	rha_error("(parsing) argument list expected (1)\n");
-      tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
-      object_t t0 = tuple_get(t, 0);
-      if (ptype(t0) != SYMBOL_T)
-	rha_error("(parsing) argument list expected (2)\n");
-      symbol_t s = UNWRAP_SYMBOL(t0);
-      if (s != rounded_sym)
-	rha_error("(parsing) argument list expected (3)\n");
-      // replace the rounded_sym with the function call so far
-      tuple_set(t, 0, fncall);
-      fncall = resolve_macro(env, t);
+      if ((ptype(obj)==SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym)
+	rha_error("(parsing) something else than dot expected\n");
+      fncall = obj;
+      continue;
     }
-    debug("return (prules) %o\n", fncall);
-    return fncall;
+    if ((ptype(obj) == SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym) {
+      // ok we have a dotted expression
+      // get the next object
+      obj = list_popfirst(source);
+      if (!obj || (ptype(obj) != SYMBOL_T))
+	rha_error("(parsing) a dot is always followed by a symbol\n");
+      // make dotted expression
+      tuple_t dot_rhs = tuple_new(2);
+      tuple_set(dot_rhs, 0, WRAP_SYMBOL(quote_sym));
+      tuple_set(dot_rhs, 1, obj);
+      tuple_t t = tuple_new(3);
+      // note that we use 'eval_sym' instead of 'lookup_sym', the
+      // reason is that the later doesn't issue a 'lookup failed'
+      // exception and returns NULL in that case, while 'eval' does
+      // issue an exception and return 'void_obj'.
+      tuple_set(t, 0, WRAP_SYMBOL(eval_sym));
+      tuple_set(t, 1, fncall);
+      tuple_set(t, 2, WRAP_PTR(TUPLE_T, tuple_proto, dot_rhs));
+      fncall = WRAP_PTR(TUPLE_T, tuple_proto, t);
+      continue;
+    }
+    if (ptype(obj) != TUPLE_T)
+      rha_error("(parsing) argument list expected (1)\n");
+    tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
+    object_t t0 = tuple_get(t, 0);
+    if (ptype(t0) != SYMBOL_T)
+      rha_error("(parsing) argument list expected (2)\n");
+    symbol_t s = UNWRAP_SYMBOL(t0);
+    if (s != rounded_sym)
+      rha_error("(parsing) argument list expected (3)\n");
+    // replace the rounded_sym with the function call so far
+    tuple_set(t, 0, fncall);
+    fncall = resolve_macro(env, t);
   }
-  assert(1==0);  // never reach this point
+  debug("return (prules) %o\n", fncall);
+  return fncall;
+}
+
+
+object_t resolve_list_by_prules(object_t env, list_t source)
+{
+  debug("resolve_prules(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  // it is a tuple containing a white-spaced list
+  // without any particular heading symbol
+  
+  object_t prule = find_best_prule(env, source);
+  object_t excp;
+  if (prule) {
+    // try to call that prule
+    try {
+      return resolve_prule(env, source, prule);
+    }
+    catch (excp) {
+      if (excp == prule_failed_excp) {
+	// try it again
+	// hopefully, the prule has adjusted the source to avoid it
+	// from being called again
+	// this happens (e.g.) for 'minus_pr' if it encounters a prefix-minus
+	return resolve_list_by_prules(env, source);
+      }
+      else {
+	// pass the unknown exception on
+	throw(excp);
+      }
+    }
+    // never reach this point
+    assert(1==0);
+  }
+  else
+    return resolve_dots_and_fn_calls(env, source);
 }
 
 

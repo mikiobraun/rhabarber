@@ -1,12 +1,14 @@
 #include "symtable.h"
 #include <assert.h>
 #include "alloc.h"
+#include "eval.h"
 #include "list_fn.h"
 #include "object.h"
 #include "tuple_fn.h"
 #include "symbol_fn.h"
 #include "string_fn.h"
 #include "utils.h"
+#include "messages.h"
 
 #include "gtree.h"
 
@@ -58,11 +60,14 @@ void symtable_print(symtable_t st)
 {
   string_t s = gc_strdup("");
   gtree_iterator_t it;
-  for (gtree_begin(&it, &st->tree); !gtree_done(&it); gtree_next(&it))
-    {
-      s = string_append(s, sprint("%s==%o\n", 
-				  symbol_name((symbol_t) gtree_get_key_(&it)), 
-				  (object_t) gtree_get_value_(&it)));
+  symbol_t key;
+  object_t obj;
+  string_t next_line = "";
+  for (gtree_begin(&it, &st->tree); !gtree_done(&it); gtree_next(&it)) {
+    key = (symbol_t) gtree_get_key_(&it);
+    obj = (object_t) gtree_get_value_(&it);
+    next_line = sprint("%s==%o\n", symbol_name(key), obj);
+    s = string_append(s, next_line);
   }
   fprint(stdout, "%s", s);
 }

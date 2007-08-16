@@ -130,22 +130,6 @@ object_t for_fn(object_t this, symbol_t var, object_t container, object_t code)
 
 
 
-/************************************************************
- *
- * arithmetics
- *
- *************************************************************/
-
-object_t plus_fn(object_t a, object_t b)
-{
-  real_t x, y;
-  switch (ptype(a)) {
-  case INT_T: x = (real_t) UNWRAP_INT(a); break;
-  case REAL_T: x = UNWRAP_REAL(a); break;
-  default: rha_error("can't add those types");
-  }
-  return WRAP_REAL(x+y);
-}
 
 
 /************************************************************

@@ -6,22 +6,71 @@
 modules.object.assign(root, \assign, modules.object.assign);
 
 // (1.2) let's get more stuff from the object module
-new  = modules.object.new;
-ls   = modules.object.ls;
-new  = modules.object.new;
-addr = modules.object.addr;
+new   = modules.object.new;
+ls    = modules.object.ls;
+new   = modules.object.new;
+clone = modules.object.clone;
+addr  = modules.object.addr;
+ptype = modules.object.ptype;
+run   = modules.core.run_fn;
 
 // temporarily for testing purposes (as long as we have to overloaded)
 inc = modules.object.inc;
 dec = modules.object.dec;
-inc_copy = modules.object.inc_copy;
-dec_copy = modules.object.dec_copy;
-inc_copy = modules.object.inc_copy;
-equalequal_fn = modules.object.equalequal_fn;
-notequal_fn = modules.object.notequal_fn;
-less_fn = modules.object.less_fn;
-lessequal_fn = modules.object.lessequal_fn;
-greater_fn = modules.object.greater_fn;
+inc_copy        = modules.object.inc_copy;
+dec_copy        = modules.object.dec_copy;
+plus_fn         = modules.object.plus_fn;
+neg_fn          = modules.object.neg_fn;
+minus_fn        = modules.object.minus_fn;
+times_fn        = modules.object.times_fn;
+divide_fn       = modules.object.divide_fn;
+equalequal_fn   = modules.object.equalequal_fn;
+notequal_fn     = modules.object.notequal_fn;
+less_fn         = modules.object.less_fn;
+lessequal_fn    = modules.object.lessequal_fn;
+greater_fn      = modules.object.greater_fn;
 greaterequal_fn = modules.object.greaterequal_fn;
-and_fn = modules.core.and_fn;
-or_fn = modules.core.or_fn;
+and_fn          = modules.core.and_fn;
+or_fn           = modules.core.or_fn;
+
+
+// what is an integer?
+//   int.check = fn (x) return ptype(x)==int;  ???
+
+// what is a prule?
+//   prule.check = fn (x) {
+//     if (!has(x, \callable)) return false;
+//     if (!has(x, \priority)) return false;
+//     return true;
+//   }
+// an optinal slot is: 'resolving'
+
+// what is a function?
+// note that builtin functions should also have their stuff available
+// in \callable!
+//   fn.check = fn (x) {
+//     if (!has(x, \callable)) return false;
+//     return true;
+//   }
+
+// what is a macro?
+//   macro.check = fn (x) {
+//     if (!fn.check(x)) return false;
+//     if (!has(x, \ismacro)) return false;
+//     return true;
+//   }
+
+// what is iterable?
+//   iterable.check = fn (x) {
+//     if (!has(x, \iterable)) return false;
+//     i = x.iterable;
+//     if (!has(i, \begin)) return false;
+//     if (!has(i, \done)) return false;
+//     if (!has(i, \next)) return false;
+//     if (!has(i, \get)) return false;
+//     return true;
+//   }
+
+// what is an exception?
+// any object can be an exception, however if it has the slot 'msg' it
+// will be shown

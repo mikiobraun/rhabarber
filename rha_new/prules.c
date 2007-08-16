@@ -8,6 +8,9 @@
 #include "assert.h"
 #include "debug.h"
 
+// additional symbols used here
+symbol_t prefix_minus_sym = 0;
+
 // prules take a white-space list and return a function call!
 // prules must not return a macro call!
 
@@ -51,9 +54,14 @@ static glist_t cmp_sym_list;    // a list with < <= > >= == !=
   assign(f, priority_sym, WRAP_REAL(prio));				\
   assign(module, ttt ## _sym, f);
 
+#define MAKE_PRULES_RESOLVING(ttt, prio) MAKE_PRULES(ttt, prio)		\
+  assign(f, resolving_sym, void_obj);
 
 void prules_init(object_t root, object_t module)
 {
+  // additional symbols
+  prefix_minus_sym = symbol_new("prefix_minus");
+
   // initialize prule symbols
   // the string must show the form that appears in Rhabarber
   // and can be different from the function name in C
@@ -113,19 +121,20 @@ void prules_init(object_t root, object_t module)
   // either.  Both 'dots' and 'fncall' are dealt with by hand in
   // 'resolve_list_by_prule'
   object_t f = 0;
+  MAKE_PRULES(prefix_minus, 1.0);
   MAKE_PRULES(plusplus, 1.0);   // increment, decrement
   MAKE_PRULES(minusminus, 1.0);
   MAKE_PRULES(not, 2.5);        // logics
   MAKE_PRULES(divide, 3.0);     // arithemics
   MAKE_PRULES(times, 4.0);
-  MAKE_PRULES(minus, 5.0);
+  MAKE_PRULES_RESOLVING(minus, 5.0);
   MAKE_PRULES(plus, 6.0);
   MAKE_PRULES(less, 7.0);       // comparison
-  MAKE_PRULES(lessequal, 7.0);
-  MAKE_PRULES(greater, 7.0);
-  MAKE_PRULES(greaterequal, 7.0);
-  MAKE_PRULES(equalequal, 7.0);
-  MAKE_PRULES(notequal, 7.0);
+  MAKE_PRULES_RESOLVING(lessequal, 7.0);
+  MAKE_PRULES_RESOLVING(greater, 7.0);
+  MAKE_PRULES_RESOLVING(greaterequal, 7.0);
+  MAKE_PRULES_RESOLVING(equalequal, 7.0);
+  MAKE_PRULES_RESOLVING(notequal, 7.0);
   MAKE_PRULES(and, 8.0);        // logics
   MAKE_PRULES(or, 9.0);
   MAKE_PRULES(return, 10.0);
@@ -156,7 +165,7 @@ tuple_t resolve_infix_prule_list(list_t parsetree,
 				 symbol_t fun_sym, bool_t left_binding);
 tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, 
 			     glist_t *assign_sym_list);
-tuple_t resolve_cmp_prule(list_t parsetree);
+tuple_t resolve_cmp_prule(object_t env, list_t parsetree);
 
 
 
@@ -172,60 +181,91 @@ tuple_t resolve_cmp_prule(list_t parsetree);
 // their name in rhabarber.  this is important for, e.g.:
 //
 //    RHA-NAME C-NAME     C-IMPLEMENTATION
-//    *        times_pr   int_times
-//    /        divide_pr  int_divide
+//    *        times_pr   times_fn
+//    /        divide_pr  divide_fn
 //    return   return_pr  return_fn
 //
 // the keyword case is the reason why '_pr' is necessary
-// also 
-tuple_t plusplus_pr(list_t parsetree) { return resolve_incdec_prule(parsetree); }
-tuple_t minusminus_pr(list_t parsetree) { return resolve_incdec_prule(parsetree); }
-tuple_t not_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t divide_pr(list_t parsetree) {
-  return resolve_infix_prule(parsetree, divide_sym, int_divide_sym, LEFT_BIND);
+// 
+// the signature is 
+//
+//    tuple_t plusplus_pr(object_t env, list_t parsetree)
+//
+// the 'env' is needed only if the prule resolves its arg itsself
+// (e.g. in minus_pr).
+tuple_t plusplus_pr(object_t env, list_t parsetree) { return resolve_incdec_prule(parsetree); }
+tuple_t minusminus_pr(object_t env, list_t parsetree) { return resolve_incdec_prule(parsetree); }
+tuple_t not_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t divide_pr(object_t env, list_t parsetree) {
+  return resolve_infix_prule(parsetree, divide_sym, divide_fn_sym, LEFT_BIND);
 }
-tuple_t times_pr(list_t parsetree) {
-  return resolve_infix_prule(parsetree, times_sym, int_times_sym, LEFT_BIND);
+tuple_t times_pr(object_t env, list_t parsetree) {
+  return resolve_infix_prule(parsetree, times_sym, times_fn_sym, LEFT_BIND);
 }
-tuple_t minus_pr(list_t parsetree) {
-  return resolve_infix_prule(parsetree, minus_sym, int_minus_sym, LEFT_BIND);
+tuple_t prefix_minus_pr(object_t env, list_t parsetree) {
+  return resolve_prefix_prule(parsetree, neg_fn_sym);
 }
-tuple_t plus_pr(list_t parsetree) {
-  return resolve_infix_prule(parsetree, plus_sym, int_plus_sym, LEFT_BIND);
+tuple_t minus_pr(object_t env, list_t parsetree) {
+  // here we also have to take care of the prefix minus, 
+  // which actually has a higher priority (== lower precedence)
+  
+  // suppose we are trying to resolve a minus-sign since it had higher
+  // priority than a times sign, however, actually, the minus-sign is
+  // a prefix minus and thus should have lower priority
+  
+  // (1) how can we identify that case?
+  // look whether it is the left-most tuple-entry
+  // if so, we replace it by a special symbol which will trigger a
+  // prefix prule later on
+  object_t first = list_first(parsetree);
+  if ((ptype(first)==SYMBOL_T) && (UNWRAP_SYMBOL(first)==minus_sym)) {
+    // replace it
+    list_popfirst(parsetree);
+    list_prepend(parsetree, WRAP_SYMBOL(prefix_minus_sym));
+    // start over elsewhere!
+    throw(prule_failed_excp);
+  }
+  tuple_t t = resolve_infix_prule(parsetree, minus_sym, minus_fn_sym, LEFT_BIND);
+  // resolve args here!
+  resolve_args(env, t);
+  return t;
 }
-tuple_t less_pr(list_t parsetree) { return resolve_cmp_prule(parsetree); }
-tuple_t lessequal_pr(list_t parsetree) { return resolve_cmp_prule(parsetree); }
-tuple_t greater_pr(list_t parsetree) { return resolve_cmp_prule(parsetree); }
-tuple_t greaterequal_pr(list_t parsetree) { return resolve_cmp_prule(parsetree); }
-tuple_t equalequal_pr(list_t parsetree) { return resolve_cmp_prule(parsetree); }
-tuple_t notequal_pr(list_t parsetree) { return resolve_cmp_prule(parsetree); }
-tuple_t and_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t or_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t return_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t deliver_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t break_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t throw_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t if_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t try_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t while_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t for_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t fn_pr(list_t parsetree) { return tuple_new(0); }
-tuple_t equal_pr(list_t parsetree) {
+tuple_t plus_pr(object_t env, list_t parsetree) {
+  return resolve_infix_prule(parsetree, plus_sym, plus_fn_sym, LEFT_BIND);
+}
+tuple_t less_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
+tuple_t lessequal_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
+tuple_t greater_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
+tuple_t greaterequal_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
+tuple_t equalequal_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
+tuple_t notequal_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
+tuple_t and_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t or_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t return_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t deliver_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t break_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t throw_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t if_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t try_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t while_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t for_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t fn_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+tuple_t equal_pr(object_t env, list_t parsetree) {
   return resolve_assign_prule(parsetree, equal_sym, &assign_sym_list);
 }
-tuple_t plusequal_pr(list_t parsetree) {
+tuple_t plusequal_pr(object_t env, list_t parsetree) {
   return resolve_assign_prule(parsetree, plusequal_sym, &assign_sym_list);
 }
-tuple_t minusequal_pr(list_t parsetree) {
+tuple_t minusequal_pr(object_t env, list_t parsetree) {
   return resolve_assign_prule(parsetree, minusequal_sym, &assign_sym_list);
 }
-tuple_t timesequal_pr(list_t parsetree) {
+tuple_t timesequal_pr(object_t env, list_t parsetree) {
   return resolve_assign_prule(parsetree, timesequal_sym, &assign_sym_list);
 }
-tuple_t divideequal_pr(list_t parsetree) {
+tuple_t divideequal_pr(object_t env, list_t parsetree) {
   return resolve_assign_prule(parsetree, divideequal_sym, &assign_sym_list);
 }
-tuple_t quote_pr(list_t parsetree) {
+tuple_t quote_pr(object_t env, list_t parsetree) {
   return resolve_prefix_prule(parsetree, quote_sym);
 }
 
@@ -299,7 +339,8 @@ tuple_t resolve_incdec_prule(list_t parsetree)
 tuple_t resolve_prefix_prule(list_t parsetree, symbol_t fun_sym)
 // fs  the function symbol (of the function to be called)
 // which is also the prule symbol
-// e.g. \(17+42)    for the backslash
+// e.g. \(17+42)    quoting
+//      -f(x)       negation
 {
   // the prule symbol must be the first in the parsetree tuple
   int llen = list_len(parsetree);
@@ -428,7 +469,7 @@ tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, glist_t *assi
   return t;
 }
 
-object_t get_cmp_obj(symbol_t cmp_s)
+object_t get_cmp_fn(symbol_t cmp_s)
 {
   if (cmp_s==equalequal_sym)        return WRAP_SYMBOL(equalequal_fn_sym);
   else if (cmp_s==equalequal_sym)   return WRAP_SYMBOL(notequal_fn_sym);
@@ -441,19 +482,13 @@ object_t get_cmp_obj(symbol_t cmp_s)
 }
 
 
-list_t built_call(object_t fn_obj, list_t part1, list_t part2)
+tuple_t built_call(object_t fn_obj, object_t part1, object_t part2)
 {
-  // built arguments
-  list_t rounded_l = list_new();
-  list_append(rounded_l, WRAP_SYMBOL(rounded_sym));
-  list_extend(rounded_l, part1);
-  list_append(rounded_l, WRAP_SYMBOL(comma_sym));
-  list_extend(rounded_l, part2);
-  // built comparison call
-  list_t call = list_new();
-  list_append(call, fn_obj);
-  list_append(call, WRAP_PTR(LIST_T, list_proto, rounded_l));
-  return call;
+  tuple_t t = tuple_new(3);
+  tuple_set(t, 0, fn_obj);
+  tuple_set(t, 1, part1);
+  tuple_set(t, 2, part2);
+  return t;
 }
 
 object_t copy_expr(object_t expr)
@@ -481,7 +516,8 @@ object_t copy_expr(object_t expr)
 }
 
 
-tuple_t resolve_cmp_prule(list_t parsetree)
+
+tuple_t resolve_cmp_prule(object_t env, list_t parsetree)
 // resolve stuff like a == b == c < d
 {
   // (1) chop the parsetree into pieces
@@ -495,8 +531,8 @@ tuple_t resolve_cmp_prule(list_t parsetree)
       if (glist_iselementi(&cmp_sym_list, s)) {
 	if (list_len(parts) == 0)
 	  rha_error("cmp symbols must not be at the beginning of an expression\n");
-	list_append(cmp_l, head);
-	list_append(pieces, WRAP_PTR(LIST_T, list_proto, parts));
+	list_append(cmp_l, get_cmp_fn(s));
+	list_append(pieces, resolve_list_by_prules(env, parts));
 	parts = list_new();
 	continue;
       }
@@ -505,38 +541,23 @@ tuple_t resolve_cmp_prule(list_t parsetree)
   }
   if (list_len(parts)==0)
     rha_error("cmp symbols must not be at the end of expression\n");
-  list_append(pieces, WRAP_PTR(LIST_T, list_proto, parts));
+  list_append(pieces, resolve_list_by_prules(env, parts));
 
   // (2) built the expression
-  list_t part1 = UNWRAP_PTR(LIST_T, list_popfirst(pieces));
-  list_t part2 = UNWRAP_PTR(LIST_T, list_popfirst(pieces));
-  symbol_t cmp_s = UNWRAP_SYMBOL(list_popfirst(cmp_l));
-  if (list_len(cmp_l)==0) {
-    tuple_t t = tuple_new(3);
-    tuple_set(t, 0, get_cmp_obj(cmp_s));
-    tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, part1));
-    tuple_set(t, 2, WRAP_PTR(LIST_T, list_proto, part2));
-    return t;
+  object_t cmp_obj = list_popfirst(cmp_l);
+  object_t part1 = list_popfirst(pieces);
+  object_t part2 = list_popfirst(pieces);
+  tuple_t call = built_call(cmp_obj, part1, part2);
+  object_t and_fn_obj = WRAP_SYMBOL(and_fn_sym);
+  while ((cmp_obj = list_popfirst(cmp_l))) {
+    part1 = part2;
+    part2 = list_popfirst(pieces);
+    call = built_call(and_fn_obj,
+		      WRAP_PTR(TUPLE_T, tuple_proto, call),
+		      WRAP_PTR(TUPLE_T, tuple_proto, 
+			       built_call(cmp_obj, part1, part2)));
   }
-  list_t call = built_call(get_cmp_obj(cmp_s), part1, part2);
-  while (1) {
-    head = list_popfirst(cmp_l);
-    part1 = UNWRAP_PTR(LIST_T, copy_expr(WRAP_PTR(LIST_T, list_proto, part2)));
-    part2 = UNWRAP_PTR(LIST_T, list_popfirst(pieces));
-    cmp_s = UNWRAP_SYMBOL(head);
-    if (list_len(cmp_l) > 0)
-      call = built_call(WRAP_SYMBOL(and_fn_sym), 
-			call, 
-			built_call(get_cmp_obj(cmp_s), part1, part2));
-    else {
-      // last round, thus create a tuple
-      tuple_t t = tuple_new(3);
-      tuple_set(t, 0, WRAP_SYMBOL(and_fn_sym));
-      tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, call));
-      tuple_set(t, 2, WRAP_PTR(LIST_T, list_proto, built_call(get_cmp_obj(cmp_s), part1, part2)));
-      return t;
-    }
-  }
+  return call;
 }
 
 

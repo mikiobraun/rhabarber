@@ -16,6 +16,7 @@
 
 #include "messages.h"
 #include "utils.h"
+#include "excp.h"
 #include "rha_init.h"
 
 int main(int argc, char **argv)
@@ -42,8 +43,7 @@ int main(int argc, char **argv)
     fprint(stdout, "%o\n", e); 
   } 
   catch(excp) { 
-    string_t msg = UNWRAP_PTR(STRING_T, excp); 
-    fprintf(stderr, "Caught exception (while loading 'prelude.rha'): %s\n", msg);
+    excp_show(excp);
   } 
 
   // for the prompt
@@ -72,8 +72,7 @@ int main(int argc, char **argv)
 	fprintf(stdout, "parse returned ZERO\n");
     }
     catch(excp) {
-      string_t msg = UNWRAP_PTR(STRING_T, excp);
-      fprintf(stderr, "Caught exception: %s\n", msg);
+      excp_show(excp);
     }
   }
 

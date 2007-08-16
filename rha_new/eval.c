@@ -147,7 +147,7 @@ object_t eval_args_and_call_fun(object_t env, tuple_t expr)
 
 object_t call_fun(object_t env, int_t tlen, tuple_t values)
 {
-  if (ptype(tuple_get(values, 0))==FN_T)
+  if (ptype(tuple_get(values, 0))==FUNCTION_T)
     // the function is implemented in C
     return call_C_fun(tlen, values);
   else
@@ -170,8 +170,8 @@ void *call_C_fun(int tlen, tuple_t t)
   int narg = tlen-1;
   // extract the function
   object_t t0 = tuple_get(t, 0);
-  assert(t0 && ptype(t0)==FN_T);
-  fn_t f = UNWRAP_PTR(FN_T, t0);
+  assert(t0 && ptype(t0)==FUNCTION_T);
+  function_t f = UNWRAP_PTR(FUNCTION_T, t0);
   // is the argument number correct?
   if (f->narg != narg)
     rha_error("wrong number of arguments (expected %d, got %d)\n", f->narg, narg);
