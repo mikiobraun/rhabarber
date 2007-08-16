@@ -5,7 +5,13 @@
 
 extern       void    prules_init(object_t root, object_t module);
 
+// function to define common prules
+extern _rha_ object_t prule_new_infix();
+extern _rha_ object_t prule_new_prefix();
+extern _rha_ object_t prule_new_postfix();
+extern _rha_ object_t prule_new_freefix();
 
+// predefined prules
 extern _rha_ tuple_t plusplus_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t minusminus_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t not_pr(object_t env, list_t parsetree);

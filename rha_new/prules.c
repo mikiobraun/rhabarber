@@ -152,6 +152,12 @@ void prules_init(object_t root, object_t module)
 }
 
 
+object_t prule_new_infix(){ return void_obj; }
+object_t prule_new_prefix(){ return void_obj; }
+object_t prule_new_postfix(){ return void_obj; }
+object_t prule_new_freefix(){ return void_obj; }
+
+
 // forward declaration of helper functions
 tuple_t resolve_incdec_prule(list_t parsetree);
 tuple_t resolve_prefix_prule(list_t parsetree, symbol_t fun_sym);
@@ -163,6 +169,7 @@ tuple_t resolve_infix_prule_list(list_t parsetree,
 tuple_t resolve_assign_prule(list_t parsetree, symbol_t prule_sym, 
 			     glist_t *assign_sym_list);
 tuple_t resolve_cmp_prule(object_t env, list_t parsetree);
+tuple_t resolve_freefix_prule(object_t env, list_t parsetree);
 
 
 
@@ -600,18 +607,6 @@ static list_tr cmp_list = 0; // a list of comparison prule symbols
 
 
 
-/* object_t check_and_extract_condition(object_t cond) */
-/* { */
-/*   // the condition must be only one grouped element */
-/*   if (HAS_TYPE(list, cond) && list_length(cond) == 1) */
-/*     cond = list_solidify(cond); */
-/*     if (!iscallof(group_sym, cond) || tuple_length(cond) != 2) */
-/*       rha_error("The condition of 'if' must be one expr enclosed in brackets.\n"); */
-/*     cond = tuple_get(cond, 1); // get rid of the brackets */
-  
-/* } */
-
-
 object_t resolve_ctrl_prule(tuple_tr in)
 // if (cond) code
 // if (cond) code else code_else
@@ -758,77 +753,6 @@ object_t resolve_ctrl_prule(tuple_tr in)
 
   if (!result) rha_error("resolve_crt_prule error.\n");
   return result;
-}
-
-object_t resolve_try_catch_prule(tuple_tr in) {
-  return 0;
-}
-
-/*
-  Program logic
-*/ 
-
-
-/*
- * lazy_or and lazy_and macro
- */
-
-BUILTIN(b_lazy_or)
-{
-  int nin = tuple_length(in);
-  if (nin == 3) {
-    fprint(stdout, "lazy or\n");
-    object_t lhs = tuple_get(in, 1);
-    object_t rhs = tuple_get(in, 2);
-    lhs = eval(env, lhs);
-    if (HAS_TYPE(bool, lhs))
-      if (bool_get(lhs))
-	return bool_new(true);
-      else {
-	rhs = eval(env, rhs);
-	if (HAS_TYPE(bool, rhs))
-	  if (bool_get(rhs))
-	    return bool_new(true);
-	  else
-	    return bool_new(false);
-	else
-	  rha_error("rhs of 'op||' must eval to bool.\n");
-      }
-    else
-      rha_error("lhs of 'op||' must eval to bool.\n");
-  }
-  // otherwise wrong number of args
-  rha_error("'op||' must be called with exactly two args.\n");
-  return 0;
-}
-
-BUILTIN(b_lazy_and)
-{
-  int nin = tuple_length(in);
-  if (nin == 3) {
-    fprint(stdout, "lazy and\n");
-    object_t lhs = tuple_get(in, 1);
-    object_t rhs = tuple_get(in, 2);
-    lhs = eval(env, lhs);
-    if (HAS_TYPE(bool, lhs))
-      if (!bool_get(lhs))
-	return bool_new(false);
-      else {
-	rhs = eval(env, rhs);
-	if (HAS_TYPE(bool, rhs))
-	  if (bool_get(rhs))
-	    return bool_new(true);
-	  else
-	    return bool_new(false);
-	else
-	  rha_error("rhs of 'op&&' must eval to bool.\n");
-      }
-    else
-      rha_error("lhs of 'op&&' must eval to bool.\n");
-  }
-  // otherwise wrong number of args
-  rha_error("'op&&' must be called with exactly two args.\n");
-  return 0;
 }
 
 
