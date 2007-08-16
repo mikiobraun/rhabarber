@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "symbol_fn.h"
-#include "util/gtree.h"
+#include "gtree.h"
+#include "alloc.h"
 
 static int symbolcount = 0;
 static struct gtree symbolids;
@@ -27,7 +28,7 @@ symbol_t symbol_new(string_t s)
   if (!i) {
     symbolcount++;
     i = symbolcount;
-    s = strdup(s);
+    s = gc_strdup(s);
     gtree_insert(&symbolids, s, i);
     gtree_insert(&symbolnames, i, s);
   }

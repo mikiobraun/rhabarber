@@ -6,19 +6,14 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include "alloc.h"
 
-#define ALLOC(p) p = malloc(sizeof(*p))
 
 static bool fmt_initialized = false;
 static fmt_f *table[256];
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
-
-//#define HAVE_STRDUP
-#ifndef HAVE_STRDUP
-static char *strdup(const char *s);
 #endif
 
 static void fmt_init();
@@ -32,7 +27,7 @@ void vprtfmt(struct stream *s, const char *fmt, va_list *ap)
 {
   if (!fmt_initialized) fmt_init();
 
-  char *f = strdup(fmt);
+  char *f = gc_strdup(fmt);
 
   char *start = 0;
 
@@ -116,7 +111,7 @@ void sprtfmt(char **buffer, const char *fmt, ...)
   vprtfmt(s, fmt, &ap);
   va_end(ap);
   
-  *buffer = strdup(sstrbuffer(s));
+  *buffer = gc_strdup(sstrbuffer(s));
 
   strclose(s);
 }
@@ -244,22 +239,12 @@ void addfmt(char c, fmt_f f)
  * helper functions
  */
 
-#ifndef HAVE_STRDUP
-static
-char *strdup(const char *s)
-{
-  char *p = malloc(sizeof(char) * (strlen(s) + 1));
-  strcpy(p, s);
-  return p;
-}
-#endif
-
 /* parse a format string. This basically consists in collecting all
    non-numerical characters into the flag array and extracting two
    numbers, one before the point and one behind (if existing) */
 void parsefmtspec(const char *fmt, struct fmt_spec *spec)
 {
-  char *f = strdup(fmt + 1);
+  char *f = gc_strdup(fmt + 1);
   f[strlen(f) - 1] = '\0';
 
   char *first = 0;
