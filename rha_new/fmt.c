@@ -27,7 +27,7 @@ void vprtfmt(struct stream *s, const char *fmt, va_list *ap)
 {
   if (!fmt_initialized) fmt_init();
 
-  char *f = gc_strdup(fmt);
+  char *f = nongc_strdup(fmt);
 
   char *start = 0;
 
@@ -111,7 +111,7 @@ void sprtfmt(char **buffer, const char *fmt, ...)
   vprtfmt(s, fmt, &ap);
   va_end(ap);
   
-  *buffer = gc_strdup(sstrbuffer(s));
+  *buffer = nongc_strdup(sstrbuffer(s));
 
   strclose(s);
 }
@@ -244,7 +244,7 @@ void addfmt(char c, fmt_f f)
    numbers, one before the point and one behind (if existing) */
 void parsefmtspec(const char *fmt, struct fmt_spec *spec)
 {
-  char *f = gc_strdup(fmt + 1);
+  char *f = nongc_strdup(fmt + 1);
   f[strlen(f) - 1] = '\0';
 
   char *first = 0;
