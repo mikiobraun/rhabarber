@@ -97,9 +97,10 @@ bool is_symbol(symbol_t a_symbol, object_t expr) {
 
 object_t resolve(object_t env, object_t expr)
 {
-  // note that tuples are not resolved anymore, 
-  // that way we can distinguish whether we need to go deeper 
-
+  // note that tuples are not resolved anymore
+  // thus: if prules resolve the arguments themselves, they become
+  // tuples and that we it doesn't matter if we call 'resolve' again
+  // on them
   debug("resolve(%o, %o)\n", env, expr);
   if (ptype(expr) == LIST_T)
     return resolve_list_by_head(env, UNWRAP_PTR(LIST_T, expr));

@@ -245,6 +245,9 @@ string_t to_string(object_t o)
   }
   else {
     switch (ptype(o)) {
+    case OBJECT_T: {
+      return sprint("<addr=%p>", (void *) addr(o));
+    }
     case BOOL_T: {
       if (UNWRAP_BOOL(o))
 	return sprint("true");
@@ -307,7 +310,7 @@ string_t to_string(object_t o)
 	return sprint("%p", (void *) UNWRAP_PTR(ADDRESS_T, o));
       }
       default:
-	return sprint("<addr=%p>", (void *) addr(o));
+	return sprint("<UNKNOWN ptype: addr=%p>", (void *) addr(o));
       }
     }
   }
