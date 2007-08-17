@@ -319,7 +319,7 @@ string_t to_string(object_t o)
 
 void print_fn(object_t o)
 {
-  fprintf(stdout, "%s", to_string(o));
+  fprintf(stdout, "%s\n", to_string(o));
 }
 
 
@@ -386,6 +386,12 @@ bool_t notequal_fn(object_t a, object_t b)
     return UNWRAP_INT(a) != UNWRAP_INT(b);
   else
     return a != b;
+}
+
+bool_t in_fn(object_t a, object_t b)
+{
+  rha_error("element check for iterables is not yet implemented\n");
+  assert(1==0);
 }
 
 int_t neg_fn(object_t a)

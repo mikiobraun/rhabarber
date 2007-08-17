@@ -31,5 +31,6 @@ extern list_t list_chop_first(list_t l, symbol_t s);
 extern list_t list_chop_first_list(list_t l, glist_t *sym_list);
 extern list_t list_chop_last(list_t l, symbol_t s);
 extern list_t list_chop_last_list(list_t l, glist_t *sym_list);
+extern list_t list_chop_matching(list_t l, symbol_t left, symbol_t right);
 
 #endif

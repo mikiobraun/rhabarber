@@ -9,6 +9,7 @@ extern _rha_ object_t parse_file(object_t root, string_t fname);
 extern _rha_ object_t resolve(object_t root, object_t expr);
 extern       void     resolve_args(object_t env, tuple_t t);
 extern       object_t resolve_list_by_prules(object_t env, list_t source);
+extern       object_t resolve_tuple(object_t env, list_t source);
 
 
 extern       void     parse_init(object_t root, object_t module);

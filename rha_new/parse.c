@@ -101,7 +101,7 @@ object_t resolve(object_t env, object_t expr)
   // thus: if prules resolve the arguments themselves, they become
   // tuples and that we it doesn't matter if we call 'resolve' again
   // on them
-  debug("resolve(%o, %o)\n", env, expr);
+  //debug("resolve(%o, %o)\n", env, expr);
   if (ptype(expr) == LIST_T)
     return resolve_list_by_head(env, UNWRAP_PTR(LIST_T, expr));
   else
@@ -110,7 +110,7 @@ object_t resolve(object_t env, object_t expr)
 
 object_t resolve_list_by_head(object_t env, list_t source)
 {
-  debug("resolve_list_by_head(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  //debug("resolve_list_by_head(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
   // take the list 'source'
   // built a list 'sink'
   // finally return the 'sink' transformed into a tuple
@@ -147,7 +147,7 @@ object_t resolve_list_by_head(object_t env, list_t source)
  
 object_t resolve_code_block(object_t env, list_t source)
 {
-  debug("resolve_code_block(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  //debug("resolve_code_block(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
   // code blocks  -->  returns a list_t
   // { x = 1; y = 7; deliver 5; { a=5; } x=5 }
   // split by semicolon, comma is not allowed
@@ -183,7 +183,7 @@ object_t resolve_code_block(object_t env, list_t source)
 
 object_t resolve_tuple(object_t env, list_t source)
 {
-  debug("resolve_tuple(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  //debug("resolve_tuple(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
   // grouped expression and argument lists
   // (x+1)*4 or (x, y, z) or (17,)
   // split only by comma, no semiclon is allowed
@@ -235,14 +235,14 @@ object_t resolve_tuple(object_t env, list_t source)
     // comma wasn't the last symbol
     list_prepend(sink, WRAP_SYMBOL(rounded_sym));
   }
-  print("return (resolve_tuple): %o\n", WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink)));
+  //debug("return (resolve_tuple): %o\n", WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink)));
   return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
 }
 
 
 object_t resolve_complex_literal(list_t source)
 {
-  debug("resolve_complex_literal(%o)\n", WRAP_PTR(LIST_T, list_proto, source));
+  //debug("resolve_complex_literal(%o)\n", WRAP_PTR(LIST_T, list_proto, source));
   // complex literals
   // [x, 17] or [ 2*x for x in [1,2,3]]
   
@@ -346,7 +346,7 @@ object_t resolve_prule(object_t env, list_t source, object_t prule)
     // resolved when it was parsed
     expr = resolve_macro(env, t);
   }
-  debug("return (prules) %o\n", expr);
+  //debug("return (prules) %o\n", expr);
   return expr;
 }
 
@@ -414,14 +414,14 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
     tuple_set(t, 0, fncall);
     fncall = resolve_macro(env, t);
   }
-  debug("return (prules) %o\n", fncall);
+  //debug("return (prules) %o\n", fncall);
   return fncall;
 }
 
 
 object_t resolve_list_by_prules(object_t env, list_t source)
 {
-  debug("resolve_prules(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  //debug("resolve_prules(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
   // it is a tuple containing a white-spaced list
   // without any particular heading symbol
   

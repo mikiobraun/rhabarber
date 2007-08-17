@@ -6,6 +6,7 @@
 #include "object.h"
 #include "rha_types.h"
 #include "messages.h"
+#include "debug.h"
 #include "utils.h"
 #include "list_fn.h"
 #include "tuple_fn.h"
@@ -53,38 +54,10 @@ int frame_tos = -1;
 // Note, that these stacks must be only changed via the macros defined
 // in eval.h.
 
-#define IGNORE
-#ifndef IGNORE
-object_t eval(object_t env, object_t expr)
-{
-  ENTER;
-  print("eval(env = %p, expr = %o)\n", env, expr);
-
-  object_t value;
-  switch (ptype(expr)) {
-  case SYMBOL_T:
-    // symbols
-    value = lookup(env, UNWRAP_SYMBOL(expr));
-    if (!value) rha_error("lookup of symbol '%o' failed\n", expr);
-    RETURN( value ); 
-  case TUPLE_T: 
-    // function call
-    assert(UNWRAP_PTR(TUPLE_T, expr));
-    RETURN( eval_args_and_call_fun(env, UNWRAP_PTR(TUPLE_T, expr)) );
-  case LIST_T:
-    // sequence of expressions, e.g. { x=17; y=42 }
-    assert(UNWRAP_PTR(LIST_T, expr));
-    RETURN( eval_sequence(env, UNWRAP_PTR(LIST_T, expr)) );
-  default:
-    // literal
-    RETURN( expr );
-  }
-}
-#endif
 
 object_t eval(object_t env, object_t expr)
 {
-  print("eval(env=%p, expr=%o)\n", env, expr);
+  //debug("eval(env=%p, expr=%o)\n", env, expr);
 
   object_t value;
   switch (ptype(expr)) {
@@ -216,7 +189,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   // assign the arguments
   for(int i = 0; i < nargs; i++) {
     symbol_t s = UNWRAP_SYMBOL(tuple_get(argnames, i));
-    printf("assigning argument number %d to '%s'\n", i, symbol_name(s));
+    debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
     assign(local, s, tuple_get(expr, i+1));
   }
 

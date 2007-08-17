@@ -18,6 +18,7 @@ symbol_t prefix_minus_sym = 0;
 symbol_t plusplus_sym = 0;
 symbol_t minusminus_sym = 0;
 symbol_t not_sym = 0;
+symbol_t in_sym = 0;    // for element check
 symbol_t divide_sym = 0;
 symbol_t times_sym = 0;
 symbol_t minus_sym = 0;
@@ -30,12 +31,15 @@ symbol_t equalequal_sym = 0;
 symbol_t notequal_sym = 0;
 symbol_t and_sym = 0;
 symbol_t or_sym = 0;
+symbol_t print_sym = 0;
 symbol_t return_sym = 0;
 symbol_t deliver_sym = 0;
 symbol_t break_sym = 0;
 symbol_t throw_sym = 0;
 symbol_t if_sym = 0;
+symbol_t else_sym = 0;
 symbol_t try_sym = 0;
+symbol_t catch_sym = 0;
 symbol_t while_sym = 0;
 symbol_t for_sym = 0;
 symbol_t fn_sym = 0;
@@ -65,6 +69,7 @@ void prules_init(object_t root, object_t module)
   plusplus_sym     = symbol_new("++");
   minusminus_sym   = symbol_new("--");
   not_sym          = symbol_new("!");
+  in_sym           = symbol_new("in");
   divide_sym       = symbol_new("/");
   times_sym        = symbol_new("*");
   minus_sym        = symbol_new("-");
@@ -77,12 +82,15 @@ void prules_init(object_t root, object_t module)
   notequal_sym     = symbol_new("!=");
   and_sym          = symbol_new("&&");
   or_sym           = symbol_new("||");
+  print_sym        = symbol_new("print");
   return_sym       = symbol_new("return");
   deliver_sym      = symbol_new("deliver");
   break_sym        = symbol_new("break");
   throw_sym        = symbol_new("throw");
   if_sym           = symbol_new("if");
+  else_sym         = symbol_new("else");
   try_sym          = symbol_new("try");
+  catch_sym        = symbol_new("catch");
   while_sym        = symbol_new("while");
   for_sym          = symbol_new("for");
   fn_sym           = symbol_new("fn");
@@ -126,6 +134,7 @@ void prules_init(object_t root, object_t module)
   MAKE_PRULES(times, 4.0);
   MAKE_PRULES(minus, 5.0);
   MAKE_PRULES(plus, 6.0);
+  MAKE_PRULES(in, 6.5);         // element test for iterables
   MAKE_PRULES(less, 7.0);       // comparison
   MAKE_PRULES(lessequal, 7.0);
   MAKE_PRULES(greater, 7.0);
@@ -143,6 +152,7 @@ void prules_init(object_t root, object_t module)
   MAKE_PRULES(while, 10.0);
   MAKE_PRULES(for, 10.0);
   MAKE_PRULES(fn, 10.0);
+  MAKE_PRULES(print, 10.0);
   MAKE_PRULES(equal, 11.0);     // assignments
   MAKE_PRULES(plusequal, 11.0);
   MAKE_PRULES(minusequal, 11.0);
@@ -160,8 +170,9 @@ object_t prule_new_freefix(){ return void_obj; }
 
 
 // forward declaration of helper functions
+object_t quoted(object_t obj);
+
 tuple_t resolve_incdec_prule(list_t parsetree);
-tuple_t resolve_prefix_prule(list_t parsetree, symbol_t fun_sym);
 tuple_t resolve_infix_prule(list_t parsetree, symbol_t prule_sym, 
 			    symbol_t fun_sym, bool_t left_binding);
 tuple_t resolve_infix_prule_list(list_t parsetree, 
@@ -170,7 +181,14 @@ tuple_t resolve_infix_prule_list(list_t parsetree,
 tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t
 			     prule_sym, glist_t *assign_sym_list);
 tuple_t resolve_cmp_prule(object_t env, list_t parsetree);
-tuple_t resolve_freefix_prule(object_t env, list_t parsetree);
+tuple_t resolve_freefix_prule1(object_t env, list_t parsetree,
+			       symbol_t fun_sym,
+			       symbol_t key1, int_t narg1);
+tuple_t resolve_freefix_prule2(object_t env, list_t parsetree,
+			       symbol_t fun_sym,
+			       symbol_t key1, int_t narg1, 
+			       symbol_t key2, int_t narg2);
+
 
 
 
@@ -198,19 +216,42 @@ tuple_t resolve_freefix_prule(object_t env, list_t parsetree);
 //
 // the 'env' is needed only if the prule resolves its arg itsself
 // (e.g. in minus_pr).
-tuple_t plusplus_pr(object_t env, list_t parsetree) { return resolve_incdec_prule(parsetree); }
-tuple_t minusminus_pr(object_t env, list_t parsetree) { return resolve_incdec_prule(parsetree); }
-tuple_t not_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t divide_pr(object_t env, list_t parsetree) {
+tuple_t plusplus_pr(object_t env, list_t parsetree) 
+{ 
+  return resolve_incdec_prule(parsetree); 
+}
+
+tuple_t minusminus_pr(object_t env, list_t parsetree) 
+{ 
+  return resolve_incdec_prule(parsetree); 
+}
+
+tuple_t not_pr(object_t env, list_t parsetree) 
+{ 
+  return tuple_new(0); 
+}
+
+tuple_t divide_pr(object_t env, list_t parsetree) 
+{
   return resolve_infix_prule(parsetree, divide_sym, divide_fn_sym, LEFT_BIND);
 }
-tuple_t times_pr(object_t env, list_t parsetree) {
+
+tuple_t times_pr(object_t env, list_t parsetree) 
+{
   return resolve_infix_prule(parsetree, times_sym, times_fn_sym, LEFT_BIND);
 }
-tuple_t prefix_minus_pr(object_t env, list_t parsetree) {
-  return resolve_prefix_prule(parsetree, neg_fn_sym);
+
+
+tuple_t prefix_minus_pr(object_t env, list_t parsetree) 
+{
+  if (list_len(parsetree) < 2)
+    rha_error("(parsing) prefix-minus requires argument.\n");
+  list_popfirst(parsetree);
+  return tuple_make(2, WRAP_SYMBOL(neg_fn_sym), WRAP_PTR(LIST_T, list_proto, parsetree));
 }
-tuple_t minus_pr(object_t env, list_t parsetree) {
+
+tuple_t minus_pr(object_t env, list_t parsetree) 
+{
   // here we also have to take care of the prefix minus, 
   // which actually has a higher priority (== lower precedence)
   
@@ -235,43 +276,195 @@ tuple_t minus_pr(object_t env, list_t parsetree) {
   resolve_args(env, t);
   return t;
 }
-tuple_t plus_pr(object_t env, list_t parsetree) {
+
+tuple_t plus_pr(object_t env, list_t parsetree) 
+{
   return resolve_infix_prule(parsetree, plus_sym, plus_fn_sym, LEFT_BIND);
 }
-tuple_t less_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
-tuple_t lessequal_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
-tuple_t greater_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
-tuple_t greaterequal_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
-tuple_t equalequal_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
-tuple_t notequal_pr(object_t env, list_t parsetree) { return resolve_cmp_prule(env, parsetree); }
-tuple_t and_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t or_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t return_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t deliver_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t break_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t throw_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t if_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t try_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t while_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t for_pr(object_t env, list_t parsetree) { return tuple_new(0); }
-tuple_t fn_pr(object_t env, list_t parsetree) { return tuple_new(0); }
+
+tuple_t in_pr(object_t env, list_t parsetree) 
+{
+  return resolve_infix_prule(parsetree, in_sym, in_fn_sym, LEFT_BIND);
+}
+
+tuple_t less_pr(object_t env, list_t parsetree) 
+{ 
+  return resolve_cmp_prule(env, parsetree); 
+}
+
+tuple_t lessequal_pr(object_t env, list_t parsetree) 
+{ 
+  return resolve_cmp_prule(env, parsetree); 
+}
+
+tuple_t greater_pr(object_t env, list_t parsetree) 
+{
+  return resolve_cmp_prule(env, parsetree); 
+}
+
+tuple_t greaterequal_pr(object_t env, list_t parsetree) 
+{ 
+  return resolve_cmp_prule(env, parsetree); 
+}
+
+tuple_t equalequal_pr(object_t env, list_t parsetree) 
+{ 
+  return resolve_cmp_prule(env, parsetree); 
+}
+
+tuple_t notequal_pr(object_t env, list_t parsetree) 
+{ 
+  return resolve_cmp_prule(env, parsetree); 
+}
+
+tuple_t and_pr(object_t env, list_t parsetree) 
+{ 
+  return resolve_infix_prule(parsetree, and_sym, and_fn_sym, LEFT_BIND);
+}
+
+tuple_t or_pr(object_t env, list_t parsetree) 
+{ 
+  return resolve_infix_prule(parsetree, or_sym, or_fn_sym, LEFT_BIND);
+}
+
+#define HANDLE_STUFF_LIKE_RETURN(ttt) list_popfirst(parsetree);	\
+  tuple_t t = tuple_new(2);					\
+  tuple_set(t, 0, WRAP_SYMBOL(ttt ## _fn_sym));			\
+  if (list_len(parsetree) > 0)					\
+    tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, parsetree));	\
+  else								\
+    tuple_set(t, 1, void_obj);					\
+  return t;
+
+tuple_t print_pr(object_t env, list_t parsetree) 
+{ 
+  HANDLE_STUFF_LIKE_RETURN(print)
+}
+
+tuple_t return_pr(object_t env, list_t parsetree) 
+{ 
+  HANDLE_STUFF_LIKE_RETURN(return)
+}
+
+tuple_t deliver_pr(object_t env, list_t parsetree)
+{ 
+  HANDLE_STUFF_LIKE_RETURN(deliver)
+}
+
+tuple_t break_pr(object_t env, list_t parsetree)
+{ 
+  HANDLE_STUFF_LIKE_RETURN(break)
+}
+
+tuple_t throw_pr(object_t env, list_t parsetree)
+{
+  HANDLE_STUFF_LIKE_RETURN(throw)
+}
+
+tuple_t if_pr(object_t env, list_t parsetree)
+{ 
+  tuple_t pre_t = resolve_freefix_prule2(env, parsetree, if_fn_sym,
+					 if_sym, 2, else_sym, 1);
+  tuple_t t = tuple_new(5);
+  tuple_set(t, 0, tuple_get(pre_t, 0));
+  tuple_set(t, 1, env);
+  tuple_set(t, 2, tuple_get(pre_t, 1));
+  tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
+  tuple_set(t, 4, quoted(tuple_get(pre_t, 3)));
+  return t;
+}
+
+tuple_t try_pr(object_t env, list_t parsetree)
+{ 
+  tuple_t pre_t = resolve_freefix_prule2(env, parsetree, try_fn_sym, try_sym, 1, catch_sym, 2);
+  tuple_t t = tuple_new(5);
+  tuple_set(t, 0, tuple_get(pre_t, 0));
+  tuple_set(t, 1, env);
+  tuple_set(t, 2, quoted(tuple_get(pre_t, 1)));
+  object_t obj = tuple_get(pre_t, 2);
+  if (ptype(obj) != SYMBOL_T)
+    rha_error("in 'try 17 catch (x) 42', 'x' must be a symbol\n");
+  tuple_set(t, 3, quoted(obj));
+  tuple_set(t, 4, quoted(tuple_get(pre_t, 3)));
+  return t;
+}
+
+tuple_t while_pr(object_t env, list_t parsetree)
+{ 
+  tuple_t pre_t = resolve_freefix_prule1(env, parsetree, while_fn_sym,
+					 while_sym, 2);
+  tuple_t t = tuple_new(4);
+  tuple_set(t, 0, tuple_get(pre_t, 0));
+  tuple_set(t, 1, env);
+  tuple_set(t, 2, quoted(tuple_get(pre_t, 1)));
+  tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
+  return t;
+}
+
+tuple_t for_pr(object_t env, list_t parsetree)
+{ 
+  tuple_t pre_t = resolve_freefix_prule1(env, parsetree, for_fn_sym, for_sym, 2);
+  // the second argument (e.g. (x in l) must be splitted into two
+  tuple_t t = tuple_new(5);
+  tuple_set(t, 0, tuple_get(pre_t, 0));
+  tuple_set(t, 1, env);
+  // check now whether the first arg has the right form!
+  object_t obj = tuple_get(pre_t, 1);
+  if (ptype(obj)!=TUPLE_T)
+    rha_error("second arg to 'for' must look like (x in l)\n");
+  tuple_t arg = UNWRAP_PTR(TUPLE_T, obj);
+  if (tuple_len(arg) != 3)
+    rha_error("second arg to 'for' must look like (x in l)\n");
+  obj = tuple_get(arg, 0);
+  if (ptype(obj) != SYMBOL_T)
+    rha_error("second arg to 'for' must look like (x in l)\n");
+  if (UNWRAP_SYMBOL(obj) != in_fn_sym)
+    rha_error("second arg to 'for' must look like (x in l)\n");
+  tuple_set(t, 2, quoted(tuple_get(arg, 1)));
+  tuple_set(t, 3, tuple_get(arg, 2));
+  tuple_set(t, 4, quoted(tuple_get(pre_t, 2)));
+  return t;
+}
+
+tuple_t fn_pr(object_t env, list_t parsetree)
+{ 
+  tuple_t t = resolve_freefix_prule1(env, parsetree, fn_fn_sym, fn_sym, 2);
+  tuple_set(t, 1, quoted(tuple_get(t, 1)));
+  tuple_set(t, 2, quoted(tuple_get(t, 2)));
+  return t;
+
+}
+
 tuple_t equal_pr(object_t env, list_t parsetree) {
   return resolve_assign_prule(env, parsetree, equal_sym, &assign_sym_list);
 }
+
 tuple_t plusequal_pr(object_t env, list_t parsetree) {
   return resolve_assign_prule(env, parsetree, plusequal_sym, &assign_sym_list);
 }
+
 tuple_t minusequal_pr(object_t env, list_t parsetree) {
   return resolve_assign_prule(env, parsetree, minusequal_sym, &assign_sym_list);
 }
+
 tuple_t timesequal_pr(object_t env, list_t parsetree) {
   return resolve_assign_prule(env, parsetree, timesequal_sym, &assign_sym_list);
 }
+
 tuple_t divideequal_pr(object_t env, list_t parsetree) {
   return resolve_assign_prule(env, parsetree, divideequal_sym, &assign_sym_list);
 }
-tuple_t quote_pr(object_t env, list_t parsetree) {
-  return resolve_prefix_prule(parsetree, quote_sym);
+
+tuple_t quote_pr(object_t env, list_t parsetree)
+{
+  list_popfirst(parsetree);	
+  tuple_t t = tuple_new(2);					
+  tuple_set(t, 0, WRAP_SYMBOL(quote_sym));			
+  if (list_len(parsetree) > 0)					
+    tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, parsetree));	
+  else								
+    tuple_set(t, 1, void_obj);					
+  return t;
 }
 
 
@@ -286,6 +479,12 @@ tuple_t quote_pr(object_t env, list_t parsetree) {
  * Helper functions for prules
  *
  **********************************************************************/
+
+object_t quoted(object_t obj)
+{
+  return WRAP_PTR(TUPLE_T, tuple_proto, 
+		  tuple_make(2, WRAP_SYMBOL(quote_sym), obj));
+}
 
 object_t copy_expr(object_t expr)
 {
@@ -320,7 +519,7 @@ tuple_t resolve_incdec_prule(list_t parsetree)
   // what is that "copy" thing?
   //   inc_copy = fn (x) { o=copy(x); inc(x); return o };
   // similarly for 'dec'
-  debug("resolve_incdec_prule(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
+  //debug("resolve_incdec_prule(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
 
   assert(list_len(parsetree) > 0);
   if (list_len(parsetree) == 1)
@@ -365,40 +564,6 @@ tuple_t resolve_incdec_prule(list_t parsetree)
 }
 
 
-tuple_t resolve_prefix_prule(list_t parsetree, symbol_t fun_sym)
-// fs  the function symbol (of the function to be called)
-// which is also the prule symbol
-// e.g. \(17+42)    quoting
-//      -f(x)       negation
-{
-  // the prule symbol must be the first in the parsetree tuple
-  int llen = list_len(parsetree);
-  if (llen == 1) {
-    // e.g. return or break (to finish a function, returning nothing)
-    return tuple_make(1, WRAP_SYMBOL(fun_sym));
-  }
-  else if (llen == 2) {
-    // e.g. return 17
-    //      \x
-    return tuple_make(2, WRAP_SYMBOL(fun_sym), list_last(parsetree));
-  }
-  else if (llen > 2) {
-    // e.g. return 17 + 42
-    // chop off the prefix symbol and return the rest for further
-    // processing
-
-    list_popfirst(parsetree);
-    tuple_t t = tuple_make(2, WRAP_SYMBOL(fun_sym), WRAP_PTR(LIST_T, list_proto, parsetree));
-    print("%o\n", WRAP_PTR(TUPLE_T, 0, t));
-    return t;
-  }
-  else
-    rha_error("resolve_prefix_prule: parse error.\n");
-  // never reach this point
-  assert(1==0);
-}
-
-
 tuple_t resolve_infix_prule(list_t parsetree, symbol_t prule_sym, symbol_t fun_sym, bool_t left_binding)
 {
   glist_t sym_list;
@@ -435,7 +600,7 @@ tuple_t resolve_infix_prule_list(list_t parsetree, glist_t *prule_sym_list, symb
 tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym, glist_t *assign_sym_list)
 // resolves the right-most assignment (could be = += -= *= /=)
 {
-  debug("resolve_assign_prule(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
+  //debug("resolve_assign_prule(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
 
   // (0) let's find the first appearance (left-most) of an assignment
   tuple_t pre_t = resolve_infix_prule_list(parsetree, assign_sym_list,
@@ -473,12 +638,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
   else if (ptype(lhs_obj) != SYMBOL_T)
     rha_error("(parsing) can only assign to symbols.");
   // quote the symbol:
-  // note that we create a list since this list will be resolved
-  // somewhere else
-  list_t quote_call = list_new();
-  list_append(quote_call, WRAP_SYMBOL(quote_sym));
-  list_append(quote_call, lhs_sym_obj);
-  tuple_set(t, 2, WRAP_PTR(LIST_T, list_proto, quote_call));
+  tuple_set(t, 2, quoted(lhs_sym_obj));
   // (2) to build the RHS we check whether the 'prule_sym' was
   // something else than 'equal_sym'
   object_t rhs_obj = resolve(env, tuple_get(pre_t, 2));
@@ -504,7 +664,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
   }
   // finally add it to the tuple
   tuple_set(t, 3, rhs_obj);
-  debug("resolve_assign_prule returns: %o\n", WRAP_PTR(TUPLE_T, 0, t));
+  //debug("resolve_assign_prule returns: %o\n", WRAP_PTR(TUPLE_T, 0, t));
   return t;
 }
 
@@ -566,32 +726,101 @@ tuple_t resolve_cmp_prule(object_t env, list_t parsetree)
   return call;
 }
 
-
-// we need:
-//   keywords   "words that start a prule"
-//   words      "words that appear inside a prule"
-// note that the 'keyword' of a prule must be unique
-// we will eat up the patterns in a greedy way
-// the patterns are strings:
-//     "if##(else#)?"
-//     "try#(catch##)+"
-// note that we can use round brackets for grouping and ?+* similar to
-//   regular expression.  several # implies that all but the last be
-//   in rounded brackets.
-
-// helper functions for the patterns
-
-
-tuple_t resolve_freefix_prule(object_t env, list_t parsetree)
+list_t remove_rounded_brackets(object_t expr)
 {
-  // 
-
-  // seeing a new keyword pushs a new pattern on the stack
-
-  // the current position is only 
-  return tuple_new(0);
+  if (ptype(expr) != LIST_T)
+    rha_error("(parsing) first args of freefix form must be enclosed"
+	      "in round brackets, found %o\n", expr);
+  list_t l = UNWRAP_PTR(LIST_T, expr);
+  assert(list_len(l)>0); // otherwise parser problem
+  object_t head = list_popfirst(l);
+  assert(ptype(head) == SYMBOL_T);  // otherwise parser problem
+  if (UNWRAP_SYMBOL(head) != rounded_sym)
+    rha_error("(parsing) first args of freefix form must be enclosed"
+	      "in round brackets, found %o\n", expr);
+  return l;
 }
 
+
+list_t read_freefix_args(object_t env, list_t parsetree, int_t narg)
+{
+  if (list_len(parsetree) < narg)
+    rha_error("(parsing) not enough arguments for freefix form\n");
+  list_t args = list_new();
+  for (int i=1; i<narg; i++) {
+    object_t obj = list_popfirst(parsetree);
+    // check its roundedness, extract its content and resolve
+    obj = resolve_tuple(env, remove_rounded_brackets(obj));
+    // we need to remove the 'rounded_sym' by hand...
+    assert(ptype(obj)==TUPLE_T);
+    tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
+    list_t l = tuple_to_list(t);
+    list_popfirst(l);
+    if (list_len(l) > 1)
+      list_append(args, WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(l)));
+    else 
+      list_append(args, list_popfirst(l));
+  }
+  // last argument is the rest of the list
+  if (list_len(parsetree) == 1)
+    list_append(args, list_popfirst(parsetree));
+  else
+    list_append(args, resolve_list_by_prules(env, parsetree));
+  return args;
+}
+
+tuple_t resolve_freefix_prule1(object_t env, list_t parsetree,
+			       symbol_t fun_sym,
+			       symbol_t key1, int_t narg1)
+{
+  // resolve_freefix_prule(env, pt, for_fn_sym, for_sym, 2);
+  // for (x in l) { ... }
+  // resolve_freefix_prule(env, pt, while_fn_sym, while_sym, 2);
+  // while (x>0) f(x)
+  //
+  // note that all but the last of several arguments to keys must be
+  // in rounded brackets
+  object_t head = list_popfirst(parsetree);
+  assert(UNWRAP_SYMBOL(head) == key1);
+  list_t call = read_freefix_args(env, parsetree, narg1);
+  list_prepend(call, WRAP_SYMBOL(fun_sym));
+  return list_to_tuple(call);
+}
+
+
+tuple_t resolve_freefix_prule2(object_t env, list_t parsetree,
+			       symbol_t fun_sym,
+			       symbol_t key1, int_t narg1, 
+			       symbol_t key2, int_t narg2)
+{
+  // resolve_freefix_prule(env, pt, if_fn_sym, if_sym, 2, else_sym, 1);
+  // if (x==0) 17
+  // if (x==0) 17 else 42
+  // resolve_freefix_prule(env, pt, try_fn_sym, try_sym, 1, catch_sym, 2);
+  // try f(x)
+  // try f(x) catch(excp) { }
+  //
+  // note that the expression with key2 is optional
+  // note that all but the last of several arguments to keys must be
+  // in rounded brackets
+  object_t head = list_popfirst(parsetree);
+  assert(UNWRAP_SYMBOL(head) == key1);
+  // split the parsetree
+  int parsetree_len = list_len(parsetree);
+  list_t front_l = list_chop_matching(parsetree, key1, key2);
+  int front_len = list_len(front_l);
+  list_t call = read_freefix_args(env, front_l, narg1);
+  // check whether there was 'key2'
+  if (front_len < parsetree_len) {
+    // there was a key2
+    list_extend(call, read_freefix_args(env, parsetree, narg2));
+  }
+  else
+    list_append(call, void_obj);
+  // 
+  list_prepend(call, WRAP_SYMBOL(fun_sym));
+  return list_to_tuple(call);
+}
 
 
 #define IGNORE

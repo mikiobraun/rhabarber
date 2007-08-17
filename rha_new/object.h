@@ -62,6 +62,8 @@ extern _rha_ bool_t     lessequal_fn(object_t a, object_t b);
 extern _rha_ bool_t     greater_fn(object_t a, object_t b);
 extern _rha_ bool_t     greaterequal_fn(object_t a, object_t b);
 
+extern _rha_ bool_t     in_fn(object_t a, object_t b);
+
 extern _rha_ int_t      plus_fn(object_t a, object_t b);
 extern _rha_ int_t      minus_fn(object_t a, object_t b);
 extern _rha_ int_t      times_fn(object_t a, object_t b);

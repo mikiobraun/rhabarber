@@ -117,17 +117,22 @@ object_t while_fn(object_t this, object_t cond, object_t body)
 
 object_t try_fn(object_t this, object_t tryblock, symbol_t catchvar, object_t catchblock)
 {
-  rha_error("not yet");
-  return 0;
+  object_t excp = 0;
+  try
+    return eval(this, tryblock);
+  catch (excp) {
+    assign(this, catchvar, excp);
+    return eval(this, catchblock);
+  }
+  assert(1==0);
 }
 
 
-object_t for_fn(object_t this, symbol_t var, object_t container, object_t code)
+object_t for_fn(object_t this, symbol_t var, object_t iterable, object_t code)
 {
-  rha_error("not yet!");
-  return 0;
+  rha_error("not yet implemented\n");
+  assert(1==0);
 }
-
 
 
 
@@ -173,7 +178,6 @@ real_t toc_fn()
 
 object_t run_fn(object_t root, string_t fname)
 {
-  fprint(stdout, "--loading \"%s\"\n", fname);
   object_t p = parse_file(root, fname);
   if (p) {
     return eval(root, p);

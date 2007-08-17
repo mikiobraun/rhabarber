@@ -14,6 +14,14 @@ addr  = modules.object.addr;
 ptype = modules.object.ptype;
 run   = modules.core.run_fn;
 
+// functions for prules
+if_fn = modules.core.if_fn;
+fn_fn = modules.core.fn_fn;
+for_fn = modules.core.for_fn;
+while_fn = modules.core.while_fn;
+try_fn = modules.core.try_fn;
+print_fn = modules.object.print_fn;
+
 // temporarily for testing purposes (as long as we have to overloaded)
 inc = modules.object.inc;
 dec = modules.object.dec;

@@ -160,3 +160,41 @@ list_t list_chop_last_list(list_t l, glist_t *sym_list)
   }
   return part;
 }
+
+
+list_t list_chop_matching(list_t l, symbol_t left, symbol_t right)
+// this is for stuff like 
+//    if ... else
+//    try ... catch
+// where we need match the correct one
+// we want: if (true) if (true) 17 else 42  --->   if (true) (if (true) 17 else 42)
+// so we need to find our 'else':  e.g. 
+// if (true) 17 *else* if (false) 42 else 55 
+// if (true) if (false) 42 else 44 *else* 43
+
+// example:
+//     if (x==0) 17 else 42;
+{
+  int counter = 1;
+  // we have popped off one 'if' from l (in 'left')
+  // an 'else' (in 'right') will decrease the counter
+  // once we are at zero we found ours...
+  // this is similar to counting brackets
+  list_t part = list_new();
+  object_t head = 0;
+  while ((head = list_popfirst(l))) {
+    if (ptype(head) == SYMBOL_T) {
+      symbol_t head_s = UNWRAP_SYMBOL(head);
+      if (head_s == left)
+	counter++;
+      else if (head_s == right)
+	counter--;
+    }
+    if (counter==0) break;
+    list_append(part, head);
+  }
+  // note that by now:
+  // l == "(x==0) 17"
+  // part == "42"
+  return part;
+}

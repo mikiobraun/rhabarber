@@ -35,16 +35,17 @@ int main(int argc, char **argv)
   // set up root object
   object_t root = rha_init(root);
 
-  // load 'prelude.rha'
+  // load basic stuff implemented in rhabarber
+  string_t fname = "prelude.rha";
   object_t excp;   // exception object
   try { 
-    object_t e = run_fn(root, "prelude.rha"); 
+    object_t e = run_fn(root, fname);
     if (!e) rha_error("can't load 'prelude.rha'\n"); 
-    fprint(stdout, "%o\n", e); 
   } 
   catch(excp) { 
     excp_show(excp);
   } 
+  print("--loaded \"%s\"\n", fname);
 
   // for the prompt
   int lineno = 0;
@@ -52,6 +53,7 @@ int main(int argc, char **argv)
 
   // the read eval print loop (REPL)
   // never returns
+  printf("\n");
   while(1) {
     // read line
     sprintf(prompt, "rha[%d]$ ", lineno++);
@@ -61,12 +63,9 @@ int main(int argc, char **argv)
 
     try {
       object_t p = parse(root, line);
-      print_fn(p);
-      fprintf(stdout, "\n");
       if (p) {
 	object_t e = eval(root, p);
-	print_fn(e);
-	fprintf(stdout, "\n");
+	fprint(stdout, "%o\n", e);
       }
       else
 	fprintf(stdout, "parse returned ZERO\n");
