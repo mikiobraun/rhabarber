@@ -128,10 +128,31 @@ object_t try_fn(object_t this, object_t tryblock, symbol_t catchvar, object_t ca
 }
 
 
-object_t for_fn(object_t this, symbol_t var, object_t iterable, object_t code)
+object_t call_slot(object_t o, symbol_t s)
 {
-  rha_error("not yet implemented");
-  assert(1==0);
+  object_t slot = lookup(o, s);
+  if (!slot)
+    rha_error("(call_slot) object %o doesn't have slot %s", o, symbol_name(s));
+  return eval(o, WRAP_PTR(TUPLE_T, tuple_proto, tuple_make(1, slot)));
+}
+
+object_t for_fn(object_t this, symbol_t var, object_t container, object_t body)
+{
+  rha_error("not yet!!!\n");
+
+  object_t res = void_obj;
+  object_t iter = call_slot(container, symbol_new("iterable"));
+  symbol_t done_sym = symbol_new("done");
+  symbol_t get_sym = symbol_new("get");
+  symbol_t next_sym = symbol_new("next");
+  begin_frame(LOOP_FRAME)
+    while (!UNWRAP_BOOL(call_slot(iter, done_sym))) {
+      assign(this, var, call_slot(iter, get_sym));
+      res = eval(this, body);
+      call_slot(iter, next_sym);
+    }
+  end_frame(res);
+  return res;
 }
 
 

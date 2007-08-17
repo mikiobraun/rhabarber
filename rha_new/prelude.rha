@@ -43,6 +43,38 @@ greaterequal_fn = modules.object.greaterequal_fn;
 and_fn          = modules.core.and_fn;
 or_fn           = modules.core.or_fn;
 
+// add functions to the tuple prototype
+//tuple.len = modules.tuple_fn.tuple_len;
+//tuple.set = modules.tuple_fn.tuple_set;
+//tuple.get = modules.tuple_fn.tuple_get;
+//tuple.iterable = fn () {
+//  iter = new();
+//  iter.counter = 0;
+//  iter.tuple = this;
+//  iter.next = fn () 
+//    if (counter < this.tuple.len)
+//      return this.tuple.get(counter++);
+//    else
+//      break;
+//  return iter;
+//};
+
+// list stuff
+//list.len      = modules.list_fn.list_len;
+//list.copy     = modules.list_fn.list_copy;
+//list.append   = modules.list_fn.list_append;
+//list.prepend  = modules.list_fn.list_prepend;
+//list.extend   = modules.list_fn.list_extend;
+//list.to_tuple = modules.list_fn.list_to_tuple;
+//list.iterable = fn () {
+//  iter = modules.list_fn.list_iter(this);
+//  iter.next = modules.list_fn.list_next(this);
+//  iter.done = modules.list_fn.list_done(this);
+//  iter.get  = modules.list_fn.list_get(this);
+//};
+//list.iter() = listit.new(this);
+
+
 
 // what is an integer?
 //   int.check = fn (x) return ptype(x)==int;  ???

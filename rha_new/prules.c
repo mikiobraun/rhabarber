@@ -785,7 +785,7 @@ list_t read_freefix_args(object_t env, list_t parsetree, int_t narg)
   }
   // last argument is the rest of the list
   if (list_len(parsetree) == 1)
-    list_append(args, list_popfirst(parsetree));
+    list_append(args, resolve(env, list_popfirst(parsetree)));
   else
     list_append(args, resolve_list_by_prules(env, parsetree));
   return args;
