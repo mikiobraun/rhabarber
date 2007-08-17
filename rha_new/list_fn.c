@@ -2,7 +2,9 @@
 #include "glist.h"
 #include "tuple_fn.h"
 #include "alloc.h"
+#include <assert.h>
 #include "object.h"
+#include "messages.h"
 
 list_t list_new()
 {
@@ -40,6 +42,13 @@ void list_extend(list_t l, list_t other)
   glist_iterator_t it;
   for (it=glist_begin(other); !glist_done(&it); glist_next(&it))
     list_append(l, glist_getp(&it));
+}
+
+
+list_t list_literal(list_t parsetree)
+{
+  rha_error("not yet");
+  assert(1==0);
 }
 
 tuple_t list_to_tuple(list_t l)

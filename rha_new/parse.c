@@ -63,7 +63,7 @@ object_t resolve_list_by_head(object_t env, list_t source);
 object_t resolve_list_by_prules(object_t env, list_t source);
 object_t resolve_code_block(object_t env, list_t source);
 object_t resolve_tuple(object_t env, list_t source);
-object_t resolve_complex_literal(list_t source);
+object_t resolve_complex_literal(object_t env, list_t source);
 object_t resolve_macro(object_t env, tuple_t t);
 
 
@@ -138,7 +138,7 @@ object_t resolve_list_by_head(object_t env, list_t source)
     return resolve_tuple(env, source);
   }
   else if (head == squared_sym) {
-    return resolve_complex_literal(source);
+    return resolve_complex_literal(env, source);
   }
   else 
     // never reach this point
@@ -168,7 +168,7 @@ object_t resolve_code_block(object_t env, list_t source)
     }
     else if (is_symbol(comma_sym, obj)) {
       // this is not allowed
-      rha_error("(parsing) in a 'curlied' expression no comma allowed\n");
+      rha_error("(parsing) in a 'curlied' expression no comma allowed");
       assert(1==0);
     }
     else {
@@ -200,7 +200,7 @@ object_t resolve_tuple(object_t env, list_t source)
     if (is_symbol(comma_sym, obj)) {
       // split here and ignore the comma
       switch (list_len(part)) {
-      case 0: rha_error("can't start tuple with COMMA\n");
+      case 0: rha_error("can't start tuple with COMMA");
       case 1: list_append(sink, resolve(env, list_first(part))); break;
       default:
 	list_append(sink, resolve_list_by_prules(env, part));
@@ -211,7 +211,7 @@ object_t resolve_tuple(object_t env, list_t source)
     }
     else if (is_symbol(semicolon_sym, obj)) {
       // this is not allowed
-      rha_error("(parsing) in a 'rounded' expression no semicolon allowed\n");
+      rha_error("(parsing) in a 'rounded' expression no semicolon allowed");
       assert(1==0);
     }
     list_append(part, obj);
@@ -224,7 +224,7 @@ object_t resolve_tuple(object_t env, list_t source)
   if (last_was_comma)
     if (list_len(sink)!=2) {
       assert(list_len(part) == 0);
-      rha_error("(parsing) trailing comma only allowed for singleton tuple\n");
+      rha_error("(parsing) trailing comma only allowed for singleton tuple");
     }
     else {
       // (2) stuff like: (17,)
@@ -240,7 +240,7 @@ object_t resolve_tuple(object_t env, list_t source)
 }
 
 
-object_t resolve_complex_literal(list_t source)
+object_t resolve_complex_literal(object_t env, list_t source)
 {
   //debug("resolve_complex_literal(%o)\n", WRAP_PTR(LIST_T, list_proto, source));
   // complex literals
@@ -253,24 +253,22 @@ object_t resolve_complex_literal(list_t source)
   
   // problem:
   // * we need to call 'resolve' for each part
-  // * we only can decide on the parts when we have splitted 
+  // * we only can decide on the parts after we have splitted 
   
   // solution:
   // * we allow types to give a list of separators and types
-  // * then there is some magic function (this one) which does the
-  // work and tries all different literals as specified 
-  // * this only works for default behavior.
 
-  // for now: we delay the resolution of complex literals until 'eval'
-  // time and create:
+  // we delay the resolution of the subexpression until either the
+  // default literal resolver is called or a special one
   //  [1,2,3] ==>  (literal_sym (tuple_sym [1,2,3]))
   tuple_t t1 = tuple_new(2);
   tuple_set(t1, 0, WRAP_SYMBOL(quote_sym));
   tuple_set(t1, 1, WRAP_PTR(LIST_T, list_proto, source));
-  tuple_t t = tuple_new(2);
-  tuple_set(t, 0, WRAP_SYMBOL(squared_sym));
-  tuple_set(t, 1, WRAP_PTR(TUPLE_T, tuple_proto, t1));
-  return WRAP_PTR(TUPLE_T, tuple_proto, source);
+  tuple_t t = tuple_new(3);
+  tuple_set(t, 0, WRAP_SYMBOL(literal_sym));
+  tuple_set(t, 1, env);
+  tuple_set(t, 2, WRAP_PTR(TUPLE_T, tuple_proto, t1));
+  return WRAP_PTR(TUPLE_T, tuple_proto, t);
 }
 
  
@@ -332,7 +330,7 @@ object_t resolve_prule(object_t env, list_t source, object_t prule)
     tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
     // check the resulting tuple
     if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=SYMBOL_T))
-      rha_error("(parsing) prule must create function call with function symbol\n");
+      rha_error("(parsing) prule must create function call with function symbol");
 
     // note that we can always resolve the arguments, since they are
     // only resolve if they are lists (see resolve()), thus if a prule
@@ -355,7 +353,7 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
   // otherwise build function calls and deal with dots, which bind
   // even stronger than function calls
   if (list_len(source) == 0)
-    rha_error("(parsing) missing expression\n");
+    rha_error("(parsing) missing expression");
   object_t fncall = 0;
   object_t obj = 0;
   while ((obj = list_popfirst(source))) {
@@ -369,14 +367,14 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
 	  object_t tt0 = tuple_get(tt, 0);
 	  if (ptype(tt0) == SYMBOL_T) {
 	    symbol_t tts = UNWRAP_SYMBOL(tt0);
-	    if (tts != tuple_forced_sym) {
+	    if (tts == rounded_sym) {
 	      obj = tuple_get(tt, 1);
 	    }
 	  }
 	}
       }
       if ((ptype(obj)==SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym)
-	rha_error("(parsing) something else than dot expected\n");
+	rha_error("(parsing) something else than dot expected");
       fncall = obj;
       continue;
     }
@@ -385,7 +383,7 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
       // get the next object
       obj = list_popfirst(source);
       if (!obj || (ptype(obj) != SYMBOL_T))
-	rha_error("(parsing) a dot is always followed by a symbol\n");
+	rha_error("(parsing) a dot is always followed by a symbol");
       // make dotted expression
       tuple_t dot_rhs = tuple_new(2);
       tuple_set(dot_rhs, 0, WRAP_SYMBOL(quote_sym));
@@ -402,14 +400,14 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
       continue;
     }
     if (ptype(obj) != TUPLE_T)
-      rha_error("(parsing) argument list expected (1)\n");
+      rha_error("(parsing) argument list expected (1)");
     tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
     object_t t0 = tuple_get(t, 0);
     if (ptype(t0) != SYMBOL_T)
-      rha_error("(parsing) argument list expected (2)\n");
+      rha_error("(parsing) argument list expected (2)");
     symbol_t s = UNWRAP_SYMBOL(t0);
     if (s != rounded_sym)
-      rha_error("(parsing) argument list expected (3)\n");
+      rha_error("(parsing) argument list expected (3)");
     // replace the rounded_sym with the function call so far
     tuple_set(t, 0, fncall);
     fncall = resolve_macro(env, t);

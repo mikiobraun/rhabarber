@@ -21,9 +21,9 @@ void excp_show(object_t excp)
   object_t msg_obj = lookup(excp, msg_sym);
   if (msg_obj && (ptype(msg_obj)==STRING_T)) {
     string_t msg = UNWRAP_PTR(STRING_T, msg_obj);
-    fprintf(stderr, "Caught exception: %s\n", msg);
+    fprintf(stderr, "%s\n", msg);
   }
   else {
-    fprintf(stderr, "Caught exception without message.\n");
+    fprintf(stderr, "[error] <no message>\n");
   }
 }

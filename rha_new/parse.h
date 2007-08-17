@@ -15,6 +15,9 @@ extern       object_t resolve_tuple(object_t env, list_t source);
 extern       void     parse_init(object_t root, object_t module);
 
 
+extern       bool     is_symbol(symbol_t a_symbol, object_t expr);
+
+
 extern symbol_t semicolon_sym;
 extern symbol_t comma_sym;
 extern symbol_t dot_sym;

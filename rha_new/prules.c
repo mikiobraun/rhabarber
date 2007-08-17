@@ -18,7 +18,8 @@ symbol_t prefix_minus_sym = 0;
 symbol_t plusplus_sym = 0;
 symbol_t minusminus_sym = 0;
 symbol_t not_sym = 0;
-symbol_t in_sym = 0;    // for element check
+symbol_t colon_sym = 0;    // for slices and typing 
+symbol_t in_sym = 0;       // for element check
 symbol_t divide_sym = 0;
 symbol_t times_sym = 0;
 symbol_t minus_sym = 0;
@@ -69,6 +70,7 @@ void prules_init(object_t root, object_t module)
   plusplus_sym     = symbol_new("++");
   minusminus_sym   = symbol_new("--");
   not_sym          = symbol_new("!");
+  colon_sym        = symbol_new(":");
   in_sym           = symbol_new("in");
   divide_sym       = symbol_new("/");
   times_sym        = symbol_new("*");
@@ -134,6 +136,7 @@ void prules_init(object_t root, object_t module)
   MAKE_PRULES(times, 4.0);
   MAKE_PRULES(minus, 5.0);
   MAKE_PRULES(plus, 6.0);
+  MAKE_PRULES(colon, 6.25);     // for slicing and typing
   MAKE_PRULES(in, 6.5);         // element test for iterables
   MAKE_PRULES(less, 7.0);       // comparison
   MAKE_PRULES(lessequal, 7.0);
@@ -245,7 +248,7 @@ tuple_t times_pr(object_t env, list_t parsetree)
 tuple_t prefix_minus_pr(object_t env, list_t parsetree) 
 {
   if (list_len(parsetree) < 2)
-    rha_error("(parsing) prefix-minus requires argument.\n");
+    rha_error("(parsing) prefix-minus requires argument.");
   list_popfirst(parsetree);
   return tuple_make(2, WRAP_SYMBOL(neg_fn_sym), WRAP_PTR(LIST_T, list_proto, parsetree));
 }
@@ -285,6 +288,18 @@ tuple_t plus_pr(object_t env, list_t parsetree)
 tuple_t in_pr(object_t env, list_t parsetree) 
 {
   return resolve_infix_prule(parsetree, in_sym, in_fn_sym, LEFT_BIND);
+}
+
+tuple_t colon_pr(object_t env, list_t parsetree) 
+{
+  // how about rightbinding?
+  // a:(b:c)  would be casting c to type b and then to type a
+  tuple_t pre_t = resolve_infix_prule(parsetree, colon_sym, colon_fn_sym, RIGHT_BIND);
+  tuple_t t = tuple_new(3);
+  tuple_set(t, 0, tuple_get(pre_t, 0));
+  tuple_set(t, 1, tuple_get(pre_t, 1));
+  tuple_set(t, 2, quoted(resolve(env, tuple_get(pre_t, 2))));
+  return t;
 }
 
 tuple_t less_pr(object_t env, list_t parsetree) 
@@ -383,7 +398,7 @@ tuple_t try_pr(object_t env, list_t parsetree)
   tuple_set(t, 2, quoted(tuple_get(pre_t, 1)));
   object_t obj = tuple_get(pre_t, 2);
   if (ptype(obj) != SYMBOL_T)
-    rha_error("in 'try 17 catch (x) 42', 'x' must be a symbol\n");
+    rha_error("in 'try 17 catch (x) 42', 'x' must be a symbol");
   tuple_set(t, 3, quoted(obj));
   tuple_set(t, 4, quoted(tuple_get(pre_t, 3)));
   return t;
@@ -411,15 +426,15 @@ tuple_t for_pr(object_t env, list_t parsetree)
   // check now whether the first arg has the right form!
   object_t obj = tuple_get(pre_t, 1);
   if (ptype(obj)!=TUPLE_T)
-    rha_error("second arg to 'for' must look like (x in l)\n");
+    rha_error("second arg to 'for' must look like (x in l)");
   tuple_t arg = UNWRAP_PTR(TUPLE_T, obj);
   if (tuple_len(arg) != 3)
-    rha_error("second arg to 'for' must look like (x in l)\n");
+    rha_error("second arg to 'for' must look like (x in l)");
   obj = tuple_get(arg, 0);
   if (ptype(obj) != SYMBOL_T)
-    rha_error("second arg to 'for' must look like (x in l)\n");
+    rha_error("second arg to 'for' must look like (x in l)");
   if (UNWRAP_SYMBOL(obj) != in_fn_sym)
-    rha_error("second arg to 'for' must look like (x in l)\n");
+    rha_error("second arg to 'for' must look like (x in l)");
   tuple_set(t, 2, quoted(tuple_get(arg, 1)));
   tuple_set(t, 3, tuple_get(arg, 2));
   tuple_set(t, 4, quoted(tuple_get(pre_t, 2)));
@@ -596,7 +611,7 @@ tuple_t resolve_infix_prule_list(list_t parsetree, glist_t *prule_sym_list, symb
   }
 
   if ((list_len(lhs)==0) || (list_len(rhs)==0))
-    rha_error("resolve_infix_prule: infix requires a nonempty lhs and rhs.");
+    rha_error("(resolve_infix_prule) infix requires a nonempty lhs and rhs");
   tuple_t t = tuple_new(3);
   tuple_set(t, 0, WRAP_SYMBOL(fun_sym));
   tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, lhs));
@@ -632,18 +647,18 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
     // since we do not allow anything else than symbols as the last
     lhs_sym_obj = list_poplast(lhs);
     if (ptype(lhs_sym_obj) != SYMBOL_T)
-      rha_error("(parsing) the assign sign must be preceeded by a symbol\n");
+      rha_error("(parsing) the assign sign must be preceeded by a symbol");
     if (list_len(lhs) > 0) {
       object_t a_dot = list_poplast(lhs);
       // this must be a "DOT"
       if ((ptype(a_dot) != SYMBOL_T) || (UNWRAP_SYMBOL(a_dot)!=dot_sym))
-	rha_error("(parsing) preceeding the symbol must be a dot\n");
+	rha_error("(parsing) preceeding the symbol must be a dot");
       // now, 'lhs' contains the LHS of the dot
       tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, lhs));
     }
   }
   else if (ptype(lhs_obj) != SYMBOL_T)
-    rha_error("(parsing) can only assign to symbols.");
+    rha_error("(parsing) can only assign to symbols");
   // quote the symbol:
   tuple_set(t, 2, quoted(lhs_sym_obj));
   // (2) to build the RHS we check whether the 'prule_sym' was
@@ -683,7 +698,7 @@ object_t get_cmp_fn(symbol_t cmp_s)
   else if (cmp_s==lessequal_sym)    return WRAP_SYMBOL(lessequal_fn_sym);
   else if (cmp_s==greater_sym)      return WRAP_SYMBOL(greater_fn_sym);
   else if (cmp_s==greaterequal_sym) return WRAP_SYMBOL(greaterequal_fn_sym);
-  else rha_error("unkown cmp symbol\n");
+  else rha_error("unkown cmp symbol");
   assert(1==0);
 }
 
@@ -703,7 +718,7 @@ tuple_t resolve_cmp_prule(object_t env, list_t parsetree)
       symbol_t s = UNWRAP_SYMBOL(head);
       if (glist_iselementi(&cmp_sym_list, s)) {
 	if (list_len(parts) == 0)
-	  rha_error("cmp symbols must not be at the beginning of an expression\n");
+	  rha_error("cmp symbols must not be at the beginning of an expression");
 	list_append(cmp_l, get_cmp_fn(s));
 	list_append(pieces, resolve_list_by_prules(env, parts));
 	parts = list_new();
@@ -713,7 +728,7 @@ tuple_t resolve_cmp_prule(object_t env, list_t parsetree)
     list_append(parts, head);
   }
   if (list_len(parts)==0)
-    rha_error("cmp symbols must not be at the end of expression\n");
+    rha_error("cmp symbols must not be at the end of expression");
   list_append(pieces, resolve_list_by_prules(env, parts));
 
   // (2) built the expression
@@ -737,14 +752,14 @@ list_t remove_rounded_brackets(object_t expr)
 {
   if (ptype(expr) != LIST_T)
     rha_error("(parsing) first args of freefix form must be enclosed"
-	      "in round brackets, found %o\n", expr);
+	      "in round brackets, found %o", expr);
   list_t l = UNWRAP_PTR(LIST_T, expr);
   assert(list_len(l)>0); // otherwise parser problem
   object_t head = list_popfirst(l);
   assert(ptype(head) == SYMBOL_T);  // otherwise parser problem
   if (UNWRAP_SYMBOL(head) != rounded_sym)
     rha_error("(parsing) first args of freefix form must be enclosed"
-	      "in round brackets, found %o\n", expr);
+	      "in round brackets, found %o", expr);
   return l;
 }
 
@@ -752,7 +767,7 @@ list_t remove_rounded_brackets(object_t expr)
 list_t read_freefix_args(object_t env, list_t parsetree, int_t narg)
 {
   if (list_len(parsetree) < narg)
-    rha_error("(parsing) not enough arguments for freefix form\n");
+    rha_error("(parsing) not enough arguments for freefix form");
   list_t args = list_new();
   for (int i=1; i<narg; i++) {
     object_t obj = list_popfirst(parsetree);
@@ -830,192 +845,3 @@ tuple_t resolve_freefix_prule2(object_t env, list_t parsetree,
 }
 
 
-#define IGNORE
-#ifndef IGNORE
-
-tuple_t precall(int narg, ...)
-{
-  va_list ap;
-  tuple_t t = tuple_new(narg+1);
-  va_start(ap, narg);
-  for (int i = 0; i < narg; i++)
-    tuple_set(t, i+1, va_arg(ap, object_t));
-  va_end(ap);
-
-  tuple_set(t, 0, WRAP_SYMBOL(rounded_sym));
-
-  return t;
-}
-
-
-object_t precall1(object_t f, object_t arg1)
-// this will create:
-//     (f (rounded_sym arg1))
-// this expression will be converted in a function call by resolve_prules
-{
-  return tuple_make(2, f, tuple_make(2, rounded_sym, arg1));
-}
-
-
-object_t precall2(object_t f, object_t arg1, object_t arg2)
-// this will create:
-//     (f (rounded arg1 arg2))
-// this expression will be converted in a function call by resolve_prules
-{
-  return tuple_make(2, f, tuple_make(3, rounded_sym, arg1, arg2));
-}
-
-static list_tr cmp_list = 0; // a list of comparison prule symbols
-
-
-
-object_t resolve_ctrl_prule(tuple_tr in)
-// if (cond) code
-// if (cond) code else code_else
-// try code catch (x) code
-// while (cond) code
-// for (init, check, update) code
-// for (x in y) code
-// fn () code                // functions
-// fn (x) code
-// fn (x, y) code
-// ...
-// macro () code             // macro (like functions, but args are not evaluated)
-// macro (x) code
-// macro (x, y) code
-// ...
-// prule (priority, parsetree_var) code    // parse rule
-{
-  assert(tuple_length(in)==3);
-  object_t t = tuple_get(in, 2);
-  symbol_tr s = tuple_get(in, 1);
-  assert(HAS_TYPE(symbol, s));
-  CHECK_TYPE(tuple, t);
-  list_tr code = tuple_to_list(t);
-  // all above prules have at least three parts
-  if (list_length(code) < 3) rha_error("resolve_ctrl_prule error 1.\n");
-  object_t o = list_pop(code);
-  // all above prules start with a keyword
-  if (!HAS_TYPE(symbol, o) || !symbol_equal_symbol(o, s))
-    rha_error("resolve_ctrl_prule error 2.\n");
-  object_t cond = list_pop(code);
-  
-  // extra stuff for various symbols
-  object_t result = 0;
-  if (symbol_equal_symbol(s, if_sym)) {
-    // if (cond) code_then
-    // if (cond) code_then else code
-    if (!iscallof(tuplefy_sym, cond) || tuple_length(cond) != 2)
-      rha_error("Condition for 'if' must be a single expression in brackets.\n");
-    cond = tuple_get(cond, 1);
-    // check for else
-    int codelen = list_length(code);
-    list_tr code_then = list_chop_matching(code, if_sym, else_sym);
-    if (codelen == list_length(code_then)+1)  // there was no code after "else"
-      rha_error("'else' must be followed by code.\n");
-
-    if (list_length(code) == 0)
-      // no 'else'
-      result = tuple_make(3, op_if_sym, cond, 
-			  list_solidify(code_then));
-    else
-      // with 'else'
-      result = tuple_make(4, op_if_sym, cond, 
-			  list_solidify(code_then),
-			  list_solidify(code));
-  }
-  else if (symbol_equal_symbol(s, try_sym)) {
-    // try tryblock catch (catchvar) catchblock
-    list_prepend(code, cond);   // there is no 'cond' part here, so put it back
-    list_tr tryblock = list_chop_matching(code, try_sym, catch_sym);
-    if (list_length(tryblock)==0)
-      rha_error("try-block is missing.\n");
-    int lcode = list_length(code);
-    if (lcode == 0) 
-      rha_error("catch-block is missing.\n");
-    else if (lcode == 1) 
-      rha_error("catch-block must have catch variable and catch-code.\n");
-    object_t catchvar = list_pop(code);  // the catch variable
-    if (!iscallof(tuplefy_sym, catchvar) || tuple_length(catchvar) != 2)
-      rha_error("'catch' must be followed by a single expression (catch variable) in brackets.\n");
-    catchvar = tuple_get(catchvar, 1);
-    result = tuple_make(4, op_try_sym,
-			list_solidify(tryblock),
-			catchvar,
-			list_solidify(code));
-  }
-  else if (symbol_equal_symbol(s, while_sym)) {
-    // while (cond) code
-    if (!iscallof(tuplefy_sym, cond) || tuple_length(cond) != 2)
-      rha_error("Condition for 'while' must be a single expression in brackets.\n");
-    cond = tuple_get(cond, 1);
-    // that's it
-    result = tuple_make(3, op_while_sym, cond, list_solidify(code));
-  }
-  else if (symbol_equal_symbol(s, for_sym)) {
-    // for (init, check, update) code
-    // for (element in container) code
-    // note that 'cond' contains the parameters of 'for'
-    if (iscallof(tuplefy_sym, cond) && tuple_length(cond)==4) {
-      object_t init = tuple_get(cond, 1);
-      object_t check = tuple_get(cond, 2);
-      object_t update = tuple_get(cond, 3);
-      result = tuple_make(5, op_for_cstyle_sym, init, check, update, 
-			  list_solidify(code));
-    }
-    else if (iscallof(tuplefy_sym, cond) && tuple_length(cond)==2) {
-      // extract element and container
-      cond = tuple_get(cond, 1);
-      if (tuple_length(cond)>=3) {
-	list_tr condlist = tuple_to_list(cond);
-	object_t t0 = list_pop(condlist);
-	object_t t1 = list_pop(condlist);
-	if (HAS_TYPE(symbol, t1) && symbol_equal_symbol(in_sym, t1))
-	  result = tuple_make(4, op_for_iterator_sym, t0, 
-			      list_solidify(condlist), list_solidify(code));
-      }
-    }
-    if (!result) rha_error("'for' requires special forms for its arg.\n");
-  }
-  else if (symbol_equal_symbol(s, fn_sym) || symbol_equal_symbol(s, macro_sym)) {
-    // fn () code
-    // fn (x) code
-    // fn (x, y) code
-    // macro () code
-    // macro (x) code
-    // macro (x, y) code
-
-    // note that 'cond' are for 'fn' and 'macro' their args
-    // do some checks on the args
-    if (!iscallof(tuplefy_sym, cond))
-      rha_error("args must be a tuple of symbols or a single grouped symbol.\n");
-    if (symbol_equal_symbol(s, fn_sym)) 
-      tuple_set(cond, 0, op_fn_sym);
-    else  
-      tuple_set(cond, 0, op_macro_sym);
-    result = tuple_to_list(cond);
-    list_append(result, list_solidify(code));
-    result = list_solidify(result);
-  }
-  else if (symbol_equal_symbol(s, prule_sym)) {
-    // prule (priority, parsetree_var) code
-    // note that 'cond' for 'prule' is a pair which contains a real number 
-    // and a symbol with which we can access the parsetree
-    if (iscallof(tuplefy_sym, cond)) {
-      if (tuple_length(cond)!=3) 
-	rha_error("prule has a special form: prule (priority, parsetree_var) code.\n");
-    }
-    else 
-      rha_error("prule has a special form: prule (priority, parsetree_var) code.\n");
-    tuple_set(cond, 0, op_prule_sym);
-    result = tuple_to_list(cond);
-    list_append(result, list_solidify(code));
-    result = list_solidify(result);
-  }
-
-  if (!result) rha_error("resolve_crt_prule error.\n");
-  return result;
-}
-
-
-#endif

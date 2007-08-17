@@ -41,7 +41,7 @@ int main(int argc, char **argv)
   try { 
     object_t e = run_fn(root, fname);
     if (!e) 
-      rha_error("can't load 'prelude.rha'\n"); 
+      rha_error("can't load 'prelude.rha'"); 
     print("--loaded \"%s\"\n", fname);
   } 
   catch(excp) { 

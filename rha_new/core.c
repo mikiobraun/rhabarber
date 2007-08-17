@@ -130,7 +130,7 @@ object_t try_fn(object_t this, object_t tryblock, symbol_t catchvar, object_t ca
 
 object_t for_fn(object_t this, symbol_t var, object_t iterable, object_t code)
 {
-  rha_error("not yet implemented\n");
+  rha_error("not yet implemented");
   assert(1==0);
 }
 
@@ -207,3 +207,54 @@ bool_t or_fn(bool_t a, bool_t b)
   return false;
 }
 
+/************************************************************
+ *
+ * For slicing and typing and complex literals
+ *
+ *************************************************************/
+
+
+object_t colon_fn(object_t a, object_t b)
+{
+  rha_warning("(colon_fn) for now 'a:b' returns 'b'\n");
+  return b;
+}
+
+object_t literal(object_t env, list_t parsetree)
+{
+  // this is the default complex literal handler
+  // for now we simply generate a list by getting rid of all COMMA and
+  // by calling resolve on each sublist
+  list_t sink = list_new();
+  list_t part = list_new();
+  object_t head = 0;
+  while ((head = list_popfirst(parsetree))) {
+    if (is_symbol(comma_sym, head)) {
+      if (list_len(part)>0) {
+	// split here and ignore the comma
+	list_append(sink, resolve_list_by_prules(env, part));
+	part = list_new();
+      }
+      continue;
+    }
+    else if (is_symbol(semicolon_sym, head)) {
+      // this is not allowed
+      rha_error("(parsing) in a list literal is no semicolon allowed");
+    }
+    else {
+      list_append(part, head);
+    }
+  }
+  if (list_len(part)>0)
+    list_append(sink, resolve_list_by_prules(env, part));
+
+  // finally evaluate all entries
+  list_t source = sink;
+  sink = list_new();
+  while ((head = list_popfirst(source)))
+    list_append(sink, eval(env, head));
+  
+  // and wrap it up!
+
+  return WRAP_PTR(LIST_T, list_proto, sink);  // a list!
+}

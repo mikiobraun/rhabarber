@@ -64,7 +64,7 @@ object_t eval(object_t env, object_t expr)
   case SYMBOL_T:
     // symbols
     value = lookup(env, UNWRAP_SYMBOL(expr));
-    if (!value) rha_error("lookup of symbol '%o' failed\n", expr);
+    if (!value) rha_error("lookup of symbol '%o' failed", expr);
     return value;
   case TUPLE_T: 
     // function call
@@ -133,7 +133,7 @@ void check_ptypes(object_t o, enum ptypes pt)
 {
   // note that OBJECT_T matches anything!
   if ((pt != OBJECT_T) && (ptype(o) != pt))
-    rha_error("argument primtype missmatch (expected: %s, got: %s)\n",
+    rha_error("argument primtype missmatch (expected: %s, got: %s)",
 	      ptype_names[pt], ptype_names[ptype(o)]);
 }
 
@@ -147,7 +147,7 @@ void *call_C_fun(int tlen, tuple_t t)
   function_t f = UNWRAP_PTR(FUNCTION_T, t0);
   // is the argument number correct?
   if (f->narg != narg)
-    rha_error("wrong number of arguments (expected %d, got %d)\n", f->narg, narg);
+    rha_error("wrong number of arguments (expected %d, got %d)", f->narg, narg);
   // check the types of the args
   for (int i=0; i<narg; i++)
     check_ptypes(tuple_get(t, i+1), f->argptypes[i]);
@@ -171,7 +171,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   int nargs = tlen - 1;
   object_t _argnames = lookup(fn, argnames_sym);
   if (!_argnames) {
-    rha_error("the object %o is not callable\n", fn);
+    rha_error("the object %o is not callable", fn);
     return 0;
   }
   tuple_t argnames = UNWRAP_PTR(TUPLE_T, _argnames);

@@ -20,6 +20,7 @@ extern _rha_ tuple_t times_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t prefix_minus_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t minus_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t plus_pr(object_t env, list_t parsetree);
+extern _rha_ tuple_t colon_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t in_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t less_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t lessequal_pr(object_t env, list_t parsetree);

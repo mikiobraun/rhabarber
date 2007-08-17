@@ -335,7 +335,7 @@ object_t inc(object_t o)
     o->raw.i++;
     return o;
   }
-  rha_error("'inc' is currently only implemented for integers\n");
+  rha_error("'inc' is currently only implemented for integers");
   assert(1==0);
 }
 
@@ -345,7 +345,7 @@ object_t dec(object_t o)
     o->raw.i--;
     return o;
   }
-  rha_error("'dec' is currently only implemented for integers\n");
+  rha_error("'dec' is currently only implemented for integers");
   assert(1==0);
 }
 
@@ -356,7 +356,7 @@ object_t inc_copy(object_t o)
     o->raw.i++;
     return other;
   }
-  rha_error("'inc_copy' is currently only implemented for integers\n");
+  rha_error("'inc_copy' is currently only implemented for integers");
   assert(1==0);
 }
 
@@ -367,7 +367,7 @@ object_t dec_copy(object_t o)
     o->raw.i--;
     return other;
   }
-  rha_error("'dec_copy' is currently only implemented for integers\n");
+  rha_error("'dec_copy' is currently only implemented for integers");
   assert(1==0);
 }
 
@@ -390,7 +390,7 @@ bool_t notequal_fn(object_t a, object_t b)
 
 bool_t in_fn(object_t a, object_t b)
 {
-  rha_error("element check for iterables is not yet implemented\n");
+  rha_error("element check for iterables is not yet implemented");
   assert(1==0);
 }
 
@@ -398,7 +398,7 @@ int_t neg_fn(object_t a)
 {
   if (ptype(a) == INT_T)
     return -UNWRAP_INT(a);
-  rha_error("'neg_fn' is currently only implemented for integers\n");
+  rha_error("'neg_fn' is currently only implemented for integers");
   assert(1==0);
 }
 
@@ -407,7 +407,7 @@ int_t neg_fn(object_t a)
   {									\
     if ((ptype(a) == INT_T) && (ptype(b) == INT_T))			\
       return UNWRAP_INT(a) symbol UNWRAP_INT(b);			\
-    rha_error("'" #name "' is currently only implemented for integers\n"); \
+    rha_error("'" #name "' is currently only implemented for integers"); \
     assert(1==0);							\
   }									
 

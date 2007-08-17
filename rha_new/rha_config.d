@@ -43,7 +43,6 @@ extern symbol_t root_sym;
 extern symbol_t local_sym;
 extern symbol_t void_sym;
 extern symbol_t parent_sym;
-extern symbol_t literal_sym;
 
 // special slots in root
 extern symbol_t modules_sym;
