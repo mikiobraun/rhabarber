@@ -428,9 +428,16 @@ tuple_t for_pr(object_t env, list_t parsetree)
 
 tuple_t fn_pr(object_t env, list_t parsetree)
 { 
-  tuple_t t = resolve_freefix_prule1(env, parsetree, fn_fn_sym, fn_sym, 2);
-  tuple_set(t, 1, quoted(tuple_get(t, 1)));
-  tuple_set(t, 2, quoted(tuple_get(t, 2)));
+  tuple_t pre_t = resolve_freefix_prule1(env, parsetree, fn_fn_sym, fn_sym, 2);
+  tuple_t t = tuple_new(4);
+  tuple_set(t, 0, WRAP_SYMBOL(fn_fn_sym));
+  tuple_set(t, 1, env);
+  object_t obj = tuple_get(pre_t, 1);
+  if (ptype(obj) == TUPLE_T)
+    tuple_set(t, 2, quoted(obj));
+  else
+    tuple_set(t, 2, quoted(WRAP_PTR(TUPLE_T, tuple_proto, tuple_make(1, obj))));
+  tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   return t;
 
 }
