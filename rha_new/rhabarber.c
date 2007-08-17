@@ -40,12 +40,13 @@ int main(int argc, char **argv)
   object_t excp;   // exception object
   try { 
     object_t e = run_fn(root, fname);
-    if (!e) rha_error("can't load 'prelude.rha'\n"); 
+    if (!e) 
+      rha_error("can't load 'prelude.rha'\n"); 
+    print("--loaded \"%s\"\n", fname);
   } 
   catch(excp) { 
     excp_show(excp);
   } 
-  print("--loaded \"%s\"\n", fname);
 
   // for the prompt
   int lineno = 0;
