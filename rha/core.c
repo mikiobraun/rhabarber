@@ -349,6 +349,11 @@ BUILTIN(b_minus) {
   object_t parsetree = tuple_get(in, 2);
   assert(HAS_TYPE(symbol, ms));
   if (iscallof(ms, parsetree)) {
+    // DANGER:
+    // this code is wrong!!!
+    // e.g. \-f(17)+42
+    // becomes (op+, (id, ((op-, f), 17)), 42)
+
     // prefix minus:
     list_tr l = tuple_to_list(parsetree);
     // remove the first entry
