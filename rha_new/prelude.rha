@@ -56,13 +56,17 @@ test = fn (name) {
   t.check = fn (cond) if (cond) this.success++ else this.failure++;
   t.summarize = fn () {
     concat = modules.string_fn.string_append;
-    ls(local);
     msg = concat("[test] ", this.name);
-    if (this.failure==0)
-      print concat(msg, " FAILED\n")
-    else
-      print concat(msg, " PASSED\n");
     ls(local);
+    ls(this);
+    if (this.failure==0) {
+      concat(msg, " FAILED\n");
+    }
+    else {
+      concat(msg, " PASSED\n");
+    };
+    ls(local);
+    return msg;
   };
   return t;
 };

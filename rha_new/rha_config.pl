@@ -119,12 +119,21 @@ foreach $module (@mods) {
 	@args = $fnargs =~ /($id|\.\.\.)[^,]*/gox;
 	$narg = $#args + 1;
 	
+	# check whether the first argument is "object_t env"
+	$requiresenv = 0; # == false
+	if ($args[0] eq "object_t env") {
+	    # take a note
+	    $requiresenv = 1; # == true
+	    # get rid of it, since it wont be passed in the tuple
+	    shift(@args);
+	}
+
 	# check whether all types appear in '%typeset'
 	if (!$typeset{$fntype} && ($fntype ne "void")) {
 	    die "type error: return type '$fntype' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
 	}
 
-	$ellipses = 0; # false
+	$ellipses = 0; # == false
 	foreach $arg (@args) {
 	    if (!$typeset{$arg}) {
 		if ($arg eq "...") {
@@ -132,7 +141,7 @@ foreach $module (@mods) {
 		    # whether the ellipses is at the last argument
 		    # position, because the C-compiler will complain
 		    # about it...
-		    $ellipses = 1; # true
+		    $ellipses = 1; # == true
 		}
 		else {
 		    die "type error: arg type '$arg' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
@@ -143,7 +152,7 @@ foreach $module (@mods) {
 	push(@symbs, $fnname);
 	
 	# add wrapper code
-	$init_c_functions .= "object_t b_$fnname(tuple_t t) {\n";
+	$init_c_functions .= "object_t b_$fnname(object_t env, tuple_t t) {\n";
 	$fncall_str = "$fnname(";
 	
 	if ($ellipses) {
@@ -162,6 +171,9 @@ foreach $module (@mods) {
 	    # instead of calling the function itself, we call the
 	    # function with the same name with a prepended 'v'
 	    $fncall_str = "v" . $fncall_str;
+	}
+	if ($requiresenv) {
+	    $fncall_str .= "env, ";
 	}
 	$i = 1;
 	foreach $item (@args) {
@@ -194,13 +206,15 @@ foreach $module (@mods) {
 
 	# add code to add functions
 	$init_c_add_modules .= "  add_function(module, $fnname"."_sym";
+	$init_c_add_modules .= ", b_$fnname";
 	if ($ellipses) {
 	    # note that negative 'narg' will mean, at least 'narg' arguments
-	    $init_c_add_modules .= ", b_$fnname, true, $narg";
+	    $init_c_add_modules .= ", true";
 	}
 	else {
-	    $init_c_add_modules .= ", b_$fnname, false, $narg";
+	    $init_c_add_modules .= ", false";
 	}
+	$init_c_add_modules .= ", $narg";
 	foreach $item (@args) {
 	    if ($item ne "...") {
 		$ucitem = uc($item);
@@ -402,14 +416,15 @@ $init_c_functions
   module = new();\\
   assign(modules, mmm ## _sym, module);
 
-void add_function(object_t module, symbol_t s, object_t (*code)(tuple_t),
+void add_function(object_t module, symbol_t s, 
+                  object_t (*code)(object_t, tuple_t),
                   bool_t varargs, int narg, ...)
 {
   // create a struct containing all info about the builtin function
   function_t f = ALLOC_SIZE(sizeof(struct _function_t_));
   f->code = code;
-  f->narg = narg;
   f->varargs = varargs;
+  f->narg = narg;
   f->argptypes = ALLOC_SIZE(narg*sizeof(enum ptypes));
 
   // read out the argument types

@@ -156,11 +156,17 @@ void prules_init(object_t root, object_t module)
   MAKE_PRULES(for, 10.0);
   MAKE_PRULES(fn, 10.0);
   MAKE_PRULES(print, 10.0);
-  MAKE_PRULES(equal, 11.0);     // assignments
-  MAKE_PRULES(plusequal, 11.0);
-  MAKE_PRULES(minusequal, 11.0);
-  MAKE_PRULES(timesequal, 11.0);
-  MAKE_PRULES(divideequal, 11.0);
+  MAKE_PRULES(equal, 10.0);     // assignments
+  MAKE_PRULES(plusequal, 10.0);
+  MAKE_PRULES(minusequal, 10.0);
+  MAKE_PRULES(timesequal, 10.0);
+  MAKE_PRULES(divideequal, 10.0);
+  // note that 'assignments' must have the same priority as freefix
+  // forms, consider:
+  //
+  //    x = if (true) 17 else 42;       x = (if (true) 17 else 42)
+  //    if (true) x = 17 else x = 42;   if (true) (x=17) else (x=42)
+
   MAKE_PRULES(quote, 15.0);     // quote
 }
 
