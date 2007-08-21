@@ -24,7 +24,7 @@ typedef int                 _rha_ int_t;
 typedef bool                _rha_ bool_t;
 typedef struct gtuple*      _rha_ tuple_t;
 typedef struct _function_t_ { 
-  object_t (*code)(object_t, tuple_t);
+  object_t (*code)(tuple_t);
   bool_t varargs;           // does it have variable many arguments?
   int_t narg;
   int_t *argptypes;

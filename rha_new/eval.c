@@ -25,7 +25,7 @@ void eval_init(object_t root, object_t module)
 object_t eval_sequence(object_t env, list_t source);
 object_t eval_args_and_call_fun(object_t env, tuple_t expr);
 object_t call_fun(object_t env, int_t tlen, tuple_t expr);
-void *call_C_fun(object_t env, int tlen, tuple_t t);
+void *call_C_fun(int tlen, tuple_t t);
 object_t call_rha_fun(object_t this, int narg, tuple_t expr);
 
 // some code for bug-tracking
@@ -130,7 +130,7 @@ object_t call_fun(object_t env, int_t tlen, tuple_t values)
 {
   if (ptype(tuple_get(values, 0))==FUNCTION_T)
     // the function is implemented in C
-    return call_C_fun(env, tlen, values);
+    return call_C_fun(tlen, values);
   else
     // the function is pure rhabarber
     return call_rha_fun(env, tlen, values);
@@ -146,7 +146,7 @@ void check_ptypes(object_t o, enum ptypes pt)
 }
 
 
-void *call_C_fun(object_t env, int tlen, tuple_t t) 
+void *call_C_fun(int tlen, tuple_t t) 
 {
   int narg = tlen-1;
   // extract the function
@@ -178,7 +178,7 @@ void *call_C_fun(object_t env, int tlen, tuple_t t)
   // finally call 'f'
   object_t res = 0;
   begin_frame(FUNCTION_FRAME)
-    res = (f->code)(env, t);
+    res = (f->code)(t);
   end_frame(res);
   return res;
 }

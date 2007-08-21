@@ -119,15 +119,6 @@ foreach $module (@mods) {
 	@args = $fnargs =~ /($id|\.\.\.)[^,]*/gox;
 	$narg = $#args + 1;
 	
-	# check whether the first argument is "object_t env"
-	$requiresenv = 0; # == false
-	if ($args[0] eq "object_t env") {
-	    # take a note
-	    $requiresenv = 1; # == true
-	    # get rid of it, since it wont be passed in the tuple
-	    shift(@args);
-	}
-
 	# check whether all types appear in '%typeset'
 	if (!$typeset{$fntype} && ($fntype ne "void")) {
 	    die "type error: return type '$fntype' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
@@ -152,7 +143,7 @@ foreach $module (@mods) {
 	push(@symbs, $fnname);
 	
 	# add wrapper code
-	$init_c_functions .= "object_t b_$fnname(object_t env, tuple_t t) {\n";
+	$init_c_functions .= "object_t b_$fnname(tuple_t t) {\n";
 	$fncall_str = "$fnname(";
 	
 	if ($ellipses) {
@@ -171,9 +162,6 @@ foreach $module (@mods) {
 	    # instead of calling the function itself, we call the
 	    # function with the same name with a prepended 'v'
 	    $fncall_str = "v" . $fncall_str;
-	}
-	if ($requiresenv) {
-	    $fncall_str .= "env, ";
 	}
 	$i = 1;
 	foreach $item (@args) {
@@ -417,7 +405,7 @@ $init_c_functions
   assign(modules, mmm ## _sym, module);
 
 void add_function(object_t module, symbol_t s, 
-                  object_t (*code)(object_t, tuple_t),
+                  object_t (*code)(tuple_t),
                   bool_t varargs, int narg, ...)
 {
   // create a struct containing all info about the builtin function

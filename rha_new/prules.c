@@ -387,7 +387,7 @@ tuple_t if_pr(object_t env, list_t parsetree)
 					 if_sym, 2, else_sym, 1);
   tuple_t t = tuple_new(5);
   tuple_set(t, 0, tuple_get(pre_t, 0));
-  tuple_set(t, 1, env);
+  tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   tuple_set(t, 2, tuple_get(pre_t, 1));
   tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   tuple_set(t, 4, quoted(tuple_get(pre_t, 3)));
@@ -399,7 +399,7 @@ tuple_t try_pr(object_t env, list_t parsetree)
   tuple_t pre_t = resolve_freefix_prule2(env, parsetree, try_fn_sym, try_sym, 1, catch_sym, 2);
   tuple_t t = tuple_new(5);
   tuple_set(t, 0, tuple_get(pre_t, 0));
-  tuple_set(t, 1, env);
+  tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   tuple_set(t, 2, quoted(tuple_get(pre_t, 1)));
   object_t obj = tuple_get(pre_t, 2);
   if (ptype(obj) != SYMBOL_T)
@@ -415,7 +415,7 @@ tuple_t while_pr(object_t env, list_t parsetree)
 					 while_sym, 2);
   tuple_t t = tuple_new(4);
   tuple_set(t, 0, tuple_get(pre_t, 0));
-  tuple_set(t, 1, env);
+  tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   tuple_set(t, 2, quoted(tuple_get(pre_t, 1)));
   tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   return t;
@@ -427,7 +427,7 @@ tuple_t for_pr(object_t env, list_t parsetree)
   // the second argument (e.g. (x in l) must be splitted into two
   tuple_t t = tuple_new(5);
   tuple_set(t, 0, tuple_get(pre_t, 0));
-  tuple_set(t, 1, env);
+  tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   // check now whether the first arg has the right form!
   object_t obj = tuple_get(pre_t, 1);
   if (ptype(obj)!=TUPLE_T)
@@ -452,7 +452,7 @@ tuple_t fn_pr(object_t env, list_t parsetree)
   tuple_t pre_t = resolve_freefix_prule1(env, parsetree, fn_fn_sym, fn_sym, 2);
   tuple_t t = tuple_new(4);
   tuple_set(t, 0, WRAP_SYMBOL(fn_fn_sym));
-  tuple_set(t, 1, env);
+  tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   if (tuple_len(pre_t) == 2) {
     // the case: fn () code
     tuple_set(t, 2, quoted(WRAP_PTR(TUPLE_T, tuple_proto, tuple_new(0))));
@@ -640,7 +640,7 @@ tuple_t resolve_infix_prule_list(list_t parsetree, glist_t *prule_sym_list, symb
 tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym, glist_t *assign_sym_list)
 // resolves the right-most assignment (could be = += -= *= /=)
 {
-  //debug("resolve_assign_prule(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
+  //  debug("resolve_assign_prule(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
 
   // (0) let's find the first appearance (left-most) of an assignment
   tuple_t pre_t = resolve_infix_prule_list(parsetree, assign_sym_list,
@@ -670,7 +670,8 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
       object_t a_dot = list_poplast(lhs);
       // this must be a "DOT"
       if ((ptype(a_dot) != SYMBOL_T) || (UNWRAP_SYMBOL(a_dot)!=dot_sym))
-	rha_error("(parsing) preceeding the symbol must be a dot");
+	rha_error("(parsing) preceeding the symbol must be a dot, "
+		  "found '%o'", a_dot);
       // now, 'lhs' contains the LHS of the dot
       tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, lhs));
     }
@@ -823,6 +824,7 @@ tuple_t resolve_freefix_prule1(object_t env, list_t parsetree,
   //
   // note that all but the last of several arguments to keys must be
   // in rounded brackets
+  //debug("resolve_freefix_prule1(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
   object_t head = list_popfirst(parsetree);
   assert(UNWRAP_SYMBOL(head) == key1);
   list_t call = read_freefix_args(env, parsetree, narg1);
@@ -846,6 +848,7 @@ tuple_t resolve_freefix_prule2(object_t env, list_t parsetree,
   // note that the expression with key2 is optional
   // note that all but the last of several arguments to keys must be
   // in rounded brackets
+  //  debug("resolve_freefix_prule2(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
   object_t head = list_popfirst(parsetree);
   assert(UNWRAP_SYMBOL(head) == key1);
   // split the parsetree
