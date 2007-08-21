@@ -432,7 +432,7 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
   // (3) deal with series of function calls
   while (obj) {
     if (!is_rounded_tuple(obj))
-      rha_error("(parsing) argument list expected");
+      rha_error("(parsing) argument list expected, found \"%o\"", obj);
 
     if (dotted) {
       // construct a slot call

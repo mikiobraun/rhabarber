@@ -58,18 +58,14 @@ object_t symtable_delete(symtable_t st, symbol_t s)
 
 void symtable_print(symtable_t st)
 {
-  string_t s = gc_strdup("");
   gtree_iterator_t it;
   symbol_t key;
   object_t obj;
-  string_t next_line = "";
   for (gtree_begin(&it, &st->tree); !gtree_done(&it); gtree_next(&it)) {
     key = (symbol_t) gtree_get_key_(&it);
     obj = (object_t) gtree_get_value_(&it);
-    next_line = sprint("%s==%o\n", symbol_name(key), obj);
-    s = string_append(s, next_line);
+    fprint(stdout, "%s==%o\n", symbol_name(key), obj);
   }
-  fprint(stdout, "%s", s);
 }
 
 

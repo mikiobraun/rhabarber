@@ -1,0 +1,20 @@
+// put all testing code here!
+
+t = test("proxy tests");
+a = 17;
+b = proxy(\a);
+t.check(a==b);
+a = 42;
+t.check(a==b);
+a.xxx = "a new slot";
+t.check(has(b, \xxx));
+b.yyy = "another slot";
+t.check(has(a, \yyy));
+t.summarize();
+
+t = test("arithmetic test");
+t.check(17+42 == 59);
+t.check(17-42 == -25);
+t.check(17*42 == 714);
+t.check(42/17 == 2);
+t.summarize();

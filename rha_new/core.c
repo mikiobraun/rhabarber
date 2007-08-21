@@ -28,6 +28,25 @@
 #include "parse.h"
 
 
+object_t proxy_fn(object_t this, symbol_t s)
+{
+  // note that this function can't be implemented fully in rhabarber itself!!!
+  // failing attempt:
+  //
+  // proxy = fn (s) {
+  //   y = new();
+  //   y.proxy = fn () lookup(parent.this, s);
+  //   return y;
+  // }
+  //
+  // the problem is that after adding the slot 'proxy' to 'y', we can
+  // not return 'y', since it is not accessible anymore.
+  object_t obj = new();
+  // create proxy function
+  assign(obj, proxy_sym, fn_fn(this, tuple_new(0), WRAP_SYMBOL(s)));
+  return obj;
+}
+
 object_t fn_fn(object_t this, tuple_t argnames, object_t fnbody)
 {
   // defines a new rhabarber function

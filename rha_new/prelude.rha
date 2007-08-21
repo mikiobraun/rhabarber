@@ -6,13 +6,15 @@
 modules.object.assign(root, \assign, modules.object.assign);
 
 // (1.2) let's get more stuff from the object module
-new   = modules.object.new;
-ls    = modules.object.ls;
-new   = modules.object.new;
-clone = modules.object.clone;
-addr  = modules.object.addr;
-ptype = modules.object.ptype;
-run   = modules.core.run_fn;
+new    = modules.object.new;
+ls     = modules.object.ls;
+new    = modules.object.new;
+has    = modules.object.has;
+lookup = modules.object.lookup;
+clone  = modules.object.clone;
+addr   = modules.object.addr;
+ptype  = modules.object.ptypename;
+run    = modules.core.run_fn;
 
 // functions for prules
 if_fn      = modules.core.if_fn;
@@ -25,8 +27,7 @@ literal    = modules.core.literal;
 return_fn  = modules.core.return_fn;
 deliver_fn = modules.core.deliver_fn;
 break_fn   = modules.core.break_fn;
-print_fn   = modules.object.print_fn;
-
+print      = modules.object.print_fn;
 
 // temporarily for testing purposes (as long as we have to overloaded)
 inc             = modules.object.inc;
@@ -54,17 +55,14 @@ test = fn (name) {
   t.failure = 0;
   t.success = 0;
   t.check = fn (cond) if (cond) this.success++ else this.failure++;
-  t.summarize = fn () {
-    concat = modules.string_fn.string_append;
-    msg = concat("[test] ", this.name);
-    if (this.failure==0) 
-      msg = concat(msg, " FAILED\n")
-    else 
-      msg = concat(msg, " PASSED\n");
-    print(msg);
-  };
+  t.summarize = fn () print("[test]", this.name, 
+			    this.success, "PASSED and",
+			    this.failure, "FAILED");
   return t;
 };
+
+// proxy stuff
+proxy = fn (s) root.modules.core.proxy_fn(this, s);
 
 
 // add functions to the tuple prototype

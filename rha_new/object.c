@@ -96,6 +96,11 @@ int_t ptype(object_t o)
   return o->ptype;
 }
 
+string_t ptypename(object_t o)
+{
+  return ptype_names[ptype(o)];
+}
+
 void setptype(object_t o, int_t id)
 {
   o->ptype = id;
@@ -275,7 +280,7 @@ string_t to_string(object_t o)
       switch (ptype(o)) {
       case STRING_T: {
 	s = UNWRAP_PTR(STRING_T, o);
-	return sprint("\"%s\"", s); 
+	return sprint("%s", s); 
       }
       case TUPLE_T: {
 	tuple_t t = UNWRAP_PTR(TUPLE_T, o);
@@ -317,10 +322,23 @@ string_t to_string(object_t o)
   }
 }
 
-
-void print_fn(object_t o)
+void vprint_fn(int_t narg, list_t args)
 {
-  fprintf(stdout, "%s\n", to_string(o));
+  for (int i=0; i<narg; i++)
+    fprintf(stdout, "%s ", to_string(list_popfirst(args)));
+  fprintf(stdout, "\n");
+}
+
+void print_fn(int_t narg, ...)
+{
+  va_list ap;
+  va_start(ap, narg);
+  list_t args = list_new();
+  for (int i = 0; i < narg; i++)
+    list_append(args, va_arg(ap, object_t));
+  va_end(ap);
+  
+  vprint_fn(narg, args);
 }
 
 

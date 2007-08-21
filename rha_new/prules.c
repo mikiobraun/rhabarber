@@ -32,7 +32,6 @@ symbol_t equalequal_sym = 0;
 symbol_t notequal_sym = 0;
 symbol_t and_sym = 0;
 symbol_t or_sym = 0;
-symbol_t print_sym = 0;
 symbol_t return_sym = 0;
 symbol_t deliver_sym = 0;
 symbol_t break_sym = 0;
@@ -84,7 +83,6 @@ void prules_init(object_t root, object_t module)
   notequal_sym     = symbol_new("!=");
   and_sym          = symbol_new("&&");
   or_sym           = symbol_new("||");
-  print_sym        = symbol_new("print");
   return_sym       = symbol_new("return");
   deliver_sym      = symbol_new("deliver");
   break_sym        = symbol_new("break");
@@ -155,7 +153,6 @@ void prules_init(object_t root, object_t module)
   MAKE_PRULES(while, 10.0);
   MAKE_PRULES(for, 10.0);
   MAKE_PRULES(fn, 10.0);
-  MAKE_PRULES(print, 10.0);
   MAKE_PRULES(equal, 10.0);     // assignments
   MAKE_PRULES(plusequal, 10.0);
   MAKE_PRULES(minusequal, 10.0);
@@ -355,11 +352,6 @@ tuple_t or_pr(object_t env, list_t parsetree)
   else								\
     tuple_set(t, 1, void_obj);					\
   return t;
-
-tuple_t print_pr(object_t env, list_t parsetree) 
-{ 
-  HANDLE_STUFF_LIKE_RETURN(print)
-}
 
 tuple_t return_pr(object_t env, list_t parsetree) 
 { 

@@ -57,8 +57,7 @@ int main(int argc, char **argv)
   print("\n");
   while(1) {
     // read line
-    //sprintf(prompt, "rha[%d]$ ", frame_tos);  // for debugging 'try-catch'
-    sprintf(prompt, "rha[%d]$ ", lineno++);
+    sprintf(prompt, "rha[%d](%d)$ ", lineno++, frame_tos);
     string_t line = readline(prompt);
     if (!line) break;
     add_history(line);

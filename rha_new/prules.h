@@ -3,7 +3,7 @@
 
 #include "rha_init.h"
 
-extern       void    prules_init(object_t root, object_t module);
+extern       void     prules_init(object_t root, object_t module);
 
 // helper
 extern       object_t quoted(object_t obj);
@@ -33,7 +33,6 @@ extern _rha_ tuple_t equalequal_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t notequal_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t and_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t or_pr(object_t env, list_t parsetree);
-extern _rha_ tuple_t print_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t return_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t deliver_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t break_pr(object_t env, list_t parsetree);
