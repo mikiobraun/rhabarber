@@ -173,7 +173,6 @@ object_t prule_new_freefix(){ return void_obj; }
 
 
 // forward declaration of helper functions
-object_t quoted(object_t obj);
 
 tuple_t resolve_incdec_prule(list_t parsetree);
 tuple_t resolve_infix_prule(list_t parsetree, symbol_t prule_sym, 
@@ -443,16 +442,29 @@ tuple_t for_pr(object_t env, list_t parsetree)
 
 tuple_t fn_pr(object_t env, list_t parsetree)
 { 
+  // currently this functions contains mainly a dirty hack!
   tuple_t pre_t = resolve_freefix_prule1(env, parsetree, fn_fn_sym, fn_sym, 2);
   tuple_t t = tuple_new(4);
   tuple_set(t, 0, WRAP_SYMBOL(fn_fn_sym));
   tuple_set(t, 1, env);
-  object_t obj = tuple_get(pre_t, 1);
-  if (ptype(obj) == TUPLE_T)
-    tuple_set(t, 2, quoted(obj));
-  else
-    tuple_set(t, 2, quoted(WRAP_PTR(TUPLE_T, tuple_proto, tuple_make(1, obj))));
-  tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
+  if (tuple_len(pre_t) == 2) {
+    // the case: fn () code
+    tuple_set(t, 2, quoted(WRAP_PTR(TUPLE_T, tuple_proto, tuple_new(0))));
+    tuple_set(t, 3, quoted(tuple_get(pre_t, 1)));
+  }
+  else {
+    assert(tuple_len(pre_t) == 3);
+    object_t obj = tuple_get(pre_t, 1);
+    if (ptype(obj) == TUPLE_T)
+      // fn (x, y) code; fn (x, y, z) code; etc
+      tuple_set(t, 2, quoted(obj));
+    else
+      // fn (x) code
+      tuple_set(t, 2, quoted(WRAP_PTR(TUPLE_T, tuple_proto, tuple_make(1, obj))));
+    // add the code
+    tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
+  }
+  //debug("(fn_pr) %o\n", WRAP_PTR(TUPLE_T, tuple_proto, t));
   return t;
 
 }
@@ -780,14 +792,17 @@ list_t read_freefix_args(object_t env, list_t parsetree, int_t narg)
     list_popfirst(l);
     if (list_len(l) > 1)
       list_append(args, WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(l)));
-    else 
+    else if (list_len(l) == 1)
       list_append(args, list_popfirst(l));
+    // else
+    //   do nothing
   }
   // last argument is the rest of the list
   if (list_len(parsetree) == 1)
     list_append(args, resolve(env, list_popfirst(parsetree)));
   else
     list_append(args, resolve_list_by_prules(env, parsetree));
+  //debug("%o\n", WRAP_PTR(LIST_T, list_proto, args));
   return args;
 }
 

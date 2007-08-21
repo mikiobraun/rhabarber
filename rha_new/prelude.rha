@@ -22,7 +22,11 @@ while_fn   = modules.core.while_fn;
 try_fn     = modules.core.try_fn;
 colon_fn   = modules.core.colon_fn;
 literal    = modules.core.literal;
+return_fn  = modules.core.return_fn;
+deliver_fn = modules.core.deliver_fn;
+break_fn   = modules.core.break_fn;
 print_fn   = modules.object.print_fn;
+
 
 // temporarily for testing purposes (as long as we have to overloaded)
 inc             = modules.object.inc;
@@ -42,6 +46,27 @@ greater_fn      = modules.object.greater_fn;
 greaterequal_fn = modules.object.greaterequal_fn;
 and_fn          = modules.core.and_fn;
 or_fn           = modules.core.or_fn;
+
+// code for testing
+test = fn (name) {
+  t = new();
+  t.name = name;
+  t.failure = 0;
+  t.success = 0;
+  t.check = fn (cond) if (cond) this.success++ else this.failure++;
+  t.summarize = fn () {
+    concat = modules.string_fn.string_append;
+    ls(local);
+    msg = concat("[test] ", this.name);
+    if (this.failure==0)
+      print concat(msg, " FAILED\n")
+    else
+      print concat(msg, " PASSED\n");
+    ls(local);
+  };
+  return t;
+};
+
 
 // add functions to the tuple prototype
 //tuple.len = modules.tuple_fn.tuple_len;

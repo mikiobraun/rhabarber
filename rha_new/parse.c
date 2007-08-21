@@ -17,11 +17,6 @@
 // semicolon, otherwise we could make a list of keywords which are
 // allowed to extend expression also after a 'curlied' expression
 
-symbol_t semicolon_sym = 0;
-symbol_t comma_sym = 0;
-symbol_t dot_sym = 0;
-symbol_t tuple_forced_sym = 0;
-
 object_t prule_failed_excp = 0; // exception
 
 object_t prules = 0;  // the object containing all prules
@@ -97,6 +92,7 @@ bool is_symbol(symbol_t a_symbol, object_t expr) {
 
 object_t resolve(object_t env, object_t expr)
 {
+  if (!expr) return 0;
   // note that tuples are not resolved anymore
   // thus: if prules resolve the arguments themselves, they become
   // tuples and that we it doesn't matter if we call 'resolve' again
@@ -185,7 +181,7 @@ object_t resolve_tuple(object_t env, list_t source)
 {
   //debug("resolve_tuple(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
   // grouped expression and argument lists
-  // (x+1)*4 or (x, y, z) or (17,)
+  // (x+1)*4 or (x, y, z)
   // split only by comma, no semiclon is allowed
   if (list_len(source) == 0) {
     tuple_t t = tuple_new(1);
@@ -195,9 +191,10 @@ object_t resolve_tuple(object_t env, list_t source)
   list_t sink = list_new();
   list_t part = list_new();
   object_t obj = 0;
-  bool last_was_comma = false;
   while ((obj = list_popfirst(source))) {
     if (is_symbol(comma_sym, obj)) {
+      if (list_len(source)==0)
+	rha_error("(parsing) trailing comma not allowed");
       // split here and ignore the comma
       switch (list_len(part)) {
       case 0: rha_error("can't start tuple with COMMA");
@@ -206,7 +203,6 @@ object_t resolve_tuple(object_t env, list_t source)
 	list_append(sink, resolve_list_by_prules(env, part));
       }
       part = list_new();
-      last_was_comma = true;
       continue;
     }
     else if (is_symbol(semicolon_sym, obj)) {
@@ -215,26 +211,10 @@ object_t resolve_tuple(object_t env, list_t source)
       assert(1==0);
     }
     list_append(part, obj);
-    last_was_comma = false;
   }
   if (list_len(part) > 0)
     list_append(sink, resolve_list_by_prules(env, part));
-  // three cases:
-  // (1) stuff like: (17,42,)
-  if (last_was_comma)
-    if (list_len(sink)!=2) {
-      assert(list_len(part) == 0);
-      rha_error("(parsing) trailing comma only allowed for singleton tuple");
-    }
-    else {
-      // (2) stuff like: (17,)
-      list_prepend(sink, WRAP_SYMBOL(tuple_forced_sym));
-    }
-  else {
-    // (3) stuff like: (17, 42)   (17)
-    // comma wasn't the last symbol
-    list_prepend(sink, WRAP_SYMBOL(rounded_sym));
-  }
+  list_prepend(sink, WRAP_SYMBOL(rounded_sym));
   //debug("return (resolve_tuple): %o\n", WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink)));
   return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
 }
@@ -261,13 +241,10 @@ object_t resolve_complex_literal(object_t env, list_t source)
   // we delay the resolution of the subexpression until either the
   // default literal resolver is called or a special one
   //  [1,2,3] ==>  (literal_sym (tuple_sym [1,2,3]))
-  tuple_t t1 = tuple_new(2);
-  tuple_set(t1, 0, WRAP_SYMBOL(quote_sym));
-  tuple_set(t1, 1, WRAP_PTR(LIST_T, list_proto, source));
   tuple_t t = tuple_new(3);
   tuple_set(t, 0, WRAP_SYMBOL(literal_sym));
   tuple_set(t, 1, env);
-  tuple_set(t, 2, WRAP_PTR(TUPLE_T, tuple_proto, t1));
+  tuple_set(t, 2, quoted(WRAP_PTR(LIST_T, list_proto, source)));
   return WRAP_PTR(TUPLE_T, tuple_proto, t);
 }
 
@@ -348,72 +325,143 @@ object_t resolve_prule(object_t env, list_t source, object_t prule)
   return expr;
 }
 
+object_t remove_grouping_brackets(object_t obj)
+{
+  // if 'obj' is a tuple starting with 'rounded_sym' it must only
+  // be a singleton.  in that case the rounded brackets are removed
+  if (ptype(obj) == TUPLE_T) {
+    tuple_t tt = UNWRAP_PTR(TUPLE_T, obj);
+    if (tuple_len(tt) > 0) {
+      object_t tt0 = tuple_get(tt, 0);
+      if (ptype(tt0) == SYMBOL_T) {
+	symbol_t tts = UNWRAP_SYMBOL(tt0);
+	if (tts == rounded_sym) {
+	  if (tuple_len(tt) != 2)
+	    rha_error("(parsing) rounded brackets are only for "
+		      "grouping or arg lists");
+	  obj = tuple_get(tt, 1);
+	}
+      }
+    }
+  }
+  return obj;
+}
+
+bool_t is_rounded_tuple(object_t obj)
+{
+  if (ptype(obj) != TUPLE_T)
+    return false;
+  tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
+  if (tuple_len(t) == 0)
+    return false;
+  object_t t0 = tuple_get(t, 0);
+  if (ptype(t0) != SYMBOL_T)
+    return false;
+  symbol_t s = UNWRAP_SYMBOL(t0);
+  if (s != rounded_sym)
+    return false;
+  // ok, it is a roudned tupled
+  return true;
+}
+
 object_t resolve_dots_and_fn_calls(object_t env, list_t source)
 {
+  // what this function does:
+  //   source        result
+  //   ----------------------------------------------
+  //   a             a
+  //   a.x           (eval a \x)
+  //   a.x.y         (eval (eval a \x) \y)
+  //   a(z)          (a z)
+  //   a(z)(zz)      ((a z) zz)
+  //   a.x(z)        (callslot a \x z)
+  //   a.x.y(z)      (callslot (eval a \x) \y z)
+  //   a.x(z)(zz)    ((callslot a \x z) zz)
+  //   a.x.y(z)(zz)  ((callslot (eval a \x) \y z) zz)
+
   // otherwise build function calls and deal with dots, which bind
   // even stronger than function calls
   if (list_len(source) == 0)
     rha_error("(parsing) missing expression");
-  object_t fncall = 0;
-  object_t obj = 0;
-  while ((obj = list_popfirst(source))) {
-    if (ptype(obj) == LIST_T)
-      obj = resolve(env, obj);
-    if (!fncall) {
-      // deal here with the singleton case
-      if (ptype(obj) == TUPLE_T) {
-	tuple_t tt = UNWRAP_PTR(TUPLE_T, obj);
-	if (tuple_len(tt) == 2) {
-	  object_t tt0 = tuple_get(tt, 0);
-	  if (ptype(tt0) == SYMBOL_T) {
-	    symbol_t tts = UNWRAP_SYMBOL(tt0);
-	    if (tts == rounded_sym) {
-	      obj = tuple_get(tt, 1);
-	    }
-	  }
-	}
-      }
-      if ((ptype(obj)==SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym)
-	rha_error("(parsing) something else than dot expected");
-      fncall = obj;
-      continue;
-    }
+
+  // (1.1) get the first piece and resolve it
+  object_t obj = resolve(env, list_popfirst(source));
+
+  // (1.2) remove rounded brackets for grouping
+  obj = remove_grouping_brackets(obj);
+
+  // (1.3) check that we don't start with the 'dot'
+  if ((ptype(obj)==SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym)
+    rha_error("(parsing) something else than dot expected");
+
+  // (1.4) start the expression
+  object_t expr = obj;
+
+  // we need to keep a flag which tells us later whether we have the
+  // usual function call or a slotcall.
+  bool_t dotted = false;
+  // (2) deal with a series of dotted expressions
+  while ((obj = resolve(env, list_popfirst(source)))) {
     if ((ptype(obj) == SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym) {
       // ok we have a dotted expression
-      // get the next object
+      // get the next object as well
       obj = list_popfirst(source);
       if (!obj || (ptype(obj) != SYMBOL_T))
 	rha_error("(parsing) a dot is always followed by a symbol");
+
       // make dotted expression
-      tuple_t dot_rhs = tuple_new(2);
-      tuple_set(dot_rhs, 0, WRAP_SYMBOL(quote_sym));
-      tuple_set(dot_rhs, 1, obj);
       tuple_t t = tuple_new(3);
       // note that we use 'eval_sym' instead of 'lookup_sym', the
       // reason is that the later doesn't issue a 'lookup failed'
       // exception and returns NULL in that case, while 'eval' does
       // issue an exception and return 'void_obj'.
       tuple_set(t, 0, WRAP_SYMBOL(eval_sym));
-      tuple_set(t, 1, fncall);
-      tuple_set(t, 2, WRAP_PTR(TUPLE_T, tuple_proto, dot_rhs));
-      fncall = WRAP_PTR(TUPLE_T, tuple_proto, t);
+      tuple_set(t, 1, expr);
+      tuple_set(t, 2, quoted(obj));
+      
+      // we are potentially constructing a method call
+      dotted = true;
+      expr = WRAP_PTR(TUPLE_T, tuple_proto, t);
       continue;
     }
-    if (ptype(obj) != TUPLE_T)
-      rha_error("(parsing) argument list expected (1)");
-    tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
-    object_t t0 = tuple_get(t, 0);
-    if (ptype(t0) != SYMBOL_T)
-      rha_error("(parsing) argument list expected (2)");
-    symbol_t s = UNWRAP_SYMBOL(t0);
-    if (s != rounded_sym)
-      rha_error("(parsing) argument list expected (3)");
-    // replace the rounded_sym with the function call so far
-    tuple_set(t, 0, fncall);
-    fncall = resolve_macro(env, t);
+    else
+      // go on with constructing function calls
+      break;
   }
-  //debug("return (prules) %o\n", fncall);
-  return fncall;
+
+  // (3) deal with series of function calls
+  while (obj) {
+    if (!is_rounded_tuple(obj))
+      rha_error("(parsing) argument list expected");
+
+    if (dotted) {
+      // construct a slot call
+      dotted = false; // this happens only once
+      // for a.f(x,y) we have by now two ingredients:
+      // (i)  expr == (eval a \f)
+      // (ii) obj  == (rounded x y)
+      // from those we construct
+      //      (callslot a \f x y)
+      list_t l = tuple_to_list(UNWRAP_PTR(TUPLE_T, obj));
+      tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
+      list_popfirst(l);                           // remove 'rounded'
+      list_prepend(l, tuple_get(t, 2));           // prepend '\f'
+      list_prepend(l, tuple_get(t, 1));           // prepend 'a'
+      list_prepend(l, WRAP_SYMBOL(callslot_sym)); // prepend 'callslot'
+      expr = WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(l));
+    }
+    else {
+      // construct a plain function call
+      // replace the rounded_sym with the expression so far
+      tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
+      tuple_set(t, 0, expr);
+      expr = resolve_macro(env, t);
+    }
+    // get next piece
+    obj = resolve(env, list_popfirst(source));
+  }
+  //debug("return (resolve_dots_and_funcalls) %o\n", expr);
+  return expr;
 }
 
 

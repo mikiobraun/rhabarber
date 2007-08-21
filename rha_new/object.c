@@ -199,6 +199,7 @@ object_t assign(object_t o, symbol_t s, object_t v)
 }
 
 
+
 void rmslot(object_t o, symbol_t s) 
 {
   symtable_delete( o->table, s );

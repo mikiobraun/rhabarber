@@ -115,23 +115,28 @@ foreach $module (@mods) {
 	$fnargs = $3;
 	print "matched: $fntype $fnname $fnargs\n" if $debug;
 	
-	# disect the args
-	@args = $fnargs =~ /($id)[^,]*/gox;
+       	# disect the args (also get ellipses (...))
+	@args = $fnargs =~ /($id|\.\.\.)[^,]*/gox;
 	$narg = $#args + 1;
 	
-        # find C elipses '...'
-	$elispes = false;
-	if ($fnargs =~ /\.\.\.\s*/gox) {
-	    $elipses = true;
-	}
-
 	# check whether all types appear in '%typeset'
 	if (!$typeset{$fntype} && ($fntype ne "void")) {
 	    die "type error: return type '$fntype' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
 	}
+
+	$ellipses = 0; # false
 	foreach $arg (@args) {
 	    if (!$typeset{$arg}) {
-		die "type error: arg type '$arg' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
+		if ($arg eq "...") {
+		    # note that we don't care here in 'rha_config.pl'
+		    # whether the ellipses is at the last argument
+		    # position, because the C-compiler will complain
+		    # about it...
+		    $ellipses = 1; # true
+		}
+		else {
+		    die "type error: arg type '$arg' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
+		}
 	    }
 	}
 	# add a symbol for the function
@@ -140,6 +145,24 @@ foreach $module (@mods) {
 	# add wrapper code
 	$init_c_functions .= "object_t b_$fnname(tuple_t t) {\n";
 	$fncall_str = "$fnname(";
+	
+	if ($ellipses) {
+	    # we ignore the second last argument which is
+	    # e.g. something like "int_t narg"
+	    $dots = pop(@args);
+	    $dummy = pop(@args);
+	    push(@args, $dots);
+	    # adjust $narg, take off for 'int_t narg' and one for '...'
+	    $narg = $narg - 2;
+	    # the b_* function needs additional code
+	    $init_c_functions .= "  int_t tlen = tuple_len(t);\n";
+	    $init_c_functions .= "  list_t l = list_new();\n";
+	    $init_c_functions .= "  for (int i=$narg+1; i<tlen; i++)\n";
+	    $init_c_functions .= "    list_append(l, tuple_get(t, i));\n";
+	    # instead of calling the function itself, we call the
+	    # function with the same name with a prepended 'v'
+	    $fncall_str = "v" . $fncall_str;
+	}
 	$i = 1;
 	foreach $item (@args) {
 	    if ($item eq "void") { die "'void' is not allowed as argument" }
@@ -150,6 +173,7 @@ foreach $module (@mods) {
 	    elsif ($item eq "bool_t") { $fnarg_str = "UNWRAP_BOOL($fnarg_str)" }
 	    elsif ($item eq "symbol_t") { $fnarg_str = "UNWRAP_SYMBOL($fnarg_str)" }
 	    elsif ($item eq "real_t") { $fnarg_str = "UNWRAP_REAL($fnarg_str)" }
+	    elsif ($item eq "...") {$fnarg_str = "tlen-$narg-1, l" }
 	    elsif ($item ne "object_t") { $fnarg_str = "UNWRAP_PTR($ucitem, $fnarg_str)" }
 	    $fncall_str .= $fnarg_str;
 	    $i++;
@@ -170,10 +194,18 @@ foreach $module (@mods) {
 
 	# add code to add functions
 	$init_c_add_modules .= "  add_function(module, $fnname"."_sym";
-	$init_c_add_modules .= ", b_$fnname, $narg";
+	if ($ellipses) {
+	    # note that negative 'narg' will mean, at least 'narg' arguments
+	    $init_c_add_modules .= ", b_$fnname, true, $narg";
+	}
+	else {
+	    $init_c_add_modules .= ", b_$fnname, false, $narg";
+	}
 	foreach $item (@args) {
-	    $ucitem = uc($item);
-	    $init_c_add_modules .= ", $ucitem";
+	    if ($item ne "...") {
+		$ucitem = uc($item);
+		$init_c_add_modules .= ", $ucitem";
+	    }
 	}
 	$init_c_add_modules .= ");\n";
     }
@@ -335,7 +367,11 @@ sub create_init_c {
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 #include "alloc.h"
+#include "eval.h"
+#include "tuple_fn.h"
+#include "list_fn.h"
 #include "rha_init.h"
 
 // (1) symbols
@@ -362,12 +398,18 @@ $init_c_functions
   assign(root, ttt ## _sym, ttt ## _obj);\\
   assign(ttt ## _obj, proto_sym, ttt ## _proto);
 
-void add_function(object_t module, symbol_t s, object_t (*code)(tuple_t), int narg, ...)
+#define ADD_MODULE(mmm)   \\
+  module = new();\\
+  assign(modules, mmm ## _sym, module);
+
+void add_function(object_t module, symbol_t s, object_t (*code)(tuple_t),
+                  bool_t varargs, int narg, ...)
 {
   // create a struct containing all info about the builtin function
   function_t f = ALLOC_SIZE(sizeof(struct _function_t_));
   f->code = code;
   f->narg = narg;
+  f->varargs = varargs;
   f->argptypes = ALLOC_SIZE(narg*sizeof(enum ptypes));
 
   // read out the argument types
@@ -379,14 +421,10 @@ void add_function(object_t module, symbol_t s, object_t (*code)(tuple_t), int na
 
   // create a new object
   object_t o = wrap_ptr(FUNCTION_T, function_proto, f);
-
+  
   // finally add it to module
   assign(module, s, o);
 }
-
-#define ADD_MODULE(mmm)   \\
-  module = new();\\
-  assign(modules, mmm ## _sym, module);
 
 object_t rha_init()
 {

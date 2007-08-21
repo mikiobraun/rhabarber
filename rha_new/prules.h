@@ -5,6 +5,9 @@
 
 extern       void    prules_init(object_t root, object_t module);
 
+// helper
+extern       object_t quoted(object_t obj);
+
 // function to define common prules
 extern _rha_ object_t prule_new_infix();
 extern _rha_ object_t prule_new_prefix();

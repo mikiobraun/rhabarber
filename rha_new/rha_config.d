@@ -24,9 +24,10 @@ typedef int                 _rha_ int_t;
 typedef bool                _rha_ bool_t;
 typedef struct gtuple*      _rha_ tuple_t;
 typedef struct _function_t_ { 
-  object_t (*code)(tuple_t t);        
-  int_t narg;        
-  int_t *argptypes; 
+  object_t (*code)(tuple_t t);
+  int_t narg;
+  bool_t varargs;
+  int_t *argptypes;
 }*                          _rha_ function_t;
 typedef double              _rha_ real_t;
 typedef double *            _rha_ mat_t;
@@ -54,11 +55,22 @@ extern symbol_t scope_sym;
 extern symbol_t argnames_sym;
 extern symbol_t fnbody_sym;
 extern symbol_t priority_sym;
+extern symbol_t proxy_sym;
+extern symbol_t done_sym;
+extern symbol_t get_sym;
+extern symbol_t next_sym;
 
 // special symbols for parsing
 extern symbol_t curlied_sym;
 extern symbol_t squared_sym;
 extern symbol_t rounded_sym;
+extern symbol_t semicolon_sym;
+extern symbol_t comma_sym;
+extern symbol_t dot_sym;
+extern symbol_t tuple_forced_sym;
+
+// other special symbols
+extern symbol_t method_call_sym;
 
 //MACROS
 #define UNWRAP_INT(o)    (unwrap_int(INT_T, o))

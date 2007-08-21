@@ -37,15 +37,23 @@ void tuple_set(tuple_t t, int_t i, object_t s)
   gtuple_set(t, i, s);
 }
 
-tuple_t tuple_make(int narg, ...)
+tuple_t tuple_make(int_t narg, ...)
 {
   va_list ap;
-  tuple_t t = tuple_new(narg);
   va_start(ap, narg);
+  list_t args = list_new();
   for (int i = 0; i < narg; i++)
-    tuple_set(t, i, va_arg(ap, object_t));
+    list_append(args, va_arg(ap, object_t));
   va_end(ap);
 
+  return vtuple_make(narg, args);
+}
+
+tuple_t vtuple_make(int_t narg, list_t args)
+{
+  tuple_t t = tuple_new(narg);
+  for (int i = 0; i < narg; i++)
+    tuple_set(t, i, list_popfirst(args));
   return t;
 }
 

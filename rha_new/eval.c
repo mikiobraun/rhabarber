@@ -7,19 +7,19 @@
 #include "rha_types.h"
 #include "messages.h"
 #include "debug.h"
+#include "alloc.h"
 #include "utils.h"
+#include "excp.h"
 #include "list_fn.h"
 #include "tuple_fn.h"
 #include "symbol_fn.h"
 
-
 void eval_init(object_t root, object_t module)
 {
-  // the only two function we need to pull by hand (and not in prelude.rha)
+  // the only two functions we need to pull by hand (and not in prelude.rha)
   assign(root, eval_sym, lookup(module, eval_sym));
+  assign(root, callslot_sym, lookup(module, callslot_sym));
 }
-
-
 
 // forward declarations
 object_t eval_sequence(object_t env, list_t source);
@@ -65,6 +65,13 @@ object_t eval(object_t env, object_t expr)
     // symbols
     value = lookup(env, UNWRAP_SYMBOL(expr));
     if (!value) rha_error("lookup of symbol '%o' failed", expr);
+    object_t excp;
+    try {
+      value = callslot(value, proxy_sym, 0);
+    }
+    catch(excp) {
+      // ignore it
+    }
     return value;
   case TUPLE_T: 
     // function call
@@ -101,6 +108,7 @@ object_t eval_sequence(object_t env, list_t source)
 object_t eval_args_and_call_fun(object_t env, tuple_t expr)
 {
   int tlen = tuple_len(expr);
+  //  debug("eval_args: %o\n", WRAP_PTR(TUPLE_T, tuple_proto, expr));
   assert(tlen>0);  // otherwise repair 'rhaparser.y'
   object_t f = tuple_get(expr, 0);
   // deal with 'quote'
@@ -145,15 +153,34 @@ void *call_C_fun(int tlen, tuple_t t)
   object_t t0 = tuple_get(t, 0);
   assert(t0 && ptype(t0)==FUNCTION_T);
   function_t f = UNWRAP_PTR(FUNCTION_T, t0);
+
   // is the argument number correct?
-  if (f->narg != narg)
-    rha_error("wrong number of arguments (expected %d, got %d)", f->narg, narg);
+  // we distinguish depending on whether variable length argument
+  // lists are allowed
+  if (f->varargs) {
+    if (f->narg > narg)
+      rha_error("wrong number of arguments (expected at least %d, got %d)",
+		f->narg, narg);
+  }
+  else {
+    if (f->narg != narg)
+      rha_error("wrong number of arguments (expected %d, got %d)", 
+		f->narg, narg);
+  }
   // check the types of the args
-  for (int i=0; i<narg; i++)
-    check_ptypes(tuple_get(t, i+1), f->argptypes[i]);
+  for (int i = 0; i < narg; i++)
+    if (i < f->narg)
+      check_ptypes(tuple_get(t, i+1), f->argptypes[i]);
+    else
+      // all optional arguments must be OBJECT_T
+      check_ptypes(tuple_get(t, i+1), OBJECT_T);
 
   // finally call 'f'
-  return (f->code)(t);
+  object_t res = 0;
+  begin_frame(FUNCTION_FRAME)
+    res = (f->code)(t);
+  end_frame(res);
+  return res;
 }
 
 /* Call a rhabarber function 
@@ -189,11 +216,56 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   // assign the arguments
   for(int i = 0; i < nargs; i++) {
     symbol_t s = UNWRAP_SYMBOL(tuple_get(argnames, i));
-    debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
+    //debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
     assign(local, s, tuple_get(expr, i+1));
   }
 
   // execute the function body
   object_t fnbody = lookup(fn, fnbody_sym);
-  return eval(local, fnbody);
+  object_t res = 0;
+  begin_frame(FUNCTION_FRAME)
+    res = eval(local, fnbody);
+  end_frame(res);
+  return res;
+}
+
+
+
+
+// note on "variable argument lists" in rhabarber:
+// to pull in a function like 'callslot' with '...' automatically, we
+// need to implement a function 'vcallclot' with the '...' replaced by
+// a 'list_t' argument:
+object_t vcallslot(object_t obj, symbol_t slotname, int_t narg, list_t args)
+{
+  // note that 'callslot' assumes that all arguments are already
+  // evaluated in the outer calling scope.  this is important since we
+  // have no longer access to the outer calling scope.  the inner
+  // calling scope ('this') will be set to 'obj'
+  object_t slot = lookup(obj, slotname);
+  if (!slot)
+    throw(excp_newf("(call_slot) object %o doesn't have slot %s",
+		    obj, symbol_name(slotname)));
+  
+  // construct the call
+  list_prepend(args, slot);
+
+  // call the slot with the scope being the object
+  return call_fun(obj, narg+1, list_to_tuple(args));
+}
+
+
+// note that:
+// * calling 'callslot' in C calls 'callslot'
+// * calling 'callslot' in Rhaberber calls 'vcallslot'
+object_t callslot(object_t obj, symbol_t slotname, int_t narg, ...)
+{
+  va_list ap;
+  va_start(ap, narg);
+  list_t args = list_new();
+  for (int i = 0; i < narg; i++)
+    list_append(args, va_arg(ap, object_t));
+  va_end(ap);
+  
+  return vcallslot(obj, slotname, narg, args);
 }
