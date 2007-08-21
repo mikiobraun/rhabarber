@@ -118,19 +118,21 @@ object_t while_fn(object_t this, object_t cond, object_t body)
 object_t try_fn(object_t this, object_t tryblock, symbol_t catchvar, object_t catchblock)
 {
   object_t excp = 0;
-  try
-    return eval(this, tryblock);
+  object_t result = 0;
+  try {
+    result = eval(this, tryblock);
+  }
   catch (excp) {
     assign(this, catchvar, excp);
-    return eval(this, catchblock);
+    result = eval(this, catchblock);
   }
-  assert(1==0);
+  return result;
 }
 
 
 object_t for_fn(object_t this, symbol_t var, object_t container, object_t body)
 {
-  rha_error("not yet!!!\n");
+  rha_error("not yet!!!");
 
   object_t res = void_obj;
   object_t iter = callslot(container, symbol_new("iterable"), 0);
@@ -193,7 +195,7 @@ object_t run_fn(object_t root, string_t fname)
     return eval(root, p);
   }
   else
-    fprintf(stdout, "parse returned ZERO\n");
+    rha_error("parse returned ZERO");
   return 0;
 }
 
@@ -226,7 +228,7 @@ bool_t or_fn(bool_t a, bool_t b)
 
 object_t colon_fn(object_t a, object_t b)
 {
-  rha_warning("(colon_fn) for now 'a:b' returns 'b'\n");
+  rha_warning("(colon_fn) for now 'a:b' returns 'b'");
   return b;
 }
 

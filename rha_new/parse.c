@@ -472,11 +472,13 @@ object_t resolve_list_by_prules(object_t env, list_t source)
   // without any particular heading symbol
   
   object_t prule = find_best_prule(env, source);
-  object_t excp;
+  object_t excp = 0;
+  object_t result = 0;
   if (prule) {
     // try to call that prule
     try {
-      return resolve_prule(env, source, prule);
+      // don't call 'return' inside 'try-catch' blocks!!!
+      result = resolve_prule(env, source, prule);
     }
     catch (excp) {
       if (excp == prule_failed_excp) {
@@ -484,15 +486,14 @@ object_t resolve_list_by_prules(object_t env, list_t source)
 	// hopefully, the prule has adjusted the source to avoid it
 	// from being called again
 	// this happens (e.g.) for 'minus_pr' if it encounters a prefix-minus
-	return resolve_list_by_prules(env, source);
+	result = resolve_list_by_prules(env, source);
       }
       else {
 	// pass the unknown exception on
 	throw(excp);
       }
     }
-    // never reach this point
-    assert(1==0);
+    return result;
   }
   else
     return resolve_dots_and_fn_calls(env, source);

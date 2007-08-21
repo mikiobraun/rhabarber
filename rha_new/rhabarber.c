@@ -54,9 +54,10 @@ int main(int argc, char **argv)
 
   // the read eval print loop (REPL)
   // never returns
-  printf("\n");
+  print("\n");
   while(1) {
     // read line
+    //sprintf(prompt, "rha[%d]$ ", frame_tos);  // for debugging 'try-catch'
     sprintf(prompt, "rha[%d]$ ", lineno++);
     string_t line = readline(prompt);
     if (!line) break;
@@ -69,7 +70,7 @@ int main(int argc, char **argv)
 	fprint(stdout, "%o\n", e);
       }
       else
-	fprintf(stdout, "parse returned ZERO\n");
+	rha_error("parse returned ZERO");
     }
     catch(excp) {
       excp_show(excp);

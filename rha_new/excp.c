@@ -25,14 +25,19 @@ object_t excp_newf(const char *fmt, ...)
   return excp_new(vsprint(fmt, &ap));
 }
 
-void excp_show(object_t excp)
+string_t excp_msg(object_t excp)
 {
   object_t msg_obj = lookup(excp, msg_sym);
   if (msg_obj && (ptype(msg_obj)==STRING_T)) {
     string_t msg = UNWRAP_PTR(STRING_T, msg_obj);
-    fprintf(stderr, "%s\n", msg);
+    return msg;
   }
   else {
-    fprintf(stderr, "[error] <no message>\n");
+    return sprint("[error] <no message>");
   }
+}
+
+void excp_show(object_t excp)
+{
+  fprintf(stderr, "%s\n", excp_msg(excp));
 }

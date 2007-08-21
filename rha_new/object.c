@@ -34,7 +34,7 @@ object_t object_empty_excp = 0;
 
 void object_init(object_t root, object_t module)
 {
-  object_empty_excp = excp_new("accessing a primitive prototype is not allowed\n");
+  object_empty_excp = excp_new("accessing a primitive prototype is not allowed");
 }
 
 

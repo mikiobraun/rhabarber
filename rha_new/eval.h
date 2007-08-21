@@ -33,7 +33,7 @@ extern int frame_tos;                           // frame counter
 #define begin_frame(_type)                                      \
     if (frame_tos >= FRAME_MAX_NESTING - 1) {                   \
       frame_tos = -1;                                           \
-      rha_error("Maximal frame nesting reached.\n");            \
+      rha_error("maximal frame nesting reached");		\
     }                                                           \
     else if ( (frame_type[++frame_tos] = (_type)) - (_type) );  \
     else if ( !setjmp(frame_stack[frame_tos]) ) do
@@ -50,33 +50,40 @@ extern int frame_tos;                           // frame counter
 // without 'frame_tos = 0;' we would miss an exception that is
 // generated in frame_jump by rha_error if we for instance just type
 // 'return' at the prompt.
-#define frame_jump(_type, _expr) do {                           \
-    if ((_type) == TRY_FRAME)                                   \
-      while ( (frame_tos >= 0)                                  \
-              && ((_type) != frame_type[frame_tos]) )           \
-                frame_tos--;                                    \
-    while ( (frame_tos >= 0)                                    \
-            && ((_type) < frame_type[frame_tos]) )              \
-	      frame_tos--;                                      \
-    if ((frame_tos < 0) || ((_type) != frame_type[frame_tos])) {\
-      frame_tos = 0;                                            \
-      if ((_type == FUNCTION_FRAME))                            \
-        rha_error("No function to 'return' from.\n");           \
-      else if ((_type == LOOP_FRAME))                           \
-        rha_error("No loop to 'break'.\n");                     \
-      else if ((_type == BLOCK_FRAME))                          \
-        rha_error("No block to 'return' from.\n");              \
-      else if ((_type == TRY_FRAME)) {                          \
-        fprintf(stderr, "Rhabarber failed to catch exception.\n"); \
-        exit(EXIT_FAILURE);                                     \
-      }                                                         \
-    }                                                           \
-    else {                                                      \
-      frame_value[frame_tos] = (_expr);                         \
-      longjmp(frame_stack[frame_tos], 1);                       \
-    }                                                           \
+
+#include "excp.h"
+
+#define frame_jump(_type, _expr) do {					\
+    if ((_type) == TRY_FRAME)						\
+      while ( (frame_tos >= 0)						\
+              && ((_type) != frame_type[frame_tos]) )			\
+	frame_tos--;							\
+    while ( (frame_tos >= 0)						\
+            && ((_type) < frame_type[frame_tos]) )			\
+      frame_tos--;							\
+    if ((frame_tos < 0) || ((_type) != frame_type[frame_tos])) {	\
+      frame_tos = 0;							\
+      if ((_type == FUNCTION_FRAME))					\
+        rha_error("no function to 'return' from");			\
+      else if ((_type == LOOP_FRAME))					\
+        rha_error("no loop to 'break'");				\
+      else if ((_type == BLOCK_FRAME))					\
+        rha_error("no block to 'return' from");				\
+      else if ((_type == TRY_FRAME)) {					\
+	excp_show(_expr);						\
+        fprintf(stderr,							\
+		"[fatal error] rhabarber failed to catch last exception\n"); \
+        exit(EXIT_FAILURE);						\
+      }									\
+    }									\
+    else {								\
+      frame_value[frame_tos] = (_expr);					\
+      longjmp(frame_stack[frame_tos], 1);				\
+    }									\
   } while (0);
 
+
+// WARNING: don't call 'return' inside 'try-catch' blocks!!!
 #define try begin_frame(TRY_FRAME)
 
 #define catch(_exception) while ((--frame_tos)-frame_tos);      \
