@@ -18,13 +18,15 @@
 #include "utils.h"
 #include "excp.h"
 #include "rha_init.h"
+#include "utilalloc.h"
 
 int main(int argc, char **argv)
 {
   // initialize garbage collection
   GC_INIT();
   GC_set_max_heap_size(512*1048576);
-  GC_enable();
+  util_malloc = GC_malloc;
+  util_free = GC_free;
 
   // use history for the shell
   using_history();
@@ -33,7 +35,7 @@ int main(int argc, char **argv)
   sayhello();
 
   // set up root object
-  object_t root = rha_init(root);
+  object_t root = rha_init();
 
   // load basic stuff implemented in rhabarber
   string_t fname = "prelude.rha";
