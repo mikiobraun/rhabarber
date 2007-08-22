@@ -52,7 +52,7 @@ object_t fn_fn(object_t this, tuple_t argnames, object_t fnbody)
   // defines a new rhabarber function
   object_t f = new();
   assign(f, scope_sym, this);
-  assign(f, argnames_sym, WRAP_PTR(TUPLE_T, tuple_proto, argnames));
+  assign(f, argnames_sym, WRAP_PTR(TUPLE_T, argnames));
   assign(f, fnbody_sym, fnbody);
   return f;
 }
@@ -287,5 +287,5 @@ object_t literal(object_t env, list_t parsetree)
   
   // and wrap it up!
 
-  return WRAP_PTR(LIST_T, list_proto, sink);  // a list!
+  return WRAP_PTR(LIST_T, sink);  // a list!
 }

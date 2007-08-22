@@ -186,7 +186,7 @@ foreach $module (@mods) {
 	elsif ($fntype ne "object_t" && $fntype ne "void") {
 	    $ucfntype = uc($fntype);
 	    $ifntype = 	substr($fntype, 0, -2);
-	    $fncall_str = "WRAP_PTR($ucfntype, $ifntype"."_proto, $fncall_str)";
+	    $fncall_str = "WRAP_PTR($ucfntype, $fncall_str)";
 	}
 	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n  return void_obj;\n" }
 	else { $init_c_functions .= "  return $fncall_str;\n" }
@@ -275,14 +275,18 @@ sub create_prototypes {
 	    $ucitem = uc($item);
 	    $iitem = substr($item, 0, -2);
 	    $uciitem = uc($iitem);
-	    $type_h_prototypes .= "extern object_t $iitem"."_proto;\n";
 	    $type_h_typeobjects .= "extern object_t $iitem"."_obj;\n";
-	    $init_c_prototypes .= "object_t $iitem"."_proto;\n";
 	    $init_c_typeobjects .= "object_t $iitem"."_obj;\n";
-	    $init_c_init_prototypes .= "  $iitem"."_proto = new_t($ucitem, 0);\n";
 	    $init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
 	}
     }
+    $ntdefs = scalar(@tdefs);
+    $type_h_prototypes .= "extern object_t prototypes[$ntdefs];\n";
+    $init_c_prototypes .= "object_t prototypes[$ntdefs];\n";
+    $init_c_init_prototypes .= "  for (int i = 0; i < $ntdefs; i++) {\n";
+    $init_c_init_prototypes .= "    prototypes[i] = 0; // new_pt might look at it\n";
+    $init_c_init_prototypes .= "    prototypes[i] = new_pt(i);\n";
+    $init_c_init_prototypes .= "  }";
 }
 
 sub create_symbols {
@@ -398,7 +402,7 @@ $init_c_functions
 #define ADD_TYPE(ttt, TTT)   \\
   ttt ## _obj = new();\\
   assign(root, ttt ## _sym, ttt ## _obj);\\
-  assign(ttt ## _obj, proto_sym, ttt ## _proto);
+  assign(ttt ## _obj, proto_sym, prototypes[TTT ## _T]);
 
 #define ADD_MODULE(mmm)   \\
   module = new();\\
@@ -408,25 +412,12 @@ void add_function(object_t module, symbol_t s,
                   object_t (*code)(tuple_t),
                   bool_t varargs, int narg, ...)
 {
-  // create a struct containing all info about the builtin function
-  function_t f = ALLOC_SIZE(sizeof(struct _function_t_));
-  f->code = code;
-  f->varargs = varargs;
-  f->narg = narg;
-  f->argptypes = ALLOC_SIZE(narg*sizeof(enum ptypes));
+  va_list args;
+  va_start(args, narg);
+  object_t f = vcreate_function(code, varargs, narg, args);
+  va_end(args);
 
-  // read out the argument types
-  va_list ap;
-  va_start(ap, narg);
-  for (int i=0; i<narg; i++)
-    f->argptypes[i] = va_arg(ap, int_t);
-  va_end(ap);
-
-  // create a new object
-  object_t o = wrap_ptr(FUNCTION_T, function_proto, f);
-  
-  // finally add it to module
-  assign(module, s, o);
+  assign(module, s, f);
 }
 
 object_t rha_init()

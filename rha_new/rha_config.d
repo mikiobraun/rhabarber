@@ -80,10 +80,10 @@ extern symbol_t method_call_sym;
 #define UNWRAP_REAL(o)   (unwrap_double(REAL_T, o))
 #define UNWRAP_PTR(pt, o) (unwrap_ptr(pt, o))
 
-#define WRAP_INT(i)    (wrap_int(INT_T, int_proto, i))
-#define WRAP_BOOL(b)   (wrap_int(BOOL_T, bool_proto, b))
-#define WRAP_SYMBOL(s) (wrap_int(SYMBOL_T, symbol_proto, s))
-#define WRAP_REAL(d)   (wrap_double(REAL_T, real_proto, d))
-#define WRAP_PTR(pt, proto, p)    (wrap_ptr(pt, proto, p))
+#define WRAP_INT(i)    (wrap_int(INT_T, i))
+#define WRAP_BOOL(b)   (wrap_int(BOOL_T, b))
+#define WRAP_SYMBOL(s) (wrap_int(SYMBOL_T, s))
+#define WRAP_REAL(d)   (wrap_double(REAL_T, d))
+#define WRAP_PTR(pt, p)    (wrap_ptr(pt, p))
 
 //PRULES

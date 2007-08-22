@@ -252,7 +252,7 @@ tuple_t prefix_minus_pr(object_t env, list_t parsetree)
   if (list_len(parsetree) < 2)
     rha_error("(parsing) prefix-minus requires argument.");
   list_popfirst(parsetree);
-  return tuple_make(2, WRAP_SYMBOL(neg_fn_sym), WRAP_PTR(LIST_T, list_proto, parsetree));
+  return tuple_make(2, WRAP_SYMBOL(neg_fn_sym), WRAP_PTR(LIST_T, parsetree));
 }
 
 tuple_t minus_pr(object_t env, list_t parsetree) 
@@ -348,7 +348,7 @@ tuple_t or_pr(object_t env, list_t parsetree)
   tuple_t t = tuple_new(2);					\
   tuple_set(t, 0, WRAP_SYMBOL(ttt ## _fn_sym));			\
   if (list_len(parsetree) > 0)					\
-    tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, parsetree));	\
+    tuple_set(t, 1, WRAP_PTR(LIST_T, parsetree));	\
   else								\
     tuple_set(t, 1, void_obj);					\
   return t;
@@ -447,7 +447,7 @@ tuple_t fn_pr(object_t env, list_t parsetree)
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   if (tuple_len(pre_t) == 2) {
     // the case: fn () code
-    tuple_set(t, 2, quoted(WRAP_PTR(TUPLE_T, tuple_proto, tuple_new(0))));
+    tuple_set(t, 2, quoted(WRAP_PTR(TUPLE_T, tuple_new(0))));
     tuple_set(t, 3, quoted(tuple_get(pre_t, 1)));
   }
   else {
@@ -458,11 +458,11 @@ tuple_t fn_pr(object_t env, list_t parsetree)
       tuple_set(t, 2, quoted(obj));
     else
       // fn (x) code
-      tuple_set(t, 2, quoted(WRAP_PTR(TUPLE_T, tuple_proto, tuple_make(1, obj))));
+      tuple_set(t, 2, quoted(WRAP_PTR(TUPLE_T, tuple_make(1, obj))));
     // add the code
     tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   }
-  //debug("(fn_pr) %o\n", WRAP_PTR(TUPLE_T, tuple_proto, t));
+  //debug("(fn_pr) %o\n", WRAP_PTR(TUPLE_T, t));
   return t;
 
 }
@@ -493,7 +493,7 @@ tuple_t quote_pr(object_t env, list_t parsetree)
   tuple_t t = tuple_new(2);					
   tuple_set(t, 0, WRAP_SYMBOL(quote_sym));			
   if (list_len(parsetree) > 0)					
-    tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, parsetree));	
+    tuple_set(t, 1, WRAP_PTR(LIST_T, parsetree));	
   else								
     tuple_set(t, 1, void_obj);					
   return t;
@@ -514,7 +514,7 @@ tuple_t quote_pr(object_t env, list_t parsetree)
 
 object_t quoted(object_t obj)
 {
-  return WRAP_PTR(TUPLE_T, tuple_proto, 
+  return WRAP_PTR(TUPLE_T, 
 		  tuple_make(2, WRAP_SYMBOL(quote_sym), obj));
 }
 
@@ -528,7 +528,7 @@ object_t copy_expr(object_t expr)
     tuple_t other = tuple_new(tlen);
     for (int i=0; i<tlen; i++)
       tuple_set(other, i, copy_expr(tuple_get(t, i)));
-    return WRAP_PTR(TUPLE_T, tuple_proto, other);
+    return WRAP_PTR(TUPLE_T, other);
   }
   else if (ptype(expr) == LIST_T) {
     list_t l = UNWRAP_PTR(LIST_T, expr);
@@ -536,7 +536,7 @@ object_t copy_expr(object_t expr)
     list_it it;
     for (list_begin(l, &it); !list_done(&it); list_next(&it))
       list_append(other, copy_expr(list_get(&it)));
-    return WRAP_PTR(LIST_T, list_proto, other);
+    return WRAP_PTR(LIST_T, other);
   }
   else
     return expr;
@@ -551,7 +551,7 @@ tuple_t resolve_incdec_prule(list_t parsetree)
   // what is that "copy" thing?
   //   inc_copy = fn (x) { o=copy(x); inc(x); return o };
   // similarly for 'dec'
-  //debug("resolve_incdec_prule(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
+  //debug("resolve_incdec_prule(%o)\n", WRAP_PTR(LIST_T, parsetree));
 
   assert(list_len(parsetree) > 0);
   if (list_len(parsetree) == 1)
@@ -569,7 +569,7 @@ tuple_t resolve_incdec_prule(list_t parsetree)
       else if (first_s == minusminus_sym)
 	tuple_set(t, 0, WRAP_SYMBOL(dec_sym));
       else assert(1==0);
-      tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, parsetree));
+      tuple_set(t, 1, WRAP_PTR(LIST_T, parsetree));
       return t;
     }
   }
@@ -586,7 +586,7 @@ tuple_t resolve_incdec_prule(list_t parsetree)
       else if (last_s == minusminus_sym)
 	tuple_set(t, 0, WRAP_SYMBOL(dec_copy_sym));
       else assert(1==0);
-      tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, parsetree));
+      tuple_set(t, 1, WRAP_PTR(LIST_T, parsetree));
       return t;
     }
   }
@@ -624,15 +624,15 @@ tuple_t resolve_infix_prule_list(list_t parsetree, glist_t *prule_sym_list, symb
     rha_error("(resolve_infix_prule) infix requires a nonempty lhs and rhs");
   tuple_t t = tuple_new(3);
   tuple_set(t, 0, WRAP_SYMBOL(fun_sym));
-  tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, lhs));
-  tuple_set(t, 2, WRAP_PTR(LIST_T, list_proto, rhs));
+  tuple_set(t, 1, WRAP_PTR(LIST_T, lhs));
+  tuple_set(t, 2, WRAP_PTR(LIST_T, rhs));
   return t;
 }
 
 tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym, glist_t *assign_sym_list)
 // resolves the right-most assignment (could be = += -= *= /=)
 {
-  //  debug("resolve_assign_prule(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
+  //  debug("resolve_assign_prule(%o)\n", WRAP_PTR(LIST_T, parsetree));
 
   // (0) let's find the first appearance (left-most) of an assignment
   tuple_t pre_t = resolve_infix_prule_list(parsetree, assign_sym_list,
@@ -665,7 +665,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
 	rha_error("(parsing) preceeding the symbol must be a dot, "
 		  "found '%o'", a_dot);
       // now, 'lhs' contains the LHS of the dot
-      tuple_set(t, 1, WRAP_PTR(LIST_T, list_proto, lhs));
+      tuple_set(t, 1, WRAP_PTR(LIST_T, lhs));
     }
   }
   else if (ptype(lhs_obj) != SYMBOL_T)
@@ -693,7 +693,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
       tuple_set(rhs, 0, WRAP_SYMBOL(divide_fn_sym));
     else
       assert(1==0);
-    rhs_obj = WRAP_PTR(TUPLE_T, tuple_proto, rhs);
+    rhs_obj = WRAP_PTR(TUPLE_T, rhs);
   }
   // finally add it to the tuple
   tuple_set(t, 3, rhs_obj);
@@ -752,8 +752,8 @@ tuple_t resolve_cmp_prule(object_t env, list_t parsetree)
     part1 = part2;
     part2 = list_popfirst(pieces);
     call = tuple_make(3, and_fn_obj,
-		      WRAP_PTR(TUPLE_T, tuple_proto, call),
-		      WRAP_PTR(TUPLE_T, tuple_proto, 
+		      WRAP_PTR(TUPLE_T, call),
+		      WRAP_PTR(TUPLE_T, 
 			       tuple_make(3, cmp_obj, part1, part2)));
   }
   return call;
@@ -790,7 +790,7 @@ list_t read_freefix_args(object_t env, list_t parsetree, int_t narg)
     list_t l = tuple_to_list(t);
     list_popfirst(l);
     if (list_len(l) > 1)
-      list_append(args, WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(l)));
+      list_append(args, WRAP_PTR(TUPLE_T, list_to_tuple(l)));
     else if (list_len(l) == 1)
       list_append(args, list_popfirst(l));
     // else
@@ -801,7 +801,7 @@ list_t read_freefix_args(object_t env, list_t parsetree, int_t narg)
     list_append(args, resolve(env, list_popfirst(parsetree)));
   else
     list_append(args, resolve_list_by_prules(env, parsetree));
-  //debug("%o\n", WRAP_PTR(LIST_T, list_proto, args));
+  //debug("%o\n", WRAP_PTR(LIST_T, args));
   return args;
 }
 
@@ -816,7 +816,7 @@ tuple_t resolve_freefix_prule1(object_t env, list_t parsetree,
   //
   // note that all but the last of several arguments to keys must be
   // in rounded brackets
-  //debug("resolve_freefix_prule1(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
+  //debug("resolve_freefix_prule1(%o)\n", WRAP_PTR(LIST_T, parsetree));
   object_t head = list_popfirst(parsetree);
   assert(UNWRAP_SYMBOL(head) == key1);
   list_t call = read_freefix_args(env, parsetree, narg1);
@@ -840,7 +840,7 @@ tuple_t resolve_freefix_prule2(object_t env, list_t parsetree,
   // note that the expression with key2 is optional
   // note that all but the last of several arguments to keys must be
   // in rounded brackets
-  //  debug("resolve_freefix_prule2(%o)\n", WRAP_PTR(LIST_T, list_proto, parsetree));
+  //  debug("resolve_freefix_prule2(%o)\n", WRAP_PTR(LIST_T, parsetree));
   object_t head = list_popfirst(parsetree);
   assert(UNWRAP_SYMBOL(head) == key1);
   // split the parsetree

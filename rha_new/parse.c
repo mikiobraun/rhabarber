@@ -106,7 +106,7 @@ object_t resolve(object_t env, object_t expr)
 
 object_t resolve_list_by_head(object_t env, list_t source)
 {
-  //debug("resolve_list_by_head(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  //debug("resolve_list_by_head(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
   // take the list 'source'
   // built a list 'sink'
   // finally return the 'sink' transformed into a tuple
@@ -143,12 +143,12 @@ object_t resolve_list_by_head(object_t env, list_t source)
  
 object_t resolve_code_block(object_t env, list_t source)
 {
-  //debug("resolve_code_block(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  //debug("resolve_code_block(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
   // code blocks  -->  returns a list_t
   // { x = 1; y = 7; deliver 5; { a=5; } x=5 }
   // split by semicolon, comma is not allowed
   if (list_len(source) == 0) {
-    return WRAP_PTR(LIST_T, list_proto, list_new());
+    return WRAP_PTR(LIST_T, list_new());
   }
   list_t sink = list_new();
   list_t part = list_new();
@@ -173,20 +173,20 @@ object_t resolve_code_block(object_t env, list_t source)
   }
   if (list_len(part)>0)
     list_append(sink, resolve_list_by_prules(env, part));
-  return WRAP_PTR(LIST_T, list_proto, sink);  // a list!
+  return WRAP_PTR(LIST_T, sink);  // a list!
 }
 
 
 object_t resolve_tuple(object_t env, list_t source)
 {
-  //debug("resolve_tuple(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  //debug("resolve_tuple(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
   // grouped expression and argument lists
   // (x+1)*4 or (x, y, z)
   // split only by comma, no semiclon is allowed
   if (list_len(source) == 0) {
     tuple_t t = tuple_new(1);
     tuple_set(t, 0, WRAP_SYMBOL(rounded_sym));
-    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+    return WRAP_PTR(TUPLE_T, t);
   }
   list_t sink = list_new();
   list_t part = list_new();
@@ -215,14 +215,14 @@ object_t resolve_tuple(object_t env, list_t source)
   if (list_len(part) > 0)
     list_append(sink, resolve_list_by_prules(env, part));
   list_prepend(sink, WRAP_SYMBOL(rounded_sym));
-  //debug("return (resolve_tuple): %o\n", WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink)));
-  return WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(sink));
+  //debug("return (resolve_tuple): %o\n", WRAP_PTR(TUPLE_T, list_to_tuple(sink)));
+  return WRAP_PTR(TUPLE_T, list_to_tuple(sink));
 }
 
 
 object_t resolve_complex_literal(object_t env, list_t source)
 {
-  //debug("resolve_complex_literal(%o)\n", WRAP_PTR(LIST_T, list_proto, source));
+  //debug("resolve_complex_literal(%o)\n", WRAP_PTR(LIST_T, source));
   // complex literals
   // [x, 17] or [ 2*x for x in [1,2,3]]
   
@@ -244,8 +244,8 @@ object_t resolve_complex_literal(object_t env, list_t source)
   tuple_t t = tuple_new(3);
   tuple_set(t, 0, WRAP_SYMBOL(literal_sym));
   tuple_set(t, 1, env);
-  tuple_set(t, 2, quoted(WRAP_PTR(LIST_T, list_proto, source)));
-  return WRAP_PTR(TUPLE_T, tuple_proto, t);
+  tuple_set(t, 2, quoted(WRAP_PTR(LIST_T, source)));
+  return WRAP_PTR(TUPLE_T, t);
 }
 
  
@@ -296,7 +296,7 @@ object_t resolve_prule(object_t env, list_t source, object_t prule)
   tuple_t prule_call = tuple_new(tlen);
   tuple_set(prule_call, 0, prule);
   tuple_set(prule_call, 1, env);
-  tuple_set(prule_call, 2, WRAP_PTR(LIST_T, list_proto, source));
+  tuple_set(prule_call, 2, WRAP_PTR(LIST_T, source));
 
   // the list containing the parse tree
   // run the prule itself to resolve it
@@ -421,7 +421,7 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
       
       // we are potentially constructing a method call
       dotted = true;
-      expr = WRAP_PTR(TUPLE_T, tuple_proto, t);
+      expr = WRAP_PTR(TUPLE_T, t);
       continue;
     }
     else
@@ -448,7 +448,7 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
       list_prepend(l, tuple_get(t, 2));           // prepend '\f'
       list_prepend(l, tuple_get(t, 1));           // prepend 'a'
       list_prepend(l, WRAP_SYMBOL(callslot_sym)); // prepend 'callslot'
-      expr = WRAP_PTR(TUPLE_T, tuple_proto, list_to_tuple(l));
+      expr = WRAP_PTR(TUPLE_T, list_to_tuple(l));
     }
     else {
       // construct a plain function call
@@ -467,7 +467,7 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
 
 object_t resolve_list_by_prules(object_t env, list_t source)
 {
-  //debug("resolve_prules(%o, %o)\n", env, WRAP_PTR(LIST_T, list_proto, source));
+  //debug("resolve_prules(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
   // it is a tuple containing a white-spaced list
   // without any particular heading symbol
   
@@ -515,7 +515,7 @@ object_t replace_expr(object_t expr, symbol_t s, object_t sub)
     tuple_t newt = tuple_new(tlen);
     for (int i=0; i<tuple_len(t); i++)
       tuple_set(newt, i, replace_expr(tuple_get(t, i), s, sub));
-    return WRAP_PTR(TUPLE_T, tuple_proto, newt);
+    return WRAP_PTR(TUPLE_T, newt);
   }
   return expr;
 }
@@ -525,19 +525,19 @@ object_t resolve_macro(object_t env, tuple_t t)
 {
   int tlen = tuple_len(t);
   if (tlen == 0) 
-    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+    return WRAP_PTR(TUPLE_T, t);
   object_t t0 = tuple_get(t, 0);
   if (ptype(t0) != SYMBOL_T)
-    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+    return WRAP_PTR(TUPLE_T, t);
   symbol_t s = UNWRAP_SYMBOL(t0);
   object_t macro = lookup(env, s);
   if (!macro)
-    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+    return WRAP_PTR(TUPLE_T, t);
   if (!lookup(macro, symbol_new("ismacro")))
-    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+    return WRAP_PTR(TUPLE_T, t);
   object_t macro_body = lookup(macro, symbol_new("fnbody"));
   if (!macro_body)
-    return WRAP_PTR(TUPLE_T, tuple_proto, t);
+    return WRAP_PTR(TUPLE_T, t);
   object_t _macro_args = lookup(macro, symbol_new("argnames"));
   if (!_macro_args)
     rha_error("(parsing) macro found but args are missing");

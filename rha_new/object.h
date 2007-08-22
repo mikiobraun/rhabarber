@@ -12,22 +12,26 @@
 #define OBJECT_H
 
 #include <stdbool.h>
+#include <stdarg.h>
 #include "rha_types.h"
 
 // stuff for the perl magic
 #define rhabarber
+
+// a union for the raw content
+union raw_t {
+  int i;
+  float f;
+  double d;
+  void *p;              // possible raw content
+};
 
 /* the rhabarber object */
 struct rha_object {
   enum ptypes ptype;            // primtype (ptype): internal type 
                           // that describes the content
   struct symtable *table; // symbol table of slots
-  union {
-    int i;
-    float f;
-    double d;
-    void *p;              // possible raw content
-  } raw;
+  union raw_t raw;
 };
 
 extern object_t object_empty_excp;
@@ -38,8 +42,14 @@ extern object_t object_empty_excp;
 extern       void       object_init(object_t root, object_t module);
 
 extern _rha_ object_t   new();
-extern       object_t   new_t(int_t pt, object_t proto);
-extern _rha_ object_t   copy(object_t o);
+extern       object_t   new_factory(object_t obj);
+extern       object_t   new_pt(int_t pt);
+extern       object_t   create_function(object_t (*code)(tuple_t),
+					bool_t varargs, int narg, ...);
+extern       object_t   vcreate_function(object_t (*code)(tuple_t),
+					 bool_t varargs, int narg, va_list);
+
+extern       object_t   copy_pt(object_t o);
 extern _rha_ address_t  addr(object_t o);
 extern _rha_ object_t   clone(object_t parent);
 extern       int_t      ptype(object_t);      // primtype
@@ -72,14 +82,17 @@ extern _rha_ int_t      times_fn(object_t a, object_t b);
 extern _rha_ int_t      divide_fn(object_t a, object_t b);
 extern _rha_ int_t      neg_fn(object_t a);
 
-extern       object_t   wrap_int(int ptype, object_t proto, int i);
-extern       object_t   wrap_float(int ptype, object_t proto, float f);
-extern       object_t   wrap_double(int ptype, object_t proto, double d);
-extern       object_t   wrap_ptr(int ptype, object_t proto, void *p);
+extern       object_t   wrap_int(int ptype, int i);
+extern       object_t   wrap_float(int ptype, float f);
+extern       object_t   wrap_double(int ptype, double d);
+extern       object_t   wrap_ptr(int ptype, void *p);
 extern       int        unwrap_int(int ptype, object_t o);
 extern       float      unwrap_float(int ptype, object_t o);
 extern       double     unwrap_double(int ptype, object_t o);
 extern       void      *unwrap_ptr(int ptype, object_t o);
+
+extern       object_t   wrap(int ptype, ...);
+
 
 // 'lookup'
 //     z          -> lookup(local, \z);

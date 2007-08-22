@@ -39,7 +39,7 @@ extern int yylineno;
                  }
 \"[^\"]*\"	 { 
                    yytext[strlen(yytext) - 1] = 0;
-                   yylval.obj = WRAP_PTR(STRING_T, string_proto, escexpand(yytext + 1));
+                   yylval.obj = WRAP_PTR(STRING_T, escexpand(yytext + 1));
                    return STRING;
                  }
 [0-9]+		 { yylval.obj = WRAP_INT(atoi(yytext)); return INT; }

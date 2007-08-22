@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include "rha_lexer.h"
 #include "rha_types.h"
-  //#include "utils.h"
 #include "messages.h"
 
 #include "tuple_fn.h"
@@ -65,7 +64,7 @@ int numerrors;
 object_t solidify(symbol_t s, list_t l)
 {
   list_prepend(l, WRAP_SYMBOL(s));
-  return WRAP_PTR(LIST_T, list_proto, l);
+  return WRAP_PTR(LIST_T, l);
 }
 
 

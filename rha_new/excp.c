@@ -14,7 +14,7 @@ void excp_init(object_t root, object_t module)
 object_t excp_new(string_t msg)
 {
   object_t excp = new();
-  assign(excp, msg_sym, WRAP_PTR(STRING_T, string_proto, msg));
+  assign(excp, msg_sym, WRAP_PTR(STRING_T, msg));
   return excp;
 }
 

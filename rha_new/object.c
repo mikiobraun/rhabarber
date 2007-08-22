@@ -55,21 +55,41 @@ object_t new()
   return o;
 }
 
-object_t new_t(int_t pt, object_t proto)
+object_t new_pt(int_t pt)
 {
   object_t o = new();
   setptype(o, pt);
-  if (proto)
-    assign(o, symbol_new("parent"), proto);    
+  assign(o, symbol_new("parent"), prototypes[pt]);
   return o;
 }
 
-object_t copy(object_t other)
+object_t b_copy_pt(tuple_t t)
 {
+  return copy_pt(tuple_get(t, 1));  
+}
+
+object_t new_factory(object_t obj)
+{
+  // here we use the proxy stuff
+  // the cool thing is that in code snippets a 17 will always look
+  // like a 17, but each access to it will generate a new one
   object_t o = new();
-  o->ptype = other->ptype;
-  o->table = symtable_copy(other->table);
-  o->raw   = other->raw;
+  tuple_t t = tuple_new(2);
+  tuple_set(t, 0, create_function(b_copy_pt, false, 1, OBJECT_T));
+  tuple_set(t, 1, obj);
+  assign(o, proxy_sym, fn_fn(0, tuple_new(0), 
+			     WRAP_PTR(TUPLE_T, t)));
+  return o;
+} 
+
+object_t copy_pt(object_t other)
+{
+  // note that symbol table information is lost
+  // thus this function is not intended to copy OBJECT_T stuff
+  assert(ptype(other) != OBJECT_T);
+  object_t o = new();
+  o->ptype   = other->ptype;
+  o->raw     = other->raw;
   return o;
 }
 
@@ -106,35 +126,55 @@ void setptype(object_t o, int_t id)
   o->ptype = id;
 }
 
-object_t wrap_int(int ptype, object_t proto, int i)
+object_t wrap_int(int ptype, int i)
 {
-  object_t o = new_t(ptype, proto);
+  object_t o = new_pt(ptype);
   o->raw.i = i;
   return o;
 }
 
-object_t wrap_float(int ptype, object_t proto, float f)
+object_t wrap_float(int ptype, float f)
 {
-  object_t o = new_t(ptype, proto);
+  object_t o = new_pt(ptype);
   o->raw.f = f;
   return o;
 }
 
-object_t wrap_double(int ptype, object_t proto, double d)
+object_t wrap_double(int ptype, double d)
 {
-  object_t o = new_t(ptype, proto);
+  object_t o = new_pt(ptype);
   o->raw.d = d;
   return o;
 }
 
-object_t wrap_ptr(int ptype, object_t proto, void *p)
+object_t wrap_ptr(int ptype, void *p)
 {
   assert(ptype!=BOOL_T);
   assert(ptype!=INT_T);
   assert(ptype!=REAL_T);
   assert(ptype!=SYMBOL_T);
-  object_t o = new_t(ptype, proto);
+  object_t o = new_pt(ptype);
   o->raw.p = p;
+  return o;
+}
+
+object_t wrap(int ptype, ...)
+{
+  va_list ap;
+  object_t o = new_pt(ptype);
+  switch (ptype) {
+  case BOOL_T:
+  case INT_T:
+  case SYMBOL_T:
+    o->raw.i = va_arg(ap, int);
+    break;
+  case REAL_T:
+    o->raw.d = va_arg(ap, double);
+    break;
+  default:
+    o->raw.p = va_arg(ap, void *);
+  }
+  va_end(ap);
   return o;
 }
 
@@ -164,6 +204,44 @@ void *unwrap_ptr(int pt, object_t o)
     throw(object_empty_excp);
   return p;
 }
+
+
+/*
+ *
+ * Creating builtin functions
+ *
+ */
+object_t vcreate_function(object_t (*code)(tuple_t),
+			  bool_t varargs, int narg, va_list args)
+{
+  // create a struct containing all info about the builtin function
+  function_t f = ALLOC_SIZE(sizeof(struct _function_t_));
+  f->code = code;
+  f->varargs = varargs;
+  f->narg = narg;
+  f->argptypes = ALLOC_SIZE(narg*sizeof(enum ptypes));
+
+  // read out the argument types
+  for (int i=0; i<narg; i++)
+    f->argptypes[i] = va_arg(args, int_t);
+
+  // create a new object and return it
+  return wrap_ptr(FUNCTION_T, f);
+}
+
+
+object_t create_function(object_t (*code)(tuple_t),
+			 bool_t varargs, int narg, ...)
+{
+  // read out the argument types
+  va_list args;
+  va_start(args, narg);
+  object_t f = vcreate_function(code, varargs, narg, args);
+  va_end(args);
+
+  return f;
+}
+
 
 /*
  *
@@ -371,7 +449,7 @@ object_t dec(object_t o)
 object_t inc_copy(object_t o)
 {
   if (ptype(o) == INT_T) {
-    object_t other = copy(o);
+    object_t other = copy_pt(o);
     o->raw.i++;
     return other;
   }
@@ -382,7 +460,7 @@ object_t inc_copy(object_t o)
 object_t dec_copy(object_t o)
 {
   if (ptype(o) == INT_T) {
-    object_t other = copy(o);
+    object_t other = copy_pt(o);
     o->raw.i--;
     return other;
   }
