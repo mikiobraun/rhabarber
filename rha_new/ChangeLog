@@ -1,0 +1,13 @@
+2007-08-22  Mikio Braun  <mikiobraun@gmail.com>
+
+	* gtree.h: If FAST_GTREE_LIMIT is defined, the first
+	FAST_GTREE_LIMIT - 1 symbols will be stored in a field, not the
+	tree. While this reduces lookups to O(1), object creation becomes
+	more expensive. For moderate values of FAST_GTREE_LIMIT, for
+	example, 12, runtime for fib(25) decreases to 60%.
+
+	* rha_config.pl: symbols are now generated in the order they were
+	defined.
+	
+
+
