@@ -66,20 +66,21 @@ proxy = fn (s) root.modules.core.proxy_fn(this, s);
 
 
 // add functions to the tuple prototype
-//tuple.len = modules.tuple_fn.tuple_len;
-//tuple.set = modules.tuple_fn.tuple_set;
-//tuple.get = modules.tuple_fn.tuple_get;
-//tuple.iterable = fn () {
-//  iter = new();
-//  iter.counter = 0;
-//  iter.tuple = this;
-//  iter.next = fn () 
-//    if (counter < this.tuple.len)
-//      return this.tuple.get(counter++);
-//    else
-//      break;
-//  return iter;
-//};
+tuple.new = modules.tuple_fn.tuple_new;
+tuple.proto.len = fn () modules.tuple_fn.tuple_len(this);
+tuple.proto.set = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
+tuple.proto.get = fn (i) modules.tuple_fn.tuple_get(this, i);
+tuple.proto.iter = fn () {
+  i = new();
+  i.counter = 0;
+  i.tuple = this;
+  i.next = fn ()
+    if (this.counter < this.tuple.len())
+      return this.tuple.get(this.counter++)
+    else
+      break;
+  return i;
+};
 
 // list stuff
 //list.len      = modules.list_fn.list_len;

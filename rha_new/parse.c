@@ -21,15 +21,17 @@ object_t prule_failed_excp = 0; // exception
 
 object_t prules = 0;  // the object containing all prules
 
+symbol_t semicolon_sym = 0;
+symbol_t comma_sym = 0;
+symbol_t dot_sym = 0;
+
 void parse_init(object_t root, object_t module)
 {
   prule_failed_excp = excp_new("prule failed");
 
-  // the following symbols are only used in 'parse.c'
   semicolon_sym = symbol_new(";");
   comma_sym = symbol_new(",");
   dot_sym = symbol_new(".");
-  tuple_forced_sym = symbol_new("tuple_forced");
 
   // the object 'prules' is used to lookup the prules
   // its location should be changed here
@@ -39,7 +41,7 @@ void parse_init(object_t root, object_t module)
     fprint(stderr, "    Lookup of 'root.modules' failed.\n");
     fprint(stderr, "    We won't use any prules!\n");
   }
-  prules = lookup(modules, symbol_new("prules"));
+  prules = lookup(modules, prules_sym);
   if (!prules) {
     fprint(stderr, "WARNING (parse_init):\n");
     fprint(stderr, "    Lookup of 'root.modules.prules' failed.\n");
@@ -533,12 +535,12 @@ object_t resolve_macro(object_t env, tuple_t t)
   object_t macro = lookup(env, s);
   if (!macro)
     return WRAP_PTR(TUPLE_T, t);
-  if (!lookup(macro, symbol_new("ismacro")))
+  if (!lookup(macro, ismacro_sym))
     return WRAP_PTR(TUPLE_T, t);
-  object_t macro_body = lookup(macro, symbol_new("fnbody"));
+  object_t macro_body = lookup(macro, fnbody_sym);
   if (!macro_body)
     return WRAP_PTR(TUPLE_T, t);
-  object_t _macro_args = lookup(macro, symbol_new("argnames"));
+  object_t _macro_args = lookup(macro, argnames_sym);
   if (!_macro_args)
     rha_error("(parsing) macro found but args are missing");
   tuple_t macro_args = UNWRAP_PTR(TUPLE_T, _macro_args);

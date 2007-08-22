@@ -51,9 +51,9 @@ extern symbol_t argnames_sym;
 extern symbol_t fnbody_sym;
 extern symbol_t priority_sym;
 extern symbol_t hasproxy_sym;
-extern symbol_t done_sym;
-extern symbol_t get_sym;
 extern symbol_t next_sym;
+extern symbol_t msg_sym;
+extern symbol_t ismacro_sym;
 
 // special slots in root
 extern symbol_t modules_sym;
@@ -64,9 +64,6 @@ extern symbol_t prules_sym;
 extern symbol_t curlied_sym;
 extern symbol_t squared_sym;
 extern symbol_t rounded_sym;
-extern symbol_t semicolon_sym;
-extern symbol_t comma_sym;
-extern symbol_t dot_sym;
 extern symbol_t tuple_forced_sym;
 
 // other special symbols

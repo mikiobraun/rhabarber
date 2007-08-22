@@ -7,6 +7,7 @@
 #include "rha_types.h"
 #include "object.h"
 #include "symbol_fn.h"
+#include "messages.h"
 #include "alloc.h"
 
   //#include "rhalexer.h"
@@ -53,7 +54,7 @@ extern int yylineno;
                  }
 \n[ \t]*\n       { yylval.obj = WRAP_SYMBOL(symbol_new(";")); return SYMBOL; }
 \n		 yylineno++;
-.		 printf("Warning: Unrecognized character \"%s\"\n", yytext);
+.		 rha_warning("unrecognized character \"%s\"", yytext);
 <<EOF>>		 yyterminate();
 %%
 YY_BUFFER_STATE currentbuffer;

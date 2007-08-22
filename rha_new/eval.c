@@ -86,6 +86,10 @@ object_t eval(object_t env, object_t expr)
     // (must be copied as well, since they might be modified)
     return copy_pt(expr);
   default:
+    if (expr == void_obj)
+      // do nothing
+      return expr;
+    // else don't know!
     rha_error("(eval) don't know how to evaluate '%o'", expr);
     assert(1==0);
   }

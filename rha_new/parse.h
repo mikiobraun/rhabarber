@@ -18,10 +18,11 @@ extern       void     parse_init(object_t root, object_t module);
 extern       bool     is_symbol(symbol_t a_symbol, object_t expr);
 
 
+// note that the following symbols can NOT go to 'rha_config.d' since
+// the string for 'semicolon_sym' is ';' and not 'semicolon'
 extern symbol_t semicolon_sym;
 extern symbol_t comma_sym;
 extern symbol_t dot_sym;
-extern symbol_t tuple_forced_sym;
 
 //extern _rha_ object_t prule_failed_excp; // exception
 extern object_t prule_failed_excp; // exception

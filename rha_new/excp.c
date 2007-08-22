@@ -4,11 +4,9 @@
 #include "utils.h"
 
 
-symbol_t msg_sym = 0;
-
 void excp_init(object_t root, object_t module)
 {
-  msg_sym = symbol_new("msg");
+  // nothingness
 }
 
 object_t excp_new(string_t msg)

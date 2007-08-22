@@ -10,10 +10,6 @@
 static void fmt_object(STREAM *s, char *fmt, va_list *ap)
 {
   strputs(s, to_string(va_arg(*ap, object_t)));
-  //if (fmt[strlen(fmt) - 2] != '#')
-  //  strputs(s, object_to_string(va_arg(ap, object_t)));
-  //else
-  //  strputs(s, rha_lookup(va_arg(ap, object_t), symbol_new("typename")));
 }
 
 void print(const char *fmt, ...)

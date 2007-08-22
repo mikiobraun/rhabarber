@@ -59,7 +59,7 @@ object_t new_pt(int_t pt)
 {
   object_t o = new();
   setptype(o, pt);
-  assign(o, symbol_new("parent"), prototypes[pt]);
+  assign(o, parent_sym, prototypes[pt]);
   return o;
 }
 
@@ -91,7 +91,7 @@ object_t clone(object_t parent)
   object_t o = new();
   o->ptype = parent->ptype;
   o->raw = parent->raw;
-  symtable_assign( o->table, symbol_new("parent"), parent);
+  symtable_assign( o->table, parent_sym, parent);
   // debug(" %p.parent -> %p (in object.h->clone)\n", (void *) o, (void *) parent);
   return o;
 }
@@ -344,7 +344,7 @@ string_t to_string(object_t o)
       switch (ptype(o)) {
       case STRING_T: {
 	s = UNWRAP_PTR(STRING_T, o);
-	return sprint("%s", s); 
+	return sprint("\"%s\"", s); 
       }
       case TUPLE_T: {
 	tuple_t t = UNWRAP_PTR(TUPLE_T, o);
