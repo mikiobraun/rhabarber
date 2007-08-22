@@ -68,20 +68,6 @@ object_t b_copy_pt(tuple_t t)
   return copy_pt(tuple_get(t, 1));  
 }
 
-object_t new_factory(object_t obj)
-{
-  // here we use the proxy stuff
-  // the cool thing is that in code snippets a 17 will always look
-  // like a 17, but each access to it will generate a new one
-  object_t o = new();
-  tuple_t t = tuple_new(2);
-  tuple_set(t, 0, create_function(b_copy_pt, false, 1, OBJECT_T));
-  tuple_set(t, 1, obj);
-  assign(o, proxy_sym, fn_fn(0, tuple_new(0), 
-			     WRAP_PTR(TUPLE_T, t)));
-  return o;
-} 
-
 object_t copy_pt(object_t other)
 {
   // note that symbol table information is lost

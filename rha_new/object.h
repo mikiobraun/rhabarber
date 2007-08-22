@@ -42,7 +42,6 @@ extern object_t object_empty_excp;
 extern       void       object_init(object_t root, object_t module);
 
 extern _rha_ object_t   new();
-extern       object_t   new_factory(object_t obj);
 extern       object_t   new_pt(int_t pt);
 extern       object_t   create_function(object_t (*code)(tuple_t),
 					bool_t varargs, int narg, ...);
