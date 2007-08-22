@@ -361,10 +361,10 @@ string_t to_string(object_t o)
 	s = gc_strdup("[");
 	list_t l = UNWRAP_PTR(LIST_T, o);
 	int i; 
-	list_it it;
-	for(list_begin(l, &it), i = 0; !list_done(&it); list_next(&it), i++) {
+	list_it_t it;
+	for(it = list_begin(l), i = 0; !list_done(it); list_next(it), i++) {
 	  if (i > 0) s = string_append(s, ", ");
-	  s = string_append(s, to_string(list_get(&it)));
+	  s = string_append(s, to_string(list_get(it)));
 	}
 	return string_append(s, "]");
       }

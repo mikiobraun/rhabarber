@@ -21,10 +21,12 @@ t.summarize();
 
 t = test("tuple test");
 x = tuple.new(4);
+t.check(x.len() == 4);
 x.set(0, 42);
 x.set(1, "seventeen");
 t.check(x.get(0) == 42);
 t.check(x.get(1) == "seventeen");
+t.check(x.len() == 4);
 t.summarize();
 
 t = test("for loop test");
@@ -39,13 +41,23 @@ t.check(y==125);
 t.summarize();
 
 t = test("colon test");
-x = tuple.new(5);
+x = tuple(5);
 x.set(0, 5);
 x.set(1, 6);
 x.set(2, 7);
 x.set(3, 8);
 x.set(4, 9);
 y = 5:10;
+t.check(y.len() == 5);
 for (i in 0:5)
   t.check(x.get(i) == y.get(i));
+t.summarize();
+
+t = test("list test");
+l = list.new();
+l.append(17);
+l.append(42);
+y = 111;
+for (x in l) y += x;
+t.check(y == 170);
 t.summarize();

@@ -1,5 +1,16 @@
 2007-08-22  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>
 
+	* prelude.rha: also added function functionality to 'list', now we
+	can construct a list in two ways:
+
+	     l1 = list.new();
+	     l2 = list();
+
+	* list_fn.c (list_begin, list_done, list_next, list_get):
+	introduced a new rhabarber type 'list_it_t' which is a list
+	iterator.  It is used in 'prelude.rha' to define iteration for
+	lists, see 'test.rha'.
+
 	* core.c (colon_fn): added case for integers: now 
 
 	     3:7

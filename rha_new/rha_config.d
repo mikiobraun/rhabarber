@@ -10,6 +10,7 @@
 #include "parse.h"
 #include "symbol_fn.h"
 #include "tuple_fn.h"
+#include "list_fn.h"
 #include "int_fn.h"
 #include "string_fn.h"
 
@@ -33,7 +34,8 @@ typedef double              _rha_ real_t;
 typedef double *            _rha_ mat_t;
 typedef char *              _rha_ string_t;
 typedef void *              _rha_ address_t;
-typedef struct glist*       _rha_ list_t;
+typedef struct glist *      _rha_ list_t;
+typedef glist_iterator_t *  _rha_ list_it_t;
 
 //SYMBOLS
 // the most basic symbols

@@ -537,9 +537,9 @@ object_t copy_expr(object_t expr)
   else if (ptype(expr) == LIST_T) {
     list_t l = UNWRAP_PTR(LIST_T, expr);
     list_t other = list_new();
-    list_it it;
-    for (list_begin(l, &it); !list_done(&it); list_next(&it))
-      list_append(other, copy_expr(list_get(&it)));
+    list_it_t it;
+    for (it = list_begin(l); !list_done(it); list_next(it))
+      list_append(other, copy_expr(list_get(it)));
     return WRAP_PTR(LIST_T, other);
   }
   else

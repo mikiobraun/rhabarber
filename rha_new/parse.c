@@ -258,9 +258,9 @@ object_t find_best_prule(object_t env, list_t source)
   // loop over all entries and check the symbols whether they are prules
   double best_priority = 0.0;  // initially the priority is like functions
   object_t best_prule  = 0;    // the object containing the best prule
-  glist_iterator_t it;
-  for (list_begin(source, &it); !list_done(&it); glist_next(&it)) {
-    object_t symbol_obj = list_get(&it);
+  list_it_t it;
+  for (it = list_begin(source); !list_done(it); glist_next(it)) {
+    object_t symbol_obj = list_get(it);
     if (ptype(symbol_obj) == SYMBOL_T) {
       object_t prule = lookup(prules, UNWRAP_SYMBOL(symbol_obj));
       if (!prule) continue;

@@ -85,25 +85,27 @@ object_t list_poplast(list_t l)
 }
 
 /*
- * Iteration - so far only in C (unfortunately)
+ * Iteration
  */ 
 
-void list_begin(list_t l, list_it *i)
+list_it_t list_begin(list_t l)
 {
+  list_it_t i = ALLOC_SIZE(sizeof(glist_iterator_t));
   *i = glist_begin(l);
+  return i;
 }
 
-bool list_done(list_it *i)
+bool list_done(list_it_t i)
 {
   return glist_done(i);
 }
 
-void list_next(list_it *i)
+void list_next(list_it_t i)
 {
   glist_next(i);
 }
 
-object_t list_get(list_it *i)
+object_t list_get(list_it_t i)
 {
   return glist_getp(i);
 }

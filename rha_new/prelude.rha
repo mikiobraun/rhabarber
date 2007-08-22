@@ -88,20 +88,23 @@ tuple.proto.iter = fn () {
 };
 
 // list stuff
-//list.len      = modules.list_fn.list_len;
-//list.copy     = modules.list_fn.list_copy;
-//list.append   = modules.list_fn.list_append;
-//list.prepend  = modules.list_fn.list_prepend;
-//list.extend   = modules.list_fn.list_extend;
-//list.to_tuple = modules.list_fn.list_to_tuple;
-//list.iterable = fn () {
-//  iter = modules.list_fn.list_iter(this);
-//  iter.next = modules.list_fn.list_next(this);
-//  iter.done = modules.list_fn.list_done(this);
-//  iter.get  = modules.list_fn.list_get(this);
-//};
-//list.iter() = listit.new(this);
-
+list.new = modules.list_fn.list_new;
+list.scope = local;
+list.argnames = modules.tuple_fn.tuple_new(0);
+list.fnbody = \modules.list_fn.list_new();
+list.proto.len      = fn () modules.list_fn.list_len(this);
+list.proto.copy     = fn () modules.list_fn.list_copy(this);
+list.proto.append   = fn (x) modules.list_fn.list_append(this, x);
+list.proto.prepend  = fn (x) modules.list_fn.list_prepend(this, x);
+list.proto.extend   = fn (l) modules.list_fn.list_extend(this, l);
+list.proto.to_tuple = fn () modules.list_fn.list_to_tuple(this);
+list.proto.iter     = fn () {
+  i = modules.list_fn.list_begin(this);
+  i.next = fn () modules.list_fn.list_next(this);
+  i.done = fn () modules.list_fn.list_done(this);
+  i.get  = fn () modules.list_fn.list_get(this);
+  return i;
+};
 
 
 // what is an integer?
