@@ -14,6 +14,7 @@
 // RHA
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 #include <assert.h>
 #include "alloc.h"
 #include "eval.h"
@@ -459,6 +460,8 @@ bool_t equalequal_fn(object_t a, object_t b)
 {
   if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
     return UNWRAP_INT(a) == UNWRAP_INT(b);
+  else if ((ptype(a) == STRING_T) && (ptype(b) == STRING_T))
+    return 0==strcmp(UNWRAP_PTR(STRING_T, a), UNWRAP_PTR(STRING_T, b));
   else
     return a == b;
 }

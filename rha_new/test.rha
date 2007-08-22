@@ -18,3 +18,34 @@ t.check(17-42 == -25);
 t.check(17*42 == 714);
 t.check(42/17 == 2);
 t.summarize();
+
+t = test("tuple test");
+x = tuple.new(4);
+x.set(0, 42);
+x.set(1, "seventeen");
+t.check(x.get(0) == 42);
+t.check(x.get(1) == "seventeen");
+t.summarize();
+
+t = test("for loop test");
+x = tuple.new(4);
+x.set(0, 55);
+x.set(1, 33);
+x.set(2, 42);
+x.set(3, -5);
+y = 0;
+for (i in x) y += i;
+t.check(y==125);
+t.summarize();
+
+t = test("colon test");
+x = tuple.new(5);
+x.set(0, 5);
+x.set(1, 6);
+x.set(2, 7);
+x.set(3, 8);
+x.set(4, 9);
+y = 5:10;
+for (i in 0:5)
+  t.check(x.get(i) == y.get(i));
+t.summarize();

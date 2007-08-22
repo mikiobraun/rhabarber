@@ -245,7 +245,22 @@ bool_t or_fn(bool_t a, bool_t b)
 
 object_t colon_fn(object_t a, object_t b)
 {
-  rha_warning("(colon_fn) for now 'a:b' returns 'b'");
+  if (ptype(a) == INT_T && ptype(b) == INT_T) {
+    int_t i = UNWRAP_INT(a);
+    int_t j = UNWRAP_INT(b);
+    // create a tuple with those numbers
+    // e.g.   0:4   ->   tuple:[0, 1, 2, 3]
+    tuple_t t = 0;
+    if (i>j) 
+      t = tuple_new(0);
+    else {
+      t = tuple_new(j-i);
+      for (int k=i; k<j; k++)
+	tuple_set(t, k-i, WRAP_INT(k));
+    }
+    return WRAP_PTR(TUPLE_T, t);
+  }
+  rha_warning("(colon_fn) for non-integers, 'a:b' returns 'b'");
   return b;
 }
 
