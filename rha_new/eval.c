@@ -65,12 +65,8 @@ object_t eval(object_t env, object_t expr)
     // symbols
     value = lookup(env, UNWRAP_SYMBOL(expr));
     if (!value) rha_error("lookup of symbol '%o' failed", expr);
-    object_t excp;
-    try {
-      value = callslot(value, proxy_sym, 0);
-    }
-    catch(excp) {
-      // ignore it
+    if (has(value, hasproxy_sym)) {
+      value = callslot(value, hasproxy_sym, 0);
     }
     return value;
   case TUPLE_T: 
@@ -204,7 +200,8 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   tuple_t argnames = UNWRAP_PTR(TUPLE_T, _argnames);
 
   if (tuple_len(argnames) != nargs) {
-    rha_error("Function called with wrong number of arguments");
+    rha_error("Function %o called with wrong number of arguments (%d instead of %d)",
+	      fn, nargs, tuple_len(argnames));
   }
 
   // construct the inner scope

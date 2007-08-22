@@ -56,6 +56,7 @@ extern symbol_t argnames_sym;
 extern symbol_t fnbody_sym;
 extern symbol_t priority_sym;
 extern symbol_t proxy_sym;
+extern symbol_t hasproxy_sym;
 extern symbol_t done_sym;
 extern symbol_t get_sym;
 extern symbol_t next_sym;

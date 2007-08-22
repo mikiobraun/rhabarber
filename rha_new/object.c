@@ -252,7 +252,7 @@ string_t to_string(object_t o)
   else {
     switch (ptype(o)) {
     case OBJECT_T: {
-      return sprint("<addr=%p>", (void *) addr(o));
+      return sprint("<object@%p>", (void *) addr(o));
     }
     case BOOL_T: {
       if (UNWRAP_BOOL(o))

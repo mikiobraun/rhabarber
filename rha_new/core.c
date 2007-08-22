@@ -43,7 +43,7 @@ object_t proxy_fn(object_t this, symbol_t s)
   // not return 'y', since it is not accessible anymore.
   object_t obj = new();
   // create proxy function
-  assign(obj, proxy_sym, fn_fn(this, tuple_new(0), WRAP_SYMBOL(s)));
+  assign(obj, hasproxy_sym, fn_fn(this, tuple_new(0), WRAP_SYMBOL(s)));
   return obj;
 }
 
