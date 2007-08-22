@@ -45,6 +45,9 @@ void gtree_init(gtree_t *t, gtreelessfct_t *lessfct)
   t->root = nil;
   t->size = 0;
   t->lessfct = lessfct;
+#ifdef FAST_GTREE_LIMIT
+  memset(t->fast_values, FAST_GTREE_LIMIT * sizeof(intptr_t), 0);
+#endif
 }
 
 
@@ -135,6 +138,10 @@ intptr_t gtree_node_search(struct gtreenode *x, intptr_t key) {
 
 
 intptr_t gtree_search_(gtree_t *t, intptr_t key) { 
+#ifdef FAST_GTREE_LIMIT
+  if (key < FAST_GTREE_LIMIT)
+    return t->fast_values[key];
+#endif
   return gtree_node_search(t->root, key);
 }
 
@@ -272,6 +279,15 @@ void gtree_node_rightrotate(gtree_t *t, struct gtreenode *x) {
 // inserts (key,value) into t
 void gtree_insert_(gtree_t *t, intptr_t key, intptr_t value) 
 {
+#ifdef FAST_GTREE_LIMIT
+  if (key < FAST_GTREE_LIMIT) {
+    if (!t->fast_values[key])
+      t->size++;
+    t->fast_values[key] = value;
+    return;
+  }
+#endif
+
   struct gtreenode *x = gtree_node_insert_(t,key,value);
   // to test whether red-black stuff is working replace 
   // if (0 && x!=NULL) ...
@@ -384,6 +400,17 @@ void gtree_node_deletefixup(gtree_t *t, struct gtreenode *x)
 // deletes key in t and returns its value
 intptr_t gtree_delete_(gtree_t *t, intptr_t key) 
 {
+#ifdef FAST_GTREE_LIMIT
+  if (key < FAST_GTREE_LIMIT) {
+    intptr_t saved_value = t->fast_values[key];
+    if (saved_value) {
+      t->fast_values[key] = 0;
+      --t->size;
+    }
+    return saved_value;
+  }
+#endif
+
   // find key in t
   struct gtreenode *z = t->root;
   while (z != nil) {
@@ -446,10 +473,29 @@ void gtree_begin(gtree_iterator_t *i, gtree_t *t)
   }
   i->c = t->root;
   gtree_downleft(i);
+#ifdef FAST_GTREE_LIMIT
+  i->fast_it = 0;
+  while(!t->fast_values[i->fast_it] && i->fast_it < FAST_GTREE_LIMIT)
+    ++i->fast_it;
+  i->t = t;
+#endif
 }
 
 void gtree_next(gtree_iterator_t *i)
 {
+#ifdef FAST_GTREE_LIMIT
+  if(i->fast_it < FAST_GTREE_LIMIT) {
+    ++i->fast_it;
+    while(i->fast_it < FAST_GTREE_LIMIT
+	  && !i->t->fast_values[i->fast_it])
+      ++i->fast_it;
+    return; /* we must return in any case: When we are done the first
+	       time, the gtree iterator still points to the first
+	       object and we don't need to increase it! */
+	       
+  }
+#endif
+
   if (i->c == nil) return;
   if (i->hist->state == gtree_LEFT) {
     // have a look at the right side
@@ -480,17 +526,29 @@ void gtree_next(gtree_iterator_t *i)
 
 bool gtree_done(gtree_iterator_t *i)
 {
+#ifdef FAST_GTREE_LIMIT
+  return (i->fast_it == FAST_GTREE_LIMIT && i->c == NULL);
+#else
   return (i->c == NULL);
+#endif
 }
 
 
 intptr_t gtree_get_key_(gtree_iterator_t *i)
 {
+#ifdef FAST_GTREE_LIMIT
+  if (i->fast_it < FAST_GTREE_LIMIT)
+    return i->fast_it;
+#endif
   return i->c->key;
 }
 
 
 intptr_t gtree_get_value_(gtree_iterator_t *i)
 {
+#ifdef FAST_GTREE_LIMIT
+  if (i->fast_it < FAST_GTREE_LIMIT)
+    return i->t->fast_values[i->fast_it];
+#endif
   return i->c->value;
 }

@@ -24,7 +24,7 @@ BEGIN_CASE(gtree)
 
    gtree_insert(&inttree, 1, 2);
    mu_assert_equal("lookup up 1 -> 2", gtree_searchi(&inttree, 1), 2);
-   mu_assert_equal("lookup up 42 -> 0", gtree_searchi(&inttree, 1), 2);
+   mu_assert_equal("lookup up 42 -> 0", gtree_searchi(&inttree, 42), 0);
 
    // test the string tree
    gtree_t strtree;
@@ -41,9 +41,38 @@ BEGIN_CASE(gtree)
    // hm... let's test the strcmp function!
    mu_assert_equal("strcmp(abcd, abcd) == 0", strcmp("abcd", "abcd"), 0);
    mu_assert_equal("strcmp(abcd, abca) == 1", strcmp("abcd", "abcc"), 1);
-   mu_assert_equal("strcmp(abcd, abcz) == -1", strcmp("abcd", "abce"), -1);   
+   mu_assert_equal("strcmp(abcd, abcz) == -1", strcmp("abcd", "abce"), -1);
 END_CASE
+
+BEGIN_CASE(iterators)
+   gtree_t inttree;
+
+   gtree_init(&inttree, intless);
+   
+   gtree_insert(&inttree, 5, 8);
+   gtree_insert(&inttree, 51, 102);
+   gtree_insert(&inttree, 101, 202);
+
+   // testing iterators
+   gtree_iterator_t i;
+   gtree_begin(&i, &inttree);
+   mu_assert_equal("first key", gtree_get_keyi(&i), 5);
+   mu_assert_equal("first value", gtree_get_valuei(&i), 8);
+   gtree_next(&i);
+   mu_assert_equal("not yet done!", gtree_done(&i), false);
+   mu_assert_equal("second key", gtree_get_keyi(&i), 51);
+   mu_assert_equal("second value", gtree_get_valuei(&i), 102);
+   gtree_next(&i);
+   mu_assert_equal("not yet done!", gtree_done(&i), false);
+   mu_assert_equal("third key", gtree_get_keyi(&i), 101);
+   mu_assert_equal("third value", gtree_get_valuei(&i), 202);
+   gtree_next(&i);
+   mu_assert_equal("now done!", gtree_done(&i), true);
+
+END_CASE
+
 
 BEGIN_TESTS
    mu_run_test(gtree);
+   mu_run_test(iterators);
 END_TESTS

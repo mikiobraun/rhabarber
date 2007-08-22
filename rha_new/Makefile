@@ -1,9 +1,8 @@
 CC=gcc
-CFLAGS=-std=c99 -I../ -Wall -pedantic -ggdb
-#CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include -Wall -pedantic -pg
-#CFLAGS=-std=c99 -I../ -O3 -I/opt/local/include
+CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include -Wall -pedantic
+#CFLAGS=-std=c99 -I../ -O3 -I/opt/local/include -Wall -pedantic
 
-LDFLAGS=-L/opt/local/lib -pg
+LDFLAGS=-L/opt/local/lib
 LOADLIBES=-lgc -lreadline
 
 ALLSOURCES=$(wildcard *.c)

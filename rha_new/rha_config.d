@@ -45,11 +45,6 @@ extern symbol_t local_sym;
 extern symbol_t void_sym;
 extern symbol_t parent_sym;
 
-// special slots in root
-extern symbol_t modules_sym;
-extern symbol_t keywords_sym;
-extern symbol_t prules_sym;
-
 // special slots elsewhere
 extern symbol_t scope_sym;
 extern symbol_t argnames_sym;
@@ -60,6 +55,11 @@ extern symbol_t hasproxy_sym;
 extern symbol_t done_sym;
 extern symbol_t get_sym;
 extern symbol_t next_sym;
+
+// special slots in root
+extern symbol_t modules_sym;
+extern symbol_t keywords_sym;
+extern symbol_t prules_sym;
 
 // special symbols for parsing
 extern symbol_t curlied_sym;

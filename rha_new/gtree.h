@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <string.h>
 
+//#define FAST_GTREE_LIMIT 12
+
 struct gtreenode {
   enum {gtree_RED, gtree_BLACK} color;
   intptr_t key;
@@ -32,6 +34,9 @@ typedef struct gtree {
   struct gtreenode *root;
   int size;
   gtreelessfct_t *lessfct;
+#ifdef FAST_GTREE_LIMIT
+  intptr_t fast_values[FAST_GTREE_LIMIT];
+#endif
 } gtree_t;
 
 struct gtree_iterstack {
@@ -42,6 +47,10 @@ struct gtree_iterstack {
 typedef struct {
   struct gtreenode *c;
   struct gtree_iterstack *hist;
+#ifdef FAST_GTREE_LIMIT
+  int fast_it;
+  struct gtree *t; 
+#endif
 } gtree_iterator_t;
 
 extern int gtree_lastsearchdepth;
