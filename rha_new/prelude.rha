@@ -74,11 +74,9 @@ tuple.proto.iter = fn () {
   i = new();
   i.counter = 0;
   i.tuple = this;
-  i.next = fn ()
-    if (this.counter < this.tuple.len())
-      return this.tuple.get(this.counter++)
-    else
-      break;
+  i.done = fn () i.counter == i.tuple.len();
+  i.next = fn () this.counter++;
+  i.get = fn () this.tuple.get(this.counter);
   return i;
 };
 

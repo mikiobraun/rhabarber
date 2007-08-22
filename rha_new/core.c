@@ -152,11 +152,12 @@ object_t try_fn(object_t this, object_t tryblock, symbol_t catchvar, object_t ca
 object_t for_fn(object_t this, symbol_t var, object_t container, object_t body)
 {
   object_t res = void_obj;
-  object_t iter = callslot(container, symbol_new("iter"), 0);
+  object_t iter = callslot(container, iter_sym, 0);
   begin_frame(LOOP_FRAME)
-    while (1) {
-      assign(this, var, callslot(iter, next_sym, 0));
+    while (!UNWRAP_BOOL(callslot(iter, done_sym, 0))) {
+      assign(this, var, callslot(iter, get_sym, 0));
       res = eval(this, body);
+      callslot(iter, next_sym, 0);
     }
   end_frame(res);
   return res;
