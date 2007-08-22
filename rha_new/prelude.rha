@@ -66,10 +66,17 @@ proxy = fn (s) root.modules.core.proxy_fn(this, s);
 
 
 // add functions to the tuple prototype
-tuple.new = modules.tuple_fn.tuple_new;
 tuple.proto.len = fn () modules.tuple_fn.tuple_len(this);
 tuple.proto.set = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
 tuple.proto.get = fn (i) modules.tuple_fn.tuple_get(this, i);
+// a simple constructor for tuples is defined by:
+tuple.new = modules.tuple_fn.tuple_new;
+// this allows stuff like: t = tuple.new(4);
+// however, let's try to be fancy and make 'tuple' a function itself:
+tuple.scope = local;
+tuple.argnames = modules.tuple_fn.tuple_new(1);
+tuple.argnames.set(0, \n);
+tuple.fnbody = \modules.tuple_fn.tuple_new(n);
 tuple.proto.iter = fn () {
   i = new();
   i.counter = 0;

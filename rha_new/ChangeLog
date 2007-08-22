@@ -1,5 +1,25 @@
 2007-08-22  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>
 
+	* prelude.rha (fn): besides 
+
+	     t = tuple.new(4);
+
+	we can now also magically say
+
+	     t = tuple(4);
+
+	since we made t a function by adding the relevant slots.
+
+	* prules.c (prules_init): changed priority of quote ('\') to
+	10.0.  Now it is equal to all freefix forms and all assignments.
+	The reason is:
+
+	     x = \peter              x = \(peter)
+	     \x = peter              \(x=peter)
+
+	We see that most prules must be resolved simply from left to
+	right.  
+
 	* eval.c (eval_sequence, eval_args_and_call_fun), parse.c
 	(resolve_code_block):   eval() no longer accepts LIST_T, which
 	were used before for sequences of expression, instead a sequence

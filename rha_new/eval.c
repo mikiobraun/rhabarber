@@ -206,12 +206,11 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   // check if number of args is the same
   int nargs = tlen - 1;
   object_t _argnames = lookup(fn, argnames_sym);
-  if (!_argnames) {
-    rha_error("the object %o is not callable", fn);
-    return 0;
-  }
+  if (!_argnames)
+    rha_error("(eval) %o doesn't have list of args, "
+	      "i.e. no slot '%s'", fn, symbol_name(argnames_sym));
   tuple_t argnames = UNWRAP_PTR(TUPLE_T, _argnames);
-
+  
   if (tuple_len(argnames) != nargs) {
     rha_error("function %o called with wrong number of arguments (%d instead of %d)",
 	      fn, nargs, tuple_len(argnames));
@@ -221,8 +220,12 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   object_t local = new();
   assign(local, local_sym, local);
   assign(local, this_sym, this);
-  assign(local, parent_sym, lookup(fn, scope_sym));
-
+  object_t scope = lookup(fn, scope_sym);
+  if (!scope)
+    rha_error("(eval) %o doesn't have defining scope, "
+	      "i.e. no slot '%s'", fn, symbol_name(scope_sym));
+  assign(local, parent_sym, scope);
+  
   // assign the arguments
   for(int i = 0; i < nargs; i++) {
     symbol_t s = UNWRAP_SYMBOL(tuple_get(argnames, i));
@@ -232,6 +235,9 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
 
   // execute the function body
   object_t fnbody = lookup(fn, fnbody_sym);
+  if (!fnbody)
+    rha_error("(eval) %o doesn't have function body, "
+	      "i.e. no slot '%s'", fn, symbol_name(scope_sym));
   object_t res = 0;
   begin_frame(FUNCTION_FRAME)
     res = eval(local, fnbody);
