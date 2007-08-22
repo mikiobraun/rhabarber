@@ -38,6 +38,7 @@ typedef struct glist*       _rha_ list_t;
 //SYMBOLS
 // the most basic symbols
 extern symbol_t proto_sym;
+extern symbol_t do_sym;
 extern symbol_t quote_sym;
 extern symbol_t this_sym;
 extern symbol_t root_sym;

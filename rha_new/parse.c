@@ -146,11 +146,11 @@ object_t resolve_list_by_head(object_t env, list_t source)
 object_t resolve_code_block(object_t env, list_t source)
 {
   //debug("resolve_code_block(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
-  // code blocks  -->  returns a list_t
+  // code blocks  -->  returns a tuple_t
   // { x = 1; y = 7; deliver 5; { a=5; } x=5 }
   // split by semicolon, comma is not allowed
   if (list_len(source) == 0) {
-    return WRAP_PTR(LIST_T, list_new());
+    return WRAP_PTR(TUPLE_T, tuple_new(0));
   }
   list_t sink = list_new();
   list_t part = list_new();
@@ -175,7 +175,8 @@ object_t resolve_code_block(object_t env, list_t source)
   }
   if (list_len(part)>0)
     list_append(sink, resolve_list_by_prules(env, part));
-  return WRAP_PTR(LIST_T, sink);  // a list!
+  list_prepend(sink, WRAP_SYMBOL(do_sym));
+  return WRAP_PTR(TUPLE_T, list_to_tuple(sink));  // a list!
 }
 
 

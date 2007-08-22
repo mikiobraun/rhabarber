@@ -22,7 +22,7 @@ void eval_init(object_t root, object_t module)
 }
 
 // forward declarations
-object_t eval_sequence(object_t env, list_t source);
+object_t eval_sequence(object_t env, tuple_t t);
 object_t eval_args_and_call_fun(object_t env, tuple_t expr);
 object_t call_fun(object_t env, int_t tlen, tuple_t expr);
 void *call_C_fun(int tlen, tuple_t t);
@@ -72,10 +72,6 @@ object_t eval(object_t env, object_t expr)
     // function call
     assert(UNWRAP_PTR(TUPLE_T, expr));
     return eval_args_and_call_fun(env, UNWRAP_PTR(TUPLE_T, expr));
-  case LIST_T:
-    // sequence of expressions, e.g. { x=17; y=42 }
-    assert(UNWRAP_PTR(LIST_T, expr));
-    return eval_sequence(env, UNWRAP_PTR(LIST_T, expr));
   case STRING_T:
     // string literals (must be copied, since they might be modified)
     return WRAP_PTR(STRING_T, string_copy(UNWRAP_PTR(STRING_T, expr)));
@@ -95,18 +91,18 @@ object_t eval(object_t env, object_t expr)
   }
 }
 
-
-object_t eval_sequence(object_t env, list_t source)
+object_t eval_sequence(object_t env, tuple_t t)
 {
   // either the value of the last expression is delivered
   // or the value following 'deliver'
-  // eval_squence does not open a new scope
+  // eval_sequence does not open a new scope
   object_t res = void_obj;
-  list_it it;
+  int_t tlen = tuple_len(t);
   begin_frame(BLOCK_FRAME)
     // evaluate all, or stop earlier via 'deliver', 'break', 'return'
-    for (list_begin(source, &it); !list_done(&it); list_next(&it))
-      res = eval(env, list_get(&it));
+    // note: the counter begins at 1 to ignore 'do_sym'
+    for (int i = 1; i < tlen; i++)
+      res = eval(env, tuple_get(t, i));
   end_frame(res);
   // return the result
   return res;
@@ -119,10 +115,15 @@ object_t eval_args_and_call_fun(object_t env, tuple_t expr)
   //  debug("eval_args: %o\n", WRAP_PTR(TUPLE_T, expr));
   assert(tlen>0);  // otherwise repair 'rhaparser.y'
   object_t f = tuple_get(expr, 0);
-  // deal with 'quote'
-  if ((ptype(f)==SYMBOL_T) && symbol_equal(quote_sym, UNWRAP_SYMBOL(f))) {
-    assert(tlen==2);  // otherwise repair 'rhaparser.y'
-    return tuple_get(expr, 1);
+  // deal with special stuff
+  if (ptype(f)==SYMBOL_T) {
+    if (quote_sym == UNWRAP_SYMBOL(f)) {
+      assert(tlen==2);  // otherwise repair 'rhaparser.y'
+      return tuple_get(expr, 1);
+    }
+    else if (do_sym == UNWRAP_SYMBOL(f)) {
+      return eval_sequence(env, expr);
+    }
   }
 
   // otherwise a usual function

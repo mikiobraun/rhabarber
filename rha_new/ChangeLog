@@ -1,5 +1,14 @@
 2007-08-22  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>
 
+	* eval.c (eval_sequence, eval_args_and_call_fun), parse.c
+	(resolve_code_block):   eval() no longer accepts LIST_T, which
+	were used before for sequences of expression, instead a sequence
+	is now a tuple with first element 'do_sym'.  This is preferable,
+	since now expression in the eval function are always TUPLE_T or
+	simpler.  Note that the parser generates LIST_T stuff, which is
+	resolved by the prules to TUPLE_T.  Repeated resolving TUPLE_T
+	doesn't change anything.
+
 	* core.c (for_fn), prelude.rha: for-loops for tuples work, example
 	code:
 
