@@ -1,3 +1,8 @@
+2007-08-23  Mikio Braun  <mikiobraun@gmail.com>
+
+	* object.c (assign): added error message if you try to assign a
+	void
+
 2007-08-23  Stefan Harmeling  <harmeling@gmail.com>
 
 	* object.c (to_string): catch the case for 'symbol.proto' which is

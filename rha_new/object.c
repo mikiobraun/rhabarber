@@ -54,6 +54,13 @@ object_t new()
   return o;
 }
 
+object_t create_pt(int_t pt)
+{
+  object_t o = new();
+  setptype(o, pt);
+  return o;
+}
+
 object_t new_pt(int_t pt)
 {
   object_t o = new();
@@ -254,6 +261,9 @@ object_t assign(object_t o, symbol_t s, object_t v)
 {
   // debug(" %p.%s -> %p\n", (void *) o, symbol_name(s), (void *) v);
   // assign 's' to the sym table
+  if(!v)
+    rha_error("cannot assign void");
+  
   symtable_assign(o->table, s, v);
   return v;
 }

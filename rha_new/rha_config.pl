@@ -282,8 +282,7 @@ sub create_prototypes {
     $init_c_prototypes .= "object_t prototypes[$ntdefs];\n";
     $init_c_init_prototypes .= "  prototypes[0] = 0; // void prototype\n";
     $init_c_init_prototypes .= "  for (int i = 1; i < $ntdefs; i++) {\n";
-    $init_c_init_prototypes .= "    prototypes[i] = 0; // new_pt might look at it\n";
-    $init_c_init_prototypes .= "    prototypes[i] = new_pt(i);\n";
+    $init_c_init_prototypes .= "    prototypes[i] = create_pt(i);\n";
     $init_c_init_prototypes .= "  }";
 }
 
@@ -436,10 +435,7 @@ $init_c_init_symbols
   // (6.3) create type objects (TYPES)
 $init_c_init_typeobjects
 
-  // (6.4) create the void object
-  assign(root, void_sym, 0);
-
-  // (6.5) add modules (MODULES, functions)
+  // (6.4) add modules (MODULES, functions)
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;
