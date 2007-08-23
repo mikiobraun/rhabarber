@@ -38,7 +38,7 @@ extern int yylineno;
                    yylval.obj = WRAP_SYMBOL(symbol_new(yytext));
                    return SYMBOL; 
                  }
-\"[^\"]*\"	 { 
+(\"[^\"]*\"|\'[^\']*\')	 { 
                    yytext[strlen(yytext) - 1] = 0;
                    yylval.obj = WRAP_PTR(STRING_T, escexpand(yytext + 1));
                    return STRING;

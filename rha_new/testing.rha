@@ -1,0 +1,15 @@
+// code for testing
+test = fn (name) {
+  t = new();
+  t.name = name;
+  t.failure = 0;
+  t.success = 0;
+  t.check = fn (cond) if (cond) this.success++ else this.failure++;
+  t.summarize = fn () print("[test]", this.name, 
+			    this.success, "PASSED and",
+			    this.failure, "FAILED");
+  return t;
+};
+
+// test (for convenience)
+runtest = fn () run(root, "test.rha");

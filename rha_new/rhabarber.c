@@ -41,9 +41,7 @@ int main(int argc, char **argv)
   string_t fname = "prelude.rha";
   object_t excp;   // exception object
   try { 
-    object_t e = run_fn(root, fname);
-    if (!e) 
-      rha_error("can't load '%s'", fname); 
+    run_fn(root, fname);
     print("--loaded and run \"%s\"\n", fname);
   } 
   catch(excp) { 
@@ -66,8 +64,11 @@ int main(int argc, char **argv)
 
     try {
       object_t p = parse(root, line);
-      object_t e = eval(root, p);
-      fprint(stdout, "%o\n", e);
+      if (p) {
+	object_t e = eval(root, p);
+	if(e)
+	  fprint(stdout, "%o\n", e);
+      }
     }
     catch(excp) {
       excp_show(excp);

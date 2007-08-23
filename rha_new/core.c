@@ -223,11 +223,9 @@ real_t toc_fn()
 object_t run_fn(object_t root, string_t fname)
 {
   object_t p = parse_file(root, fname);
-  if (p) {
+  if (p) { // otherwise, input was empty
     return eval(root, p);
   }
-  else
-    rha_error("parse returned ZERO");
   return 0;
 }
 

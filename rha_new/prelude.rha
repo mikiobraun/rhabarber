@@ -29,10 +29,6 @@ deliver_fn = modules.core.deliver_fn;
 break_fn   = modules.core.break_fn;
 print      = modules.object.print_fn;
 
-
-// test (for convenience)
-runtest = fn () run(root, "test.rha");
-
 // temporarily for testing purposes (as long as we have to overloaded)
 inc             = modules.object.inc;
 dec             = modules.object.dec;
@@ -52,63 +48,19 @@ greaterequal_fn = modules.object.greaterequal_fn;
 and_fn          = modules.core.and_fn;
 or_fn           = modules.core.or_fn;
 
-// code for testing
-test = fn (name) {
-  t = new();
-  t.name = name;
-  t.failure = 0;
-  t.success = 0;
-  t.check = fn (cond) if (cond) this.success++ else this.failure++;
-  t.summarize = fn () print("[test]", this.name, 
-			    this.success, "PASSED and",
-			    this.failure, "FAILED");
-  return t;
-};
+not             = modules.bool_fn.bool_not;
 
 // proxy stuff
 proxy = fn (s) root.modules.core.proxy_fn(this, s);
 
+// other stuff
+load = fn(filename) run(this, filename);
+defined = fn(symbolname) has(this, symbolname);
 
-// add functions to the tuple prototype
-tuple.proto.len = fn () modules.tuple_fn.tuple_len(this);
-tuple.proto.set = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
-tuple.proto.get = fn (i) modules.tuple_fn.tuple_get(this, i);
-// a simple constructor for tuples is defined by:
-tuple.new = modules.tuple_fn.tuple_new;
-// this allows stuff like: t = tuple.new(4);
-// however, let's try to be fancy and make 'tuple' a function itself:
-tuple.scope = local;
-tuple.argnames = modules.tuple_fn.tuple_new(1);
-tuple.argnames.set(0, \n);
-tuple.fnbody = \modules.tuple_fn.tuple_new(n);
-tuple.proto.iter = fn () {
-  i = new();
-  i.counter = 0;
-  i.tuple = this;
-  i.done = fn () i.counter == i.tuple.len();
-  i.next = fn () this.counter++;
-  i.get = fn () this.tuple.get(this.counter);
-  return i;
-};
-
-// list stuff
-list.new = modules.list_fn.list_new;
-list.scope = local;
-list.argnames = tuple(0);
-list.fnbody = \modules.list_fn.list_new();
-list.proto.len      = fn () modules.list_fn.list_len(this);
-list.proto.copy     = fn () modules.list_fn.list_copy(this);
-list.proto.append   = fn (x) modules.list_fn.list_append(this, x);
-list.proto.prepend  = fn (x) modules.list_fn.list_prepend(this, x);
-list.proto.extend   = fn (l) modules.list_fn.list_extend(this, l);
-list.proto.to_tuple = fn () modules.list_fn.list_to_tuple(this);
-list.proto.iter     = fn () {
-  i = modules.list_fn.list_begin(this);
-  i.next = fn () modules.list_fn.list_next(this);
-  i.done = fn () modules.list_fn.list_done(this);
-  i.get  = fn () modules.list_fn.list_get(this);
-  return i;
-};
+load("testing.rha");
+load("list.rha");
+load("tuple.rha");
+load("tuple.rha");
 
 // symbol stuff
 // usually we can create symbol with quote, e.g. '\x', however
@@ -117,7 +69,6 @@ symbol.scope = local;
 symbol.argnames = tuple(1);
 symbol.argnames.set(0, \name);
 symbol.fnbody = \modules.symbol_fn.symbol_new(name);
-
 
 // 'in' element test
 in_fn = fn (a, b) {

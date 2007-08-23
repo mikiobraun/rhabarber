@@ -10,7 +10,7 @@ SOURCES=alloc.o eval.o core.o \
 	glist.o gtree.o gtuple.o list_fn.o messages.o object.o \
 	parse.o rha_init.o rha_lexer.o rha_parser.tab.o symbol_fn.o \
 	symtable.o tuple_fn.o utils.o utilalloc.o fmt.o cstream.o \
-	int_fn.o prules.o string_fn.o debug.o excp.o
+	int_fn.o prules.o string_fn.o debug.o excp.o bool_fn.o
 UTILOBJ=gtree.o utilalloc.o gtuple.o
 
 TESTCASES=$(subst .c,,$(wildcard test_*.c))
@@ -45,6 +45,8 @@ endif
 
 TAGS: $(ALLSOURCES)
 	etags $^
+
+prepare: clean TAGS depend
 
 ######################################################################
 #
