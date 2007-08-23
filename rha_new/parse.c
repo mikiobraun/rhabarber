@@ -68,7 +68,7 @@ object_t parse(object_t root, string_t s)
 {
   // (0) run bison code
   list_t source = rhaparsestring(s);
-  if (!source) return 0;
+  if (list_len(source)==0) return 0;
 
   // (1) resolve prules and macros creating a big function call
   return resolve_list_by_head(root, source);

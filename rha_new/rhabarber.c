@@ -66,12 +66,8 @@ int main(int argc, char **argv)
 
     try {
       object_t p = parse(root, line);
-      if (p) {
-	object_t e = eval(root, p);
-	fprint(stdout, "%o\n", e);
-      }
-      else
-	rha_error("parse returned ZERO");
+      object_t e = eval(root, p);
+      fprint(stdout, "%o\n", e);
     }
     catch(excp) {
       excp_show(excp);

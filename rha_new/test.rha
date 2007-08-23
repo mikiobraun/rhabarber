@@ -1,5 +1,15 @@
 // put all testing code here!
 
+t = test("equalequal test");
+t.check(17==17);
+t.check("test"=="test");
+t.check(void==void);
+t.check(void!=15);
+t.check("test"!=66);
+t.check("test"!="tests");
+t.summarize();
+
+
 t = test("proxy tests");
 a = 17;
 b = proxy(\a);
@@ -60,4 +70,20 @@ l.append(42);
 y = 111;
 for (x in l) y += x;
 t.check(y == 170);
+t.summarize();
+
+t = test("return test");
+x = fn () { y = new(); y.a = 17; return y; z == zz }();
+t.check(x.a == 17);
+t.summarize();
+
+t = test("deliver test");
+x = { y = new(); y.a = 17; deliver y; z == zz };
+t.check(x.a == 17);
+t.summarize();
+
+t = test("break test");
+for (i in 0:5)
+  if (i==2) break;
+t.check(i == 2);
 t.summarize();

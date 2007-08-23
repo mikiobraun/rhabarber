@@ -254,17 +254,14 @@ exit();
 #########################################
 
 sub create_ids {
-    $start = 0;
-    $id = $start;
+    $type_h_ids .= "  VOID_T = 0";
+    $init_c_ptypenames .= "    \"void\"";
+    $id = 1;
     foreach $item (@tdefs) {
-	if ($id>$start) { 
-	    $type_h_ids .= ",\n";
-	    $init_c_ptypenames .= ",\n";
-	}
 	$ucitem = uc($item);
 	$iitem = substr($item, 0, -2);
-	$type_h_ids .= "  $ucitem = $id";
-	$init_c_ptypenames .= "    \"$iitem\"";
+	$type_h_ids .= ",\n  $ucitem = $id";
+	$init_c_ptypenames .= ",\n    \"$iitem\"";
 	$id++;
     }
 }
@@ -280,10 +277,11 @@ sub create_prototypes {
 	    $init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
 	}
     }
-    $ntdefs = scalar(@tdefs);
+    $ntdefs = scalar(@tdefs) + 1;
     $type_h_prototypes .= "extern object_t prototypes[$ntdefs];\n";
     $init_c_prototypes .= "object_t prototypes[$ntdefs];\n";
-    $init_c_init_prototypes .= "  for (int i = 0; i < $ntdefs; i++) {\n";
+    $init_c_init_prototypes .= "  prototypes[0] = 0; // void prototype\n";
+    $init_c_init_prototypes .= "  for (int i = 1; i < $ntdefs; i++) {\n";
     $init_c_init_prototypes .= "    prototypes[i] = 0; // new_pt might look at it\n";
     $init_c_init_prototypes .= "    prototypes[i] = new_pt(i);\n";
     $init_c_init_prototypes .= "  }";
@@ -422,6 +420,9 @@ void add_function(object_t module, symbol_t s,
 
 object_t rha_init()
 {
+  // (6.0) create parent symbol
+  parent_sym = symbol_new("parent");
+
   // (6.1) create prototypes (TYPES)
 $init_c_init_prototypes
 

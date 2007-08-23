@@ -81,7 +81,12 @@ object_t if_fn(object_t this, bool_t cond, object_t then_code, object_t else_cod
 
 void return_fn(object_t retval)
 {
-  // thow_fn does not return!
+  // note that 'return_fn' also added a FUNCTION_FRAME to the frame
+  // stack, which we have to ignore in the following 'frame_jump',
+  // thus
+  frame_tos--;
+
+  // throw_fn does not return!
   frame_jump(FUNCTION_FRAME, retval);
   // never reaches this point
 }
@@ -89,7 +94,12 @@ void return_fn(object_t retval)
 
 void deliver_fn(object_t retval)
 {
-  // thow_fn does not return!
+  // note that 'deliver_fn' also added a FUNCTION_FRAME to the frame
+  // stack, which we have to ignore in the following 'frame_jump',
+  // thus
+  frame_tos--;
+
+  // throw_fn does not return!
   frame_jump(BLOCK_FRAME, retval);
   // never reaches this point
 }
@@ -97,7 +107,12 @@ void deliver_fn(object_t retval)
 
 void break_fn(object_t retval)
 {
-  // thow_fn does not return!
+  // note that 'break_fn' also added a FUNCTION_FRAME to the frame
+  // stack, which we have to ignore in the following 'frame_jump',
+  // thus
+  frame_tos--;
+
+  // throw_fn does not return!
   frame_jump(LOOP_FRAME, retval);
   // never reaches this point
 }
@@ -242,27 +257,6 @@ bool_t or_fn(bool_t a, bool_t b)
  *
  *************************************************************/
 
-
-object_t colon_fn(object_t a, object_t b)
-{
-  if (ptype(a) == INT_T && ptype(b) == INT_T) {
-    int_t i = UNWRAP_INT(a);
-    int_t j = UNWRAP_INT(b);
-    // create a tuple with those numbers
-    // e.g.   0:4   ->   tuple:[0, 1, 2, 3]
-    tuple_t t = 0;
-    if (i>j) 
-      t = tuple_new(0);
-    else {
-      t = tuple_new(j-i);
-      for (int k=i; k<j; k++)
-	tuple_set(t, k-i, WRAP_INT(k));
-    }
-    return WRAP_PTR(TUPLE_T, t);
-  }
-  rha_warning("(colon_fn) for non-integers, 'a:b' returns 'b'");
-  return b;
-}
 
 object_t literal(object_t env, list_t parsetree)
 {

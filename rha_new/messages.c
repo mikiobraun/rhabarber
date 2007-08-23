@@ -12,11 +12,22 @@
 
 #include "rha_types.h"
 #include "utils.h"
-//#define DEBUG
 #include "debug.h"
 #include "core.h"
 #include "eval.h"
 #include "excp.h"
+
+
+void warning(string_t msg)
+{
+  rha_warning("%s", msg);
+}
+
+
+void error(string_t msg)
+{
+  rha_error("%s", msg);
+}
 
 void rha_warning(const char *fmt, ...)
 {

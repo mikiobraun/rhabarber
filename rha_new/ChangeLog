@@ -1,3 +1,16 @@
+2007-08-23  Stefan Harmeling  <harmeling@gmail.com>
+
+	* object.c (to_string): catch the case for 'symbol.proto' which is
+	a symbol but has value zero.
+
+	* symbol_fn.c (symbol_name): check for accessing symbol number
+	zero.
+	
+
+	* rhabarber.c (main): fixed a bug that happens when just pressing
+	return at the prompt, now the parse() function might return zero
+	which is fine with eval() and fprint("%o").
+
 2007-08-23  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>
 
 	* eval.c, rhabarber.c, prules.c, rha_config.pl, object.c, core.c,

@@ -39,7 +39,7 @@ static object_t solidify(symbol_t s, list_t t);
 %type <lis> prog wslist
 
 %% /* Grammar rules and actions follow.  */
-prog        : /* empty */     { parsetree = 0; }
+prog        : /* empty */     { parsetree = list_new(); }
             | wslist          { parsetree = UNWRAP_PTR(LIST_T, solidify(curlied_sym, $1)); }
             ;
 wslist      : expr            { $$ = list_new(); list_append($$, $1); }    // white-spaced list
@@ -71,10 +71,10 @@ object_t solidify(symbol_t s, list_t l)
 void yyerror (char const *s)
 {
   if (currentfile)
-    printf ("%s:%d: error: syntax error before \'%s\' token\n", 
-	    currentfile, yylineno, yytext);
+    rha_error("in %s:%d syntax error before \'%s\' token",
+	      currentfile, yylineno, yytext);
   else
-    printf ("error: syntax error before \'%s\' token\n", yytext);
+    rha_error("syntax error before \'%s\' token", yytext);
   numerrors++;
 }
 
@@ -95,7 +95,7 @@ list_t rhaparsestring(char *str)
   initparserstate(NULL);
   beginstringparse(str);
   int failed = yyparse();
-  if (failed) printf("yyparse error\n");
+  if (failed) rha_error("yyparse error");
   endparse();
   if (failed || numerrors > 0)
     return 0;
@@ -112,7 +112,7 @@ list_t rhaparsefile(char *str)
     beginfileparse(f);
     int failed = yyparse();
     endparse();	
-    if (failed) printf("parser couldn't recover\n");
+    if (failed) rha_error("parser couldn't recover");
     fclose(f);
     if (failed || numerrors > 0)
       return 0;

@@ -293,19 +293,20 @@ tuple_t plus_pr(object_t env, list_t parsetree)
 
 tuple_t in_pr(object_t env, list_t parsetree) 
 {
-  return resolve_infix_prule(parsetree, in_sym, in_fn_sym, LEFT_BIND);
+  return resolve_infix_prule(parsetree, in_sym, symbol_new("in_fn"), LEFT_BIND);
 }
 
 tuple_t colon_pr(object_t env, list_t parsetree) 
 {
   // how about rightbinding?
   // a:(b:c)  would be casting c to type b and then to type a
-  tuple_t pre_t = resolve_infix_prule(parsetree, colon_sym, colon_fn_sym, RIGHT_BIND);
-  tuple_t t = tuple_new(3);
-  tuple_set(t, 0, tuple_get(pre_t, 0));
-  tuple_set(t, 1, tuple_get(pre_t, 1));
-  tuple_set(t, 2, quoted(resolve(env, tuple_get(pre_t, 2))));
-  return t;
+  return resolve_infix_prule(parsetree, colon_sym, symbol_new("colon_fn"), RIGHT_BIND);
+  //tuple_t pre_t = resolve_infix_prule(parsetree, colon_sym, colon_fn_sym, RIGHT_BIND);
+  //tuple_t t = tuple_new(3);
+  //tuple_set(t, 0, tuple_get(pre_t, 0));
+  //tuple_set(t, 1, tuple_get(pre_t, 1));
+  //tuple_set(t, 2, quoted(resolve(env, tuple_get(pre_t, 2))));
+  //return t;
 }
 
 tuple_t less_pr(object_t env, list_t parsetree) 
@@ -434,7 +435,7 @@ tuple_t for_pr(object_t env, list_t parsetree)
   obj = tuple_get(arg, 0);
   if (ptype(obj) != SYMBOL_T)
     rha_error("second arg to 'for' must look like (x in l)");
-  if (UNWRAP_SYMBOL(obj) != in_fn_sym)
+  if (UNWRAP_SYMBOL(obj) != symbol_new("in_fn"))
     rha_error("second arg to 'for' must look like (x in l)");
   tuple_set(t, 2, quoted(tuple_get(arg, 1)));
   tuple_set(t, 3, tuple_get(arg, 2));
@@ -468,7 +469,6 @@ tuple_t fn_pr(object_t env, list_t parsetree)
   }
   //debug("(fn_pr) %o\n", WRAP_PTR(TUPLE_T, t));
   return t;
-
 }
 
 tuple_t equal_pr(object_t env, list_t parsetree) {
@@ -709,12 +709,12 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
 object_t get_cmp_fn(symbol_t cmp_s)
 {
   if (cmp_s==equalequal_sym)        return WRAP_SYMBOL(equalequal_fn_sym);
-  else if (cmp_s==equalequal_sym)   return WRAP_SYMBOL(notequal_fn_sym);
+  else if (cmp_s==notequal_sym)     return WRAP_SYMBOL(notequal_fn_sym);
   else if (cmp_s==less_sym)         return WRAP_SYMBOL(less_fn_sym);
   else if (cmp_s==lessequal_sym)    return WRAP_SYMBOL(lessequal_fn_sym);
   else if (cmp_s==greater_sym)      return WRAP_SYMBOL(greater_fn_sym);
   else if (cmp_s==greaterequal_sym) return WRAP_SYMBOL(greaterequal_fn_sym);
-  else rha_error("unkown cmp symbol");
+  else rha_error("unkown cmp symbol \"%o\"", WRAP_SYMBOL(cmp_s));
   assert(1==0);
   return 0; // make gcc happy
 }

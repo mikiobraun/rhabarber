@@ -13,6 +13,7 @@
 #include "list_fn.h"
 #include "int_fn.h"
 #include "string_fn.h"
+#include "messages.h"
 
 //TYPES
 #include <stdbool.h>
@@ -60,6 +61,7 @@ extern symbol_t get_sym;
 extern symbol_t next_sym;
 extern symbol_t msg_sym;
 extern symbol_t ismacro_sym;
+extern symbol_t check_sym;
 
 // special slots in root
 extern symbol_t modules_sym;

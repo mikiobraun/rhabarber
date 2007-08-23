@@ -31,11 +31,9 @@
 
 struct symtable;
 
-object_t object_empty_excp = 0;
-
 void object_init(object_t root, object_t module)
 {
-  object_empty_excp = excp_new("accessing a primitive prototype is not allowed");
+  // nothing here
 }
 
 
@@ -100,6 +98,7 @@ object_t clone(object_t parent)
 
 int_t ptype(object_t o)
 {
+  if (!o) return 0; // == VOID_T // see rha_types.h
   return o->ptype;
 }
 
@@ -113,34 +112,29 @@ void setptype(object_t o, int_t id)
   o->ptype = id;
 }
 
-object_t wrap_int(int ptype, int i)
+object_t wrap_int(int pt, int i)
 {
-  object_t o = new_pt(ptype);
+  assert(pt==BOOL_T || pt==INT_T || pt==SYMBOL_T);
+  object_t o = new_pt(pt);
   o->raw.i = i;
   return o;
 }
 
-object_t wrap_float(int ptype, float f)
+object_t wrap_double(int pt, double d)
 {
-  object_t o = new_pt(ptype);
-  o->raw.f = f;
-  return o;
-}
-
-object_t wrap_double(int ptype, double d)
-{
-  object_t o = new_pt(ptype);
+  assert(pt==REAL_T);
+  object_t o = new_pt(pt);
   o->raw.d = d;
   return o;
 }
 
-object_t wrap_ptr(int ptype, void *p)
+object_t wrap_ptr(int pt, void *p)
 {
-  assert(ptype!=BOOL_T);
-  assert(ptype!=INT_T);
-  assert(ptype!=REAL_T);
-  assert(ptype!=SYMBOL_T);
-  object_t o = new_pt(ptype);
+  assert(pt!=BOOL_T);
+  assert(pt!=INT_T);
+  assert(pt!=SYMBOL_T);
+  assert(pt!=REAL_T);
+  object_t o = new_pt(pt);
   o->raw.p = p;
   return o;
 }
@@ -167,19 +161,15 @@ object_t wrap(int ptype, ...)
 
 int unwrap_int(int pt, object_t o)
 {
-  assert(pt != OBJECT_T || ptype(o) == pt);
+  assert(pt==INT_T || pt==BOOL_T || pt==SYMBOL_T);
+  assert(pt==ptype(o));
   return o->raw.i;
-}
-
-float unwrap_float(int pt, object_t o)
-{
-  assert(pt != OBJECT_T || ptype(o) == pt);
-  return o->raw.f;
 }
 
 double unwrap_double(int pt, object_t o)
 {
-  assert(pt != OBJECT_T || ptype(o) == pt);
+  assert(pt==REAL_T);
+  assert(pt==ptype(o));
   return o->raw.d;
 }
 
@@ -187,8 +177,7 @@ void *unwrap_ptr(int pt, object_t o)
 {
   assert(pt != OBJECT_T || ptype(o) == pt);
   void *p = o->raw.p;
-  if (!p) 
-    throw(object_empty_excp);
+  // might be zero
   return p;
 }
 
@@ -265,7 +254,7 @@ object_t assign(object_t o, symbol_t s, object_t v)
 {
   // debug(" %p.%s -> %p\n", (void *) o, symbol_name(s), (void *) v);
   // assign 's' to the sym table
-  symtable_assign( o->table, s, v);
+  symtable_assign(o->table, s, v);
   return v;
 }
 
@@ -307,6 +296,7 @@ string_t to_string(object_t o)
      // right now, this is a big switch, but eventually, this should
      // be done via symbol lookup :)
 {
+  string_t primitive_prototype_string = "<primitive prototype>";
   string_t s = 0;
   if (!o) {
     // in C it is zero, in rhabarber called void
@@ -328,7 +318,8 @@ string_t to_string(object_t o)
     }
     case SYMBOL_T: {
       symbol_t s = UNWRAP_SYMBOL(o);
-      //      return sprint("%s (sym%d)", symbol_name(s), s);
+      if (!s)
+	return primitive_prototype_string;
       return sprint("%s", symbol_name(s));
     }
     case REAL_T: {
@@ -338,7 +329,7 @@ string_t to_string(object_t o)
       // content is stored in o->raw.p
       if (!o->raw.p)
 	// we are accessing a protoype
-	return "<primitive prototype>";
+	return primitive_prototype_string;
       // we can safely access the raw content
       switch (ptype(o)) {
       case STRING_T: {
@@ -478,13 +469,6 @@ bool_t notequal_fn(object_t a, object_t b)
     return UNWRAP_INT(a) != UNWRAP_INT(b);
   else
     return a != b;
-}
-
-bool_t in_fn(object_t a, object_t b)
-{
-  rha_error("element check for iterables is not yet implemented");
-  assert(1==0);
-  return 0; // make gcc happy
 }
 
 int_t neg_fn(object_t a)

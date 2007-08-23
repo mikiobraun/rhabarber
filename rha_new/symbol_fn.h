@@ -14,7 +14,7 @@
 #include "rha_types.h"
 
 extern _rha_ symbol_t symbol_new(string_t s);
-extern _rha_ bool_t symbol_equal(symbol_t s, symbol_t t);
+extern _rha_ bool_t   symbol_equal(symbol_t s, symbol_t t);
 extern _rha_ string_t symbol_name(symbol_t s);
 
 extern object_t symbol_wrap(symbol_t s);

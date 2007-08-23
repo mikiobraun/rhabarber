@@ -42,6 +42,9 @@ bool_t symbol_equal(symbol_t s, symbol_t t)
 
 string_t symbol_name(symbol_t s)
 {
+  // catch the case that s==0, which should only happen if we access
+  // 'symbol.proto'
+  if (!s) return "<no symbolname for zero>";
   string_t n = gtree_searchp(&symbolnames, s);
   assert(n);
   return n;

@@ -34,8 +34,6 @@ struct rha_object {
   union raw_t raw;
 };
 
-extern object_t object_empty_excp;
-
 /*
  * Functions
  */
@@ -73,8 +71,6 @@ extern _rha_ bool_t     lessequal_fn(object_t a, object_t b);
 extern _rha_ bool_t     greater_fn(object_t a, object_t b);
 extern _rha_ bool_t     greaterequal_fn(object_t a, object_t b);
 
-extern _rha_ bool_t     in_fn(object_t a, object_t b);
-
 extern _rha_ int_t      plus_fn(object_t a, object_t b);
 extern _rha_ int_t      minus_fn(object_t a, object_t b);
 extern _rha_ int_t      times_fn(object_t a, object_t b);
@@ -82,11 +78,9 @@ extern _rha_ int_t      divide_fn(object_t a, object_t b);
 extern _rha_ int_t      neg_fn(object_t a);
 
 extern       object_t   wrap_int(int ptype, int i);
-extern       object_t   wrap_float(int ptype, float f);
 extern       object_t   wrap_double(int ptype, double d);
 extern       object_t   wrap_ptr(int ptype, void *p);
 extern       int        unwrap_int(int ptype, object_t o);
-extern       float      unwrap_float(int ptype, object_t o);
 extern       double     unwrap_double(int ptype, object_t o);
 extern       void      *unwrap_ptr(int ptype, object_t o);
 
