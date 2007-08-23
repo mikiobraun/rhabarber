@@ -29,6 +29,10 @@ deliver_fn = modules.core.deliver_fn;
 break_fn   = modules.core.break_fn;
 print      = modules.object.print_fn;
 
+
+// test (for convenience)
+runtest = fn () run(root, "test.rha");
+
 // temporarily for testing purposes (as long as we have to overloaded)
 inc             = modules.object.inc;
 dec             = modules.object.dec;

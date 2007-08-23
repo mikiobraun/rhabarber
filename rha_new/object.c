@@ -240,7 +240,7 @@ object_t create_function(object_t (*code)(tuple_t),
 // look up a symbol and return information on the location
 object_t lookup(object_t l, symbol_t s)
 {
-  assert(l);
+  if (!l) return 0;
 
   object_t o = symtable_lookup(l->table, s);
   if (o) return o;
@@ -253,6 +253,7 @@ object_t lookup(object_t l, symbol_t s)
 
 bool_t has(object_t obj, symbol_t s)
 {
+  // note that 'void' doesn't have any slots
   if (lookup(obj, s))
     return true;
   else
@@ -308,10 +309,7 @@ string_t to_string(object_t o)
 {
   string_t s = 0;
   if (!o) {
-    // this means: undefined, i.e. evaluation failed
-    return sprint("%s", "<NULL>");
-  }
-  else if (o==void_obj) {
+    // in C it is zero, in rhabarber called void
     return sprint("%s", "<void>");
   }
   else {

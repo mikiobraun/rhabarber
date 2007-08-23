@@ -47,7 +47,7 @@ void parse_init(object_t root, object_t module)
     fprint(stderr, "    Lookup of 'root.modules.prules' failed.\n");
     fprint(stderr, "    We won't use any prules!\n");
     fprint(stderr, "    Try to change module order in 'rha_config.d'\n");
-    prules = void_obj;
+    prules = 0;
   }
 }
 
@@ -68,7 +68,7 @@ object_t parse(object_t root, string_t s)
 {
   // (0) run bison code
   list_t source = rhaparsestring(s);
-  if (!source) return void_obj;
+  if (!source) return 0;
 
   // (1) resolve prules and macros creating a big function call
   return resolve_list_by_head(root, source);
@@ -418,8 +418,8 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
       tuple_t t = tuple_new(3);
       // note that we use 'eval_sym' instead of 'lookup_sym', the
       // reason is that the later doesn't issue a 'lookup failed'
-      // exception and returns NULL in that case, while 'eval' does
-      // issue an exception and return 'void_obj'.
+      // exception and returns 'void' in that case, while 'eval' does
+      // issue an exception and return 'void' (==0).
       tuple_set(t, 0, WRAP_SYMBOL(eval_sym));
       tuple_set(t, 1, expr);
       tuple_set(t, 2, quoted(obj));

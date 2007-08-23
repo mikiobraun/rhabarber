@@ -173,10 +173,10 @@ void prules_init(object_t root, object_t module)
 
 
 // function to define simple prules
-object_t prule_new_infix(){ return void_obj; }
-object_t prule_new_prefix(){ return void_obj; }
-object_t prule_new_postfix(){ return void_obj; }
-object_t prule_new_freefix(){ return void_obj; }
+object_t prule_new_infix(){ return 0; }
+object_t prule_new_prefix(){ return 0; }
+object_t prule_new_postfix(){ return 0; }
+object_t prule_new_freefix(){ return 0; }
 
 
 // forward declaration of helper functions
@@ -352,9 +352,9 @@ tuple_t or_pr(object_t env, list_t parsetree)
   tuple_t t = tuple_new(2);					\
   tuple_set(t, 0, WRAP_SYMBOL(ttt ## _fn_sym));			\
   if (list_len(parsetree) > 0)					\
-    tuple_set(t, 1, WRAP_PTR(LIST_T, parsetree));	\
+    tuple_set(t, 1, WRAP_PTR(LIST_T, parsetree));		\
   else								\
-    tuple_set(t, 1, void_obj);					\
+    tuple_set(t, 1, 0);						\
   return t;
 
 tuple_t return_pr(object_t env, list_t parsetree) 
@@ -499,7 +499,7 @@ tuple_t quote_pr(object_t env, list_t parsetree)
   if (list_len(parsetree) > 0)					
     tuple_set(t, 1, WRAP_PTR(LIST_T, parsetree));	
   else								
-    tuple_set(t, 1, void_obj);					
+    tuple_set(t, 1, 0);
   return t;
 }
 
@@ -857,7 +857,7 @@ tuple_t resolve_freefix_prule2(object_t env, list_t parsetree,
     list_extend(call, read_freefix_args(env, parsetree, narg2));
   }
   else
-    list_append(call, void_obj);
+    list_append(call, 0);
   // 
   list_prepend(call, WRAP_SYMBOL(fun_sym));
   return list_to_tuple(call);

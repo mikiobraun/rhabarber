@@ -82,7 +82,7 @@ object_t eval(object_t env, object_t expr)
     // (must be copied as well, since they might be modified)
     return copy_pt(expr);
   default:
-    if (expr == void_obj)
+    if (expr == 0) // void
       // do nothing
       return expr;
     // else don't know!
@@ -97,7 +97,7 @@ object_t eval_sequence(object_t env, tuple_t t)
   // either the value of the last expression is delivered
   // or the value following 'deliver'
   // eval_sequence does not open a new scope
-  object_t res = void_obj;
+  object_t res = 0;
   int_t tlen = tuple_len(t);
   begin_frame(BLOCK_FRAME)
     // evaluate all, or stop earlier via 'deliver', 'break', 'return'

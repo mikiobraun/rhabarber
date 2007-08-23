@@ -188,7 +188,7 @@ foreach $module (@mods) {
 	    $ifntype = 	substr($fntype, 0, -2);
 	    $fncall_str = "WRAP_PTR($ucfntype, $fncall_str)";
 	}
-	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n  return void_obj;\n" }
+	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n  return 0;\n" }
 	else { $init_c_functions .= "  return $fncall_str;\n" }
 	$init_c_functions .= "}\n";
 
@@ -334,7 +334,6 @@ $type_h_ids
 $type_h_prototypes
 
 // (4) type objects
-extern object_t void_obj;
 $type_h_typeobjects
 
 // (5) ptype names
@@ -389,7 +388,6 @@ $init_c_symbols
 $init_c_prototypes
 
 // (3) type objects
-object_t void_obj;
 $init_c_typeobjects
 
 // (4) ptype names
@@ -438,9 +436,7 @@ $init_c_init_symbols
 $init_c_init_typeobjects
 
   // (6.4) create the void object
-  void_obj = new();
-  assign(root, void_sym, void_obj);
-
+  assign(root, void_sym, 0);
 
   // (6.5) add modules (MODULES, functions)
   object_t modules = new();

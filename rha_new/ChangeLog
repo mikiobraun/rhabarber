@@ -1,3 +1,16 @@
+2007-08-23  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>
+
+	* eval.c, rhabarber.c, prules.c, rha_config.pl, object.c, core.c,
+	parse.c, eval.c: removed 'void_obj', now 0 is void_obj.  note that
+	there is still symbol 'void' which could be internally represented
+	by: 
+	    object_t void_obj = 0;
+
+	* prelude.rha: added for convenience
+
+	    runtest = fn () run(root, "test.rha");
+
+	
 2007-08-23  mikio  <mikiobraun@gmail.com>
 
 	* object.c, eval.c, list_fn.c, parse.c, prules.c: added "return

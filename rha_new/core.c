@@ -121,7 +121,7 @@ void exit_fn(int_t exit_code)
 
 object_t while_fn(object_t this, object_t cond, object_t body)
 {
-  object_t res = void_obj; // must be initialized for "cond==false"
+  object_t res = 0; // must be initialized for "cond==false"
   begin_frame(LOOP_FRAME)
     while (1) {
       if (UNWRAP_BOOL(eval(this, cond)))
@@ -151,7 +151,7 @@ object_t try_fn(object_t this, object_t tryblock, symbol_t catchvar, object_t ca
 
 object_t for_fn(object_t this, symbol_t var, object_t container, object_t body)
 {
-  object_t res = void_obj;
+  object_t res = 0;
   object_t iter = callslot(container, iter_sym, 0);
   begin_frame(LOOP_FRAME)
     while (!UNWRAP_BOOL(callslot(iter, done_sym, 0))) {
