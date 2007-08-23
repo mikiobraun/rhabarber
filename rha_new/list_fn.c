@@ -27,21 +27,24 @@ int_t list_len(list_t l)
   return glist_length(l);
 }
 
-void list_append(list_t l, object_t o)
+list_t list_append(list_t l, object_t o)
 {
   glist_append(l, o);
+  return l;
 }
 
-void list_prepend(list_t l, object_t o)
+list_t list_prepend(list_t l, object_t o)
 {
   glist_prepend(l, o);
+  return l;
 }
 
-void list_extend(list_t l, list_t other)
+list_t list_extend(list_t l, list_t other)
 {
   glist_iterator_t it;
   for (it=glist_begin(other); !glist_done(&it); glist_next(&it))
     list_append(l, glist_getp(&it));
+  return l;
 }
 
 

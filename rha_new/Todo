@@ -7,3 +7,4 @@
   you wont get a message that there is not block to deliver from since
   there *is* a block to deliver from, this should be changed...
 
+* list().append(3)

@@ -1,3 +1,15 @@
+2007-08-23  Stefan Harmeling  <harmeling@gmail.com>
+
+	* list.rha (fn): added PERL like pop, push, shift, unshift.
+
+	* parse.c (resolve_dots_and_fn_calls): rewrote the whole thing to
+	allow magic stuff like:
+
+	     l = list().push(17).push(42);
+
+	* list_fn.c (list_append, list_prepend, list_extend): all of them
+	return now the list.
+
 2007-08-23  Mikio Braun  <mikiobraun@gmail.com>
 
 	* object.c (assign): added error message if you try to assign a

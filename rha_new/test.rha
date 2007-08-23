@@ -50,18 +50,6 @@ for (i in x) y += i;
 t.check(y==125);
 t.summarize();
 
-t = test("colon test");
-x = tuple(5);
-x.set(0, 5);
-x.set(1, 6);
-x.set(2, 7);
-x.set(3, 8);
-x.set(4, 9);
-y = 5:10;
-t.check(y.len() == 5);
-for (i in 0:5)
-  t.check(x.get(i) == y.get(i));
-t.summarize();
 
 t = test("list test");
 l = list.new();
@@ -86,4 +74,17 @@ t = test("break test");
 for (i in 0:5)
   if (i==2) break;
 t.check(i == 2);
+t.summarize();
+
+t = test("colon test");
+x = tuple(5);
+x.set(0, 5);
+x.set(1, 6);
+x.set(2, 7);
+x.set(3, 8);
+x.set(4, 9);
+y = 5:10;
+t.check(y.len() == 5);
+for (i in 0:5)
+  t.check(x.get(i) == y.get(i));
 t.summarize();

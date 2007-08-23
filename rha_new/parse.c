@@ -369,6 +369,7 @@ bool_t is_rounded_tuple(object_t obj)
   return true;
 }
 
+
 object_t resolve_dots_and_fn_calls(object_t env, list_t source)
 {
   // what this function does:
@@ -383,9 +384,13 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
   //   a.x.y(z)      (callslot (eval a \x) \y z)
   //   a.x(z)(zz)    ((callslot a \x z) zz)
   //   a.x.y(z)(zz)  ((callslot (eval a \x) \y z) zz)
+  
+  // ok there is more:
+  //   list().append(17);
+  // more precisely:
+  //   (1) the first thing can be anything but a 'dot'
+  //   (2) a series of dots and argument lists
 
-  // otherwise build function calls and deal with dots, which bind
-  // even stronger than function calls
   if (list_len(source) == 0)
     rha_error("(parsing) missing expression");
 
@@ -403,13 +408,14 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
   object_t expr = obj;
 
   // we need to keep a flag which tells us later whether we have the
-  // usual function call or a slotcall.
+  // usual function call or whether the last dot results in a
+  // slotcall. 
   bool_t dotted = false;
-  // (2) deal with a series of dotted expressions
   while ((obj = resolve(env, list_popfirst(source)))) {
     if ((ptype(obj) == SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym) {
-      // ok we have a dotted expression
-      // get the next object as well
+      // (2) dotted expression
+
+      // get the next object as well which must be a symbol
       obj = list_popfirst(source);
       if (!obj || (ptype(obj) != SYMBOL_T))
 	rha_error("(parsing) a dot is always followed by a symbol");
@@ -429,42 +435,39 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
       expr = WRAP_PTR(TUPLE_T, t);
       continue;
     }
-    else
-      // go on with constructing function calls
-      break;
-  }
-
-  // (3) deal with series of function calls
-  while (obj) {
-    if (!is_rounded_tuple(obj))
-      rha_error("(parsing) argument list expected, found \"%o\"", obj);
-
-    if (dotted) {
-      // construct a slot call
-      dotted = false; // this happens only once
-      // for a.f(x,y) we have by now two ingredients:
-      // (i)  expr == (eval a \f)
-      // (ii) obj  == (rounded x y)
-      // from those we construct
-      //      (callslot a \f x y)
-      list_t l = tuple_to_list(UNWRAP_PTR(TUPLE_T, obj));
-      tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
-      list_popfirst(l);                           // remove 'rounded'
-      list_prepend(l, tuple_get(t, 2));           // prepend '\f'
-      list_prepend(l, tuple_get(t, 1));           // prepend 'a'
-      list_prepend(l, WRAP_SYMBOL(callslot_sym)); // prepend 'callslot'
-      expr = WRAP_PTR(TUPLE_T, list_to_tuple(l));
+    else if (is_rounded_tuple(obj)) {
+      // (3) function/method call
+      if (dotted) {
+	// construct a method call
+	dotted = false; // wait for the next dot
+	// for a.f(x,y) we have by now two ingredients:
+	// (i)  expr == (eval a \f)
+	// (ii) obj  == (rounded x y)
+	// from those we construct
+	//      (callslot a \f x y)
+	list_t l = tuple_to_list(UNWRAP_PTR(TUPLE_T, obj));
+	tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
+	list_popfirst(l);                           // remove 'rounded'
+	list_prepend(l, tuple_get(t, 2));           // prepend '\f'
+	list_prepend(l, tuple_get(t, 1));           // prepend 'a'
+	list_prepend(l, WRAP_SYMBOL(callslot_sym)); // prepend 'callslot'
+	expr = WRAP_PTR(TUPLE_T, list_to_tuple(l));
+	continue;
+      }
+      else {
+	// construct a plain function call
+	// replace the rounded_sym with the expression so far
+	tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
+	tuple_set(t, 0, expr);
+	expr = resolve_macro(env, t);
+	continue;
+      }
     }
     else {
-      // construct a plain function call
-      // replace the rounded_sym with the expression so far
-      tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
-      tuple_set(t, 0, expr);
-      expr = resolve_macro(env, t);
+      rha_error("(parsing) argument list or dot expected, found \"%o\"", obj);
     }
-    // get next piece
-    obj = resolve(env, list_popfirst(source));
   }
+
   //debug("return (resolve_dots_and_funcalls) %o\n", expr);
   return expr;
 }
