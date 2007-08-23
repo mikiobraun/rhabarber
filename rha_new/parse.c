@@ -138,9 +138,11 @@ object_t resolve_list_by_head(object_t env, list_t source)
   else if (head == squared_sym) {
     return resolve_complex_literal(env, source);
   }
-  else 
+  else {
     // never reach this point
     assert(1==0);
+    return 0; // make gcc happy
+  }
 }
  
 object_t resolve_code_block(object_t env, list_t source)

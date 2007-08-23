@@ -49,6 +49,7 @@ list_t list_literal(list_t parsetree)
 {
   rha_error("not yet");
   assert(1==0);
+  return 0; // make gcc happy
 }
 
 tuple_t list_to_tuple(list_t l)

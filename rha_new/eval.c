@@ -89,6 +89,7 @@ object_t eval(object_t env, object_t expr)
     rha_error("(eval) don't know how to evaluate '%o'", expr);
     assert(1==0);
   }
+  return 0; // make gcc happy!
 }
 
 object_t eval_sequence(object_t env, tuple_t t)

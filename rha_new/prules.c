@@ -597,6 +597,7 @@ tuple_t resolve_incdec_prule(list_t parsetree)
   // else
   rha_error(" ++ and -- are only prefix/praefix operators");
   assert(1==0);
+  return 0; // make gcc happy
 }
 
 
@@ -715,6 +716,7 @@ object_t get_cmp_fn(symbol_t cmp_s)
   else if (cmp_s==greaterequal_sym) return WRAP_SYMBOL(greaterequal_fn_sym);
   else rha_error("unkown cmp symbol");
   assert(1==0);
+  return 0; // make gcc happy
 }
 
 

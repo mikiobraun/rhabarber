@@ -1,3 +1,10 @@
+2007-08-23  mikio  <mikiobraun@gmail.com>
+
+	* object.c, eval.c, list_fn.c, parse.c, prules.c: added "return
+	0;" after "assert(1==0);" to make gcc happy on cygwin (otherwise
+	it issued a warning that a function might return without passing a
+	value)... .
+
 2007-08-22  Stefan Harmeling  <harmeli@dhcp-153-147.inf.ed.ac.uk>
 
 	* prelude.rha: also added function functionality to 'list', now we

@@ -411,6 +411,10 @@ void print_fn(int_t narg, ...)
 void ls(object_t o)
 {
   symtable_print(o->table);
+  while( (o = lookup(o, parent_sym)) ) {
+    printf("^\n");
+    symtable_print(o->table);
+  }
 }
 
 object_t inc(object_t o)
@@ -421,6 +425,7 @@ object_t inc(object_t o)
   }
   rha_error("'inc' is currently only implemented for integers");
   assert(1==0);
+  return 0; // make gcc happy
 }
 
 object_t dec(object_t o)
@@ -431,6 +436,7 @@ object_t dec(object_t o)
   }
   rha_error("'dec' is currently only implemented for integers");
   assert(1==0);
+  return 0; // make gcc happy
 }
 
 object_t inc_copy(object_t o)
@@ -442,6 +448,7 @@ object_t inc_copy(object_t o)
   }
   rha_error("'inc_copy' is currently only implemented for integers");
   assert(1==0);
+  return 0; // make gcc happy
 }
 
 object_t dec_copy(object_t o)
@@ -453,6 +460,7 @@ object_t dec_copy(object_t o)
   }
   rha_error("'dec_copy' is currently only implemented for integers");
   assert(1==0);
+  return 0; // make gcc happy
 }
 
 
@@ -478,6 +486,7 @@ bool_t in_fn(object_t a, object_t b)
 {
   rha_error("element check for iterables is not yet implemented");
   assert(1==0);
+  return 0; // make gcc happy
 }
 
 int_t neg_fn(object_t a)
@@ -486,15 +495,17 @@ int_t neg_fn(object_t a)
     return -UNWRAP_INT(a);
   rha_error("'neg_fn' is currently only implemented for integers");
   assert(1==0);
+  return 0; // make gcc happy
 }
 
-#define SIMPLE_FN(returntype, name, symbol)				\
-  returntype name ## _fn(object_t a, object_t b)			\
-  {									\
-    if ((ptype(a) == INT_T) && (ptype(b) == INT_T))			\
-      return UNWRAP_INT(a) symbol UNWRAP_INT(b);			\
+#define SIMPLE_FN(returntype, name, symbol)				 \
+  returntype name ## _fn(object_t a, object_t b)			 \
+  {									 \
+    if ((ptype(a) == INT_T) && (ptype(b) == INT_T))			 \
+      return UNWRAP_INT(a) symbol UNWRAP_INT(b);			 \
     rha_error("'" #name "' is currently only implemented for integers"); \
-    assert(1==0);							\
+    assert(1==0);							 \
+    return 0;                                                            \
   }									
 
 SIMPLE_FN(bool_t, less, <)
