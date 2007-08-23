@@ -1,5 +1,13 @@
 2007-08-23  Stefan Harmeling  <harmeling@gmail.com>
 
+	* object.c (extend): added extend, which is not done yet and which
+	doesn't really extend right now, but should only overwrite an
+	existing function definiton.
+
+	* prules.c (resolve_assign_prule): rewritten the whole thing for
+	stuff like f(x)=2*x.  However, right now += and friends no longer
+	work.  But can be easily put back.
+
 	* tuple_fn.c (tuple_set): now also tuple_set returns the tuple and
 	we can do:
 

@@ -88,15 +88,16 @@ extern       void      *unwrap_ptr(int ptype, object_t o);
 extern       object_t   wrap(int ptype, ...);
 
 
-// 'lookup'
-//     z          -> lookup(local, \z);
-//     a.x        -> lookup(a, \x);
+//        z          -> lookup(local, \z);
+//        a.x        -> lookup(a, \x);
 extern _rha_ object_t   lookup(object_t env, symbol_t s);
 
-// 'assign'
-//     x = 17;    ->  assign(local_sym, \x, 17);
-//     a.x = 42;  ->  assign(a, \x, 42);
+//       x = 17;    ->  assign(local_sym, \x, 17);
+//       a.x = 42;  ->  assign(a, \x, 42);
 extern _rha_ object_t   assign(object_t obj, symbol_t s, object_t newobj);
+
+extern _rha_ object_t   extend(object_t this, symbol_t s, tuple_t argnames, object_t fnbody);
+
 
 // 'has'
 extern _rha_ bool_t     has(object_t obj, symbol_t s);

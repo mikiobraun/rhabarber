@@ -635,51 +635,104 @@ tuple_t resolve_infix_prule_list(list_t parsetree, glist_t *prule_sym_list, symb
 }
 
 tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym, glist_t *assign_sym_list)
-// resolves the right-most assignment (could be = += -= *= /=)
 {
-  //  debug("resolve_assign_prule(%o)\n", WRAP_PTR(LIST_T, parsetree));
+  // x = 0            (assign local \x 0)
+  // a.x = 0          (assign a     \x 0)
+  // a(z).x = 0       (assign (a z) \x 0)
+  // f(x) = 0         (extend local \f \(x) 0)
+  // a.f(x) = 0       (extend a     \f \(x) 0)
+  // a(z).f(x) = 0    (extend (a z) \f \(x) 0)
+
+  // resolves the right-most assignment (could be = += -= *= /=)
+
+  // debug("resolve_assign_prule(%o)\n", WRAP_PTR(LIST_T, parsetree));
 
   // (0) let's find the first appearance (left-most) of an assignment
   tuple_t pre_t = resolve_infix_prule_list(parsetree, assign_sym_list,
 					   assign_sym, RIGHT_BIND);
-  // now we got something like (assign x 18)
-  // however, we need (assign local x 18)
-  // or from (assign (x . a) 18) we need (assign x a 18)
-  tuple_t t = tuple_new(4);
-  tuple_set(t, 0, WRAP_SYMBOL(assign_sym));
-  tuple_set(t, 1, WRAP_SYMBOL(local_sym));
+  // now we got something like 
+  //         (assign lhs rhs)
+
+  // all parts:
+  object_t fun = WRAP_SYMBOL(assign_sym);
+  object_t scope = WRAP_SYMBOL(local_sym);
+  object_t symb = 0;
+  object_t arglist = 0;
 
   // (1) let's first deal with the LHS
   // do we have a dot-expression on the LHS?
   object_t lhs_obj = tuple_get(pre_t, 1);
-  object_t lhs_sym_obj = lhs_obj;
   if (ptype(lhs_obj) == LIST_T) {
     // note the shallow list copy, which is necessary since we
     // possibly need the original 'lhs' list for stuff like '+='
     list_t lhs = UNWRAP_PTR(LIST_T, copy_expr(lhs_obj));
     assert(list_len(lhs) > 0); // this has been checked in 'resolve_infix_prule'
-    // the dot must be the second last in that list,
-    // since we do not allow anything else than symbols as the last
-    lhs_sym_obj = list_poplast(lhs);
-    if (ptype(lhs_sym_obj) != SYMBOL_T)
-      rha_error("(parsing) the assign sign must be preceeded by a symbol");
-    if (list_len(lhs) > 0) {
-      object_t a_dot = list_poplast(lhs);
-      // this must be a "DOT"
-      if ((ptype(a_dot) != SYMBOL_T) || (UNWRAP_SYMBOL(a_dot)!=dot_sym))
-	rha_error("(parsing) preceeding the symbol must be a dot, "
-		  "found '%o'", a_dot);
-      // now, 'lhs' contains the LHS of the dot
-      tuple_set(t, 1, WRAP_PTR(LIST_T, lhs));
+
+    object_t lhs_obj_last = resolve(env, list_poplast(lhs));
+    if (is_rounded_tuple(lhs_obj_last)) {
+      // (1.1) we have a rounded expression right-most
+      if (list_len(lhs) == 0)
+	rha_error("(parsing) symbol on LHS of assign just before "
+		  "rounded brackets expected");
+      // remove the 'rounded' by hand
+      list_t l = tuple_to_list(UNWRAP_PTR(TUPLE_T, lhs_obj_last));
+      list_popfirst(l);
+      lhs_obj_last = WRAP_PTR(TUPLE_T, list_to_tuple(l));
+      arglist = quoted(lhs_obj_last);
+      fun = WRAP_SYMBOL(extend_sym);
+      // from here *do* go on with (1.2) with the next element
+      lhs_obj_last = list_poplast(lhs);
+    }
+    // either coming from the failed or successful if
+
+    // (1.2) now we have a symbol right-most
+    if (ptype(lhs_obj_last) != SYMBOL_T)
+      rha_error("(parsing) symbol expected, found %o", lhs_obj_last);
+    if (UNWRAP_SYMBOL(lhs_obj_last) == dot_sym)
+      rha_error("(parsing) some symbol on the RHS of dot is missing");
+    symb = quoted(lhs_obj_last);
+
+    // (1.3) optionally we have a dot
+    if ((lhs_obj_last = list_poplast(lhs))) {
+      // there is something, so it must be a dot
+      if (ptype(lhs_obj_last) != SYMBOL_T 
+	  || UNWRAP_SYMBOL(lhs_obj_last) != dot_sym)
+	rha_error("(parsing) dot expected, found %o", lhs_obj_last);
+      if (list_len(lhs) == 0)
+	rha_error("(parsing) LHS of dot expected");
+      // finally, 'lhs' contains the LHS of the dot
+      scope = WRAP_PTR(LIST_T, lhs);
     }
   }
-  else if (ptype(lhs_obj) != SYMBOL_T)
+  else if (ptype(lhs_obj) == SYMBOL_T) {
+    symb = quoted(lhs_obj);
+  }
+  else
     rha_error("(parsing) can only assign to symbols");
-  // quote the symbol:
-  tuple_set(t, 2, quoted(lhs_sym_obj));
+
   // (2) to build the RHS we check whether the 'prule_sym' was
   // something else than 'equal_sym'
   object_t rhs_obj = resolve(env, tuple_get(pre_t, 2));
+
+  // finally add it to the tuple
+  tuple_t t = 0;
+  if (arglist) {
+    t = tuple_new(5);
+    tuple_set(t, 3, arglist);
+    tuple_set(t, 4, quoted(rhs_obj));  // contains fnbody
+  }
+  else {
+    t = tuple_new(4);
+    tuple_set(t, 3, rhs_obj);
+  }
+  tuple_set(t, 0, fun);
+  tuple_set(t, 1, scope);
+  tuple_set(t, 2, symb);
+
+  //debug("resolve_assign_prule returns: %o\n", WRAP_PTR(TUPLE_T, 0, t));
+  return t;
+
+
   if (prule_sym != equal_sym) {
     assert((prule_sym==plusequal_sym) 
 	   || (prule_sym==minusequal_sym)
@@ -701,6 +754,9 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
     rhs_obj = WRAP_PTR(TUPLE_T, rhs);
   }
   // finally add it to the tuple
+  tuple_set(t, 0, WRAP_SYMBOL(assign_sym));
+  tuple_set(t, 1, WRAP_SYMBOL(local_sym));
+
   tuple_set(t, 3, rhs_obj);
   //debug("resolve_assign_prule returns: %o\n", WRAP_PTR(TUPLE_T, 0, t));
   return t;

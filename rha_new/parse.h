@@ -16,7 +16,7 @@ extern       void     parse_init(object_t root, object_t module);
 
 
 extern       bool     is_symbol(symbol_t a_symbol, object_t expr);
-
+extern       bool_t   is_rounded_tuple(object_t obj);
 
 // note that the following symbols can NOT go to 'rha_config.d' since
 // the string for 'semicolon_sym' is ';' and not 'semicolon'
