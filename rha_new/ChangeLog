@@ -1,5 +1,10 @@
 2007-08-23  Stefan Harmeling  <harmeling@gmail.com>
 
+	* tuple_fn.c (tuple_set): now also tuple_set returns the tuple and
+	we can do:
+
+	    t = tuple(3).set(0, 17).set(1, 42).set(2, 55);
+
 	* list.rha (fn): added PERL like pop, push, shift, unshift.
 
 	* parse.c (resolve_dots_and_fn_calls): rewrote the whole thing to

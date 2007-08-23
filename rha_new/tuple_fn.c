@@ -32,9 +32,10 @@ object_t tuple_get(tuple_t t, int_t i)
   return gtuple_getp(t, i);
 }
 
-void tuple_set(tuple_t t, int_t i, object_t s)
+tuple_t tuple_set(tuple_t t, int_t i, object_t s)
 {
   gtuple_set(t, i, s);
+  return t;
 }
 
 tuple_t tuple_make(int_t narg, ...)

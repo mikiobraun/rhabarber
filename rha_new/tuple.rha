@@ -1,5 +1,7 @@
-if (not(defined(\TUPLE_RHA))) {
-  TUPLE_RHA = true;
+
+// for now I want to really!! reload it everytime I do a change
+//if (not(defined(\TUPLE_RHA))) {
+//  TUPLE_RHA = true;
   
   // add functions to the tuple prototype
   tuple.proto.len = fn () modules.tuple_fn.tuple_len(this);
@@ -23,5 +25,10 @@ if (not(defined(\TUPLE_RHA))) {
     return i;
   };
 
+  // member access (doesn't work)
+  tuple.proto.scope = local;
+  tuple.proto.argnames = tuple(1).set(0,\i);
+  tuple.proto.fnbody = \this.get(i);
+
   print("Loaded tuple.rha!");
-};
+//};

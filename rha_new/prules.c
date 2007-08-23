@@ -642,9 +642,9 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
   // (0) let's find the first appearance (left-most) of an assignment
   tuple_t pre_t = resolve_infix_prule_list(parsetree, assign_sym_list,
 					   assign_sym, RIGHT_BIND);
-  // now we got something like (= x 18)
-  // however, we need (= local x 18)
-  // or from (= (x . a) 18) we need (= x a 18)
+  // now we got something like (assign x 18)
+  // however, we need (assign local x 18)
+  // or from (assign (x . a) 18) we need (assign x a 18)
   tuple_t t = tuple_new(4);
   tuple_set(t, 0, WRAP_SYMBOL(assign_sym));
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
