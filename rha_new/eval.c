@@ -57,17 +57,20 @@ int frame_tos = -1;
 object_t eval(object_t env, object_t expr)
 {
   //debug("eval(env=%p, expr=%o)\n", env, expr);
-
+  
   object_t value;
   switch (ptype(expr)) {
-  case SYMBOL_T:
-    // symbols
-    value = lookup(env, UNWRAP_SYMBOL(expr));
-    if (!value) rha_error("lookup of symbol '%o' failed", expr);
+  case SYMBOL_T: {
+    // symbol
+    symbol_t s = UNWRAP_SYMBOL(expr);
+    value = lookup(env, s);
+    if (!value && s!=void_sym) 
+      rha_error("lookup of symbol '%o' failed", expr);
     if (has(value, hasproxy_sym)) {
       value = callslot(value, hasproxy_sym, 0);
     }
     return value;
+  }
   case TUPLE_T: 
     // function call
     assert(UNWRAP_PTR(TUPLE_T, expr));

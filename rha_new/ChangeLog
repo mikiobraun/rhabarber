@@ -6,6 +6,8 @@
 	by: 
 	    object_t void_obj = 0;
 
+	(eval): lookup for void now works...
+
 	* prelude.rha: added for convenience
 
 	    runtest = fn () run(root, "test.rha");
