@@ -56,9 +56,12 @@ int frame_tos = -1;
 
 object_t eval(object_t env, object_t expr)
 {
-  //debug("eval(env=%p, expr=%o)\n", env, expr);
+  debug("eval(env=%p, expr=%o)\n", env, expr);
   
   object_t value;
+  
+  if(!expr) return expr;
+  
   switch (ptype(expr)) {
   case SYMBOL_T: {
     // symbol
