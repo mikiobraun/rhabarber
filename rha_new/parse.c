@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 
 #include "parse.h"
 #include "rha_parser.h" // the link to BISON
@@ -63,7 +64,16 @@ object_t resolve_code_block(object_t env, list_t source);
 object_t resolve_tuple(object_t env, list_t source);
 object_t resolve_complex_literal(object_t env, list_t source);
 object_t resolve_macro(object_t env, tuple_t t);
+object_t resolve_dots_and_fn_calls(object_t env, list_t source);
+object_t resolve_prule(object_t env, list_t source, object_t prule);
 
+// auxillary functions
+static bool_t is_second_order_keyword(object_t obj);
+static bool_t is_curlied_list(object_t obj);
+static object_t find_best_prule(object_t env, list_t source);
+static double get_priority(object_t prule);
+static object_t remove_grouping_brackets(object_t obj);
+static object_t replace_expr(object_t expr, symbol_t s, object_t sub);
 
 object_t parse(object_t root, string_t s)
 {
@@ -85,47 +95,10 @@ object_t parse_file(object_t root, string_t fname)
 }
 
 
-
-
-bool is_symbol(symbol_t a_symbol, object_t expr) {
-  return (ptype(expr) == SYMBOL_T)
-    && (UNWRAP_SYMBOL(expr) == a_symbol);
-}
-
-bool_t is_curlied_list(object_t obj)
-{
-  if (ptype(obj) != LIST_T)
-    return false;
-  list_t l = UNWRAP_PTR(LIST_T, obj);
-  if (list_len(l) == 0)
-    return false;
-  object_t l0 = list_first(l);
-  if (ptype(l0) != SYMBOL_T)
-    return false;
-  symbol_t s = UNWRAP_SYMBOL(l0);
-  if (s != curlied_sym)
-    return false;
-  // ok, it is a curlied list
-  return true;
-}
-
-bool_t is_rounded_tuple(object_t obj)
-{
-  if (ptype(obj) != TUPLE_T)
-    return false;
-  tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
-  if (tuple_len(t) == 0)
-    return false;
-  object_t t0 = tuple_get(t, 0);
-  if (ptype(t0) != SYMBOL_T)
-    return false;
-  symbol_t s = UNWRAP_SYMBOL(t0);
-  if (s != rounded_sym)
-    return false;
-  // ok, it is a roudned tupled
-  return true;
-}
-
+//----------------------------------------------------------------------
+//
+// main entry point for resolving the prules
+//
 
 object_t resolve(object_t env, object_t expr)
 {
@@ -141,6 +114,9 @@ object_t resolve(object_t env, object_t expr)
     return expr;
 }
 
+//----------------------------------------------------------------------
+// resolve a list 
+
 object_t resolve_list_by_head(object_t env, list_t source)
 {
   //debug("resolve_list_by_head(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
@@ -153,51 +129,39 @@ object_t resolve_list_by_head(object_t env, list_t source)
   assert(list_len(source) > 0);
   object_t l0 = list_first(source);
   symbol_t head;
-  if ((ptype(l0) != SYMBOL_T)
-      || (((head = UNWRAP_SYMBOL(l0)) != curlied_sym)
-	  && (head != rounded_sym)
-	  && (head != squared_sym)))
-    return resolve_list_by_prules(env, source);
 
-  // so we have a specially marked up list
-  assert((head==rounded_sym)||(head==squared_sym)||(head==curlied_sym));
-  // let's chop the head off
-  list_popfirst(source);
-  // split 'source' into sublist which are collected in 'sink'
-  if (head==curlied_sym) {
-    return resolve_code_block(env, source);
+  if (ptype(l0) == SYMBOL_T) {
+    head = UNWRAP_SYMBOL(l0);
+    // split 'source' into sublist which are collected in 'sink'
+    if (head == curlied_sym) {
+      list_popfirst(source);
+      return resolve_code_block(env, source);
+    }
+    else if (head == rounded_sym) {
+      list_popfirst(source);
+      return resolve_tuple(env, source);
+    }
+    else if (head == squared_sym) {
+      list_popfirst(source);
+      return resolve_complex_literal(env, source);
+    }
+    /* fall through */
   }
-  else if (head == rounded_sym) {
-    return resolve_tuple(env, source);
-  }
-  else if (head == squared_sym) {
-    return resolve_complex_literal(env, source);
-  }
-  else {
-    // never reach this point
-    assert(1==0);
-    return 0; // make gcc happy
-  }
+
+  return resolve_list_by_prules(env, source);
 }
 
+//----------------------------------------------------------------------
+// resolving a curlied list (code blocks)
 
-bool_t is_second_order_keyword(object_t obj)
-{
-  if (ptype(obj) != SYMBOL_T)
-    return false;
-  symbol_t s = UNWRAP_SYMBOL(obj);
-  if (glist_iselementi(&sec_sym_list, s))
-    return true;
-  else
-    return false;
-}
-
+// take care of curlied lists, returns a tuple
+//
+// code blocks  -->  returns a tuple_t
+// for example: { x = 1; y = 7; deliver 5; { a=5; } x=5 }
+// split by semicolon, comma is not allowed
 object_t resolve_code_block(object_t env, list_t source)
 {
   //debug("resolve_code_block(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
-  // code blocks  -->  returns a tuple_t
-  // { x = 1; y = 7; deliver 5; { a=5; } x=5 }
-  // split by semicolon, comma is not allowed
   if (list_len(source) == 0) {
     return WRAP_PTR(TUPLE_T, tuple_new(0));
   }
@@ -244,13 +208,54 @@ object_t resolve_code_block(object_t env, list_t source)
   return WRAP_PTR(TUPLE_T, list_to_tuple(sink));  // a list!
 }
 
+// is obj a "second order keyword"
+//
+// 2nd order keywords are for example 'else' or 'catch'
+static bool_t is_second_order_keyword(object_t obj)
+{
+  if (ptype(obj) != SYMBOL_T)
+    return false;
+  symbol_t s = UNWRAP_SYMBOL(obj);
+  if (glist_iselementi(&sec_sym_list, s))
+    return true;
+  else
+    return false;
+}
 
+static bool_t is_curlied_list(object_t obj)
+{
+  if (ptype(obj) != LIST_T)
+    return false;
+  list_t l = UNWRAP_PTR(LIST_T, obj);
+  if (list_len(l) == 0)
+    return false;
+  object_t l0 = list_first(l);
+  if (ptype(l0) != SYMBOL_T)
+    return false;
+  symbol_t s = UNWRAP_SYMBOL(l0);
+  if (s != curlied_sym)
+    return false;
+  // ok, it is a curlied list
+  return true;
+}
+
+// check whether an expression is a specific symbol
+bool is_symbol(symbol_t a_symbol, object_t expr) {
+  return (ptype(expr) == SYMBOL_T)
+    && (UNWRAP_SYMBOL(expr) == a_symbol);
+}
+
+//----------------------------------------------------------------------
+// resolving tuples ("(...)")
+
+// resolves "rounded list" to tuple
+//
+// grouped expression and argument lists
+// for example, (x+1)*4 or (x, y, z)
+// split only by comma, no semicolon is allowed
 object_t resolve_tuple(object_t env, list_t source)
 {
   //debug("resolve_tuple(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
-  // grouped expression and argument lists
-  // (x+1)*4 or (x, y, z)
-  // split only by comma, no semiclon is allowed
   if (list_len(source) == 0) {
     tuple_t t = tuple_new(1);
     tuple_set(t, 0, WRAP_SYMBOL(rounded_sym));
@@ -287,6 +292,10 @@ object_t resolve_tuple(object_t env, list_t source)
   return WRAP_PTR(TUPLE_T, list_to_tuple(sink));
 }
 
+//----------------------------------------------------------------------
+// resolving complex literals ("[...]")
+//
+// currently broken ???
 
 object_t resolve_complex_literal(object_t env, list_t source)
 {
@@ -316,47 +325,50 @@ object_t resolve_complex_literal(object_t env, list_t source)
   return WRAP_PTR(TUPLE_T, t);
 }
 
- 
-object_t find_best_prule(object_t env, list_t source)
+//----------------------------------------------------------------------
+// resolving prules
+//
+// the main workhorse for resolving prules
+
+// find the best prule, and apply the prule
+object_t resolve_list_by_prules(object_t env, list_t source)
 {
-  // find the prule with the lowest precendence
-  // loop over all entries and check the symbols whether they are prules
-  double best_priority = 0.0;  // initially the priority is like functions
-  object_t best_prule  = 0;    // the object containing the best prule
-  list_it_t it;
-  for (it = list_begin(source); !list_done(it); glist_next(it)) {
-    object_t symbol_obj = list_get(it);
-    if (ptype(symbol_obj) == SYMBOL_T) {
-      object_t prule = lookup(prules, UNWRAP_SYMBOL(symbol_obj));
-      if (!prule) continue;
-      object_t prior = lookup(prule, priority_sym);
-      if (prior && (ptype(prior) == REAL_T)) {
-	double priority = UNWRAP_REAL(prior);
-	// did we find a prule with a higher priority?
-	if (priority > best_priority) {
-	  // note that 'f' might not be a prule but since it has a
-	  // priority it looks like one, then we will crash later
-	  best_priority = priority;
-	  best_prule = prule;
-	}
+  //debug("resolve_prules(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
+  // it is a tuple containing a white-spaced list
+  // without any particular heading symbol
+  
+  object_t prule = find_best_prule(env, source);
+  object_t excp = 0;
+  object_t result = 0;
+  if (prule) {
+    // try to call that prule
+    try {
+      // don't call 'return' inside 'try-catch' blocks!!!
+      result = resolve_prule(env, source, prule);
+    }
+    catch (excp) {
+      if (excp == prule_failed_excp) {
+	// try it again
+	// hopefully, the prule has adjusted the source to avoid it
+	// from being called again
+	// this happens (e.g.) for 'minus_pr' if it encounters a prefix-minus
+	result = resolve_list_by_prules(env, source);
+      }
+      else {
+	// pass the unknown exception on
+	throw(excp);
       }
     }
+    return result;
   }
-  // did we find a prule?
-  if (best_priority > 0.0)
-    return best_prule;
   else
-    return 0;
+    return resolve_dots_and_fn_calls(env, source);
 }
 
-void resolve_args(object_t env, tuple_t t)
-{
-  // resolve the arguments
-  int tlen = tuple_len(t);
-  for (int i = 1; i<tlen; i++)
-    tuple_set(t, i, resolve(env, tuple_get(t, i)));
-}
-
+// resolve a specific prule
+//
+// applies the associated function, resolves the arguments, and
+// resolve possible macro calls.
 object_t resolve_prule(object_t env, list_t source, object_t prule)
 {
   // resolve prule by constructing a call to that prule
@@ -393,27 +405,61 @@ object_t resolve_prule(object_t env, list_t source, object_t prule)
   return expr;
 }
 
-object_t remove_grouping_brackets(object_t obj)
+
+// find the prule with the lowest precendence
+static object_t find_best_prule(object_t env, list_t source)
 {
-  // if 'obj' is a tuple starting with 'rounded_sym' it must only
-  // be a singleton.  in that case the rounded brackets are removed
-  if (ptype(obj) == TUPLE_T) {
-    tuple_t tt = UNWRAP_PTR(TUPLE_T, obj);
-    if (tuple_len(tt) > 0) {
-      object_t tt0 = tuple_get(tt, 0);
-      if (ptype(tt0) == SYMBOL_T) {
-	symbol_t tts = UNWRAP_SYMBOL(tt0);
-	if (tts == rounded_sym) {
-	  if (tuple_len(tt) != 2)
-	    rha_error("(parsing) rounded brackets are only for "
-		      "grouping or arg lists");
-	  obj = tuple_get(tt, 1);
+  // loop over all entries and check the symbols whether they are prules 
+
+  double best_priority = 0.0;  // initially the priority is like functions
+  object_t best_prule  = 0;    // the object containing the best prule
+  list_it_t it;
+  for (it = list_begin(source); !list_done(it); glist_next(it)) {
+    object_t symbol_obj = list_get(it);
+
+    if (ptype(symbol_obj) == SYMBOL_T) {
+      object_t prule = lookup(prules, UNWRAP_SYMBOL(symbol_obj));
+      double priority = get_priority(prule);
+
+      if(!isnan(priority) && priority > best_priority) {
+	if (priority > best_priority) {
+	  // note that 'f' might not be a prule but since it has a
+	  // priority it looks like one, then we will crash later
+	  best_priority = priority;
+	  best_prule = prule;
 	}
       }
     }
   }
-  return obj;
+  // did we find a prule?
+  if (best_priority > 0.0)
+    return best_prule;
+  else
+    return 0;
 }
+
+// return double value contained in prule.priority_sym or NAN if it
+// does not exist
+static double get_priority(object_t prule)
+{
+  if (prule) {
+    object_t prior = lookup(prule, priority_sym);
+    if (prior && (ptype(prior) == REAL_T))
+      return UNWRAP_REAL(prior);
+  }
+  return NAN;
+}
+
+// call resolve recursively for all elements of t
+void resolve_args(object_t env, tuple_t t)
+{
+  int tlen = tuple_len(t);
+  for (int i = 1; i<tlen; i++)
+    tuple_set(t, i, resolve(env, tuple_get(t, i)));
+}
+
+//----------------------------------------------------------------------
+
 
 
 object_t resolve_dots_and_fn_calls(object_t env, list_t source)
@@ -518,45 +564,101 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
   return expr;
 }
 
-
-object_t resolve_list_by_prules(object_t env, list_t source)
+static object_t remove_grouping_brackets(object_t obj)
 {
-  //debug("resolve_prules(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
-  // it is a tuple containing a white-spaced list
-  // without any particular heading symbol
-  
-  object_t prule = find_best_prule(env, source);
-  object_t excp = 0;
-  object_t result = 0;
-  if (prule) {
-    // try to call that prule
-    try {
-      // don't call 'return' inside 'try-catch' blocks!!!
-      result = resolve_prule(env, source, prule);
-    }
-    catch (excp) {
-      if (excp == prule_failed_excp) {
-	// try it again
-	// hopefully, the prule has adjusted the source to avoid it
-	// from being called again
-	// this happens (e.g.) for 'minus_pr' if it encounters a prefix-minus
-	result = resolve_list_by_prules(env, source);
-      }
-      else {
-	// pass the unknown exception on
-	throw(excp);
+  // if 'obj' is a tuple starting with 'rounded_sym' it must only
+  // be a singleton.  in that case the rounded brackets are removed
+  if (ptype(obj) == TUPLE_T) {
+    tuple_t tt = UNWRAP_PTR(TUPLE_T, obj);
+    if (tuple_len(tt) > 0) {
+      object_t tt0 = tuple_get(tt, 0);
+      if (ptype(tt0) == SYMBOL_T) {
+	symbol_t tts = UNWRAP_SYMBOL(tt0);
+	if (tts == rounded_sym) {
+	  if (tuple_len(tt) != 2)
+	    rha_error("(parsing) rounded brackets are only for "
+		      "grouping or arg lists");
+	  obj = tuple_get(tt, 1);
+	}
       }
     }
-    return result;
   }
-  else
-    return resolve_dots_and_fn_calls(env, source);
+  return obj;
 }
 
 
-object_t replace_expr(object_t expr, symbol_t s, object_t sub)
+bool_t is_rounded_tuple(object_t obj)
 {
-  // replace all occurences of 's' in 'expr' by 'sub'
+  if (ptype(obj) != TUPLE_T)
+    return false;
+  tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
+  if (tuple_len(t) == 0)
+    return false;
+  object_t t0 = tuple_get(t, 0);
+  if (ptype(t0) != SYMBOL_T)
+    return false;
+  symbol_t s = UNWRAP_SYMBOL(t0);
+  if (s != rounded_sym)
+    return false;
+  // ok, it is a roudned tupled
+  return true;
+}
+
+//----------------------------------------------------------------------
+// resolve macros
+
+// resolve macros
+//
+// check whether it is a function call, and called function is a macro
+// (having slot "ismacro".) Then, return function body with arguments
+// replaced.
+object_t resolve_macro(object_t env, tuple_t t)
+{
+  // It might just be an empty tuple
+  int tlen = tuple_len(t);
+  if (tlen == 0) 
+    return WRAP_PTR(TUPLE_T, t);
+
+  // or a tuple which does not contain a symbol at position 0
+  object_t t0 = tuple_get(t, 0);
+  if (ptype(t0) != SYMBOL_T)
+    return WRAP_PTR(TUPLE_T, t);
+  symbol_t s = UNWRAP_SYMBOL(t0);
+
+  // okay, we're ready to gather all information and perform the
+  // replacement
+  object_t macro, macro_body, _macro_args;  
+
+  if ( (macro = lookup(env, s))
+       && lookup(macro, ismacro_sym) ) {
+    if ( (macro_body = lookup(macro, fnbody_sym))
+	 && (_macro_args = lookup(macro, argnames_sym)) ) {
+      tuple_t macro_args = UNWRAP_PTR(TUPLE_T, _macro_args);
+      
+      if (tuple_len(macro_args) != tlen-1)
+	rha_error("(parsing) wrong macro argument number (expected %d, got %d)", 
+		  tuple_len(macro_args), tlen-1);
+      // replace all symbols in macro_body
+      for (int i=1; i<tlen; i++) {
+	macro_body = replace_expr(macro_body, 
+				  UNWRAP_SYMBOL(tuple_get(macro_args, i-1)),
+				  tuple_get(t, i));
+      }
+      return macro_body;
+    }
+    else { // no fnbody or argnames found
+      rha_error("(parsing) ismacro found but no function found");
+      return 0;
+    }
+  }
+  else // not found or ismacro missing
+    return WRAP_PTR(TUPLE_T, t);
+}
+
+
+// replace all occurences of 's' in 'expr' by 'sub'
+static object_t replace_expr(object_t expr, symbol_t s, object_t sub)
+{
   if (ptype(expr) == SYMBOL_T) {
     symbol_t sy = UNWRAP_SYMBOL(expr);
     if (sy == s)
@@ -575,35 +677,3 @@ object_t replace_expr(object_t expr, symbol_t s, object_t sub)
 }
 
 
-object_t resolve_macro(object_t env, tuple_t t)
-{
-  int tlen = tuple_len(t);
-  if (tlen == 0) 
-    return WRAP_PTR(TUPLE_T, t);
-  object_t t0 = tuple_get(t, 0);
-  if (ptype(t0) != SYMBOL_T)
-    return WRAP_PTR(TUPLE_T, t);
-  symbol_t s = UNWRAP_SYMBOL(t0);
-  object_t macro = lookup(env, s);
-  if (!macro)
-    return WRAP_PTR(TUPLE_T, t);
-  if (!lookup(macro, ismacro_sym))
-    return WRAP_PTR(TUPLE_T, t);
-  object_t macro_body = lookup(macro, fnbody_sym);
-  if (!macro_body)
-    return WRAP_PTR(TUPLE_T, t);
-  object_t _macro_args = lookup(macro, argnames_sym);
-  if (!_macro_args)
-    rha_error("(parsing) macro found but args are missing");
-  tuple_t macro_args = UNWRAP_PTR(TUPLE_T, _macro_args);
-  if (tuple_len(macro_args) != tlen-1)
-    rha_error("(parsing) wrong macro arc number");
-  for (int i=1; i<tlen; i++) {
-    // go through the 'macro_body' and replace all occurences of
-    // macro_args
-    macro_body = replace_expr(macro_body, 
-			      UNWRAP_SYMBOL(tuple_get(macro_args, i-1)),
-			      tuple_get(t, i));
-  }
-  return macro_body;
-}

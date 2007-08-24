@@ -1,6 +1,5 @@
-
-// for now I want to really!! reload it everytime I do a change
-//if (not(defined(\TUPLE_RHA))) {
+// for now I let's reload it everytime I do a change
+//if (not(defined(TUPLE_RHA))) {
 //  TUPLE_RHA = true;
   
   // add functions to the tuple prototype

@@ -57,7 +57,9 @@ proxy = fn (s) root.modules.core.proxy_fn(this, s);
 
 // other stuff
 load = fn(filename) run(this, filename);
-defined = fn(symbolname) has(this, symbolname);
+macro = fn(f) { f.ismacro = true; f };
+defined = macro( fn(symbolname) has(local, \symbolname) );
+undefined = macro( fn(symbolname) not(defined(symbolname)) );
 
 load("testing.rha");
 load("tuple.rha");

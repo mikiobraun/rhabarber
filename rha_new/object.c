@@ -382,7 +382,7 @@ string_t to_string(object_t o)
 	s = gc_strdup("(");
 	int tlen = tuple_len(t);
 	for(int i = 0; i < tlen; i++) {
-	  if (i > 0) s = string_append(s, ", ");
+	  if (i > 0) s = string_append(s, " ");
 	  s = string_append(s, to_string(tuple_get(t, i)));
 	}
 	return string_append(s, ")");

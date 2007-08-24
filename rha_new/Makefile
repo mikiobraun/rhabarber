@@ -24,7 +24,7 @@ TESTCASES=$(subst .c,,$(wildcard test_*.c))
 #
 # the default target
 #
-default : run_tests
+default : rhabarber
 
 run_tests: test_cases
 	for i in $$(find . -name "test_*" -perm +a+x); do echo -e "---Test: $$i\n"; $$i; done

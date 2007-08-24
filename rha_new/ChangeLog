@@ -1,3 +1,11 @@
+2007-08-24  Mikio Braun  <mikiobraun@gmail.com>
+
+	* parse.c (resolve_list_by_head): changed ordering of the checks
+	to make it "more logical" (First if used to check for a large
+	negated condition). Hopefully still correct ;)
+
+	* parse.c: cleaned up and rearranged this file a bit
+
 2007-08-24  Stefan Harmeling  <harmeling@gmail.com>
 
 	* object.c (extend): wrote function 'extend' which is able to add
