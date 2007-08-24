@@ -6,6 +6,8 @@
 
 extern _rha_ object_t  proxy_fn(object_t this, symbol_t s);
 
+extern _rha_ object_t  create_fn_data(object_t env, tuple_t argnames, object_t fnbody);
+extern _rha_ object_t  create_fn_data_entry(object_t env, tuple_t argnames, object_t fnbody);
 extern _rha_ object_t  fn_fn(object_t env, tuple_t argnames, object_t fnbody);
 extern _rha_ object_t  if_fn(object_t this, bool_t cond, object_t then_code, object_t else_code);
 extern _rha_ void      return_fn(object_t);

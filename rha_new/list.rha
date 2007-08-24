@@ -1,8 +1,6 @@
 // list stuff
 list.new = modules.list_fn.list_new;
-list.scope = local;
-list.argnames = modules.tuple_fn.tuple_new(0);
-list.fnbody = \modules.list_fn.list_new();
+list.fn_data = create_fn_data(local, tuple(0), \modules.list_fn.list_new());
 list.proto.len      = fn () modules.list_fn.list_len(this);
 list.proto.copy     = fn () modules.list_fn.list_copy(this);
 list.proto.append   = fn (x) modules.list_fn.list_append(this, x);

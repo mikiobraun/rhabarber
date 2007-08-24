@@ -206,31 +206,60 @@ void *call_C_fun(int tlen, tuple_t t)
  */
 object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
 {
+  int nargs = tlen - 1;
   object_t fn = tuple_get(expr, 0);
 
-  // check if number of args is the same
-  int nargs = tlen - 1;
-  object_t _argnames = lookup(fn, argnames_sym);
-  if (!_argnames)
-    rha_error("(eval) %o doesn't have list of args, "
-	      "i.e. no slot '%s'", fn, symbol_name(argnames_sym));
-  tuple_t argnames = UNWRAP_PTR(TUPLE_T, _argnames);
+  // get the 'argnames', 'scope' and 'fnbody' from 'fn''s slots
+  object_t fn_data = lookup(fn, fn_data_sym);
+  list_t fn_data_l = 0;
+  if (!fn_data 
+      || ptype(fn_data)!=LIST_T
+      || list_len(fn_data_l=UNWRAP_PTR(LIST_T, fn_data)) == 0)
+    rha_error("(eval) %o can't be called, since it "
+	      "has no or a faulty 'fn_data' slot", fn);
   
-  if (tuple_len(argnames) != nargs) {
-    rha_error("function %o called with wrong number of arguments (%d instead of %d)",
-	      fn, nargs, tuple_len(argnames));
+  // go through the list to find a match
+  list_it_t it;
+  tuple_t entry_t = 0;
+  tuple_t argnames;
+  for (it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
+    object_t entry = list_get(it);
+    entry_t = 0;
+    if (!entry
+	|| ptype(entry)!=TUPLE_T
+	|| tuple_len(entry_t=UNWRAP_PTR(TUPLE_T, entry))!=3)
+      rha_error("(eval) %o can't be called, since it "
+		"has faulty entry in 'fn_data'");
+    // extract argnames
+    object_t argnames_obj = tuple_get(entry_t, 0);
+    if (!argnames_obj || ptype(argnames_obj)!=TUPLE_T)
+      rha_error("(eval) %o doesn't have tuple of args", fn);
+    // check whether the number of args match
+    argnames = UNWRAP_PTR(TUPLE_T, argnames_obj);
+    int nargs = tlen - 1;
+    if (tuple_len(argnames) == nargs)
+      // match found!!!
+      break;
   }
+  // did we find something?
+  if (list_done(it)) {
+    rha_error("function %o can't be called since no matching number of "
+	      "args was found", fn);
+  }
+  // get scope and fnbody
+  object_t scope = tuple_get(entry_t, 1);
+  if (!scope)
+    rha_error("(eval) %o doesn't have defining scope", fn);
+  object_t fnbody = tuple_get(entry_t, 2);
+  if (!fnbody)
+    rha_error("(eval) %o doesn't have function body", fn);
 
   // construct the inner scope
   object_t local = new();
-  assign(local, local_sym, local);
-  assign(local, this_sym, this);
-  assign(local, static_sym, fn);
-  object_t scope = lookup(fn, scope_sym);
-  if (!scope)
-    rha_error("(eval) %o doesn't have defining scope, "
-	      "i.e. no slot '%s'", fn, symbol_name(scope_sym));
-  assign(local, parent_sym, scope);
+  assign(local, local_sym, local);   // the scope local to the function
+  assign(local, this_sym, this);     // the calling scope
+  assign(local, static_sym, fn);     // for static variables
+  assign(local, parent_sym, scope);  // the defining scope (lexical)
   
   // assign the arguments
   for(int i = 0; i < nargs; i++) {
@@ -240,10 +269,6 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   }
 
   // execute the function body
-  object_t fnbody = lookup(fn, fnbody_sym);
-  if (!fnbody)
-    rha_error("(eval) %o doesn't have function body, "
-	      "i.e. no slot '%s'", fn, symbol_name(scope_sym));
   object_t res = 0;
   begin_frame(FUNCTION_FRAME)
     res = eval(local, fnbody);

@@ -272,12 +272,32 @@ object_t assign(object_t o, symbol_t s, object_t v)
 object_t extend(object_t this, symbol_t s, tuple_t args, 
 		object_t env, object_t rhs)
 {
-  // extend the context of 's' 
-  //              in scope 'this'
-  //           for context 'args'
-  //              by value 'rhs'
-  //    with lexical scope 'env'
-  return assign(this, s, fn_fn(env, args, rhs));
+  // extend object behind 's' 
+  //             in scope 'this'
+  //          for context 'args'
+  //             by value 'rhs'
+  //   with lexical scope 'env'
+
+  // (1) does 's' exists already?  if not, create a new function.
+  object_t obj = lookup(this, s);
+  if (!obj)
+    return assign(this, s, fn_fn(env, args, rhs));
+  // else extend 'obj'
+
+  // (2) is 'obj' already a function?
+  object_t fn_data = lookup(obj, fn_data_sym);
+  list_t fn_data_l = 0;
+ if (!fn_data)
+   fn_data_l = list_new();
+ else {
+   if (ptype(fn_data)!=LIST_T
+       || list_len(fn_data_l=UNWRAP_PTR(LIST_T, fn_data)) == 0)
+     rha_error("(eval) %o has a faulty 'fn_data' slot", obj);
+   fn_data_l = UNWRAP_PTR(LIST_T, fn_data);
+ }
+ list_append(fn_data_l, create_fn_data_entry(env, args, rhs));
+ assign(obj, fn_data_sym, WRAP_PTR(LIST_T, fn_data_l));
+ return obj;
 }
 
 

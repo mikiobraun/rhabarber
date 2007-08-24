@@ -1,5 +1,17 @@
 2007-08-24  Stefan Harmeling  <harmeling@gmail.com>
 
+	* object.c (extend): wrote function 'extend' which is able to add
+	new cases to function, or to create new functions.
+
+	* eval.c (call_rha_fun): uses the new representation of functions
+	and is able to find the implementation of the first function that
+	has the same number of arguments.
+
+	* core.c (fn_fn, create_fn_data, create_fn_data_entry): the inner
+	representation of function has changed. now all information is
+	stored in a slot 'fn_data' which must contain a list of 3-tuples,
+	each of which has entries 'argnames', 'env', and 'fnbody'.
+
 	* prules.c (resolve_assign_prule): now assignments to symbols
 	still creates assignment, but assignments to calls creates
 	extends:

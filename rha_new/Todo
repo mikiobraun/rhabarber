@@ -4,3 +4,5 @@
   'resolve_list_by_prules'
 
 * break is broken
+
+* in default case of 'to_string' look for slot 'to_string'

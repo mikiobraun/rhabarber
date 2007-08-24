@@ -52,6 +52,7 @@ extern symbol_t void_sym;
 extern symbol_t parent_sym;
 
 // special slots elsewhere
+extern symbol_t fn_data_sym;
 extern symbol_t scope_sym;
 extern symbol_t argnames_sym;
 extern symbol_t fnbody_sym;

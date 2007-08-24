@@ -11,10 +11,9 @@
   tuple.new = modules.tuple_fn.tuple_new;
   // this allows stuff like: t = tuple.new(4);
   // however, let's try to be fancy and make 'tuple' a function itself:
-  tuple.scope = local;
-  tuple.argnames = modules.tuple_fn.tuple_new(1);
-  tuple.argnames.set(0, \n);
-  tuple.fnbody = \modules.tuple_fn.tuple_new(n);
+  tuple.fn_data = create_fn_data(local,
+				 tuple.new(1).set(0, \len),
+				 \modules.tuple_fn.tuple_new(len));
   tuple.proto.iter = fn () {
     i = new();
     i.counter = 0;
@@ -26,14 +25,12 @@
   }
 
   // member access
-  tuple.proto.scope = local;
-  tuple.proto.argnames = tuple(1).set(0,\i);
-  tuple.proto.fnbody = \static.get(i);
+  tuple.proto.fn_data = create_fn_data(local, 
+				       tuple(1).set(0,\i),
+				       \static.get(i));
 
   print("Loaded tuple.rha!");
 //};
-
-
 
 
 //f = f @ fn (x) 2*x

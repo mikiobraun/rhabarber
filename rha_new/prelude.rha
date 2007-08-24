@@ -8,6 +8,7 @@ modules.object.assign(root, \assign, modules.object.assign);
 // (1.2) let's get more stuff from the object module
 new    = modules.object.new;
 extend = modules.object.extend;
+create_fn_data = modules.core.create_fn_data;
 ls     = modules.object.ls;
 new    = modules.object.new;
 has    = modules.object.has;
@@ -59,17 +60,16 @@ load = fn(filename) run(this, filename);
 defined = fn(symbolname) has(this, symbolname);
 
 load("testing.rha");
+load("tuple.rha");
+load("tuple.rha");
 load("list.rha");
-load("tuple.rha");
-load("tuple.rha");
 
 // symbol stuff
 // usually we can create symbol with quote, e.g. '\x', however
 // operators can only be created by 'symbol("+")'
-symbol.scope = local;
-symbol.argnames = tuple(1);
-symbol.argnames.set(0, \name);
-symbol.fnbody = \modules.symbol_fn.symbol_new(name);
+symbol.fn_data = create_fn_data(local,
+                                tuple(1).set(0,\name),
+				\modules.symbol_fn.symbol_new(name));
 
 // 'in' element test
 in_fn = fn (a, b) {
@@ -77,7 +77,7 @@ in_fn = fn (a, b) {
   for (x in b)
     if (a==x) return true;
   return false;
-}
+};
 
 // colon
 

@@ -47,13 +47,25 @@ object_t proxy_fn(object_t this, symbol_t s)
   return obj;
 }
 
+object_t create_fn_data_entry(object_t env, tuple_t argnames, object_t fnbody)
+{
+  // note the order
+  return WRAP_PTR(TUPLE_T, tuple_make(3, WRAP_PTR(TUPLE_T, argnames), env, fnbody));
+}
+
+object_t create_fn_data(object_t env, tuple_t argnames, object_t fnbody)
+{
+  // note the order
+  list_t fn_data_l = list_new();
+  list_append(fn_data_l, create_fn_data_entry(env, argnames, fnbody));
+  return WRAP_PTR(LIST_T, fn_data_l);
+}
+
 object_t fn_fn(object_t env, tuple_t argnames, object_t fnbody)
 {
   // defines a new rhabarber function
   object_t f = new();
-  assign(f, scope_sym, env);
-  assign(f, argnames_sym, WRAP_PTR(TUPLE_T, argnames));
-  assign(f, fnbody_sym, fnbody);
+  assign(f, fn_data_sym, create_fn_data(env, argnames, fnbody));
   return f;
 }
 
