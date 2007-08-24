@@ -47,11 +47,11 @@ object_t proxy_fn(object_t this, symbol_t s)
   return obj;
 }
 
-object_t fn_fn(object_t this, tuple_t argnames, object_t fnbody)
+object_t fn_fn(object_t env, tuple_t argnames, object_t fnbody)
 {
   // defines a new rhabarber function
   object_t f = new();
-  assign(f, scope_sym, this);
+  assign(f, scope_sym, env);
   assign(f, argnames_sym, WRAP_PTR(TUPLE_T, argnames));
   assign(f, fnbody_sym, fnbody);
   return f;
@@ -254,6 +254,27 @@ bool_t or_fn(bool_t a, bool_t b)
  * For slicing and typing and complex literals
  *
  *************************************************************/
+
+object_t colon_fn(object_t a, object_t b)
+{
+  if (ptype(a) == INT_T && ptype(b) == INT_T) {
+    int_t i = UNWRAP_INT(a);
+    int_t j = UNWRAP_INT(b);
+    // create a tuple with those numbers
+    // e.g.   0:4   ->   tuple:[0, 1, 2, 3]
+    tuple_t t = 0;
+    if (i>j) 
+      t = tuple_new(0);
+    else {
+      t = tuple_new(j-i);
+      for (int k=i; k<j; k++)
+	tuple_set(t, k-i, WRAP_INT(k));
+    }
+    return WRAP_PTR(TUPLE_T, t);
+  }
+  rha_warning("(colon_fn) for non-integers, 'a:b' returns 'b'");
+  return b;
+}
 
 
 object_t literal(object_t env, list_t parsetree)

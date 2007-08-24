@@ -3,8 +3,7 @@
 * get rid of the 'throw' in 'minus_pr' and 'try' in
   'resolve_list_by_prules'
 
-* try at the prompt:   42; deliver 17; 55
-  you wont get a message that there is not block to deliver from since
-  there *is* a block to deliver from, this should be changed...
-
-* list().append(3)
+* problem: now calling C-functions from rhabarber doesn't open a
+  FUNCTION FRAME.  that is important for 
+    if (i==0) break;
+  The problem is that 

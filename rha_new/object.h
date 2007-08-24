@@ -96,7 +96,8 @@ extern _rha_ object_t   lookup(object_t env, symbol_t s);
 //       a.x = 42;  ->  assign(a, \x, 42);
 extern _rha_ object_t   assign(object_t obj, symbol_t s, object_t newobj);
 
-extern _rha_ object_t   extend(object_t this, symbol_t s, tuple_t argnames, object_t fnbody);
+extern _rha_ object_t   extend(object_t env, object_t this, symbol_t s, 
+			       object_t context, object_t value);
 
 
 // 'has'

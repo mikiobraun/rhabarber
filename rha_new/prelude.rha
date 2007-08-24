@@ -3,11 +3,10 @@
 // the only stuff that exists in 'root' is:
 
 // (1.1) right now we can't even do assignments like 'x=1'
-modules.object.assign(root, \assign, modules.object.assign);
+modules.object.assign(root, \extend, modules.object.extend);
 
 // (1.2) let's get more stuff from the object module
 new    = modules.object.new;
-extend = modules.object.extend;
 ls     = modules.object.ls;
 new    = modules.object.new;
 has    = modules.object.has;
@@ -23,7 +22,7 @@ fn_fn      = modules.core.fn_fn;
 for_fn     = modules.core.for_fn;
 while_fn   = modules.core.while_fn;
 try_fn     = modules.core.try_fn;
-//colon_fn   = modules.core.colon_fn;
+colon_fn   = modules.core.colon_fn;
 literal    = modules.core.literal;
 return_fn  = modules.core.return_fn;
 deliver_fn = modules.core.deliver_fn;

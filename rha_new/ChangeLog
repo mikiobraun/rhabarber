@@ -1,5 +1,9 @@
 2007-08-24  Stefan Harmeling  <harmeling@gmail.com>
 
+	* prules.c (resolve_assign_prule): now lhs=rhs always produces 
+
+	(extend scope symbol context value)
+
 	* eval.c (call_rha_fun): added 'static'
 
 	* parse.c (resolve_code_block): now a sequence of commands in

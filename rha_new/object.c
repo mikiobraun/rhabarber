@@ -269,22 +269,19 @@ object_t assign(object_t o, symbol_t s, object_t v)
 }
 
 
-object_t extend(object_t this, symbol_t s, tuple_t argnames, object_t fnbody)
+object_t extend(object_t env, object_t this, symbol_t s, object_t context, object_t rhs)
 {
-  object_t extender = 0;
-  object_t o = lookup(this, s);
-  if (!o)
-    // reate a new function in that case
-    return assign(this, s, fn_fn(this, argnames, fnbody));
+  // extend the context of 's' in scope 'this' for context 'context'
+  // by value 'value'
+  
+  if (!context) {
+    // non-calling context, e.g. x=18; a.x=55
+    return assign(this, s, eval(env, rhs));
+  }
   else {
-    // else look whether there is a handler for 'extend'
-    extender = lookup(o, extend_sym);
-    if (extender) {
-      assert(1==0);
-      return 0;
-    }
-    // else add function functionality!
-    return 0;
+    assert(ptype(context)==TUPLE_T);
+    tuple_t args = UNWRAP_PTR(TUPLE_T, context);
+    return assign(this, s, fn_fn(env, args, rhs));
   }
 }
 

@@ -25,10 +25,18 @@
     return i;
   }
 
-  // member access (doesn't work)
+  // member access
   tuple.proto.scope = local;
   tuple.proto.argnames = tuple(1).set(0,\i);
   tuple.proto.fnbody = \static.get(i);
 
   print("Loaded tuple.rha!");
 //};
+
+
+
+
+//f = f @ fn (x) 2*x
+//f = f # fn (x) 2*x
+//f @= fn (x) 2*x
+//f #= fn (x) 2*x
