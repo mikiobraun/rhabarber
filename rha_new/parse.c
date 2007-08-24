@@ -170,12 +170,17 @@ object_t resolve_code_block(object_t env, list_t source)
   object_t obj = list_popfirst(source);
   while (obj) {
     if (is_symbol(semicolon_sym, obj)) {
-      if (list_len(part)>0) {
+      // split only if the next one is not a second order keyword like
+      // 'else' or 'catch'
+      obj = list_popfirst(source);
+      if (!obj) break;
+      if (!is_second_order_keyword(obj) && list_len(part)>0) {
 	// split here
 	list_append(sink, resolve_list_by_prules(env, part));
 	part = list_new();
 	// ignore the semicolon
       }
+      continue;
     }
     else if (is_symbol(comma_sym, obj)) {
       // this is not allowed

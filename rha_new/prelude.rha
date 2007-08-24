@@ -101,7 +101,14 @@ in_fn = fn (a, b) {
 //}
 
 // what is an integer?
-//int.check = fn (x) return ptype(x)=="int";
+int.check = fn (x) return ptype(x)=="int";
+
+// how to inherit types
+derived = fn (t) {
+  new_t = clone(t);
+  new_t.proto = clone(t.proto);
+  return new_t;
+}
 
 // what is a prule?
 //prule.check = fn (x) {

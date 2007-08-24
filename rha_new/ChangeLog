@@ -1,3 +1,17 @@
+2007-08-24  Stefan Harmeling  <harmeling@gmail.com>
+
+	* parse.c (resolve_code_block): now the semicolon after an
+	expression before 'else' is optional.  however, for a code block
+	it is not allowed:
+
+	if (true) 17 else 42; next_stm;     // ok
+	if (true) 17; else 42; next_stm;    // ok
+	if (true) {17} else 42; next_stm;   // ok
+	if (true) 17 else {42}  next_stm;   // ok
+	if (true) 17 else {42};  next_stm;  // ok
+	if (true) 17;; else 42; next_stm;   // wrong (like in C)
+	if (true) {17}; else 42; next_stm;  // wrong (like in C)	
+
 2007-08-24  Mikio Braun  <mikiobraun@gmail.com>
 
 	* parse.c (resolve_list_by_head): changed ordering of the checks
