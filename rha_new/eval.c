@@ -197,6 +197,13 @@ void *call_C_fun(int tlen, tuple_t t)
   return res;
 }
 
+bool_t match_found(tuple_t argnames, tuple_t values)
+{
+  int_t narg = tuple_len(values) - 1;
+  return tuple_len(argnames) == narg;
+}
+
+
 /* Call a rhabarber function 
  *
  * Checks if the number of argument matches, constructs the local
@@ -204,10 +211,12 @@ void *call_C_fun(int tlen, tuple_t t)
  *
  * callable objects must have slots "argnames", "scope", and "fnbody".
  */
-object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
+object_t call_rha_fun(object_t this, int tlen, tuple_t values)
 {
-  int nargs = tlen - 1;
-  object_t fn = tuple_get(expr, 0);
+  assert(tlen == tuple_len(values));
+
+  // get the function to be called
+  object_t fn = tuple_get(values, 0);
 
   // get the 'argnames', 'scope' and 'fnbody' from 'fn''s slots
   object_t fn_data = lookup(fn, fn_data_sym);
@@ -224,6 +233,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   tuple_t argnames;
   for (it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
     object_t entry = list_get(it);
+    // check entry
     entry_t = 0;
     if (!entry
 	|| ptype(entry)!=TUPLE_T
@@ -236,8 +246,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
       rha_error("(eval) %o doesn't have tuple of args", fn);
     // check whether the number of args match
     argnames = UNWRAP_PTR(TUPLE_T, argnames_obj);
-    int nargs = tlen - 1;
-    if (tuple_len(argnames) == nargs)
+    if (match_found(argnames, values))
       // match found!!!
       break;
   }
@@ -262,10 +271,11 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   assign(local, parent_sym, scope);  // the defining scope (lexical)
   
   // assign the arguments
+  int nargs = tuple_len(values)-1;
   for(int i = 0; i < nargs; i++) {
     symbol_t s = UNWRAP_SYMBOL(tuple_get(argnames, i));
     //debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
-    assign(local, s, tuple_get(expr, i+1));
+    assign(local, s, tuple_get(values, i+1));
   }
 
   // execute the function body

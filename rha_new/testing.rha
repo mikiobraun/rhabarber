@@ -5,9 +5,13 @@ test = fn (name) {
   t.failure = 0;
   t.success = 0;
   t.check = fn (cond) if (cond) this.success++ else this.failure++;
-  t.summarize = fn () print("[test]", this.name, 
-			    this.success, "PASSED and",
-			    this.failure, "FAILED");
+  t.summarize = fn () {
+    total = this.failure + this.success;
+    if (this.failure > 0)
+      print("[test]", this.failure, "/", total, "FAILED")
+    else
+      print("[test]", this.success, "/", total, "PASSED");
+  };
   return t;
 };
 

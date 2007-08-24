@@ -82,6 +82,7 @@ object_t copy_pt(object_t other)
   object_t o = new();
   o->ptype   = other->ptype;
   o->raw     = other->raw;
+  assign(o, parent_sym, prototypes[o->ptype]);
   return o;
 }
 
