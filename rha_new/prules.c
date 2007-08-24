@@ -866,14 +866,14 @@ tuple_t resolve_cmp_prule(object_t env, list_t parsetree)
 list_t remove_rounded_brackets(object_t expr)
 {
   if (ptype(expr) != LIST_T)
-    rha_error("(parsing) first args of freefix form must be enclosed"
+    rha_error("(parsing) first args of freefix form must be enclosed "
 	      "in round brackets, found %o", expr);
   list_t l = UNWRAP_PTR(LIST_T, expr);
   assert(list_len(l)>0); // otherwise parser problem
   object_t head = list_popfirst(l);
   assert(ptype(head) == SYMBOL_T);  // otherwise parser problem
   if (UNWRAP_SYMBOL(head) != rounded_sym)
-    rha_error("(parsing) first args of freefix form must be enclosed"
+    rha_error("(parsing) first args of freefix form must be enclosed "
 	      "in round brackets, found %o", expr);
   return l;
 }

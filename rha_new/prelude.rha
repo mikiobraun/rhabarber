@@ -30,6 +30,7 @@ literal    = modules.core.literal;
 return_fn  = modules.core.return_fn;
 deliver_fn = modules.core.deliver_fn;
 break_fn   = modules.core.break_fn;
+throw_fn   = modules.core.throw_fn;
 print      = modules.object.print_fn;
 
 // temporarily for testing purposes (as long as we have to overloaded)
@@ -81,70 +82,64 @@ in_fn = fn (a, b) {
   return false;
 };
 
-// colon
 
-//colon_fn = fn (a, b) {
-//  return b;
-//
-//  check = lookup(a, \check);
-//  if (check != void) {
-//    // perform type check
-//    return check(b);
-//  };
-//  if (int.check(a) && int.check(b)) {
-//    if (a > b) return tuple(0);
-//    t = tuple(b-a);
-//    k = a;
-//    while (k < b) t.set(k-a, k);
-//    return t;
-//  }
-//}
+// TYPES:
+
+// in rha_init.c:
+//    type = new(); 
+//    type.proto = type; // 'type' is its own prototype! 
+//    type.name = "type";
+type.check = fn (x) { 
+  // a simple type check: 
+  // * look for this.proto along the parents of 'x'
+  // * could be much more sophistacted if we went 
+  // also along the type hierarchy 
+  while (x != this.proto) { 
+    if (!has(x, \parent)) return false; 
+    x = x.parent; 
+  }
+  return true; 
+}
+
+//// what is an integer?
+//int.check = fn (x) return ptype(x)=="int";
 
 // how to inherit types
 subtype = fn (t) {
+  if (!type.check(t))
+    throw "can't subtype non-types";
   new_t = clone(t);
   new_t.proto = clone(t.proto);
   return new_t;
 }
 
-// what is an integer?
-int.check = fn (x) return ptype(x)=="int";
-
-// what is a prule?
-//prule = new();
-//prule.name = "prule";
-//prule.check = fn (x) {
-//  if (!has(x, \callable)) return false;
-//  if (!has(x, \priority)) return false;
-//  return true;
-//}
-
-// what is a function?
-// note that builtin functions should also have their stuff available
-// in \callable!
-//   fn.check = fn (x) {
-//     if (!has(x, \callable)) return false;
-//     return true;
-//   }
-
-// what is a macro?
-//   macro.check = fn (x) {
-//     if (!fn.check(x)) return false;
-//     if (!has(x, \ismacro)) return false;
-//     return true;
-//   }
 
 // what is iterable?
-//   iterable.check = fn (x) {
-//     if (!has(x, \iterable)) return false;
-//     i = x.iterable;
-//     if (!has(i, \begin)) return false;
-//     if (!has(i, \done)) return false;
-//     if (!has(i, \next)) return false;
-//     if (!has(i, \get)) return false;
-//     return true;
-//   }
+iterable = new();
+iterable.check = fn (x) {
+  if (!has(x, \iter)) return false;
+  i = x.iter();
+  if (!has(i, \done)) return false;
+  if (!has(i, \next)) return false;
+  if (!has(i, \get)) return false;
+  return true;
+}
 
-// what is an exception?
-// any object can be an exception, however if it has the slot 'msg' it
-// will be shown
+// colon
+
+colon_fn = fn (a, b) {
+  if (type.check(a))
+    // perform type check
+    return a.check(b);
+  print("hallo");
+  if (int.check(a) && int.check(b)) {
+    if (a > b) return tuple(0);
+    t = tuple(b-a);
+    k = a;
+    while (k < b) t.set(k-a, k);
+    return t;
+  }
+  throw "either 0:5 or int:x";
+}
+
+

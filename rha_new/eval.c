@@ -191,9 +191,9 @@ void *call_C_fun(int tlen, tuple_t t)
 
   // finally call 'f'
   object_t res = 0;
-  begin_frame(FUNCTION_FRAME)
+  //  begin_frame(FUNCTION_FRAME)
     res = (f->code)(t);
-  end_frame(res);
+    //  end_frame(res);
   return res;
 }
 
@@ -317,7 +317,7 @@ object_t vcallslot(object_t obj, symbol_t slotname, int_t narg, list_t args)
   // calling scope ('this') will be set to 'obj'
   object_t slot = lookup(obj, slotname);
   if (!slot)
-    throw(excp_newf("(call_slot) object %o doesn't have slot %s",
+    throw(excp_newf("(call_slot) object %o doesn't have slot '%s'",
 		    obj, symbol_name(slotname)));
   
   // construct the call

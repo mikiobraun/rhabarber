@@ -396,10 +396,11 @@ $init_c_ptypenames
 $init_c_functions
 
 // (6) init
-#define ADD_TYPE(ttt, TTT)                               \\
-  ttt ## _obj = new();                                   \\
-  assign(root, ttt ## _sym, ttt ## _obj);                \\
-  assign(ttt ## _obj, proto_sym, prototypes[TTT ## _T]); \\
+#define ADD_TYPE(ttt, TTT)                                 \\
+  ttt ## _obj = new();                                     \\
+  assign(root, ttt ## _sym, ttt ## _obj);                  \\
+  assign(ttt ## _obj, proto_sym, prototypes[TTT ## _T]);   \\
+  assign(ttt ## _obj, parent_sym, type_obj);               \\
   assign(ttt ## _obj, name_sym, WRAP_PTR(STRING_T, #ttt));
 
 #define ADD_MODULE(mmm)                                  \\
@@ -434,6 +435,10 @@ $init_c_init_symbols
   assign(root, local_sym, root); // the outer-most local scope
 
   // (6.3) create type objects (TYPES)
+  object_t type_obj = new();
+  assign(type_obj, name_sym, WRAP_PTR(STRING_T, "type"));
+  assign(type_obj, proto_sym, type_obj);
+  assign(root, type_sym, type_obj);
 $init_c_init_typeobjects
 
   // (6.4) add modules (MODULES, functions)
