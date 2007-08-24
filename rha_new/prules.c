@@ -51,8 +51,9 @@ symbol_t divideequal_sym = 0;
 symbol_t quote_sym = 0;
 
 
-static glist_t assign_sym_list; // a list with = += -= *= /=
-static glist_t cmp_sym_list;    // a list with < <= > >= == !=
+glist_t assign_sym_list; // a list with = += -= *= /=
+glist_t cmp_sym_list;    // a list with < <= > >= == !=
+glist_t sec_sym_list;    // a list with 'else', 'catch'
 
 #define MAKE_PRULES(ttt, prio) f = lookup(module, ttt ## _pr_sym);	\
   assign(f, priority_sym, WRAP_REAL(prio));				\
@@ -117,6 +118,11 @@ void prules_init(object_t root, object_t module)
   glist_append(&cmp_sym_list, greaterequal_sym);
   glist_append(&cmp_sym_list, equalequal_sym);
   glist_append(&cmp_sym_list, notequal_sym);
+
+  // make a list of the second order keywords
+  glist_init(&sec_sym_list);
+  glist_append(&sec_sym_list, else_sym);
+  glist_append(&sec_sym_list, catch_sym);
 
   // add priority slots for all prules
   // and add those prules also as symbols
@@ -717,12 +723,36 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
   // finally add it to the tuple
   tuple_t t = 0;
   if (arglist) {
+    // extend
+    if (prule_sym != equal_sym)
+      rha_error("(parsing) += and friends require a symbol on lhs");
     t = tuple_new(5);
     tuple_set(t, 3, arglist);
     tuple_set(t, 4, quoted(rhs_obj));  // contains fnbody
   }
   else {
+    // assign
     t = tuple_new(4);
+    if (prule_sym != equal_sym) {
+      assert((prule_sym==plusequal_sym) 
+	     || (prule_sym==minusequal_sym)
+	     || (prule_sym==timesequal_sym)
+	     || (prule_sym==divideequal_sym));
+      tuple_t rhs = tuple_new(3);
+      tuple_set(rhs, 1, copy_expr(resolve(env, lhs_obj)));
+      tuple_set(rhs, 2, resolve(env, rhs_obj));
+      if (prule_sym==plusequal_sym) 
+	tuple_set(rhs, 0, WRAP_SYMBOL(plus_fn_sym));
+      else if (prule_sym==minusequal_sym) 
+	tuple_set(rhs, 0, WRAP_SYMBOL(minus_fn_sym));
+      else if (prule_sym==timesequal_sym) 
+	tuple_set(rhs, 0, WRAP_SYMBOL(times_fn_sym));
+      else if (prule_sym==divideequal_sym) 
+	tuple_set(rhs, 0, WRAP_SYMBOL(divide_fn_sym));
+      else
+	assert(1==0);
+      rhs_obj = WRAP_PTR(TUPLE_T, rhs);
+    }
     tuple_set(t, 3, rhs_obj);
   }
   tuple_set(t, 0, fun);
@@ -733,31 +763,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
   return t;
 
 
-  if (prule_sym != equal_sym) {
-    assert((prule_sym==plusequal_sym) 
-	   || (prule_sym==minusequal_sym)
-	   || (prule_sym==timesequal_sym)
-	   || (prule_sym==divideequal_sym));
-    tuple_t rhs = tuple_new(3);
-    tuple_set(rhs, 1, resolve(env, lhs_obj));
-    tuple_set(rhs, 2, resolve(env, rhs_obj));
-    if (prule_sym==plusequal_sym) 
-      tuple_set(rhs, 0, WRAP_SYMBOL(plus_fn_sym));
-    else if (prule_sym==minusequal_sym) 
-      tuple_set(rhs, 0, WRAP_SYMBOL(minus_fn_sym));
-    else if (prule_sym==timesequal_sym) 
-      tuple_set(rhs, 0, WRAP_SYMBOL(times_fn_sym));
-    else if (prule_sym==divideequal_sym) 
-      tuple_set(rhs, 0, WRAP_SYMBOL(divide_fn_sym));
-    else
-      assert(1==0);
-    rhs_obj = WRAP_PTR(TUPLE_T, rhs);
-  }
-  // finally add it to the tuple
-  tuple_set(t, 0, WRAP_SYMBOL(assign_sym));
-  tuple_set(t, 1, WRAP_SYMBOL(local_sym));
 
-  tuple_set(t, 3, rhs_obj);
   //debug("resolve_assign_prule returns: %o\n", WRAP_PTR(TUPLE_T, 0, t));
   return t;
 }

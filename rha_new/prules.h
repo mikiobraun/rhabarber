@@ -7,6 +7,9 @@ extern       void     prules_init(object_t root, object_t module);
 
 // helper
 extern       object_t quoted(object_t obj);
+extern       glist_t  assign_sym_list; // a list with = += -= *= /=
+extern       glist_t  cmp_sym_list;    // a list with < <= > >= == !=
+extern       glist_t  sec_sym_list;    // a list with 'else', 'catch'
 
 // function to define common prules
 extern _rha_ object_t prule_new_infix();

@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <gc/gc.h>
@@ -65,8 +66,20 @@ int main(int argc, char **argv)
     try {
       object_t p = parse(root, line);
       if (p) {
-	object_t e = eval(root, p);
-	if(e)
+	// note that the outer tuple containing a "do" is dealt with
+	// here, because this way we can avoid opening a BLOCK_FRAME.
+	// this makes sure that at the prompt 'deliver 17' will issue
+	// an error as wanted
+	assert(ptype(p) == TUPLE_T);
+	tuple_t t = UNWRAP_PTR(TUPLE_T, p);
+	int_t tlen = tuple_len(t);
+	assert(tlen > 0);
+	assert(ptype(tuple_get(t, 0)) == SYMBOL_T);
+	assert(UNWRAP_SYMBOL(tuple_get(t, 0)) == do_sym);
+	object_t e = 0;
+	for (int i = 1; i < tlen; i++)
+	  e = eval(root, tuple_get(t, i));
+	if (e)
 	  fprint(stdout, "%o\n", e);
       }
     }

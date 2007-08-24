@@ -76,7 +76,7 @@ in_fn = fn (a, b) {
   for (x in b)
     if (a==x) return true;
   return false;
-};
+}
 
 // colon
 

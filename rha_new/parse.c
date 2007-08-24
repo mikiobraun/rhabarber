@@ -11,6 +11,7 @@
 #include "messages.h"
 #include "utils.h"
 #include "debug.h"
+#include "prules.h"
 #include "excp.h"
 
 // let's require for now that all expressions must be separated by
@@ -91,6 +92,40 @@ bool is_symbol(symbol_t a_symbol, object_t expr) {
     && (UNWRAP_SYMBOL(expr) == a_symbol);
 }
 
+bool_t is_curlied_list(object_t obj)
+{
+  if (ptype(obj) != LIST_T)
+    return false;
+  list_t l = UNWRAP_PTR(LIST_T, obj);
+  if (list_len(l) == 0)
+    return false;
+  object_t l0 = list_first(l);
+  if (ptype(l0) != SYMBOL_T)
+    return false;
+  symbol_t s = UNWRAP_SYMBOL(l0);
+  if (s != curlied_sym)
+    return false;
+  // ok, it is a curlied list
+  return true;
+}
+
+bool_t is_rounded_tuple(object_t obj)
+{
+  if (ptype(obj) != TUPLE_T)
+    return false;
+  tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
+  if (tuple_len(t) == 0)
+    return false;
+  object_t t0 = tuple_get(t, 0);
+  if (ptype(t0) != SYMBOL_T)
+    return false;
+  symbol_t s = UNWRAP_SYMBOL(t0);
+  if (s != rounded_sym)
+    return false;
+  // ok, it is a roudned tupled
+  return true;
+}
+
 
 object_t resolve(object_t env, object_t expr)
 {
@@ -144,7 +179,19 @@ object_t resolve_list_by_head(object_t env, list_t source)
     return 0; // make gcc happy
   }
 }
- 
+
+
+bool_t is_second_order_keyword(object_t obj)
+{
+  if (ptype(obj) != SYMBOL_T)
+    return false;
+  symbol_t s = UNWRAP_SYMBOL(obj);
+  if (glist_iselementi(&sec_sym_list, s))
+    return true;
+  else
+    return false;
+}
+
 object_t resolve_code_block(object_t env, list_t source)
 {
   //debug("resolve_code_block(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
@@ -156,24 +203,40 @@ object_t resolve_code_block(object_t env, list_t source)
   }
   list_t sink = list_new();
   list_t part = list_new();
-  object_t obj = 0;
-  while ((obj = list_popfirst(source))) {
+  object_t obj = list_popfirst(source);
+  while (obj) {
     if (is_symbol(semicolon_sym, obj)) {
       if (list_len(part)>0) {
-	// split here and ignore the semicolon
+	// split here
 	list_append(sink, resolve_list_by_prules(env, part));
 	part = list_new();
+	// ignore the semicolon
       }
-      continue;
     }
     else if (is_symbol(comma_sym, obj)) {
       // this is not allowed
       rha_error("(parsing) in a 'curlied' expression no comma allowed");
       assert(1==0);
     }
+    else if (is_curlied_list(obj)){
+      // a code block
+      // in case there is not a keyword like 'else' or 'catch'
+      // following, we split here as well
+      list_append(part, obj);
+      // look at the next one
+      obj = list_popfirst(source);
+      if (!obj) break;
+      if (!is_second_order_keyword(obj)) {
+	// split
+	list_append(sink, resolve_list_by_prules(env, part));
+	part = list_new();
+      }
+      continue;
+    }
     else {
       list_append(part, obj);
     }
+    obj = list_popfirst(source);
   }
   if (list_len(part)>0)
     list_append(sink, resolve_list_by_prules(env, part));
@@ -350,23 +413,6 @@ object_t remove_grouping_brackets(object_t obj)
     }
   }
   return obj;
-}
-
-bool_t is_rounded_tuple(object_t obj)
-{
-  if (ptype(obj) != TUPLE_T)
-    return false;
-  tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
-  if (tuple_len(t) == 0)
-    return false;
-  object_t t0 = tuple_get(t, 0);
-  if (ptype(t0) != SYMBOL_T)
-    return false;
-  symbol_t s = UNWRAP_SYMBOL(t0);
-  if (s != rounded_sym)
-    return false;
-  // ok, it is a roudned tupled
-  return true;
 }
 
 

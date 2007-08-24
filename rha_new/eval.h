@@ -68,7 +68,7 @@ extern int frame_tos;                           // frame counter
       else if ((_type == LOOP_FRAME))					\
         rha_error("no loop to 'break'");				\
       else if ((_type == BLOCK_FRAME))					\
-        rha_error("no block to 'return' from");				\
+        rha_error("no block to 'deliver' from");			\
       else if ((_type == TRY_FRAME)) {					\
 	excp_show(_expr);						\
         fprintf(stderr,							\

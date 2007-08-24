@@ -61,7 +61,7 @@ t.check(y == 170);
 t.summarize();
 
 t = test("return test");
-x = fn () { y = new(); y.a = 17; return y; z == zz }();
+x = (fn () { y = new(); y.a = 17; return y; z == zz })();
 t.check(x.a == 17);
 t.summarize();
 

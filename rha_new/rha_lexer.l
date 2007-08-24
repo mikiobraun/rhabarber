@@ -52,7 +52,6 @@ extern int yylineno;
                    yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); 
 		   return SYMBOL; 
                  }
-\n[ \t]*\n       { yylval.obj = WRAP_SYMBOL(symbol_new(";")); return SYMBOL; }
 \n		 yylineno++;
 .		 rha_warning("unrecognized character \"%s\"", yytext);
 <<EOF>>		 yyterminate();

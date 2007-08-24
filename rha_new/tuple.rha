@@ -23,7 +23,7 @@
     i.next = fn () this.counter++;
     i.get = fn () this.tuple.get(this.counter);
     return i;
-  };
+  }
 
   // member access (doesn't work)
   tuple.proto.scope = local;

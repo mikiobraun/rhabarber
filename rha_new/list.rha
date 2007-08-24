@@ -19,4 +19,4 @@ list.proto.iter     = fn () {
   i.done = fn () modules.list_fn.list_done(this);
   i.get  = fn () modules.list_fn.list_get(this);
   return i;
-};
+}

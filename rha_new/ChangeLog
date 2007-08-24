@@ -1,3 +1,21 @@
+2007-08-24  Stefan Harmeling  <harmeling@gmail.com>
+
+	* parse.c (resolve_code_block): now a sequence of commands in
+	curly brackets is split after a code block (in curly brackets) if
+	not a "second-order-keyword" such as currently 'else' or 'catch'
+	is following.  However, this solution is preliminary, since if we
+	extend the syntax with new complicated freefix form we need to add
+	them here by hand.
+
+	* rha_lexer.l: removed the case with \n  \n that generated a
+	semicolon, since now 'resolve_code_block' deals with it.
+
+	* rhabarber.c (main): the outer-most (do_sym 17; 42+42) is now
+	dealt with outside the eval function, which makes sense, since it
+	only happens in the real-eval-loop.  now typing 'deliver 17' at
+	the prompt generates (do_sym (deliver 17)) but doesn't open a
+	BLOCK_FRAME and thus issues the correct error.
+
 2007-08-23  Stefan Harmeling  <harmeling@gmail.com>
 
 	* object.c (extend): added extend, which is not done yet and which
