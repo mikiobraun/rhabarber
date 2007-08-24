@@ -225,6 +225,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t expr)
   object_t local = new();
   assign(local, local_sym, local);
   assign(local, this_sym, this);
+  assign(local, static_sym, fn);
   object_t scope = lookup(fn, scope_sym);
   if (!scope)
     rha_error("(eval) %o doesn't have defining scope, "

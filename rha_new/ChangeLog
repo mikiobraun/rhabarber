@@ -1,5 +1,7 @@
 2007-08-24  Stefan Harmeling  <harmeling@gmail.com>
 
+	* eval.c (call_rha_fun): added 'static'
+
 	* parse.c (resolve_code_block): now a sequence of commands in
 	curly brackets is split after a code block (in curly brackets) if
 	not a "second-order-keyword" such as currently 'else' or 'catch'

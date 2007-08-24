@@ -28,7 +28,7 @@
   // member access (doesn't work)
   tuple.proto.scope = local;
   tuple.proto.argnames = tuple(1).set(0,\i);
-  tuple.proto.fnbody = \this.get(i);
+  tuple.proto.fnbody = \static.get(i);
 
   print("Loaded tuple.rha!");
 //};
