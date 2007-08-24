@@ -1,5 +1,16 @@
 2007-08-24  Stefan Harmeling  <harmeling@gmail.com>
 
+	* core.c (macro_fn): added a macro prule to write macro like
+	functions:
+
+	defined = macro (name) has(local, name);
+
+	The reason for this was to avoid the overload stuff for macros,
+	thus macros should be different from functions.  This might be
+	changed later on.
+
+	* bool_fn.c (bool_and), core.c: move lazy 'or' and 'and' to bool_fn.c
+
 	* parse.c (resolve_code_block): now the semicolon after an
 	expression before 'else' is optional.  however, for a code block
 	it is not allowed:

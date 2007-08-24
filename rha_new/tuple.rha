@@ -1,6 +1,6 @@
 // for now I let's reload it everytime I do a change
-//if (not(defined(TUPLE_RHA))) {
-//  TUPLE_RHA = true;
+if (!defined(TUPLE_RHA)) {
+  TUPLE_RHA = true;
   
   // add functions to the tuple prototype
   tuple.proto.len = fn () modules.tuple_fn.tuple_len(this);
@@ -29,7 +29,7 @@
 				       \static.get(i));
 
   print("Loaded tuple.rha!");
-//};
+};
 
 
 //f = f @ fn (x) 2*x

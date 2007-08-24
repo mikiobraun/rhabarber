@@ -21,6 +21,7 @@ run    = modules.core.run_fn;
 // functions for prules
 if_fn      = modules.core.if_fn;
 fn_fn      = modules.core.fn_fn;
+macro_fn   = modules.core.macro_fn;
 for_fn     = modules.core.for_fn;
 while_fn   = modules.core.while_fn;
 try_fn     = modules.core.try_fn;
@@ -47,19 +48,18 @@ less_fn         = modules.object.less_fn;
 lessequal_fn    = modules.object.lessequal_fn;
 greater_fn      = modules.object.greater_fn;
 greaterequal_fn = modules.object.greaterequal_fn;
-and_fn          = modules.core.and_fn;
-or_fn           = modules.core.or_fn;
+not_fn          = modules.bool_fn.not_fn;
+and_fn          = modules.bool_fn.and_fn;
+or_fn           = modules.bool_fn.or_fn;
 
-not             = modules.bool_fn.bool_not;
 
 // proxy stuff
 proxy = fn (s) root.modules.core.proxy_fn(this, s);
 
 // other stuff
 load = fn(filename) run(this, filename);
-macro = fn(f) { f.ismacro = true; f };
-defined = macro( fn(symbolname) has(local, \symbolname) );
-undefined = macro( fn(symbolname) not(defined(symbolname)) );
+defined = macro (symbolname) has(local, \symbolname);
+undefined = macro( symbolname) has(local, symbolname);
 
 load("testing.rha");
 load("tuple.rha");
@@ -100,22 +100,24 @@ in_fn = fn (a, b) {
 //  }
 //}
 
-// what is an integer?
-int.check = fn (x) return ptype(x)=="int";
-
 // how to inherit types
-derived = fn (t) {
+subtype = fn (t) {
   new_t = clone(t);
   new_t.proto = clone(t.proto);
   return new_t;
 }
 
+// what is an integer?
+int.check = fn (x) return ptype(x)=="int";
+
 // what is a prule?
+//prule = new();
+//prule.name = "prule";
 //prule.check = fn (x) {
-//     if (!has(x, \callable)) return false;
-//     if (!has(x, \priority)) return false;
-//     return true;
-//   }
+//  if (!has(x, \callable)) return false;
+//  if (!has(x, \priority)) return false;
+//  return true;
+//}
 
 // what is a function?
 // note that builtin functions should also have their stuff available

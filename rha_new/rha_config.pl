@@ -396,13 +396,14 @@ $init_c_ptypenames
 $init_c_functions
 
 // (6) init
-#define ADD_TYPE(ttt, TTT)   \\
-  ttt ## _obj = new();\\
-  assign(root, ttt ## _sym, ttt ## _obj);\\
-  assign(ttt ## _obj, proto_sym, prototypes[TTT ## _T]);
+#define ADD_TYPE(ttt, TTT)                               \\
+  ttt ## _obj = new();                                   \\
+  assign(root, ttt ## _sym, ttt ## _obj);                \\
+  assign(ttt ## _obj, proto_sym, prototypes[TTT ## _T]); \\
+  assign(ttt ## _obj, name_sym, WRAP_PTR(STRING_T, #ttt));
 
-#define ADD_MODULE(mmm)   \\
-  module = new();\\
+#define ADD_MODULE(mmm)                                  \\
+  module = new();                                        \\
   assign(modules, mmm ## _sym, module);
 
 void add_function(object_t module, symbol_t s, 

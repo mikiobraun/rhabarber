@@ -45,6 +45,7 @@ extern _rha_ tuple_t try_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t while_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t for_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t fn_pr(object_t env, list_t parsetree);
+extern _rha_ tuple_t macro_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t equal_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t plusequal_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t minusequal_pr(object_t env, list_t parsetree);

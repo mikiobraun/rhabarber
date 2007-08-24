@@ -65,7 +65,7 @@ extern symbol_t next_sym;
 extern symbol_t msg_sym;
 extern symbol_t ismacro_sym;
 extern symbol_t check_sym;
-extern symbol_t extend_sym;
+extern symbol_t name_sym;
 
 // special slots in root
 extern symbol_t modules_sym;

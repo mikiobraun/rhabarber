@@ -204,21 +204,10 @@ bool_t match_found(tuple_t argnames, tuple_t values)
 }
 
 
-/* Call a rhabarber function 
- *
- * Checks if the number of argument matches, constructs the local
- * environment of the callee and executes the function
- *
- * callable objects must have slots "argnames", "scope", and "fnbody".
- */
-object_t call_rha_fun(object_t this, int tlen, tuple_t values)
+tuple_t find_matching_fn_data_entry(object_t fn, tuple_t values)
 {
-  assert(tlen == tuple_len(values));
-
-  // get the function to be called
-  object_t fn = tuple_get(values, 0);
-
-  // get the 'argnames', 'scope' and 'fnbody' from 'fn''s slots
+  // look for 'fn_data' which contains all information for the
+  // overloaded function
   object_t fn_data = lookup(fn, fn_data_sym);
   list_t fn_data_l = 0;
   if (!fn_data 
@@ -255,7 +244,34 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t values)
     rha_error("function %o can't be called since no matching number of "
 	      "args was found", fn);
   }
-  // get scope and fnbody
+  return entry_t;
+}
+
+
+/* Call a rhabarber function 
+ *
+ * Checks if the number of argument matches, constructs the local
+ * environment of the callee and executes the function
+ *
+ * callable objects must have slots "argnames", "scope", and "fnbody".
+ */
+object_t call_rha_fun(object_t this, int tlen, tuple_t values)
+{
+  assert(tlen == tuple_len(values));
+
+  // get the function to be called
+  object_t fn = tuple_get(values, 0);
+
+  // get a matching overloaded function
+  tuple_t entry_t = find_matching_fn_data_entry(fn, values);
+
+  // get argnames, scope and fnbody
+  object_t entry_t0 = tuple_get(entry_t, 0);
+  assert(entry_t0);   // otherwise 'find_matching_fn_data_entry' is faulty
+  assert(ptype(entry_t0) == TUPLE_T);
+  tuple_t argnames = UNWRAP_PTR(TUPLE_T, entry_t0);
+  if (!argnames)
+    rha_error("(eval) %o doesn't have argnames", fn);
   object_t scope = tuple_get(entry_t, 1);
   if (!scope)
     rha_error("(eval) %o doesn't have defining scope", fn);

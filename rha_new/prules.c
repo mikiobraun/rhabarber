@@ -43,6 +43,7 @@ symbol_t catch_sym = 0;
 symbol_t while_sym = 0;
 symbol_t for_sym = 0;
 symbol_t fn_sym = 0;
+symbol_t macro_sym = 0;
 symbol_t equal_sym = 0;
 symbol_t plusequal_sym = 0;
 symbol_t minusequal_sym = 0;
@@ -95,6 +96,7 @@ void prules_init(object_t root, object_t module)
   while_sym        = symbol_new("while");
   for_sym          = symbol_new("for");
   fn_sym           = symbol_new("fn");
+  macro_sym        = symbol_new("macro");
   equal_sym        = symbol_new("=");
   plusequal_sym    = symbol_new("+=");
   minusequal_sym   = symbol_new("-=");
@@ -159,6 +161,7 @@ void prules_init(object_t root, object_t module)
   MAKE_PRULES(while, 10.0);
   MAKE_PRULES(for, 10.0);
   MAKE_PRULES(fn, 10.0);
+  MAKE_PRULES(macro, 10.0);
   // note that 'assignments' must have the same priority as freefix
   // forms, consider:
   //
@@ -243,7 +246,14 @@ tuple_t minusminus_pr(object_t env, list_t parsetree)
 
 tuple_t not_pr(object_t env, list_t parsetree) 
 { 
-  return tuple_new(0); 
+  list_popfirst(parsetree);	
+  tuple_t t = tuple_new(2);					
+  tuple_set(t, 0, WRAP_SYMBOL(not_fn_sym));			
+  if (list_len(parsetree) > 0)					
+    tuple_set(t, 1, WRAP_PTR(LIST_T, parsetree));	
+  else								
+    rha_error("(parsing) 'not' requires a single argument");
+  return t;
 }
 
 tuple_t divide_pr(object_t env, list_t parsetree) 
@@ -474,6 +484,33 @@ tuple_t fn_pr(object_t env, list_t parsetree)
     tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   }
   //debug("(fn_pr) %o\n", WRAP_PTR(TUPLE_T, t));
+  return t;
+}
+
+tuple_t macro_pr(object_t env, list_t parsetree)
+{ 
+  // currently this functions contains mainly a dirty hack!
+  tuple_t pre_t = resolve_freefix_prule1(env, parsetree, macro_fn_sym, macro_sym, 2);
+  tuple_t t = tuple_new(3);
+  tuple_set(t, 0, WRAP_SYMBOL(macro_fn_sym));
+  if (tuple_len(pre_t) == 2) {
+    // the case: macro () code
+    tuple_set(t, 1, quoted(WRAP_PTR(TUPLE_T, tuple_new(0))));
+    tuple_set(t, 2, quoted(tuple_get(pre_t, 1)));
+  }
+  else {
+    assert(tuple_len(pre_t) == 3);
+    object_t obj = tuple_get(pre_t, 1);
+    if (ptype(obj) == TUPLE_T)
+      // fn (x, y) code; fn (x, y, z) code; etc
+      tuple_set(t, 1, quoted(obj));
+    else
+      // fn (x) code
+      tuple_set(t, 1, quoted(WRAP_PTR(TUPLE_T, tuple_make(1, obj))));
+    // add the code
+    tuple_set(t, 2, quoted(tuple_get(pre_t, 2)));
+  }
+  //debug("(macro_pr) %o\n", WRAP_PTR(TUPLE_T, t));
   return t;
 }
 

@@ -69,8 +69,19 @@ object_t fn_fn(object_t env, tuple_t argnames, object_t fnbody)
   return f;
 }
 
+object_t macro_fn(tuple_t argnames, object_t fnbody)
+{
+  object_t m = new();
+  assign(m, ismacro_sym, WRAP_BOOL(true));
+  assign(m, argnames_sym, WRAP_PTR(TUPLE_T, argnames));
+  assign(m, fnbody_sym, fnbody);
+  return m;
+}
+
 object_t prule_fn(object_t this, tuple_t argnames, object_t fnbody, real_t priority)
 {
+  assert(1==0);  // is this ever used???
+
   // defines a new prule, which is:
   // * a function with the parsetree as the single argument
   // * an object with a 'priority' slot
@@ -239,26 +250,6 @@ object_t run_fn(object_t root, string_t fname)
     return eval(root, p);
   }
   return 0;
-}
-
-/************************************************************
- *
- * Lazy logic
- *
- *************************************************************/
-
-bool_t and_fn(bool_t a, bool_t b)
-{
-  if (!a) return false;
-  if (!b) return false;
-  return true;
-}
-
-bool_t or_fn(bool_t a, bool_t b)
-{
-  if (a) return true;
-  if (b) return true;
-  return false;
 }
 
 /************************************************************
