@@ -274,17 +274,18 @@ object_t extend(object_t this, symbol_t s, tuple_t argnames, object_t fnbody)
   object_t extender = 0;
   object_t o = lookup(this, s);
   if (!o)
-    // we create a new function in that case
-    o = new();
+    // reate a new function in that case
+    return assign(this, s, fn_fn(this, argnames, fnbody));
   else {
+    // else look whether there is a handler for 'extend'
     extender = lookup(o, extend_sym);
     if (extender) {
       assert(1==0);
       return 0;
     }
+    // else add function functionality!
+    return 0;
   }
-  // create a function
-  return assign(this, s, fn_fn(this, argnames, fnbody));
 }
 
 
