@@ -269,20 +269,15 @@ object_t assign(object_t o, symbol_t s, object_t v)
 }
 
 
-object_t extend(object_t env, object_t this, symbol_t s, object_t context, object_t rhs)
+object_t extend(object_t this, symbol_t s, tuple_t args, 
+		object_t env, object_t rhs)
 {
-  // extend the context of 's' in scope 'this' for context 'context'
-  // by value 'value'
-  
-  if (!context) {
-    // non-calling context, e.g. x=18; a.x=55
-    return assign(this, s, eval(env, rhs));
-  }
-  else {
-    assert(ptype(context)==TUPLE_T);
-    tuple_t args = UNWRAP_PTR(TUPLE_T, context);
-    return assign(this, s, fn_fn(env, args, rhs));
-  }
+  // extend the context of 's' 
+  //              in scope 'this'
+  //           for context 'args'
+  //              by value 'rhs'
+  //    with lexical scope 'env'
+  return assign(this, s, fn_fn(env, args, rhs));
 }
 
 

@@ -3,10 +3,11 @@
 // the only stuff that exists in 'root' is:
 
 // (1.1) right now we can't even do assignments like 'x=1'
-modules.object.assign(root, \extend, modules.object.extend);
+modules.object.assign(root, \assign, modules.object.assign);
 
 // (1.2) let's get more stuff from the object module
 new    = modules.object.new;
+extend = modules.object.extend;
 ls     = modules.object.ls;
 new    = modules.object.new;
 has    = modules.object.has;

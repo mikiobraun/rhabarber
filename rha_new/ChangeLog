@@ -1,8 +1,14 @@
 2007-08-24  Stefan Harmeling  <harmeling@gmail.com>
 
-	* prules.c (resolve_assign_prule): now lhs=rhs always produces 
+	* prules.c (resolve_assign_prule): now assignments to symbols
+	still creates assignment, but assignments to calls creates
+	extends:
 
-	(extend scope symbol context value)
+	    x=0          (assign local x 0)
+	    a.x=0        (assign a x 0)
+
+	    f(x)=0       (extend local (quote f) (quote (x)) local (quote 0))
+	    a.f(x)=0     (extend a     (quote f) (quote (x)) local (quote 0))
 
 	* eval.c (call_rha_fun): added 'static'
 

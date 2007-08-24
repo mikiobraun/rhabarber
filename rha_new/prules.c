@@ -664,7 +664,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
   // all parts:
   object_t scope = WRAP_SYMBOL(local_sym);
   object_t symb = 0;
-  object_t context = quoted(0); // == (quote void)
+  object_t args = 0;
 
   // (1) let's first deal with the LHS
   // do we have a dot-expression on the LHS?
@@ -685,7 +685,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
       list_t l = tuple_to_list(UNWRAP_PTR(TUPLE_T, lhs_obj_last));
       list_popfirst(l);
       lhs_obj_last = WRAP_PTR(TUPLE_T, list_to_tuple(l));
-      context = quoted(lhs_obj_last);
+      args = quoted(lhs_obj_last);
 
       // from here *do* go on with (1.2) with the next element
       lhs_obj_last = list_poplast(lhs);
@@ -721,40 +721,48 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
   // something else than 'equal_sym'
   object_t rhs_obj = resolve(env, tuple_get(pre_t, 2));
 
-  // finally add it to the tuple
-  tuple_t t = tuple_new(6);
-  tuple_set(t, 0, WRAP_SYMBOL(extend_sym));
-  tuple_set(t, 1, WRAP_SYMBOL(local_sym));  // later on lexical scope
-  tuple_set(t, 2, scope);                   // later on calling scope
-  tuple_set(t, 3, symb);
-  tuple_set(t, 4, context);
-  if (prule_sym != equal_sym) {
-    assert((prule_sym==plusequal_sym) 
-	   || (prule_sym==minusequal_sym)
-	   || (prule_sym==timesequal_sym)
-	   || (prule_sym==divideequal_sym));
-    tuple_t rhs = tuple_new(3);
-    tuple_set(rhs, 1, copy_expr(resolve(env, lhs_obj)));
-    tuple_set(rhs, 2, resolve(env, rhs_obj));
-    if (prule_sym==plusequal_sym) 
-      tuple_set(rhs, 0, WRAP_SYMBOL(plus_fn_sym));
-    else if (prule_sym==minusequal_sym) 
-      tuple_set(rhs, 0, WRAP_SYMBOL(minus_fn_sym));
-    else if (prule_sym==timesequal_sym) 
-      tuple_set(rhs, 0, WRAP_SYMBOL(times_fn_sym));
-    else if (prule_sym==divideequal_sym) 
-      tuple_set(rhs, 0, WRAP_SYMBOL(divide_fn_sym));
-    else
-      assert(1==0);
-    rhs_obj = WRAP_PTR(TUPLE_T, rhs);
+  // finally generate the call
+  tuple_t t = 0;
+  if (args) {
+    // extend
+    if (prule_sym != equal_sym)
+      rha_error("(parsing) += and friends only allowed for simple assignments");
+    t = tuple_new(6);
+    tuple_set(t, 0, WRAP_SYMBOL(extend_sym));
+    tuple_set(t, 1, scope);      // later on calling scope
+    tuple_set(t, 2, symb);
+    tuple_set(t, 3, args);
+    tuple_set(t, 4, WRAP_SYMBOL(local_sym));
+    tuple_set(t, 5, quoted(rhs_obj));
   }
-  tuple_set(t, 5, quoted(rhs_obj));  // contains value
-
-  //debug("resolve_assign_prule returns: %o\n", WRAP_PTR(TUPLE_T, 0, t));
-  return t;
-
-
-
+  else {
+    // assign
+    if (prule_sym != equal_sym) {
+      assert((prule_sym==plusequal_sym) 
+	     || (prule_sym==minusequal_sym)
+	     || (prule_sym==timesequal_sym)
+	     || (prule_sym==divideequal_sym));
+      tuple_t rhs = tuple_new(3);
+      tuple_set(rhs, 1, copy_expr(resolve(env, lhs_obj)));
+      tuple_set(rhs, 2, resolve(env, rhs_obj));
+      if (prule_sym==plusequal_sym) 
+	tuple_set(rhs, 0, WRAP_SYMBOL(plus_fn_sym));
+      else if (prule_sym==minusequal_sym) 
+	tuple_set(rhs, 0, WRAP_SYMBOL(minus_fn_sym));
+      else if (prule_sym==timesequal_sym) 
+	tuple_set(rhs, 0, WRAP_SYMBOL(times_fn_sym));
+      else if (prule_sym==divideequal_sym) 
+	tuple_set(rhs, 0, WRAP_SYMBOL(divide_fn_sym));
+      else
+	assert(1==0);
+      rhs_obj = WRAP_PTR(TUPLE_T, rhs);
+    }
+    t = tuple_new(4);
+    tuple_set(t, 0, WRAP_SYMBOL(assign_sym));
+    tuple_set(t, 1, scope);
+    tuple_set(t, 2, symb);
+    tuple_set(t, 3, rhs_obj);
+  }
   //debug("resolve_assign_prule returns: %o\n", WRAP_PTR(TUPLE_T, 0, t));
   return t;
 }

@@ -3,7 +3,4 @@
 * get rid of the 'throw' in 'minus_pr' and 'try' in
   'resolve_list_by_prules'
 
-* problem: now calling C-functions from rhabarber doesn't open a
-  FUNCTION FRAME.  that is important for 
-    if (i==0) break;
-  The problem is that 
+* break is broken
