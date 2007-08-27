@@ -41,10 +41,12 @@ typedef glist_iterator_t *  _rha_ list_it_t;
 
 //SYMBOLS
 // the most basic symbols
+extern symbol_t parent_sym;
 extern symbol_t proto_sym;
 extern symbol_t do_sym;
 extern symbol_t quote_sym;
 extern symbol_t type_sym;
+extern symbol_t ptype_sym;
 extern symbol_t this_sym;
 extern symbol_t static_sym;
 extern symbol_t root_sym;

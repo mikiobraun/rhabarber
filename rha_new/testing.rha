@@ -1,19 +1,25 @@
 // code for testing
-test = fn (name) {
-  t = new();
-  t.name = name;
-  t.failure = 0;
-  t.success = 0;
-  t.check = fn (cond) if (cond) this.success++ else this.failure++;
-  t.summarize = fn () {
-    total = this.failure + this.success;
-    if (this.failure > 0)
-      print("[test]", this.failure, "/", total, "FAILED")
-    else
-      print("[test]", this.success, "/", total, "PASSED");
-  };
-  return t;
-};
+test = macro (x) {
+  failure = 0;
+  success = 0;
+  name = x;
+}
+
+check = macro (x) {
+  if (eval(local, x))
+    success++;
+  else {
+    print("FAILED:" ,\x);
+    failure++;
+  }
+}
+
+summarize = macro () {
+  if (failure > 0)
+    print ("[test]", failure, "/", failure+success, "SOME FAILED", name);
+  else
+    print ("[test]", success, "/", failure+success, "ALL PASSED", name);
+}
 
 // test (for convenience)
 runtest = fn () run(root, "test.rha");

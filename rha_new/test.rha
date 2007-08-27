@@ -1,45 +1,45 @@
 // put all testing code here!
 
-t = test("equalequal test");
-t.check(17==17);
-t.check("test"=="test");
-t.check(void==void);
-t.check(void!=15);
-t.check("test"!=66);
-t.check("test"!="tests");
-t.summarize();
+test("equalequal test");
+check(17==17);
+check("test"=="test");
+check(void==void);
+check(void!=15);
+check("test"!=66);
+check("test"!="tests");
+summarize();
 
 
-t = test("proxy tests");
+test("proxy tests");
 a = 17;
 b = proxy(\a);
-t.check(a==b);
+check(a==b);
 a = 42;
-t.check(a==b);
+check(a==b);
 a.xxx = "a new slot";
-t.check(has(b, \xxx));
+check(has(b, \xxx));
 b.yyy = "another slot";
-t.check(has(a, \yyy));
-t.summarize();
+check(has(a, \yyy));
+summarize();
 
-t = test("arithmetic test");
-t.check(17+42 == 59);
-t.check(17-42 == -25);
-t.check(17*42 == 714);
-t.check(42/17 == 2);
-t.summarize();
+test("arithmetic test");
+check(17+42 == 59);
+check(17-42 == -25);
+check(17*42 == 714);
+check(42/17 == 2);
+summarize();
 
-t = test("tuple test");
+test("tuple test");
 x = tuple.new(4);
-t.check(x.len() == 4);
+check(x.len() == 4);
 x.set(0, 42);
 x.set(1, "seventeen");
-t.check(x.get(0) == 42);
-t.check(x.get(1) == "seventeen");
-t.check(x.len() == 4);
-t.summarize();
+check(x.get(0) == 42);
+check(x.get(1) == "seventeen");
+check(x.len() == 4);
+summarize();
 
-t = test("for loop test");
+test("for loop test");
 x = tuple.new(4);
 x.set(0, 55);
 x.set(1, 33);
@@ -47,36 +47,36 @@ x.set(2, 42);
 x.set(3, -5);
 y = 0;
 for (i in x) y += i;
-t.check(y==125);
-t.summarize();
+check(y==125);
+summarize();
 
 
-t = test("list test");
-l = list.new();
+test("list test");
+l = list();
 l.append(17);
 l.append(42);
 y = 111;
 for (x in l) y += x;
-t.check(y == 170);
-t.summarize();
+check(y == 170);
+summarize();
 
-t = test("return test");
-x = (fn () { y = new(); y.a = 17; return y; z == zz })();
-t.check(x.a == 17);
-t.summarize();
+//test("return test");
+//x = (fn () { y = new(); y.a = 17; return y; z == zz })();
+//check(x.a == 17);
+//summarize();
 
-t = test("deliver test");
-x = { y = new(); y.a = 17; deliver y; z == zz };
-t.check(x.a == 17);
-t.summarize();
+//test("deliver test");
+//x = { y = new(); y.a = 17; deliver y; z == zz };
+//check(x.a == 17);
+//summarize();
 
-//t = test("break test");
+//test("break test");
 //for (i in 0:5)
 //  if (i==2) break;
-//t.check(i == 2);
-//t.summarize();
+//check(i == 2);
+//summarize();
 
-t = test("colon test");
+test("colon test");
 x = tuple(5);
 x.set(0, 5);
 x.set(1, 6);
@@ -84,25 +84,25 @@ x.set(2, 7);
 x.set(3, 8);
 x.set(4, 9);
 y = 5:10;
-t.check(y.len() == 5);
+check(y.len() == 5);
 for (i in 0:5)
-  t.check(x.get(i) == y.get(i));
-t.summarize();
+  check(x.get(i) == y.get(i));
+summarize();
 
-t = test("multiple arguments");
+test("multiple arguments");
 f = new();
 f(x) = 1+1;
 f(x,y) = 2+2;
 f(x,y,z) = 3+3;
 f() = 0;
-t.check(f() == 0);
-t.check(f(5,3) == 4);
-t.check(f(1) == 2);
-t.check(f(5,6,2) == 6);
-t.summarize();
+check(f() == 0);
+check(f(5,3) == 4);
+check(f(1) == 2);
+check(f(5,6,2) == 6);
+summarize();
 
-// SPECIAL PARSING TEST
-// the following stuff is only for the parser
+
+// special parsing test
 { x = 0 }
 if (0==0) {
   1;
@@ -121,3 +121,31 @@ if (0 == 0)
 else
   8;
 print("[test] parsing test passed");
+
+test("types");
+check(type.check(type));
+check(type.check(ptype));
+check(type.check(int));
+check(type(17) == "int");
+check(type(3.14) == "real");
+check(type(true) == "bool");
+check(type("test") == "string");
+check(int.check(17));
+check(!int.check(1.7));
+check(!int.check("test"));
+check(!real.check(17));
+check(real.check(1.7));
+check(!real.check("test"));
+check(!string.check(17));
+check(!string.check(1.7));
+check(string.check("test"));
+check(int:17);
+check(!(int:1.7));
+check(!(int:"test"));
+check(!(real:17));
+check(real:1.7);
+check(!(real:"test"));
+check(!(string:17));
+check(!(string:1.7));
+check(string:"test");
+summarize();

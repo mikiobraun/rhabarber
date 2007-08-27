@@ -12,7 +12,7 @@
 #include <stdarg.h>
 #include "alloc.h"
 #include "list_fn.h"
-
+#include "messages.h"
 #include "gtuple.h"
 
 tuple_t tuple_new(int_t len)
@@ -29,11 +29,15 @@ int_t tuple_len(tuple_t t)
 
 object_t tuple_get(tuple_t t, int_t i)
 {
+  if (i<0 || i>=gtuple_length(t))
+    rha_error("(tuple) index out-of-bounds");
   return gtuple_getp(t, i);
 }
 
 tuple_t tuple_set(tuple_t t, int_t i, object_t s)
 {
+  if (i<0 || i>=gtuple_length(t))
+    rha_error("(tuple) index out-of-bounds");
   gtuple_set(t, i, s);
   return t;
 }

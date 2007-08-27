@@ -1,3 +1,15 @@
+2007-08-27  Stefan Harmeling  <harmeling@gmail.com>
+
+	* object.c (equalequal_fn): added cases for BOOL and REAL.
+
+	* testing.rha: rewritten the test stuff with macros.  now the
+	s-expressions of the failed tests are shown.
+
+	* prelude.rha: defined types!  added test code for it to test.rha
+
+	* object.c (to_string): changed the handling of primtive
+	prototypes.  try e.g. 'ls(17)'
+
 2007-08-24  Stefan Harmeling  <harmeling@gmail.com>
 
 	* core.c (macro_fn): added a macro prule to write macro like

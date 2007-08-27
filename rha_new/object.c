@@ -338,14 +338,17 @@ string_t to_string(object_t o)
      // right now, this is a big switch, but eventually, this should
      // be done via symbol lookup :)
 {
-  string_t primitive_prototype_string = "<primitive prototype>";
   string_t s = 0;
   if (!o) {
     // in C it is zero, in rhabarber called void
     return sprint("%s", "<void>");
   }
   else {
-    switch (ptype(o)) {
+    int pt = ptype(o);
+    if (o==prototypes[pt])
+      return sprint("<%s prototype>", ptype_names[pt]);
+    // else something more interesting
+    switch (pt) {
     case OBJECT_T: {
       return sprint("<object@%p>", (void *) addr(o));
     }
@@ -360,8 +363,6 @@ string_t to_string(object_t o)
     }
     case SYMBOL_T: {
       symbol_t s = UNWRAP_SYMBOL(o);
-      if (!s)
-	return primitive_prototype_string;
       return sprint("%s", symbol_name(s));
     }
     case REAL_T: {
@@ -369,11 +370,11 @@ string_t to_string(object_t o)
     }
     default:
       // content is stored in o->raw.p
-      if (!o->raw.p)
-	// we are accessing a protoype
-	return primitive_prototype_string;
-      // we can safely access the raw content
-      switch (ptype(o)) {
+      assert(o->raw.p);
+      // we catched the case (o->raw.p==0) above, since this can only
+      // happen primitive prototypes, thus we can safely access the
+      // raw content
+      switch (pt) {
       case STRING_T: {
 	s = UNWRAP_PTR(STRING_T, o);
 	return sprint("\"%s\"", s); 
@@ -497,8 +498,12 @@ object_t dec_copy(object_t o)
 
 bool_t equalequal_fn(object_t a, object_t b)
 {
+  if ((ptype(a) == BOOL_T) && (ptype(b) == BOOL_T))
+    return UNWRAP_BOOL(a) == UNWRAP_BOOL(b);
   if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
     return UNWRAP_INT(a) == UNWRAP_INT(b);
+  if ((ptype(a) == REAL_T) && (ptype(b) == REAL_T))
+    return UNWRAP_REAL(a) == UNWRAP_REAL(b);
   else if ((ptype(a) == STRING_T) && (ptype(b) == STRING_T))
     return 0==strcmp(UNWRAP_PTR(STRING_T, a), UNWRAP_PTR(STRING_T, b));
   else

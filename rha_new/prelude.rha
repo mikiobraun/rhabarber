@@ -15,7 +15,6 @@ has    = modules.object.has;
 lookup = modules.object.lookup;
 clone  = modules.object.clone;
 addr   = modules.object.addr;
-ptype  = modules.object.ptypename;
 run    = modules.core.run_fn;
 
 // functions for prules
@@ -25,7 +24,7 @@ macro_fn   = modules.core.macro_fn;
 for_fn     = modules.core.for_fn;
 while_fn   = modules.core.while_fn;
 try_fn     = modules.core.try_fn;
-colon_fn   = modules.core.colon_fn;
+//colon_fn   = modules.core.colon_fn;  // now implemented below
 literal    = modules.core.literal;
 return_fn  = modules.core.return_fn;
 deliver_fn = modules.core.deliver_fn;
@@ -83,39 +82,50 @@ in_fn = fn (a, b) {
 };
 
 
-// TYPES:
+// typing stuff
 
-// in rha_init.c:
-//    type = new(); 
-//    type.proto = type; // 'type' is its own prototype! 
-//    type.name = "type";
+// type    = new();        // in rha_init.c
+type.name  = "type";
+type.type  = type;         // 'type' is of type 'type'
+type.proto = type;         // 'type' is its own prototype
 type.check = fn (x) { 
-  // a simple type check: 
-  // * look for this.proto along the parents of 'x'
-  // * could be much more sophistacted if we went 
-  // also along the type hierarchy 
-  while (x != this.proto) { 
+  while (x != this.proto) {
     if (!has(x, \parent)) return false; 
     x = x.parent; 
   }
-  return true; 
+  return true;
 }
+type(x) = x.type.name;     // try 'type(17)'
 
-//// what is an integer?
-//int.check = fn (x) return ptype(x)=="int";
+// ptype   = clone(type);  // in rha_init.c
+ptype.name  = "ptype";
+ptype.proto = ptype;
+ptype.check = fn (x) ptype(x)==ptype(this.proto);
 
-// how to inherit types
+// comments:
+// (i)   'int', 'real' are examples of ptypes
+// (ii)  'shape', 'circle' are examples of types
+// (iii) 'type', 'ptype' are examples of type-types.
+//       note that prototypes of type-types are the 
+//       types themselves.
+// (iv)  'iterable', 'callable' are examples of types without
+//       prototype slot, since they measure properties.  In Java they
+//       are called "interfaces".  We can't
+//       instantiate from types with prototype slot.
+
+// how to instantiate a type
+instance = fn (t) return clone(t.proto);
+
+// how to inherit types/interfaces
 subtype = fn (t) {
-  if (!type.check(t))
-    throw "can't subtype non-types";
   new_t = clone(t);
-  new_t.proto = clone(t.proto);
+  if (has(t, \proto))
+    new_t.proto = clone(t.proto);
   return new_t;
 }
 
-
 // what is iterable?
-iterable = new();
+iterable = clone(type);  // use 'clone' instead of 'subtype' for interfaces
 iterable.check = fn (x) {
   if (!has(x, \iter)) return false;
   i = x.iter();
@@ -126,17 +136,20 @@ iterable.check = fn (x) {
 }
 
 // colon
-
 colon_fn = fn (a, b) {
+  // is 'a' a type?
   if (type.check(a))
-    // perform type check
+    // yes, perform type check
     return a.check(b);
-  print("hallo");
+  // otherwise generate a tuple
   if (int.check(a) && int.check(b)) {
     if (a > b) return tuple(0);
     t = tuple(b-a);
     k = a;
-    while (k < b) t.set(k-a, k);
+    while (k < b) {
+      t.set(k-a, k);
+      k += 1;  // note that k++ is wrong since it changes 'a'
+    }
     return t;
   }
   throw "either 0:5 or int:x";

@@ -83,6 +83,7 @@ $init_c_typeobject = "";
 $init_c_ptypenames = "";
 $init_c_functions = "";
 $init_c_init_prototypes = "";
+$init_c_extend_prototypes = "";
 $init_c_init_symbols = "";
 $init_c_init_typeobjects = "";
 $init_c_add_modules = "";
@@ -267,23 +268,31 @@ sub create_ids {
 }
 
 sub create_prototypes {
-    foreach $item (@tdefs) {
-	if ($item ne "object_t") {
-	    $ucitem = uc($item);
-	    $iitem = substr($item, 0, -2);
-	    $uciitem = uc($iitem);
-	    $type_h_typeobjects .= "extern object_t $iitem"."_obj;\n";
-	    $init_c_typeobjects .= "object_t $iitem"."_obj;\n";
-	    $init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
-	}
-    }
     $ntdefs = scalar(@tdefs) + 1;
     $type_h_prototypes .= "extern object_t prototypes[$ntdefs];\n";
     $init_c_prototypes .= "object_t prototypes[$ntdefs];\n";
     $init_c_init_prototypes .= "  prototypes[0] = 0; // void prototype\n";
     $init_c_init_prototypes .= "  for (int i = 1; i < $ntdefs; i++) {\n";
     $init_c_init_prototypes .= "    prototypes[i] = create_pt(i);\n";
-    $init_c_init_prototypes .= "  }";
+    $init_c_init_prototypes .= "  }\n";
+    $i = 1;
+    foreach $item (@tdefs) {
+	$ucitem = uc($item);
+	$iitem = substr($item, 0, -2);
+	$uciitem = uc($iitem);
+	if ($item ne "object_t") {
+	    $type_h_typeobjects .= "extern object_t $iitem"."_obj;\n";
+	    $init_c_typeobjects .= "object_t $iitem"."_obj;\n";
+	    $init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
+	    # note that we omit OBJECT_T for the type slot
+	    $init_c_extend_prototypes .= "  assign(prototypes[$i], type_sym, $iitem"."_obj);\n";
+	}
+	else{
+	    $init_c_extend_prototypes .= "  //assign(prototypes[$i], type_sym, $iitem"."_obj); // omitted on purpose\n";
+
+	}
+	$i = $i+1;
+    }
 }
 
 sub create_symbols {
@@ -400,7 +409,7 @@ $init_c_functions
   ttt ## _obj = new();                                     \\
   assign(root, ttt ## _sym, ttt ## _obj);                  \\
   assign(ttt ## _obj, proto_sym, prototypes[TTT ## _T]);   \\
-  assign(ttt ## _obj, parent_sym, type_obj);               \\
+  assign(ttt ## _obj, parent_sym, ptype_obj);               \\
   assign(ttt ## _obj, name_sym, WRAP_PTR(STRING_T, #ttt));
 
 #define ADD_MODULE(mmm)                                  \\
@@ -421,9 +430,6 @@ void add_function(object_t module, symbol_t s,
 
 object_t rha_init()
 {
-  // (6.0) create parent symbol
-  parent_sym = symbol_new("parent");
-
   // (6.1) create prototypes (TYPES)
 $init_c_init_prototypes
 
@@ -436,12 +442,15 @@ $init_c_init_symbols
 
   // (6.3) create type objects (TYPES)
   object_t type_obj = new();
-  assign(type_obj, name_sym, WRAP_PTR(STRING_T, "type"));
-  assign(type_obj, proto_sym, type_obj);
   assign(root, type_sym, type_obj);
+  object_t ptype_obj = clone(type_obj);
+  assign(root, ptype_sym, ptype_obj);
 $init_c_init_typeobjects
 
-  // (6.4) add modules (MODULES, functions)
+  // (6.4) add type slots to the prototypes
+$init_c_extend_prototypes
+
+  // (6.5) add modules (MODULES, functions)
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;
