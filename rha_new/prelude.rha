@@ -6,16 +6,17 @@
 modules.object.assign(root, \assign, modules.object.assign);
 
 // (1.2) let's get more stuff from the object module
-new    = modules.object.new;
-extend = modules.object.extend;
+new      = modules.object.new;
+extend   = modules.object.extend;
 create_fn_data = modules.core.create_fn_data;
-ls     = modules.object.ls;
-new    = modules.object.new;
-has    = modules.object.has;
-lookup = modules.object.lookup;
-clone  = modules.object.clone;
-addr   = modules.object.addr;
-run    = modules.core.run_fn;
+ls       = modules.object.ls;
+new      = modules.object.new;
+has      = modules.object.has;
+lookup   = modules.object.lookup;
+location = modules.object.location;
+clone    = modules.object.clone;
+addr     = modules.object.addr;
+run      = modules.core.run_fn;
 
 // functions for prules
 if_fn      = modules.core.if_fn;
@@ -69,9 +70,7 @@ load("list.rha");
 // symbol stuff
 // usually we can create symbol with quote, e.g. '\x', however
 // operators can only be created by 'symbol("+")'
-symbol.fn_data = create_fn_data(local,
-                                tuple(1).set(0,\name),
-				\modules.symbol_fn.symbol_new(name));
+symbol(name) = modules.symbol_fn.symbol_new(name);
 
 // 'in' element test
 in_fn = fn (a, b) {
@@ -84,7 +83,7 @@ in_fn = fn (a, b) {
 
 // typing stuff
 
-// type    = new();        // in rha_init.c
+// type    = new();        // in rha_init.c (used by 'ptype')
 type.name  = "type";
 type.type  = type;         // 'type' is of type 'type'
 type.proto = type;         // 'type' is its own prototype
@@ -95,12 +94,16 @@ type.check = fn (x) {
   }
   return true;
 }
-type(x) = x.type.name;     // try 'type(17)'
+typename(x) = x.type.name;     // try 'type(17)'
+	    // note that 'type(x) = x.type.name' is not a good idea,
+	    // since then also 'bool(17)' will do '17.type.name'
+	    // instead of casting.
 
-// ptype   = clone(type);  // in rha_init.c
+// ptype   = clone(type);  // in rha_init.c (used by automatically
+                           // generated types for primitive types)
 ptype.name  = "ptype";
 ptype.proto = ptype;
-ptype.check = fn (x) ptype(x)==ptype(this.proto);
+ptype.check = fn (x) typename(x)==typename(this.proto);
 
 // comments:
 // (i)   'int', 'real' are examples of ptypes
@@ -108,20 +111,42 @@ ptype.check = fn (x) ptype(x)==ptype(this.proto);
 // (iii) 'type', 'ptype' are examples of type-types.
 //       note that prototypes of type-types are the 
 //       types themselves.
-// (iv)  'iterable', 'callable' are examples of types without
+// (iv)  'iterable', 'callable' are examples of types without a
 //       prototype slot, since they measure properties.  In Java they
 //       are called "interfaces".  We can't
-//       instantiate from types with prototype slot.
+//       instantiate from types without a prototype slot.
 
 // how to instantiate a type
 instance = fn (t) return clone(t.proto);
 
-// how to inherit types/interfaces
+// how to subtype
+// note that subtypes of a type 't' can appear everywhere where 't'
+// can appear.  the usual way to subtype is by 'clone', however this
+// doesn't work for types, but only non-types.
 subtype = fn (t) {
   new_t = clone(t);
   if (has(t, \proto))
     new_t.proto = clone(t.proto);
   return new_t;
+}
+
+// find all slots along the parent hierarchy with the same name
+allslots = fn (x, slot) {
+  l = list();
+  
+
+}
+
+// is 'x' an instance of a subtype of 't'?
+isa = fn (x, t) {
+  // 'location' allows us to jump to the relevant objects in the
+  // parent path
+  while (true) {
+    x = location(x, \type);
+    if (x.type == t) return true;
+    if (!has(x, \parent)) return false;
+    x = x.parent;
+  }
 }
 
 // what is iterable?
@@ -135,13 +160,14 @@ iterable.check = fn (x) {
   return true;
 }
 
-// colon
+// colon can be used for typechecks and to generate tuple
 colon_fn = fn (a, b) {
   // is 'a' a type?
   if (type.check(a))
     // yes, perform type check
     return a.check(b);
   // otherwise generate a tuple
+  // later on, this should be a true generator using 'yield'
   if (int.check(a) && int.check(b)) {
     if (a > b) return tuple(0);
     t = tuple(b-a);
@@ -156,3 +182,5 @@ colon_fn = fn (a, b) {
 }
 
 
+// casting
+int(x) = modules.int_fn.int_cast(x);  // try 'int(3.14)'

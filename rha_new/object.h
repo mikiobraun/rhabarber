@@ -92,6 +92,9 @@ extern       object_t   wrap(int ptype, ...);
 //        a.x        -> lookup(a, \x);
 extern _rha_ object_t   lookup(object_t env, symbol_t s);
 
+
+extern _rha_ object_t   location(object_t l, symbol_t s);
+
 //       x = 17;    ->  assign(local_sym, \x, 17);
 //       a.x = 42;  ->  assign(a, \x, 42);
 extern _rha_ object_t   assign(object_t obj, symbol_t s, object_t newobj);

@@ -47,25 +47,28 @@ object_t proxy_fn(object_t this, symbol_t s)
   return obj;
 }
 
-object_t create_fn_data_entry(object_t env, tuple_t argnames, object_t fnbody)
+object_t create_fn_data_entry(object_t env, tuple_t signature, object_t fnbody)
 {
-  // note the order
-  return WRAP_PTR(TUPLE_T, tuple_make(3, WRAP_PTR(TUPLE_T, argnames), env, fnbody));
+  object_t entry = new();
+  assign(entry, signature_sym, WRAP_PTR(TUPLE_T, signature));
+  assign(entry, scope_sym, env);
+  assign(entry, fnbody_sym, fnbody);
+  return entry;
 }
 
-object_t create_fn_data(object_t env, tuple_t argnames, object_t fnbody)
+object_t create_fn_data(object_t env, tuple_t signature, object_t fnbody)
 {
   // note the order
   list_t fn_data_l = list_new();
-  list_append(fn_data_l, create_fn_data_entry(env, argnames, fnbody));
+  list_append(fn_data_l, create_fn_data_entry(env, signature, fnbody));
   return WRAP_PTR(LIST_T, fn_data_l);
 }
 
-object_t fn_fn(object_t env, tuple_t argnames, object_t fnbody)
+object_t fn_fn(object_t env, tuple_t signature, object_t fnbody)
 {
   // defines a new rhabarber function
   object_t f = new();
-  assign(f, fn_data_sym, create_fn_data(env, argnames, fnbody));
+  assign(f, fn_data_sym, create_fn_data(env, signature, fnbody));
   return f;
 }
 
@@ -289,15 +292,15 @@ object_t literal(object_t env, list_t parsetree)
   list_t part = list_new();
   object_t head = 0;
   while ((head = list_popfirst(parsetree))) {
-    if (is_symbol(comma_sym, head)) {
+    if (is_symbol(symbol_new(","), head)) {
       if (list_len(part)>0) {
 	// split here and ignore the comma
-	list_append(sink, resolve_list_by_prules(env, part));
+	list_append(sink, resolve(env, part));
 	part = list_new();
       }
       continue;
     }
-    else if (is_symbol(semicolon_sym, head)) {
+    else if (is_symbol(symbol_new(";"), head)) {
       // this is not allowed
       rha_error("(parsing) in a list literal is no semicolon allowed");
     }
@@ -306,7 +309,7 @@ object_t literal(object_t env, list_t parsetree)
     }
   }
   if (list_len(part)>0)
-    list_append(sink, resolve_list_by_prules(env, part));
+    list_append(sink, resolve(env, part));
 
   // finally evaluate all entries
   list_t source = sink;

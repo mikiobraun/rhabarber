@@ -142,7 +142,7 @@ object_t eval_args_and_call_fun(object_t env, tuple_t expr)
 
 object_t call_fun(object_t env, int_t tlen, tuple_t values)
 {
-  if (ptype(tuple_get(values, 0))==FUNCTION_T)
+  if (ptype(tuple_get(values, 0))==BUILTIN_T)
     // the function is implemented in C
     return call_C_fun(tlen, values);
   else
@@ -165,8 +165,8 @@ void *call_C_fun(int tlen, tuple_t t)
   int narg = tlen-1;
   // extract the function
   object_t t0 = tuple_get(t, 0);
-  assert(t0 && ptype(t0)==FUNCTION_T);
-  function_t f = UNWRAP_PTR(FUNCTION_T, t0);
+  assert(t0 && ptype(t0)==BUILTIN_T);
+  builtin_t f = UNWRAP_PTR(BUILTIN_T, t0);
 
   // is the argument number correct?
   // we distinguish depending on whether variable length argument
@@ -197,55 +197,72 @@ void *call_C_fun(int tlen, tuple_t t)
   return res;
 }
 
-bool_t match_found(tuple_t argnames, tuple_t values)
+
+object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
+			    tuple_t signature, tuple_t values)
+{
+  // add more to the inner scope
+  assign(local, parent_sym, scope);  // the defining scope (lexical)
+
+  // assign the arguments
+  int nargs = tuple_len(values)-1;
+  for(int i = 0; i < nargs; i++) {
+    object_t pattern = tuple_get(signature, i);
+    if (!pattern)
+      rha_error("(eval) signature is not valid");
+    object_t s_o = eval(pattern, WRAP_SYMBOL(symbol_sym));
+    if (!s_o || ptype(s_o)!=SYMBOL_T)
+      rha_error("(eval) symbol expected, found %o", s_o);
+    symbol_t s = UNWRAP_SYMBOL(s_o);
+    //debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
+    assign(local, s, tuple_get(values, i+1));
+  }
+
+  // call the function
+  object_t res = 0;
+  begin_frame(FUNCTION_FRAME)
+    // don't put 'return' inside here
+    res = eval(local, fnbody);
+  end_frame(res);
+  return res;
+}
+
+
+bool_t signature_matches(tuple_t signature, tuple_t values)
 {
   int_t narg = tuple_len(values) - 1;
-  return tuple_len(argnames) == narg;
+  return tuple_len(signature) == narg;
 }
 
 
-tuple_t find_matching_fn_data_entry(object_t fn, tuple_t values)
+object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values)
 {
-  // look for 'fn_data' which contains all information for the
-  // overloaded function
-  object_t fn_data = lookup(fn, fn_data_sym);
-  list_t fn_data_l = 0;
-  if (!fn_data 
-      || ptype(fn_data)!=LIST_T
-      || list_len(fn_data_l=UNWRAP_PTR(LIST_T, fn_data)) == 0)
-    rha_error("(eval) %o can't be called, since it "
-	      "has no or a faulty 'fn_data' slot", fn);
-  
+  string_t msg = "(eval) can't call %o, since it has a faulty entry in 'fn_data'";
   // go through the list to find a match
-  list_it_t it;
-  tuple_t entry_t = 0;
-  tuple_t argnames;
-  for (it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
-    object_t entry = list_get(it);
-    // check entry
-    entry_t = 0;
-    if (!entry
-	|| ptype(entry)!=TUPLE_T
-	|| tuple_len(entry_t=UNWRAP_PTR(TUPLE_T, entry))!=3)
-      rha_error("(eval) %o can't be called, since it "
-		"has faulty entry in 'fn_data'");
-    // extract argnames
-    object_t argnames_obj = tuple_get(entry_t, 0);
-    if (!argnames_obj || ptype(argnames_obj)!=TUPLE_T)
-      rha_error("(eval) %o doesn't have tuple of args", fn);
-    // check whether the number of args match
-    argnames = UNWRAP_PTR(TUPLE_T, argnames_obj);
-    if (match_found(argnames, values))
+  for (list_it_t it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
+    object_t impl = list_get(it);
+    if (!impl) rha_error(msg);
+    object_t impl0 = eval(impl, WRAP_SYMBOL(signature_sym));
+    if (!impl0 || ptype(impl0)!=TUPLE_T)
+      rha_error(msg);
+    tuple_t signature = UNWRAP_PTR(TUPLE_T, impl0);
+    if (signature_matches(signature, values)) {
       // match found!!!
-      break;
+      object_t scope = eval(impl, WRAP_SYMBOL(scope_sym));
+      if (!scope)
+	rha_error("(eval) can't find defining scope");
+      object_t fnbody = eval(impl, WRAP_SYMBOL(fnbody_sym));
+      if (!fnbody)
+	rha_error("(eval) can't find function body");
+      return call_matching_impl(local, scope, fnbody, signature, values);
+    }
   }
-  // did we find something?
-  if (list_done(it)) {
-    rha_error("function %o can't be called since no matching number of "
-	      "args was found", fn);
-  }
-  return entry_t;
+  // we did not find anything matching
+  rha_error("can't call function since no matching signature"
+	    "was foundnumber was found");
+  return 0;
 }
+
 
 
 /* Call a rhabarber function 
@@ -262,44 +279,26 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t values)
   // get the function to be called
   object_t fn = tuple_get(values, 0);
 
-  // get a matching overloaded function
-  tuple_t entry_t = find_matching_fn_data_entry(fn, values);
-
-  // get argnames, scope and fnbody
-  object_t entry_t0 = tuple_get(entry_t, 0);
-  assert(entry_t0);   // otherwise 'find_matching_fn_data_entry' is faulty
-  assert(ptype(entry_t0) == TUPLE_T);
-  tuple_t argnames = UNWRAP_PTR(TUPLE_T, entry_t0);
-  if (!argnames)
-    rha_error("(eval) %o doesn't have argnames", fn);
-  object_t scope = tuple_get(entry_t, 1);
-  if (!scope)
-    rha_error("(eval) %o doesn't have defining scope", fn);
-  object_t fnbody = tuple_get(entry_t, 2);
-  if (!fnbody)
-    rha_error("(eval) %o doesn't have function body", fn);
+  // look for 'fn_data' which contains all information for the
+  // overloaded function
+  object_t fn_data = lookup(fn, fn_data_sym);
+  list_t fn_data_l = 0;
+  if (!fn_data)
+    rha_error("(eval) %o can't be called, since it "
+	      "has no 'fn_data' slot", fn);
+  if (ptype(fn_data)!=LIST_T
+      || list_len(fn_data_l=UNWRAP_PTR(LIST_T, fn_data)) == 0)
+    rha_error("(eval) %o can't be called, since it "
+	      "has a faulty 'fn_data' slot", fn);
 
   // construct the inner scope
   object_t local = new();
   assign(local, local_sym, local);   // the scope local to the function
   assign(local, this_sym, this);     // the calling scope
   assign(local, static_sym, fn);     // for static variables
-  assign(local, parent_sym, scope);  // the defining scope (lexical)
-  
-  // assign the arguments
-  int nargs = tuple_len(values)-1;
-  for(int i = 0; i < nargs; i++) {
-    symbol_t s = UNWRAP_SYMBOL(tuple_get(argnames, i));
-    //debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
-    assign(local, s, tuple_get(values, i+1));
-  }
 
-  // execute the function body
-  object_t res = 0;
-  begin_frame(FUNCTION_FRAME)
-    res = eval(local, fnbody);
-  end_frame(res);
-  return res;
+  // find and call the matching implementation
+  return find_and_call_matching_impl(local, fn_data_l, values);
 }
 
 

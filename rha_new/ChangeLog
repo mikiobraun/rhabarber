@@ -1,3 +1,17 @@
+2007-08-28  Stefan Harmeling  <harmeling@gmail.com>
+
+	* core.c (fn_fn, macro_fn): needed to rewrite both, since inner
+	structure of function and withit macros had changed considerably.
+
+	* eval.c (eval_rha_fun): now we look at the signature to decide on
+	the function, still we only count argument, but the structure of
+	how this is done allows easy extension to types and default
+	arguments 
+
+	* parse.c, prules.c: added prules for curlied and squared
+	brackets, rewritten parse.c completely and got rid of many of the
+	special cases.
+
 2007-08-27  Stefan Harmeling  <harmeling@gmail.com>
 
 	* object.c (equalequal_fn): added cases for BOOL and REAL.

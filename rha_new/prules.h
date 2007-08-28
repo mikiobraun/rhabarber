@@ -6,7 +6,11 @@
 extern       void     prules_init(object_t root, object_t module);
 
 // helper
+extern       bool_t   is_symbol(symbol_t a_symbol, object_t expr);
 extern       object_t quoted(object_t obj);
+extern       bool_t   is_marked_list(symbol_t mark, object_t obj);
+extern       list_t   split_rounded_list_obj(object_t list_obj);
+
 extern       glist_t  assign_sym_list; // a list with = += -= *= /=
 extern       glist_t  cmp_sym_list;    // a list with < <= > >= == !=
 extern       glist_t  sec_sym_list;    // a list with 'else', 'catch'
@@ -18,6 +22,8 @@ extern _rha_ object_t prule_new_postfix();
 extern _rha_ object_t prule_new_freefix();
 
 // predefined prules
+extern _rha_ tuple_t curlied_pr(object_t env, list_t parsetree);
+extern _rha_ tuple_t squared_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t plusplus_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t minusminus_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t not_pr(object_t env, list_t parsetree);

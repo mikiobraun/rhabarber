@@ -23,16 +23,12 @@ object_t prule_failed_excp = 0; // exception
 
 object_t prules = 0;  // the object containing all prules
 
-symbol_t semicolon_sym = 0;
-symbol_t comma_sym = 0;
 symbol_t dot_sym = 0;
 
 void parse_init(object_t root, object_t module)
 {
   prule_failed_excp = excp_new("prule failed");
 
-  semicolon_sym = symbol_new(";");
-  comma_sym = symbol_new(",");
   dot_sym = symbol_new(".");
 
   // the object 'prules' is used to lookup the prules
@@ -57,23 +53,18 @@ void parse_init(object_t root, object_t module)
 // parsing from the outside to the inside //
 ////////////////////////////////////////////
 
-object_t resolve(object_t env, object_t expr);
-object_t resolve_list_by_head(object_t env, list_t source);
-object_t resolve_list_by_prules(object_t env, list_t source);
-object_t resolve_code_block(object_t env, list_t source);
-object_t resolve_tuple(object_t env, list_t source);
-object_t resolve_complex_literal(object_t env, list_t source);
+object_t resolve(object_t env, list_t source);
 object_t resolve_macro(object_t env, tuple_t t);
 object_t resolve_dots_and_fn_calls(object_t env, list_t source);
-object_t resolve_prule(object_t env, list_t source, object_t prule);
+object_t resolve_patterns(object_t env, list_t source);
+
 
 // auxillary functions
-static bool_t is_second_order_keyword(object_t obj);
-static bool_t is_curlied_list(object_t obj);
+static object_t call_prule(object_t env, list_t source, object_t prule);
 static object_t find_best_prule(object_t env, list_t source);
 static double get_priority(object_t prule);
-static object_t remove_grouping_brackets(object_t obj);
 static object_t replace_expr(object_t expr, symbol_t s, object_t sub);
+
 
 object_t parse(object_t root, string_t s)
 {
@@ -82,7 +73,7 @@ object_t parse(object_t root, string_t s)
   if (list_len(source)==0) return 0;
 
   // (1) resolve prules and macros creating a big function call
-  return resolve_list_by_head(root, source);
+  return resolve(root, source);
 }
 
 object_t parse_file(object_t root, string_t fname)
@@ -91,244 +82,9 @@ object_t parse_file(object_t root, string_t fname)
   list_t source = rhaparsefile(fname);
   
   // (1) resolve prules and macros creating a big function call
-  return resolve_list_by_head(root, source);
+  return resolve(root, source);
 }
 
-
-//----------------------------------------------------------------------
-//
-// main entry point for resolving the prules
-//
-
-object_t resolve(object_t env, object_t expr)
-{
-  if (!expr) return 0;
-  // note that tuples are not resolved anymore
-  // thus: if prules resolve the arguments themselves, they become
-  // tuples and that we it doesn't matter if we call 'resolve' again
-  // on them
-  //debug("resolve(%o, %o)\n", env, expr);
-  if (ptype(expr) == LIST_T)
-    return resolve_list_by_head(env, UNWRAP_PTR(LIST_T, expr));
-  else
-    return expr;
-}
-
-//----------------------------------------------------------------------
-// resolve a list 
-
-object_t resolve_list_by_head(object_t env, list_t source)
-{
-  //debug("resolve_list_by_head(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
-  // take the list 'source'
-  // built a list 'sink'
-  // finally return the 'sink' transformed into a tuple
-
-  // The list 'source' is headed by the bracket type, which will
-  // trigger different behavior
-  assert(list_len(source) > 0);
-  object_t l0 = list_first(source);
-  symbol_t head;
-
-  if (ptype(l0) == SYMBOL_T) {
-    head = UNWRAP_SYMBOL(l0);
-    // split 'source' into sublist which are collected in 'sink'
-    if (head == curlied_sym) {
-      list_popfirst(source);
-      return resolve_code_block(env, source);
-    }
-    else if (head == rounded_sym) {
-      list_popfirst(source);
-      return resolve_tuple(env, source);
-    }
-    else if (head == squared_sym) {
-      list_popfirst(source);
-      return resolve_complex_literal(env, source);
-    }
-    /* fall through */
-  }
-
-  return resolve_list_by_prules(env, source);
-}
-
-//----------------------------------------------------------------------
-// resolving a curlied list (code blocks)
-
-// take care of curlied lists, returns a tuple
-//
-// code blocks  -->  returns a tuple_t
-// for example: { x = 1; y = 7; deliver 5; { a=5; } x=5 }
-// split by semicolon, comma is not allowed
-object_t resolve_code_block(object_t env, list_t source)
-{
-  //debug("resolve_code_block(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
-  if (list_len(source) == 0) {
-    return WRAP_PTR(TUPLE_T, tuple_new(0));
-  }
-  list_t sink = list_new();
-  list_t part = list_new();
-  object_t obj = list_popfirst(source);
-  while (obj) {
-    if (is_symbol(semicolon_sym, obj)) {
-      // split only if the next one is not a second order keyword like
-      // 'else' or 'catch'
-      obj = list_popfirst(source);
-      if (!obj) break;
-      if (!is_second_order_keyword(obj) && list_len(part)>0) {
-	// split here
-	list_append(sink, resolve_list_by_prules(env, part));
-	part = list_new();
-	// ignore the semicolon
-      }
-      continue;
-    }
-    else if (is_symbol(comma_sym, obj)) {
-      // this is not allowed
-      rha_error("(parsing) in a 'curlied' expression no comma allowed");
-      assert(1==0);
-    }
-    else if (is_curlied_list(obj)){
-      // a code block
-      // in case there is not a keyword like 'else' or 'catch'
-      // following, we split here as well
-      list_append(part, obj);
-      // look at the next one
-      obj = list_popfirst(source);
-      if (!obj) break;
-      if (!is_second_order_keyword(obj)) {
-	// split
-	list_append(sink, resolve_list_by_prules(env, part));
-	part = list_new();
-      }
-      continue;
-    }
-    else {
-      list_append(part, obj);
-    }
-    obj = list_popfirst(source);
-  }
-  if (list_len(part)>0)
-    list_append(sink, resolve_list_by_prules(env, part));
-  list_prepend(sink, WRAP_SYMBOL(do_sym));
-  return WRAP_PTR(TUPLE_T, list_to_tuple(sink));  // a list!
-}
-
-// is obj a "second order keyword"
-//
-// 2nd order keywords are for example 'else' or 'catch'
-static bool_t is_second_order_keyword(object_t obj)
-{
-  if (ptype(obj) != SYMBOL_T)
-    return false;
-  symbol_t s = UNWRAP_SYMBOL(obj);
-  if (glist_iselementi(&sec_sym_list, s))
-    return true;
-  else
-    return false;
-}
-
-static bool_t is_curlied_list(object_t obj)
-{
-  if (ptype(obj) != LIST_T)
-    return false;
-  list_t l = UNWRAP_PTR(LIST_T, obj);
-  if (list_len(l) == 0)
-    return false;
-  object_t l0 = list_first(l);
-  if (ptype(l0) != SYMBOL_T)
-    return false;
-  symbol_t s = UNWRAP_SYMBOL(l0);
-  if (s != curlied_sym)
-    return false;
-  // ok, it is a curlied list
-  return true;
-}
-
-// check whether an expression is a specific symbol
-bool is_symbol(symbol_t a_symbol, object_t expr) {
-  return (ptype(expr) == SYMBOL_T)
-    && (UNWRAP_SYMBOL(expr) == a_symbol);
-}
-
-//----------------------------------------------------------------------
-// resolving tuples ("(...)")
-
-// resolves "rounded list" to tuple
-//
-// grouped expression and argument lists
-// for example, (x+1)*4 or (x, y, z)
-// split only by comma, no semicolon is allowed
-object_t resolve_tuple(object_t env, list_t source)
-{
-  //debug("resolve_tuple(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
-  if (list_len(source) == 0) {
-    tuple_t t = tuple_new(1);
-    tuple_set(t, 0, WRAP_SYMBOL(rounded_sym));
-    return WRAP_PTR(TUPLE_T, t);
-  }
-  list_t sink = list_new();
-  list_t part = list_new();
-  object_t obj = 0;
-  while ((obj = list_popfirst(source))) {
-    if (is_symbol(comma_sym, obj)) {
-      if (list_len(source)==0)
-	rha_error("(parsing) trailing comma not allowed");
-      // split here and ignore the comma
-      switch (list_len(part)) {
-      case 0: rha_error("can't start tuple with COMMA");
-      case 1: list_append(sink, resolve(env, list_first(part))); break;
-      default:
-	list_append(sink, resolve_list_by_prules(env, part));
-      }
-      part = list_new();
-      continue;
-    }
-    else if (is_symbol(semicolon_sym, obj)) {
-      // this is not allowed
-      rha_error("(parsing) in a 'rounded' expression no semicolon allowed");
-      assert(1==0);
-    }
-    list_append(part, obj);
-  }
-  if (list_len(part) > 0)
-    list_append(sink, resolve_list_by_prules(env, part));
-  list_prepend(sink, WRAP_SYMBOL(rounded_sym));
-  //debug("return (resolve_tuple): %o\n", WRAP_PTR(TUPLE_T, list_to_tuple(sink)));
-  return WRAP_PTR(TUPLE_T, list_to_tuple(sink));
-}
-
-//----------------------------------------------------------------------
-// resolving complex literals ("[...]")
-//
-// currently broken ???
-
-object_t resolve_complex_literal(object_t env, list_t source)
-{
-  //debug("resolve_complex_literal(%o)\n", WRAP_PTR(LIST_T, source));
-  // complex literals
-  // [x, 17] or [ 2*x for x in [1,2,3]]
-  
-  // the idea here is that to define a complex literal
-  // a type must define a list of separators, which determines the
-  // order of subexpressions, and a constructor, which constructs
-  // the object from the preprocessed list
-  
-  // problem:
-  // * we need to call 'resolve' for each part
-  // * we only can decide on the parts after we have splitted 
-  
-  // solution:
-  // * we allow types to give a list of separators and types
-
-  // we delay the resolution of the subexpression until either the
-  // default literal resolver is called or a special one
-  //  [1,2,3] ==>  (literal_sym (tuple_sym [1,2,3]))
-  tuple_t t = tuple_new(3);
-  tuple_set(t, 0, WRAP_SYMBOL(literal_sym));
-  tuple_set(t, 1, env);
-  tuple_set(t, 2, quoted(WRAP_PTR(LIST_T, source)));
-  return WRAP_PTR(TUPLE_T, t);
-}
 
 //----------------------------------------------------------------------
 // resolving prules
@@ -336,12 +92,9 @@ object_t resolve_complex_literal(object_t env, list_t source)
 // the main workhorse for resolving prules
 
 // find the best prule, and apply the prule
-object_t resolve_list_by_prules(object_t env, list_t source)
+object_t resolve(object_t env, list_t source)
 {
-  //debug("resolve_prules(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
-  // it is a tuple containing a white-spaced list
-  // without any particular heading symbol
-  
+  //debug("resolve(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
   object_t prule = find_best_prule(env, source);
   object_t excp = 0;
   object_t result = 0;
@@ -349,7 +102,7 @@ object_t resolve_list_by_prules(object_t env, list_t source)
     // try to call that prule
     try {
       // don't call 'return' inside 'try-catch' blocks!!!
-      result = resolve_prule(env, source, prule);
+      result = call_prule(env, source, prule);
     }
     catch (excp) {
       if (excp == prule_failed_excp) {
@@ -357,7 +110,7 @@ object_t resolve_list_by_prules(object_t env, list_t source)
 	// hopefully, the prule has adjusted the source to avoid it
 	// from being called again
 	// this happens (e.g.) for 'minus_pr' if it encounters a prefix-minus
-	result = resolve_list_by_prules(env, source);
+	result = resolve(env, source);
       }
       else {
 	// pass the unknown exception on
@@ -367,14 +120,15 @@ object_t resolve_list_by_prules(object_t env, list_t source)
     return result;
   }
   else
+    // no prule to apply, thus...
     return resolve_dots_and_fn_calls(env, source);
 }
 
-// resolve a specific prule
+// call a specific prule
 //
 // applies the associated function, resolves the arguments, and
 // resolve possible macro calls.
-object_t resolve_prule(object_t env, list_t source, object_t prule)
+object_t call_prule(object_t env, list_t source, object_t prule)
 {
   // resolve prule by constructing a call to that prule
   int tlen = 3;
@@ -394,11 +148,6 @@ object_t resolve_prule(object_t env, list_t source, object_t prule)
     if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=SYMBOL_T))
       rha_error("(parsing) prule must create function call with function symbol");
 
-    // note that we can always resolve the arguments, since they are
-    // only resolve if they are lists (see resolve()), thus if a prule
-    // does resolve the args itself, they become tuples are fixed then...
-    resolve_args(env, t);
-    
     // finally resolve a possible macro that we got
     // note that even if the macro contains further macros in its
     // definition, we need to do resolve macros here only once,
@@ -455,14 +204,6 @@ static double get_priority(object_t prule)
   return NAN;
 }
 
-// call resolve recursively for all elements of t
-void resolve_args(object_t env, tuple_t t)
-{
-  int tlen = tuple_len(t);
-  for (int i = 1; i<tlen; i++)
-    tuple_set(t, i, resolve(env, tuple_get(t, i)));
-}
-
 //----------------------------------------------------------------------
 
 
@@ -491,24 +232,33 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
   if (list_len(source) == 0)
     rha_error("(parsing) missing expression");
 
-  // (1.1) get the first piece and resolve it
-  object_t obj = resolve(env, list_popfirst(source));
-
-  // (1.2) remove rounded brackets for grouping
-  obj = remove_grouping_brackets(obj);
-
-  // (1.3) check that we don't start with the 'dot'
+  // get the first piece and resolve it
+  object_t obj = list_popfirst(source);
+  assert(obj);
   if ((ptype(obj)==SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym)
     rha_error("(parsing) something else than dot expected");
+  else if (ptype(obj) == LIST_T) {
+    list_t l = 0;
+    if (is_marked_list(rounded_sym, obj)) {
+      // must be a grouped expression, so remove the brackets
+      l = split_rounded_list_obj(obj);
+      if (list_len(l) != 1)
+	rha_error("grouped expression expected, found", obj);
+    }
+    else
+      l = UNWRAP_PTR(LIST_T, obj);
+    // and resolve it
+    obj = resolve(env, l);
+  }
 
-  // (1.4) start the expression
+  // start the expression
   object_t expr = obj;
 
   // we need to keep a flag which tells us later whether we have the
   // usual function call or whether the last dot results in a
   // slotcall. 
   bool_t dotted = false;
-  while ((obj = resolve(env, list_popfirst(source)))) {
+  while ((obj = list_popfirst(source))) {
     if ((ptype(obj) == SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym) {
       // (2) dotted expression
 
@@ -532,82 +282,84 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
       expr = WRAP_PTR(TUPLE_T, t);
       continue;
     }
-    else if (is_rounded_tuple(obj)) {
+    else if (is_marked_list(rounded_sym, obj)) {
       // (3) function/method call
+      list_t sink = list_new();
+      list_t signature = split_rounded_list_obj(obj);
+      object_t arg = 0;
+      while ((arg = list_popfirst(signature))) {
+	assert(arg && ptype(arg)==LIST_T);
+	list_append(sink, resolve(env, UNWRAP_PTR(LIST_T, arg)));
+      }
       if (dotted) {
 	// construct a method call
 	dotted = false; // wait for the next dot
 	// for a.f(x,y) we have by now two ingredients:
 	// (i)  expr == (eval a \f)
-	// (ii) obj  == (rounded x y)
+	// (ii) sink == [x y]
 	// from those we construct
 	//      (callslot a \f x y)
-	list_t l = tuple_to_list(UNWRAP_PTR(TUPLE_T, obj));
 	tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
-	list_popfirst(l);                           // remove 'rounded'
-	list_prepend(l, tuple_get(t, 2));           // prepend '\f'
-	list_prepend(l, tuple_get(t, 1));           // prepend 'a'
-	list_prepend(l, WRAP_SYMBOL(callslot_sym)); // prepend 'callslot'
-	expr = WRAP_PTR(TUPLE_T, list_to_tuple(l));
+	list_prepend(sink, tuple_get(t, 2));           // prepend '\f'
+	list_prepend(sink, tuple_get(t, 1));           // prepend 'a'
+	list_prepend(sink, WRAP_SYMBOL(callslot_sym)); // prepend 'callslot'
+	expr = WRAP_PTR(TUPLE_T, list_to_tuple(sink));
 	continue;
       }
       else {
 	// construct a plain function call
-	// replace the rounded_sym with the expression so far
-	tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
-	tuple_set(t, 0, expr);
-	expr = resolve_macro(env, t);
+	list_prepend(sink, expr);
+	expr = resolve_macro(env, list_to_tuple(sink));
 	continue;
       }
     }
     else {
-      rha_error("(parsing) argument list or dot expected, found \"%o\"", obj);
+      rha_error("(parsing) argument list or dot expected, "
+		"found \"%o\"", obj);
     }
   }
 
-  //debug("return (resolve_dots_and_funcalls) %o\n", expr);
+  //debug("return (resolve_dots_and_fn_calls) %o\n", expr);
   return expr;
 }
 
-static object_t remove_grouping_brackets(object_t obj)
+
+object_t resolve_pattern(object_t env, list_t source)
 {
-  // if 'obj' is a tuple starting with 'rounded_sym' it must only
-  // be a singleton.  in that case the rounded brackets are removed
-  if (ptype(obj) == TUPLE_T) {
-    tuple_t tt = UNWRAP_PTR(TUPLE_T, obj);
-    if (tuple_len(tt) > 0) {
-      object_t tt0 = tuple_get(tt, 0);
-      if (ptype(tt0) == SYMBOL_T) {
-	symbol_t tts = UNWRAP_SYMBOL(tt0);
-	if (tts == rounded_sym) {
-	  if (tuple_len(tt) != 2)
-	    rha_error("(parsing) rounded brackets are only for "
-		      "grouping or arg lists");
-	  obj = tuple_get(tt, 1);
-	}
-      }
-    }
+  // right now we only look for an optional type and a symbol
+  list_t lhs = list_chop_first(source, symbol_new(":"));
+  if (list_len(lhs) == 0)
+    rha_error("(parsing) pattern can't start with colon");
+  object_t thesymbol = 0;
+  object_t thetype = 0;
+  if (list_len(source) > 0) {
+    // there is a type
+    thetype = resolve(env, lhs);
+    thesymbol = resolve(env, source);
   }
-  return obj;
+  else
+    thesymbol = resolve(env, lhs);
+
+  object_t pattern = new();
+  if (thetype)
+    assign(pattern, type_sym, thetype);
+  assign(pattern, symbol_sym, thesymbol);
+  return pattern;
 }
 
-
-bool_t is_rounded_tuple(object_t obj)
+object_t resolve_patterns(object_t env, list_t source)
 {
-  if (ptype(obj) != TUPLE_T)
-    return false;
-  tuple_t t = UNWRAP_PTR(TUPLE_T, obj);
-  if (tuple_len(t) == 0)
-    return false;
-  object_t t0 = tuple_get(t, 0);
-  if (ptype(t0) != SYMBOL_T)
-    return false;
-  symbol_t s = UNWRAP_SYMBOL(t0);
-  if (s != rounded_sym)
-    return false;
-  // ok, it is a roudned tupled
-  return true;
+  list_t sink = list_new();
+  object_t entry = 0;
+  while ((entry = list_popfirst(source))) {
+    // resolve the entries as patterns
+    assert(entry && ptype(entry)==LIST_T);
+    list_append(sink, resolve_pattern(env, UNWRAP_PTR(LIST_T, entry)));
+  }
+  return WRAP_PTR(TUPLE_T, list_to_tuple(sink));
 }
+
+
 
 //----------------------------------------------------------------------
 // resolve macros
@@ -638,6 +390,8 @@ object_t resolve_macro(object_t env, tuple_t t)
        && lookup(macro, ismacro_sym) ) {
     if ( (macro_body = lookup(macro, fnbody_sym))
 	 && (_macro_args = lookup(macro, argnames_sym)) ) {
+      if (ptype(_macro_args)!=TUPLE_T)
+	rha_error("(parsing) broken macroargs");
       tuple_t macro_args = UNWRAP_PTR(TUPLE_T, _macro_args);
       
       if (tuple_len(macro_args) != tlen-1)

@@ -189,6 +189,28 @@ void *unwrap_ptr(int pt, object_t o)
   return p;
 }
 
+int uwi(int pt, object_t o, string_t msg)
+{
+  if (!o || ptype(o) != pt)
+    rha_error(msg);
+  return unwrap_int(pt, o);
+}
+
+int uwd(int pt, object_t o, string_t msg)
+{
+  if (!o || ptype(o) != pt)
+    rha_error(msg);
+  return unwrap_double(pt, o);
+}
+
+void *uw(int pt, object_t o, string_t msg)
+{
+  if (!o || ptype(o) != pt)
+    rha_error(msg);
+  void *p = o->raw.p;
+  return p;
+}
+
 
 /*
  *
@@ -199,7 +221,7 @@ object_t vcreate_function(object_t (*code)(tuple_t),
 			  bool_t varargs, int narg, va_list args)
 {
   // create a struct containing all info about the builtin function
-  function_t f = ALLOC_SIZE(sizeof(struct _function_t_));
+  builtin_t f = ALLOC_SIZE(sizeof(struct _builtin_t_));
   f->code = code;
   f->varargs = varargs;
   f->narg = narg;
@@ -210,7 +232,7 @@ object_t vcreate_function(object_t (*code)(tuple_t),
     f->argptypes[i] = va_arg(args, int_t);
 
   // create a new object and return it
-  return wrap_ptr(FUNCTION_T, f);
+  return wrap_ptr(BUILTIN_T, f);
 }
 
 
@@ -248,6 +270,20 @@ object_t lookup(object_t l, symbol_t s)
   return 0; // ZERO meaning "not found"
 }
 
+// look up a symbol and return the location
+object_t location(object_t l, symbol_t s)
+{
+  if (!l) return 0;
+  if (symtable_lookup(l->table, s)) return l;
+  // else look along the parent hierarchy
+  object_t parent = symtable_lookup(l->table, parent_sym);
+  if (parent) return location(parent, s);
+  // else there is no parent
+  return 0; // ZERO meaning "not found" (aka 'void')
+}
+
+
+
 bool_t has(object_t obj, symbol_t s)
 {
   // note that 'void' doesn't have any slots
@@ -270,19 +306,19 @@ object_t assign(object_t o, symbol_t s, object_t v)
 }
 
 
-object_t extend(object_t this, symbol_t s, tuple_t args, 
+object_t extend(object_t this, symbol_t s, tuple_t signature, 
 		object_t env, object_t rhs)
 {
   // extend object behind 's' 
   //             in scope 'this'
-  //          for context 'args'
+  //          for context 'signature'
   //             by value 'rhs'
   //   with lexical scope 'env'
 
   // (1) does 's' exists already?  if not, create a new function.
   object_t obj = lookup(this, s);
   if (!obj)
-    return assign(this, s, fn_fn(env, args, rhs));
+    return assign(this, s, fn_fn(env, signature, rhs));
   // else extend 'obj'
 
   // (2) is 'obj' already a function?
@@ -296,7 +332,7 @@ object_t extend(object_t this, symbol_t s, tuple_t args,
      rha_error("(eval) %o has a faulty 'fn_data' slot", obj);
    fn_data_l = UNWRAP_PTR(LIST_T, fn_data);
  }
- list_append(fn_data_l, create_fn_data_entry(env, args, rhs));
+ list_append(fn_data_l, create_fn_data_entry(env, signature, rhs));
  assign(obj, fn_data_sym, WRAP_PTR(LIST_T, fn_data_l));
  return obj;
 }
@@ -400,9 +436,9 @@ string_t to_string(object_t o)
 	}
 	return string_append(s, "]");
       }
-      case FUNCTION_T: {
-	function_t f = UNWRAP_PTR(FUNCTION_T, o);
-	s = sprint("<fn (");
+      case BUILTIN_T: {
+	builtin_t f = UNWRAP_PTR(BUILTIN_T, o);
+	s = sprint("<builtin (");
 	for(int i = 0; i < f->narg; i++) {
 	  if (i > 0) s = string_append(s, ", ");
 	  s = string_append(s, ptype_names[f->argptypes[i]]);
