@@ -231,7 +231,22 @@ object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
 bool_t signature_matches(tuple_t signature, tuple_t values)
 {
   int_t narg = tuple_len(values) - 1;
-  return tuple_len(signature) == narg;
+  if (tuple_len(signature) != narg)
+    return false;
+  for (int i = 0; i < narg; i++) {
+    object_t pattern = tuple_get(signature, i);
+    object_t thetype = lookup(pattern, type_sym);
+    if (thetype) {
+      // check the type
+      object_t res = callslot(thetype, symbol_new("check"), 1, tuple_get(values, i+1));
+      if (!res || ptype(res)!=BOOL_T)
+	rha_error("(signature) type %o doesn't implement a valid 'check'", thetype);
+      if (!UNWRAP_BOOL(res))
+	return false;
+    }
+  }
+  // all checks passed
+  return true;
 }
 
 
@@ -258,8 +273,7 @@ object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t v
     }
   }
   // we did not find anything matching
-  rha_error("can't call function since no matching signature"
-	    "was foundnumber was found");
+  rha_error("no matching signature found");
   return 0;
 }
 
@@ -332,6 +346,7 @@ object_t vcallslot(object_t obj, symbol_t slotname, int_t narg, list_t args)
 // * calling 'callslot' in Rhaberber calls 'vcallslot'
 object_t callslot(object_t obj, symbol_t slotname, int_t narg, ...)
 {
+  //debug("callslot(%o, %o, %d, ...)\n", obj, WRAP_SYMBOL(slotname), narg);
   va_list ap;
   va_start(ap, narg);
   list_t args = list_new();

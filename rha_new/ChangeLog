@@ -1,5 +1,10 @@
 2007-08-28  Stefan Harmeling  <harmeling@gmail.com>
 
+	* eval.c (signature_matches): now the type is really checked, see
+	test.rha for a simple example...
+
+	* object.c (to_string): symbols are now shown with a backslash.
+
 	* core.c (fn_fn, macro_fn): needed to rewrite both, since inner
 	structure of function and withit macros had changed considerably.
 

@@ -282,8 +282,6 @@ object_t location(object_t l, symbol_t s)
   return 0; // ZERO meaning "not found" (aka 'void')
 }
 
-
-
 bool_t has(object_t obj, symbol_t s)
 {
   // note that 'void' doesn't have any slots
@@ -399,7 +397,7 @@ string_t to_string(object_t o)
     }
     case SYMBOL_T: {
       symbol_t s = UNWRAP_SYMBOL(o);
-      return sprint("%s", symbol_name(s));
+      return sprint("\\%s", symbol_name(s));
     }
     case REAL_T: {
       return sprint("%f", UNWRAP_REAL(o));

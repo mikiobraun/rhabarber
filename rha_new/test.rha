@@ -149,3 +149,11 @@ check(!(string:17));
 check(!(string:1.7));
 check(string:"test");
 summarize();
+
+test("overloaded");
+f = new();
+f(int:x) = 17;
+f(real:x) = 42;
+check(f(1)==17);
+check(f(1.0)==42);
+summarize();

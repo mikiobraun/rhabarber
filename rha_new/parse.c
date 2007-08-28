@@ -334,7 +334,10 @@ object_t resolve_pattern(object_t env, list_t source)
   object_t thetype = 0;
   if (list_len(source) > 0) {
     // there is a type
-    thetype = resolve(env, lhs);
+    // in order to check it we must evaluate it
+    thetype = eval(env, resolve(env, lhs));
+    if (!has(thetype, symbol_new("check")))
+      rha_error("the lhs of colon must implement 'check'");
     thesymbol = resolve(env, source);
   }
   else
