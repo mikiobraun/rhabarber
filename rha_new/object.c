@@ -270,6 +270,17 @@ object_t lookup(object_t l, symbol_t s)
   return 0; // ZERO meaning "not found"
 }
 
+// look up a symbol only locally, i.e. don't follow parents
+object_t lookup_local(object_t l, symbol_t s)
+{
+  if (!l)
+    rha_error("void has no slots");
+  object_t o = symtable_lookup(l->table, s);
+  if (!o)
+    rha_error("local lookup of symbol '%o' failed", WRAP_SYMBOL(s));
+  return o;
+}
+
 // look up a symbol and return the location
 object_t location(object_t l, symbol_t s)
 {
@@ -319,20 +330,23 @@ object_t extend(object_t this, symbol_t s, tuple_t signature,
     return assign(this, s, fn_fn(env, signature, rhs));
   // else extend 'obj'
 
-  // (2) is 'obj' already a function?
-  object_t fn_data = lookup(obj, fn_data_sym);
+  // (2) is 'obj' itself already a function?
+  // if an ancestor of 'obj' is already a function, 'obj' will be a
+  // new function
   list_t fn_data_l = 0;
- if (!fn_data)
-   fn_data_l = list_new();
- else {
-   if (ptype(fn_data)!=LIST_T
-       || list_len(fn_data_l=UNWRAP_PTR(LIST_T, fn_data)) == 0)
-     rha_error("(eval) %o has a faulty 'fn_data' slot", obj);
-   fn_data_l = UNWRAP_PTR(LIST_T, fn_data);
- }
- list_append(fn_data_l, create_fn_data_entry(env, signature, rhs));
- assign(obj, fn_data_sym, WRAP_PTR(LIST_T, fn_data_l));
- return obj;
+  if (location(obj, fn_data_sym) != obj) {
+    fn_data_l = list_new();
+  }
+  else {
+    object_t fn_data = lookup(obj, fn_data_sym);
+    if (ptype(fn_data)!=LIST_T
+	|| list_len(fn_data_l=UNWRAP_PTR(LIST_T, fn_data)) == 0)
+      rha_error("(eval) %o has a faulty 'fn_data' slot", obj);
+    fn_data_l = UNWRAP_PTR(LIST_T, fn_data);
+  }
+  list_append(fn_data_l, create_fn_data_entry(env, signature, rhs));
+  assign(obj, fn_data_sym, WRAP_PTR(LIST_T, fn_data_l));
+  return obj;
 }
 
 

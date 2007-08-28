@@ -344,9 +344,10 @@ object_t resolve_pattern(object_t env, list_t source)
     thesymbol = resolve(env, lhs);
 
   object_t pattern = new();
+  assign(pattern, parent_sym, pattern_proto);
   if (thetype)
-    assign(pattern, type_sym, thetype);
-  assign(pattern, symbol_sym, thesymbol);
+    assign(pattern, symbol_new("patterntype"), thetype);
+  assign(pattern, symbol_new("patternsymbol"), thesymbol);
   return pattern;
 }
 

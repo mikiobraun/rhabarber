@@ -8,11 +8,11 @@ modules.object.assign(root, \assign, modules.object.assign);
 // (1.2) let's get more stuff from the object module
 new      = modules.object.new;
 extend   = modules.object.extend;
-create_fn_data = modules.core.create_fn_data;
 ls       = modules.object.ls;
 new      = modules.object.new;
 has      = modules.object.has;
 lookup   = modules.object.lookup;
+lookup_local = modules.object.lookup_local;
 location = modules.object.location;
 clone    = modules.object.clone;
 addr     = modules.object.addr;
@@ -33,22 +33,6 @@ break_fn   = modules.core.break_fn;
 throw_fn   = modules.core.throw_fn;
 print      = modules.object.print_fn;
 
-// temporarily for testing purposes (as long as we have to overloaded)
-inc             = modules.object.inc;
-dec             = modules.object.dec;
-inc_copy        = modules.object.inc_copy;
-dec_copy        = modules.object.dec_copy;
-plus_fn         = modules.object.plus_fn;
-neg_fn          = modules.object.neg_fn;
-minus_fn        = modules.object.minus_fn;
-times_fn        = modules.object.times_fn;
-divide_fn       = modules.object.divide_fn;
-equalequal_fn   = modules.object.equalequal_fn;
-notequal_fn     = modules.object.notequal_fn;
-less_fn         = modules.object.less_fn;
-lessequal_fn    = modules.object.lessequal_fn;
-greater_fn      = modules.object.greater_fn;
-greaterequal_fn = modules.object.greaterequal_fn;
 not_fn          = modules.bool_fn.not_fn;
 and_fn          = modules.bool_fn.and_fn;
 or_fn           = modules.bool_fn.or_fn;
@@ -85,6 +69,7 @@ in_fn = fn (a, b) {
 
 // type    = new();        // in rha_init.c (used by 'ptype')
 type.name  = "type";
+type.to_string = fn () this.name;
 type.type  = type;         // 'type' is of type 'type'
 type.proto = type;         // 'type' is its own prototype
 type.check = fn (x) { 
@@ -103,7 +88,7 @@ typename(x) = x.type.name;     // try 'type(17)'
                            // generated types for primitive types)
 ptype.name  = "ptype";
 ptype.proto = ptype;
-ptype.check = fn (x) typename(x)==typename(this.proto);
+ptype.check = fn (x) "object" != typename(x) == typename(this.proto);
 
 // comments:
 // (i)   'int', 'real' are examples of ptypes
@@ -117,7 +102,7 @@ ptype.check = fn (x) typename(x)==typename(this.proto);
 //       instantiate from types without a prototype slot.
 
 // how to instantiate a type
-instance = fn (t) return clone(t.proto);
+instance = fn (t) clone(t.proto);
 
 // how to subtype
 // note that subtypes of a type 't' can appear everywhere where 't'
@@ -130,13 +115,6 @@ subtype = fn (t) {
   return new_t;
 }
 
-// find all slots along the parent hierarchy with the same name
-allslots = fn (x, slot) {
-  l = list();
-  
-
-}
-
 // is 'x' an instance of a subtype of 't'?
 isa = fn (x, t) {
   // 'location' allows us to jump to the relevant objects in the
@@ -147,17 +125,6 @@ isa = fn (x, t) {
     if (!has(x, \parent)) return false;
     x = x.parent;
   }
-}
-
-// what is iterable?
-iterable = clone(type);  // use 'clone' instead of 'subtype' for interfaces
-iterable.check = fn (x) {
-  if (!has(x, \iter)) return false;
-  i = x.iter();
-  if (!has(i, \done)) return false;
-  if (!has(i, \next)) return false;
-  if (!has(i, \get)) return false;
-  return true;
 }
 
 // colon can be used for typechecks and to generate tuple
@@ -184,3 +151,4 @@ colon_fn = fn (a, b) {
 
 // casting
 int(x) = modules.int_fn.int_cast(x);  // try 'int(3.14)'
+

@@ -270,7 +270,9 @@ sub create_ids {
 sub create_prototypes {
     $ntdefs = scalar(@tdefs) + 1;
     $type_h_prototypes .= "extern object_t prototypes[$ntdefs];\n";
+    $type_h_prototypes .= "extern object_t pattern_proto;\n";
     $init_c_prototypes .= "object_t prototypes[$ntdefs];\n";
+    $init_c_prototypes .= "object_t pattern_proto = 0;\n";
     $init_c_init_prototypes .= "  prototypes[0] = 0; // void prototype\n";
     $init_c_init_prototypes .= "  for (int i = 1; i < $ntdefs; i++) {\n";
     $init_c_init_prototypes .= "    prototypes[i] = create_pt(i);\n";
@@ -445,6 +447,10 @@ $init_c_init_symbols
   assign(root, type_sym, type_obj);
   object_t ptype_obj = clone(type_obj);
   assign(root, ptype_sym, ptype_obj);
+  object_t pattern_obj = clone(type_obj);
+  pattern_proto = new();
+  assign(pattern_obj, proto_sym, pattern_proto);
+  assign(root, symbol_new("pattern"), pattern_obj);
 $init_c_init_typeobjects
 
   // (6.4) add type slots to the prototypes

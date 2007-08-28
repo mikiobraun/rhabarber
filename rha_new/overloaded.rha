@@ -1,0 +1,23 @@
+// overloaded functions
+plus_fn(int:x, int:y)       = modules.int_fn.int_plus(x, y);
+plus_fn(string:x, string:y) = modules.string_fn.string_append(x, y);
+
+less_fn(int:x, int:y) = modules.int_fn.int_less(x, y);
+less_fn(type:x, type:y) = x:y;
+
+// temporarily for testing purposes (as long as we have to overloaded)
+inc             = modules.object.inc;
+dec             = modules.object.dec;
+inc_copy        = modules.object.inc_copy;
+dec_copy        = modules.object.dec_copy;
+to_string       = modules.object.to_string;
+neg_fn          = modules.object.neg_fn;
+minus_fn        = modules.object.minus_fn;
+times_fn        = modules.object.times_fn;
+divide_fn       = modules.object.divide_fn;
+equalequal_fn   = modules.object.equalequal_fn;
+notequal_fn     = modules.object.notequal_fn;
+less_fn         = modules.object.less_fn;
+lessequal_fn    = modules.object.lessequal_fn;
+greater_fn      = modules.object.greater_fn;
+greaterequal_fn = modules.object.greaterequal_fn;

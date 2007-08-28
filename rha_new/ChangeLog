@@ -1,5 +1,12 @@
 2007-08-28  Stefan Harmeling  <harmeling@gmail.com>
 
+	* overloaded.rha: put all overloaded stuff here. the reason is
+	that the parser checks whether the lhs of : is a type, which is
+	only possible after evaluation 'prelude.rha'.
+
+	the less_fn relation for types is x:y.  However, this doesn't give
+	right now the correct result for ptype:type which should be false.
+
 	* eval.c (signature_matches): now the type is really checked, see
 	test.rha for a simple example...
 

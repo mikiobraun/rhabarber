@@ -210,7 +210,7 @@ object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
     object_t pattern = tuple_get(signature, i);
     if (!pattern)
       rha_error("(eval) signature is not valid");
-    object_t s_o = eval(pattern, WRAP_SYMBOL(symbol_sym));
+    object_t s_o = eval(pattern, WRAP_SYMBOL(symbol_new("patternsymbol")));
     if (!s_o || ptype(s_o)!=SYMBOL_T)
       rha_error("(eval) symbol expected, found %o", s_o);
     symbol_t s = UNWRAP_SYMBOL(s_o);
@@ -235,7 +235,7 @@ bool_t signature_matches(tuple_t signature, tuple_t values)
     return false;
   for (int i = 0; i < narg; i++) {
     object_t pattern = tuple_get(signature, i);
-    object_t thetype = lookup(pattern, type_sym);
+    object_t thetype = lookup(pattern, symbol_new("patterntype"));
     if (thetype) {
       // check the type
       object_t res = callslot(thetype, symbol_new("check"), 1, tuple_get(values, i+1));

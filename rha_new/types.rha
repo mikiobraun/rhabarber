@@ -1,0 +1,35 @@
+// what is a pattern?
+//   pattern = clone(type);   // in rha_init.c
+//   pattern.proto = new();   // in rha_init.c
+// a pattern constructor
+pattern(symbol:s) = {
+  p = instance(pattern);
+  p.patternsymbol = s;
+  return p;
+}
+pattern(type:x, symbol:s) = {
+  p = pattern(s);
+  p.patterntype = x;
+  return p;
+}
+pattern.check(x) = has(x, \patternsymbol);
+pattern.proto.to_string() = {
+  if (this == pattern.proto)
+    return "<pattern.proto>";
+  s = to_string(this.patternsymbol);
+  if (has(this, \patterntype))
+    s = to_string(this.patterntype)+":"+s;
+  return s;
+}
+
+// what is iterable?
+iterable = clone(type);  // use 'clone' instead of 'subtype' for interfaces
+iterable.check = fn (x) {
+  if (!has(x, \iter)) return false;
+  i = x.iter();
+  if (!has(i, \done)) return false;
+  if (!has(i, \next)) return false;
+  if (!has(i, \get)) return false;
+  return true;
+}
+

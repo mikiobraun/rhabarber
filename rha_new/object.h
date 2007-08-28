@@ -91,6 +91,7 @@ extern       object_t   wrap(int ptype, ...);
 //        z          -> lookup(local, \z);
 //        a.x        -> lookup(a, \x);
 extern _rha_ object_t   lookup(object_t env, symbol_t s);
+extern _rha_ object_t   lookup_local(object_t l, symbol_t s);
 
 
 extern _rha_ object_t   location(object_t l, symbol_t s);

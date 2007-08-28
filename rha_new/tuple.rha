@@ -23,8 +23,6 @@ if (!defined(TUPLE_RHA)) {
 
   // member access
   tuple.proto(i) = static.get(i);
-
-  print("Loaded tuple.rha!");
 };
 
 

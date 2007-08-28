@@ -39,11 +39,14 @@ int main(int argc, char **argv)
   object_t root = rha_init();
 
   // load basic stuff implemented in rhabarber
-  string_t fname = "prelude.rha";
+  #define FNAMES_LEN 3
+  string_t fnames[FNAMES_LEN] = {"prelude.rha", "types.rha", "overloaded.rha"};
   object_t excp;   // exception object
   try { 
-    run_fn(root, fname);
-    print("--loaded and run \"%s\"\n", fname);
+    for (int i = 0; i < FNAMES_LEN; i++) {
+      run_fn(root, fnames[i]);
+      print("--loaded and run \"%s\"\n", fnames[i]);
+    }
   } 
   catch(excp) { 
     excp_show(excp);

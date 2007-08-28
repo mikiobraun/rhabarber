@@ -947,6 +947,20 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
   // something else than 'equal_sym'
   object_t rhs = resolve(env, parsetree);
 
+  // (3) we need to replace all 'eval_sym' in 'scope' by
+  // 'lookup_local'
+  object_t i = scope;
+  while (ptype(i)==TUPLE_T) {
+    // we only expect stuff like (eval x \s)
+    tuple_t i_t = UNWRAP_PTR(TUPLE_T, i);
+    assert(tuple_len(i_t) == 3);
+    object_t i_t0 = tuple_get(i_t, 0);
+    assert(ptype(i_t0)==SYMBOL_T);
+    assert(UNWRAP_SYMBOL(i_t0) == eval_sym);
+    tuple_set(i_t, 0, WRAP_SYMBOL(lookup_local_sym));
+    i = tuple_get(i_t, 1);
+  }
+
   // finally generate the call
   tuple_t t = 0;
   if (signature) {
