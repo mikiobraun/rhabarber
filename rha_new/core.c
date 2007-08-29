@@ -267,8 +267,9 @@ object_t run_fn(object_t root, string_t fname)
 	e = eval(root, tuple_get(t, i));
       }
       catch (excp) {
-	throw_fn(string_concat(excp_msg(excp), 
-			       sprint("\n[%s] %o", fname, tuple_get(t, i))));
+	excp = excp_new(string_concat(excp_msg(excp), 
+				      sprint("\n[%s] %o", fname, tuple_get(t, i))));
+	throw(excp);
       }
     }
     return e;

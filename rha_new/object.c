@@ -497,6 +497,29 @@ void ls(object_t o)
   }
 }
 
+
+bool_t equalequal_fn(object_t a, object_t b)
+{
+  if ((ptype(a) == ADDRESS_T) && (ptype(b) == ADDRESS_T))
+    return UNWRAP_PTR(ADDRESS_T, a) == UNWRAP_PTR(ADDRESS_T, b);
+  if ((ptype(a) == BOOL_T) && (ptype(b) == BOOL_T))
+    return UNWRAP_BOOL(a) == UNWRAP_BOOL(b);
+  if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
+    return UNWRAP_INT(a) == UNWRAP_INT(b);
+  if ((ptype(a) == REAL_T) && (ptype(b) == REAL_T))
+    return UNWRAP_REAL(a) == UNWRAP_REAL(b);
+  else if ((ptype(a) == STRING_T) && (ptype(b) == STRING_T))
+    return 0==strcmp(UNWRAP_PTR(STRING_T, a), UNWRAP_PTR(STRING_T, b));
+  else
+    return a == b;
+}
+
+bool_t notequal_fn(object_t a, object_t b)
+{
+  return !equalequal_fn(a, b);
+}
+
+
 object_t inc(object_t o)
 {
   if (ptype(o) == INT_T) {
@@ -544,52 +567,14 @@ object_t dec_copy(object_t o)
 }
 
 
-bool_t equalequal_fn(object_t a, object_t b)
+bool_t check(object_t t, object_t o)
 {
-  if ((ptype(a) == BOOL_T) && (ptype(b) == BOOL_T))
-    return UNWRAP_BOOL(a) == UNWRAP_BOOL(b);
-  if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
-    return UNWRAP_INT(a) == UNWRAP_INT(b);
-  if ((ptype(a) == REAL_T) && (ptype(b) == REAL_T))
-    return UNWRAP_REAL(a) == UNWRAP_REAL(b);
-  else if ((ptype(a) == STRING_T) && (ptype(b) == STRING_T))
-    return 0==strcmp(UNWRAP_PTR(STRING_T, a), UNWRAP_PTR(STRING_T, b));
-  else
-    return a == b;
+  object_t proto = lookup(t, proto_sym);
+  if (!proto)
+    rha_error("(check) object %o doesn't have a slot 'check'", t);
+  do
+    if (addr(o) == addr(proto))
+      return true;
+  while ((o = lookup(o, parent_sym)));
+  return false;
 }
-
-bool_t notequal_fn(object_t a, object_t b)
-{
-  if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
-    return UNWRAP_INT(a) != UNWRAP_INT(b);
-  else
-    return a != b;
-}
-
-int_t neg_fn(object_t a)
-{
-  if (ptype(a) == INT_T)
-    return -UNWRAP_INT(a);
-  rha_error("'neg_fn' is currently only implemented for integers");
-  assert(1==0);
-  return 0; // make gcc happy
-}
-
-#define SIMPLE_FN(returntype, name, symbol)				 \
-  returntype name ## _fn(object_t a, object_t b)			 \
-  {									 \
-    if ((ptype(a) == INT_T) && (ptype(b) == INT_T))			 \
-      return UNWRAP_INT(a) symbol UNWRAP_INT(b);			 \
-    rha_error("'" #name "' is currently only implemented for integers"); \
-    assert(1==0);							 \
-    return 0;                                                            \
-  }									
-
-SIMPLE_FN(bool_t, less, <)
-SIMPLE_FN(bool_t, lessequal, <=)
-SIMPLE_FN(bool_t, greater, >)
-SIMPLE_FN(bool_t, greaterequal, >=)
-SIMPLE_FN(int_t, plus, +)
-SIMPLE_FN(int_t, minus, -)
-SIMPLE_FN(int_t, times, *)
-SIMPLE_FN(int_t, divide, /)

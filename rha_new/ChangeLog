@@ -1,5 +1,25 @@
 2007-08-29  Stefan Harmeling  <harmeling@gmail.com>
 
+	* object.c (check): added check(), and kept equalequal_fn() and
+	notequal() since they are very basic and should not always be
+	resolved via the overloaded mechanism.  removed all other simple
+	functions like plus_fn and friends.  they are now organized in
+	overloaded.rha 
+
+	* prelude.rha (typename): type.check is now a builtin function
+	defined in object.c.  the problem was that for overloaded function
+	it is called quite a lot and if its implementation uses also
+	overloaded function we are in big trouble.  in general we must be
+	careful with implementing .check function, not to use any
+	overloaded, since that can cause infinite loops.
+
+	* overloaded.rha: moved code from tuple.rha and list.rha to
+	overloaded.rha
+	
+
+	* rha_config.d: added all symbol which do no longer appear as
+	functions in object.c to rha_config.d, e.g. plus_fn
+
 	* core.c (run_fn): also files will generate an expression that has
 	an outer do_sym, which we should ignore, since otherwise a
 	'deliver' inside a file, doesn't create an error.  on the other

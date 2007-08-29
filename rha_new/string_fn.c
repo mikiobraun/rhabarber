@@ -23,3 +23,8 @@ int_t string_len(string_t s)
   // note that the return type of 'strlen' is 'size_t'
   return (int_t) strlen(s);
 }
+
+bool_t string_equalequal(string_t s1, string_t s2)
+{
+  return 0==strcmp(s1, s2);
+}

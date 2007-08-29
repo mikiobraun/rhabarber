@@ -2,27 +2,6 @@
 if (!defined(TUPLE_RHA)) {
   TUPLE_RHA = true;
   
-  // add functions to the tuple prototype
-  tuple.proto.len = fn () modules.tuple_fn.tuple_len(this);
-  tuple.proto.set = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
-  tuple.proto.get = fn (i) modules.tuple_fn.tuple_get(this, i);
-  // a simple constructor for tuples is defined by:
-  tuple.new = modules.tuple_fn.tuple_new;
-  // this allows stuff like: t = tuple.new(4);
-  // however, let's try to be fancy and make 'tuple' a function itself:
-  tuple(len) = modules.tuple_fn.tuple_new(len);
-  tuple.proto.iter = fn () {
-    i = new();
-    i.counter = 0;
-    i.tuple = this;
-    i.done = fn () i.counter == i.tuple.len();
-    i.next = fn () this.counter++;
-    i.get = fn () this.tuple.get(this.counter);
-    return i;
-  }
-
-  // member access
-  tuple.proto(i) = static.get(i);
 };
 
 

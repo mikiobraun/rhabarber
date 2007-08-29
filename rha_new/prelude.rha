@@ -6,8 +6,8 @@
 modules.object.assign(root, \assign, modules.object.assign);
 
 // (1.2) let's get more stuff from the object module
-new = modules.object.new;
-clone = modules.object.clone;
+new      = modules.object.new;
+clone    = modules.object.clone;
 extend   = modules.object.extend;
 ls       = modules.object.ls;
 new      = modules.object.new;
@@ -34,10 +34,6 @@ break_fn   = modules.core.break_fn;
 throw_fn   = modules.core.throw_fn;
 print      = modules.object.print_fn;
 
-not_fn          = modules.bool_fn.not_fn;
-and_fn          = modules.bool_fn.and_fn;
-or_fn           = modules.bool_fn.or_fn;
-
 neww = fn (t) { 
   x = new(); // creates new object 
   x.parent = t.proto; 
@@ -59,10 +55,8 @@ defined = macro (symbolname) has(local, \symbolname);
 undefined = macro( symbolname) has(local, symbolname);
 //assert = macro (cond) if (!cond) throw to_string(cond) + " FAILED";
 
+// for writing tests:
 load("testing.rha");
-load("tuple.rha");
-load("tuple.rha");
-load("list.rha");
 
 // symbol stuff
 // usually we can create symbol with quote, e.g. '\x', however
@@ -85,13 +79,7 @@ type.proto = type;         // 'type' is its own prototype
 type.name  = "type";
 type.to_string = fn () this.name;
 type.type  = type;         // 'type' is of type 'type'
-type.check = fn (x) { 
-  while (x != this.proto) {
-    if (!has(x, \parent)) return false; 
-    x = x.parent; 
-  }
-  return true;
-}
+type.check = fn (x) modules.object.check(this, x);
 typename(x) = x.type.name;     // try 'typename(17)'
 	    // note that 'type(x) = x.type.name' is not a good idea,
 	    // since then also 'bool(17)' will do '17.type.name'

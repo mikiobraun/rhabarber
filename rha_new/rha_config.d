@@ -85,6 +85,22 @@ extern symbol_t tuple_forced_sym;
 // other special symbols
 extern symbol_t method_call_sym;
 
+// special function (not directly defined in C)
+extern symbol_t not_fn_sym;
+extern symbol_t and_fn_sym;
+extern symbol_t or_fn_sym;
+extern symbol_t plus_fn_sym;
+extern symbol_t minus_fn_sym;
+extern symbol_t neg_fn_sym;
+extern symbol_t times_fn_sym;
+extern symbol_t divide_fn_sym;
+extern symbol_t equalequal_fn_sym;
+extern symbol_t notequal_fn_sym;
+extern symbol_t less_fn_sym;
+extern symbol_t lessequal_fn_sym;
+extern symbol_t greater_fn_sym;
+extern symbol_t greaterequal_fn_sym;
+
 //MACROS
 #define UNWRAP_INT(o)    (unwrap_int(INT_T, o))
 #define UNWRAP_BOOL(o)   (unwrap_int(BOOL_T, o))

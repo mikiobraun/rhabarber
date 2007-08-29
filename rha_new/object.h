@@ -60,23 +60,12 @@ extern _rha_ string_t   to_string(object_t);
 
 extern _rha_ void       ls(object_t);
 
+extern _rha_ bool_t     equalequal_fn(object_t a, object_t b);
+extern _rha_ bool_t     notequal_fn(object_t a, object_t b);
 extern _rha_ object_t   inc(object_t);
 extern _rha_ object_t   dec(object_t);
 extern _rha_ object_t   inc_copy(object_t);
 extern _rha_ object_t   dec_copy(object_t);
-
-extern _rha_ bool_t     equalequal_fn(object_t a, object_t b);
-extern _rha_ bool_t     notequal_fn(object_t a, object_t b);
-extern _rha_ bool_t     less_fn(object_t a, object_t b);
-extern _rha_ bool_t     lessequal_fn(object_t a, object_t b);
-extern _rha_ bool_t     greater_fn(object_t a, object_t b);
-extern _rha_ bool_t     greaterequal_fn(object_t a, object_t b);
-
-extern _rha_ int_t      plus_fn(object_t a, object_t b);
-extern _rha_ int_t      minus_fn(object_t a, object_t b);
-extern _rha_ int_t      times_fn(object_t a, object_t b);
-extern _rha_ int_t      divide_fn(object_t a, object_t b);
-extern _rha_ int_t      neg_fn(object_t a);
 
 extern       object_t   wrap_int(int ptype, int i);
 extern       object_t   wrap_double(int ptype, double d);
@@ -92,7 +81,7 @@ extern       object_t   wrap(int ptype, ...);
 //        a.x        -> lookup(a, \x);
 extern _rha_ object_t   lookup(object_t env, symbol_t s);
 extern _rha_ object_t   lookup_local(object_t l, symbol_t s);
-
+extern _rha_ bool_t     check(object_t t, object_t o);
 
 extern _rha_ object_t   location(object_t l, symbol_t s);
 
