@@ -6,7 +6,8 @@
 modules.object.assign(root, \assign, modules.object.assign);
 
 // (1.2) let's get more stuff from the object module
-new      = modules.object.new;
+new = modules.object.new;
+clone = modules.object.clone;
 extend   = modules.object.extend;
 ls       = modules.object.ls;
 new      = modules.object.new;
@@ -37,6 +38,17 @@ not_fn          = modules.bool_fn.not_fn;
 and_fn          = modules.bool_fn.and_fn;
 or_fn           = modules.bool_fn.or_fn;
 
+neww = fn (t) { 
+  x = new(); // creates new object 
+  x.parent = t.proto; 
+  return x; 
+}
+// note that if 't' doesn't have a slot 'proto' this code raises an 
+// look-up-failed exception, which is the intended behavior. 
+// to get an empty object with a certain parent pointer 
+// use 'clone'
+
+
 
 // proxy stuff
 proxy = fn (s) root.modules.core.proxy_fn(this, s);
@@ -45,6 +57,7 @@ proxy = fn (s) root.modules.core.proxy_fn(this, s);
 load = fn(filename) run(this, filename);
 defined = macro (symbolname) has(local, \symbolname);
 undefined = macro( symbolname) has(local, symbolname);
+//assert = macro (cond) if (!cond) throw to_string(cond) + " FAILED";
 
 load("testing.rha");
 load("tuple.rha");
@@ -68,10 +81,10 @@ in_fn = fn (a, b) {
 // typing stuff
 
 // type    = new();        // in rha_init.c (used by 'ptype')
+type.proto = type;         // 'type' is its own prototype
 type.name  = "type";
 type.to_string = fn () this.name;
 type.type  = type;         // 'type' is of type 'type'
-type.proto = type;         // 'type' is its own prototype
 type.check = fn (x) { 
   while (x != this.proto) {
     if (!has(x, \parent)) return false; 
@@ -79,30 +92,22 @@ type.check = fn (x) {
   }
   return true;
 }
-typename(x) = x.type.name;     // try 'type(17)'
+typename(x) = x.type.name;     // try 'typename(17)'
 	    // note that 'type(x) = x.type.name' is not a good idea,
 	    // since then also 'bool(17)' will do '17.type.name'
 	    // instead of casting.
 
-// ptype   = clone(type);  // in rha_init.c (used by automatically
-                           // generated types for primitive types)
-ptype.name  = "ptype";
-ptype.proto = ptype;
-ptype.check = fn (x) "object" != typename(x) == typename(this.proto);
-
 // comments:
-// (i)   'int', 'real' are examples of ptypes
-// (ii)  'shape', 'circle' are examples of types
-// (iii) 'type', 'ptype' are examples of type-types.
+// (i)   'int', 'real' are examples of types with prototypes
+// (ii)  'type', 'ptype' are examples of type-types.
 //       note that prototypes of type-types are the 
 //       types themselves.
-// (iv)  'iterable', 'callable' are examples of types without a
-//       prototype slot, since they measure properties.  In Java they
-//       are called "interfaces".  We can't
-//       instantiate from types without a prototype slot.
-
-// how to instantiate a type
-instance = fn (t) clone(t.proto);
+// (iii) 'iterable', 'callable' are examples of types without a
+//       prototype slot, since they measure properties.  They are
+//       merely like guards in Haskell.
+// (iv)  'comparable' does have a prototype slot, but instantiating
+//       it, does note create something useful since the
+//       implementation of 'cmp' is missing.
 
 // how to subtype
 // note that subtypes of a type 't' can appear everywhere where 't'
@@ -148,7 +153,4 @@ colon_fn = fn (a, b) {
   throw "either 0:5 or int:x";
 }
 
-
-// casting
-int(x) = modules.int_fn.int_cast(x);  // try 'int(3.14)'
 

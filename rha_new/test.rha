@@ -124,7 +124,6 @@ print("[test] parsing test passed");
 
 test("types");
 check(type.check(type));
-check(type.check(ptype));
 check(type.check(int));
 check(typename(17) == "int");
 check(typename(3.14) == "real");

@@ -432,10 +432,10 @@ string_t to_string(object_t o)
 	s = gc_strdup("(");
 	int tlen = tuple_len(t);
 	for(int i = 0; i < tlen; i++) {
-	  if (i > 0) s = string_append(s, " ");
-	  s = string_append(s, to_string(tuple_get(t, i)));
+	  if (i > 0) s = string_concat(s, " ");
+	  s = string_concat(s, to_string(tuple_get(t, i)));
 	}
-	return string_append(s, ")");
+	return string_concat(s, ")");
       }
       case LIST_T: {
 	s = gc_strdup("[");
@@ -443,19 +443,19 @@ string_t to_string(object_t o)
 	int i; 
 	list_it_t it;
 	for(it = list_begin(l), i = 0; !list_done(it); list_next(it), i++) {
-	  if (i > 0) s = string_append(s, ", ");
-	  s = string_append(s, to_string(list_get(it)));
+	  if (i > 0) s = string_concat(s, ", ");
+	  s = string_concat(s, to_string(list_get(it)));
 	}
-	return string_append(s, "]");
+	return string_concat(s, "]");
       }
       case BUILTIN_T: {
 	builtin_t f = UNWRAP_PTR(BUILTIN_T, o);
 	s = sprint("<builtin (");
 	for(int i = 0; i < f->narg; i++) {
-	  if (i > 0) s = string_append(s, ", ");
-	  s = string_append(s, ptype_names[f->argptypes[i]]);
+	  if (i > 0) s = string_concat(s, ", ");
+	  s = string_concat(s, ptype_names[f->argptypes[i]]);
 	}
-	return string_append(s, ")>");
+	return string_concat(s, ")>");
       }
       case ADDRESS_T: {
 	return sprint("%p", (void *) UNWRAP_PTR(ADDRESS_T, o));

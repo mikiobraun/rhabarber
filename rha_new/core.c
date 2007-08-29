@@ -250,9 +250,31 @@ object_t run_fn(object_t root, string_t fname)
 {
   object_t p = parse_file(root, fname);
   if (p) { // otherwise, input was empty
-    return eval(root, p);
+    // note that the outer tuple containing a "do" is dealt with
+    // here, because this way we can avoid opening a BLOCK_FRAME.
+    // this makes sure that at the prompt 'deliver 17' will issue
+    // an error as wanted
+    assert(ptype(p) == TUPLE_T);
+    tuple_t t = UNWRAP_PTR(TUPLE_T, p);
+    int_t tlen = tuple_len(t);
+    assert(tlen > 0);
+    assert(ptype(tuple_get(t, 0)) == SYMBOL_T);
+    assert(UNWRAP_SYMBOL(tuple_get(t, 0)) == do_sym);
+    object_t e = 0;
+    object_t excp = 0;
+    for (int i = 1; i < tlen; i++) {
+      try {
+	e = eval(root, tuple_get(t, i));
+      }
+      catch (excp) {
+	throw_fn(string_concat(excp_msg(excp), 
+			       sprint("\n[%s] %o", fname, tuple_get(t, i))));
+      }
+    }
+    return e;
   }
-  return 0;
+  else
+    return 0;
 }
 
 /************************************************************

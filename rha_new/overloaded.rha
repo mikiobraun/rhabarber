@@ -1,9 +1,53 @@
 // overloaded functions
-plus_fn(int:x, int:y)       = modules.int_fn.int_plus(x, y);
-plus_fn(string:x, string:y) = modules.string_fn.string_append(x, y);
 
-less_fn(int:x, int:y) = modules.int_fn.int_less(x, y);
-less_fn(type:x, type:y) = x:y;
+
+
+// for efficiency we use the C-implementation
+// however, the rhabarber implementation of 'clone':
+//clone = fn (parent) { 
+//  x = new(); // create new object 
+//  x.parent = parent; 
+//  return x;
+//}
+
+
+// casting
+int(real:x) = modules.int_fn.int_cast(x);  // try 'int(3.14)'
+
+// 17+42
+plus_fn(int:x, int:y) = modules.int_fn.int_plus(x, y);
+
+// string concatentation
+plus_fn(string:x, string:y) = modules.string_fn.string_concat(x, y);
+
+// 17*42
+times_fn(int:x, int:y) = modules.int_fn.int_times(x, y);
+
+// int*real*string   tuples of types
+times_fn(type:t1, type:t2) = { 
+  t = neww(type); 
+  t.check = fn (x) tuple.check(x) 
+                   && x.len() == 2 
+                   && t1:x(0) && t2:x(1); 
+  return t; 
+} 
+
+
+assert = macro (x) if (!x) throw to_string(x)+" failed";
+// note that: 
+//assert((type*type->type) : rightarrow_fn); 
+
+cmp = new();
+cmp(int:x, int:y) = modules.int_fn.int_cmp(x, y);
+cmp(type:x, type:y) = if (addr(x)==addr(y)) 0 
+                      else if (y:x) return -1
+                      else return 1;
+
+less_fn(x, y) = modules.int_fn.int_less(cmp(x, y), 0);
+lessequal_fn(x, y) = modules.int_fn.int_lessequal(cmp(x, y), 0);
+greater_fn(x, y) = modules.int_fn.int_less(0, cmp(x, y));
+greaterequal_fn(x, y) = modules.int_fn.int_lessequal(0, cmp(x, y));
+
 
 // temporarily for testing purposes (as long as we have to overloaded)
 inc             = modules.object.inc;
@@ -13,7 +57,6 @@ dec_copy        = modules.object.dec_copy;
 to_string       = modules.object.to_string;
 neg_fn          = modules.object.neg_fn;
 minus_fn        = modules.object.minus_fn;
-times_fn        = modules.object.times_fn;
 divide_fn       = modules.object.divide_fn;
 equalequal_fn   = modules.object.equalequal_fn;
 notequal_fn     = modules.object.notequal_fn;
@@ -21,3 +64,6 @@ less_fn         = modules.object.less_fn;
 lessequal_fn    = modules.object.lessequal_fn;
 greater_fn      = modules.object.greater_fn;
 greaterequal_fn = modules.object.greaterequal_fn;
+
+
+

@@ -411,7 +411,7 @@ $init_c_functions
   ttt ## _obj = new();                                     \\
   assign(root, ttt ## _sym, ttt ## _obj);                  \\
   assign(ttt ## _obj, proto_sym, prototypes[TTT ## _T]);   \\
-  assign(ttt ## _obj, parent_sym, ptype_obj);               \\
+  assign(ttt ## _obj, parent_sym, type_obj);               \\
   assign(ttt ## _obj, name_sym, WRAP_PTR(STRING_T, #ttt));
 
 #define ADD_MODULE(mmm)                                  \\
@@ -444,9 +444,8 @@ $init_c_init_symbols
 
   // (6.3) create type objects (TYPES)
   object_t type_obj = new();
+  assign(type_obj, symbol_new("check"), WRAP_PTR(STRING_T, "not implemented"));
   assign(root, type_sym, type_obj);
-  object_t ptype_obj = clone(type_obj);
-  assign(root, ptype_sym, ptype_obj);
   object_t pattern_obj = clone(type_obj);
   pattern_proto = new();
   assign(pattern_obj, proto_sym, pattern_proto);

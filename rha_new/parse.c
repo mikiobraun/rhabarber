@@ -337,7 +337,7 @@ object_t resolve_pattern(object_t env, list_t source)
     // in order to check it we must evaluate it
     thetype = eval(env, resolve(env, lhs));
     if (!has(thetype, symbol_new("check")))
-      rha_error("the lhs of colon must implement 'check'");
+      rha_error("the lhs of colon (%o) must implement 'check'", thetype);
     thesymbol = resolve(env, source);
   }
   else

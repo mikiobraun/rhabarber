@@ -10,7 +10,7 @@ string_t string_copy(string_t other)
   return s;
 }
 
-string_t string_append(string_t s1, string_t s2)
+string_t string_concat(string_t s1, string_t s2)
 {
   string_t s1s2 = ALLOC_SIZE(strlen(s1) + strlen(s2) + 1);
   strcat(strcpy(s1s2, s1), s2);

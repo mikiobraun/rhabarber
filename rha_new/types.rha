@@ -1,5 +1,5 @@
 // what is a pattern?
-//   pattern = clone(type);   // in rha_init.c
+//   pattern = new(type);     // in rha_init.c
 //   pattern.proto = new();   // in rha_init.c
 // a pattern constructor
 pattern(symbol:s) = {
@@ -12,7 +12,6 @@ pattern(type:x, symbol:s) = {
   p.patterntype = x;
   return p;
 }
-pattern.check(x) = has(x, \patternsymbol);
 pattern.proto.to_string() = {
   if (this == pattern.proto)
     return "<pattern.proto>";
@@ -23,7 +22,7 @@ pattern.proto.to_string() = {
 }
 
 // what is iterable?
-iterable = clone(type);  // use 'clone' instead of 'subtype' for interfaces
+iterable = neww(type);
 iterable.check = fn (x) {
   if (!has(x, \iter)) return false;
   i = x.iter();
@@ -33,3 +32,16 @@ iterable.check = fn (x) {
   return true;
 }
 
+// what is comparable?
+comparable = neww(type);
+comparable.check = fn (x) {
+  // check here whether x can be argument of cmp
+  //  try {
+  //  cmp(x, x)
+  // }
+  //catch (xxx) {
+  //  return false;
+  /// }
+  //return true;
+  return true;
+}

@@ -1,3 +1,11 @@
+2007-08-29  Stefan Harmeling  <harmeling@gmail.com>
+
+	* core.c (run_fn): also files will generate an expression that has
+	an outer do_sym, which we should ignore, since otherwise a
+	'deliver' inside a file, doesn't create an error.  on the other
+	hand now we also give more hints in what file and what line
+	the error appeared.
+
 2007-08-28  Stefan Harmeling  <harmeling@gmail.com>
 
 	* overloaded.rha: put all overloaded stuff here. the reason is
