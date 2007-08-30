@@ -47,12 +47,52 @@ object_t proxy_fn(object_t this, symbol_t s)
   return obj;
 }
 
+object_t create_pattern(object_t thetype, object_t thesymbol)
+{
+  // note that a pattern could be the empty object
+  object_t pattern = new();
+  assign(pattern, parent_sym, pattern_proto);
+  if (thetype)
+    assign(pattern, symbol_new("patterntype"), thetype);
+  if (thesymbol)
+    assign(pattern, symbol_new("patternsymbol"), thesymbol);
+  return pattern;
+}
+
 object_t create_fn_data_entry(object_t env, tuple_t signature, object_t fnbody)
 {
+  // check for ellipsis symbol
+  // it is only allowed at the end of a signature
+  list_t signature_l = list_new();
+  int i, tlen = tuple_len(signature);
+  for (i = 0; i < tuple_len(signature); i++) {
+    object_t pattern = tuple_get(signature, i);
+    object_t thesymbol = lookup(pattern, symbol_new("patternsymbol"));
+    if (thesymbol
+	&& ptype(thesymbol) == SYMBOL_T
+	&& UNWRAP_SYMBOL(thesymbol) == symbol_new("..."))
+      break;
+    list_append(signature_l, pattern);
+  }
+  bool_t varargs;
+  if (i < tlen-1) {
+    rha_error("ellipsis (...) is only allowed at the end of a signature");
+  }
+  else if (i == tlen-1) {
+    signature = list_to_tuple(signature_l); // removes the ellipsis
+    varargs = true;
+  }
+  else {
+    varargs = false;
+  }
+
+  // built fn_data entry
   object_t entry = new();
   assign(entry, signature_sym, WRAP_PTR(TUPLE_T, signature));
-  assign(entry, scope_sym, env);
+  if (env)
+    assign(entry, scope_sym, env);
   assign(entry, fnbody_sym, fnbody);
+  assign(entry, varargs_sym, WRAP_BOOL(varargs));
   return entry;
 }
 
@@ -66,7 +106,7 @@ object_t create_fn_data(object_t env, tuple_t signature, object_t fnbody)
 
 object_t fn_fn(object_t env, tuple_t signature, object_t fnbody)
 {
-  // defines a new rhabarber function
+  // defines a new function
   object_t f = new();
   assign(f, fn_data_sym, create_fn_data(env, signature, fnbody));
   return f;

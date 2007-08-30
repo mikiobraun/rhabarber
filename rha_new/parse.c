@@ -24,12 +24,14 @@ object_t prule_failed_excp = 0; // exception
 object_t prules = 0;  // the object containing all prules
 
 symbol_t dot_sym = 0;
+symbol_t ellipsis_sym = 0;  // ...
 
 void parse_init(object_t root, object_t module)
 {
   prule_failed_excp = excp_new("prule failed");
 
   dot_sym = symbol_new(".");
+  ellipsis_sym = symbol_new("...");
 
   // the object 'prules' is used to lookup the prules
   // its location should be changed here
@@ -139,7 +141,7 @@ object_t call_prule(object_t env, list_t source, object_t prule)
 
   // the list containing the parse tree
   // run the prule itself to resolve it
-  object_t expr = call_fun(env, tlen, prule_call);
+  object_t expr = call_fun(env, prule_call);
 
   // check what we got
   if (ptype(expr) == TUPLE_T) {
@@ -343,12 +345,7 @@ object_t resolve_pattern(object_t env, list_t source)
   else
     thesymbol = resolve(env, lhs);
 
-  object_t pattern = new();
-  assign(pattern, parent_sym, pattern_proto);
-  if (thetype)
-    assign(pattern, symbol_new("patterntype"), thetype);
-  assign(pattern, symbol_new("patternsymbol"), thesymbol);
-  return pattern;
+  return create_pattern(thetype, thesymbol);
 }
 
 object_t resolve_patterns(object_t env, list_t source)

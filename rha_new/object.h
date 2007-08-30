@@ -23,7 +23,10 @@ union raw_t {
   int i;
   float f;
   double d;
-  void *p;              // possible raw content
+  builtin_t b;     // possible pointer to builtin function
+                   // because gcc doesn't like casting function
+                   // pointer to void pointer and vice versa
+  void *p;         // possible raw content
 };
 
 /* the rhabarber object */
@@ -55,7 +58,7 @@ extern _rha_ string_t   ptypename(object_t o);
 extern       void       setptype(object_t, int_t);
 
 extern _rha_ void       print_fn(int_t narg, ...);
-extern       void       vprint_fn(int_t narg, list_t args);
+extern       void       vprint_fn(tuple_t args);
 extern _rha_ string_t   to_string(object_t);
 
 extern _rha_ void       ls(object_t);
@@ -69,9 +72,11 @@ extern _rha_ object_t   dec_copy(object_t);
 
 extern       object_t   wrap_int(int ptype, int i);
 extern       object_t   wrap_double(int ptype, double d);
+extern       object_t   wrap_builtin(int ptype, builtin_t b);
 extern       object_t   wrap_ptr(int ptype, void *p);
 extern       int        unwrap_int(int ptype, object_t o);
 extern       double     unwrap_double(int ptype, object_t o);
+extern       builtin_t  unwrap_builtin(int ptype, object_t o);
 extern       void      *unwrap_ptr(int ptype, object_t o);
 
 extern       object_t   wrap(int ptype, ...);
@@ -82,6 +87,7 @@ extern       object_t   wrap(int ptype, ...);
 extern _rha_ object_t   lookup(object_t env, symbol_t s);
 extern _rha_ object_t   lookup_local(object_t l, symbol_t s);
 extern _rha_ bool_t     check(object_t t, object_t o);
+extern _rha_ bool_t     pcheck(object_t t, object_t o);
 
 extern _rha_ object_t   location(object_t l, symbol_t s);
 
@@ -96,7 +102,7 @@ extern _rha_ object_t   extend(object_t this, symbol_t s, tuple_t args,
 // 'has'
 extern _rha_ bool_t     has(object_t obj, symbol_t s);
 
-extern _rha_ void       rmslot(object_t, symbol_t s);
+extern _rha_ void       rm(object_t, symbol_t s);
 
 // will be called by prule 'include'
 extern _rha_ void       include(object_t dest, object_t source);

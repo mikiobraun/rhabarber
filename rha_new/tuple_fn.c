@@ -46,20 +46,17 @@ tuple_t tuple_make(int_t narg, ...)
 {
   va_list ap;
   va_start(ap, narg);
-  list_t args = list_new();
+  tuple_t args = tuple_new(narg);
   for (int i = 0; i < narg; i++)
-    list_append(args, va_arg(ap, object_t));
+    tuple_set(args, i, va_arg(ap, object_t));
   va_end(ap);
 
-  return vtuple_make(narg, args);
+  return vtuple_make(args);
 }
 
-tuple_t vtuple_make(int_t narg, list_t args)
+tuple_t vtuple_make(tuple_t args)
 {
-  tuple_t t = tuple_new(narg);
-  for (int i = 0; i < narg; i++)
-    tuple_set(t, i, list_popfirst(args));
-  return t;
+  return args;
 }
 
 list_t tuple_to_list(tuple_t t)

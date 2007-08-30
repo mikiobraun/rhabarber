@@ -22,5 +22,5 @@ extern _rha_ tuple_t  tuple_set(tuple_t t, int_t i, object_t s);
 extern _rha_ list_t   tuple_to_list(tuple_t t);
 
 extern _rha_ tuple_t  tuple_make(int_t narg, ...);
-extern       tuple_t  vtuple_make(int_t narg, list_t args);
+extern       tuple_t  vtuple_make(tuple_t args);
 #endif

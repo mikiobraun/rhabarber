@@ -24,7 +24,7 @@ void eval_init(object_t root, object_t module)
 // forward declarations
 object_t eval_sequence(object_t env, tuple_t t);
 object_t eval_args_and_call_fun(object_t env, tuple_t expr);
-object_t call_fun(object_t env, int_t tlen, tuple_t expr);
+object_t call_fun(object_t env, tuple_t expr);
 void *call_C_fun(int tlen, tuple_t t);
 object_t call_rha_fun(object_t this, int narg, tuple_t expr);
 
@@ -117,7 +117,7 @@ object_t eval_sequence(object_t env, tuple_t t)
 object_t eval_args_and_call_fun(object_t env, tuple_t expr)
 {
   int tlen = tuple_len(expr);
-  //  debug("eval_args: %o\n", WRAP_PTR(TUPLE_T, expr));
+  //debug("eval_args: %o\n", WRAP_PTR(TUPLE_T, expr));
   assert(tlen>0);  // otherwise repair 'rhaparser.y'
   object_t f = tuple_get(expr, 0);
   // deal with special stuff
@@ -129,6 +129,7 @@ object_t eval_args_and_call_fun(object_t env, tuple_t expr)
     else if (do_sym == UNWRAP_SYMBOL(f)) {
       return eval_sequence(env, expr);
     }
+    //debug("calling '%o'\n", f);
   }
 
   // otherwise a usual function
@@ -137,21 +138,10 @@ object_t eval_args_and_call_fun(object_t env, tuple_t expr)
     tuple_set(values, i, eval(env, tuple_get(expr, i)));
 
   // finally call the function
-  return call_fun(env, tlen, values);
+  return call_fun(env, values);
 }
 
-object_t call_fun(object_t env, int_t tlen, tuple_t values)
-{
-  if (ptype(tuple_get(values, 0))==BUILTIN_T)
-    // the function is implemented in C
-    return call_C_fun(tlen, values);
-  else
-    // the function is pure rhabarber
-    return call_rha_fun(env, tlen, values);
-}
-
-
-void check_ptypes(object_t o, enum ptypes pt)
+void check_ptypes_obsolete(object_t o, enum ptypes pt)
 {
   // note that OBJECT_T matches anything!
   if ((pt != OBJECT_T) && (ptype(o) != pt))
@@ -160,89 +150,70 @@ void check_ptypes(object_t o, enum ptypes pt)
 }
 
 
-void *call_C_fun(int tlen, tuple_t t) 
-{
-  int narg = tlen-1;
-  // extract the function
-  object_t t0 = tuple_get(t, 0);
-  assert(t0 && ptype(t0)==BUILTIN_T);
-  builtin_t f = UNWRAP_PTR(BUILTIN_T, t0);
-
-  // is the argument number correct?
-  // we distinguish depending on whether variable length argument
-  // lists are allowed
-  if (f->varargs) {
-    if (f->narg > narg)
-      rha_error("wrong number of arguments (expected at least %d, got %d)",
-		f->narg, narg);
-  }
-  else {
-    if (f->narg != narg)
-      rha_error("wrong number of arguments (expected %d, got %d)", 
-		f->narg, narg);
-  }
-  // check the types of the args
-  for (int i = 0; i < narg; i++)
-    if (i < f->narg)
-      check_ptypes(tuple_get(t, i+1), f->argptypes[i]);
-    else
-      // all optional arguments must be OBJECT_T
-      check_ptypes(tuple_get(t, i+1), OBJECT_T);
-
-  // finally call 'f'
-  object_t res = 0;
-  //  begin_frame(FUNCTION_FRAME)
-    res = (f->code)(t);
-    //  end_frame(res);
-  return res;
-}
-
-
 object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
 			    tuple_t signature, tuple_t values)
 {
-  // add more to the inner scope
-  assign(local, parent_sym, scope);  // the defining scope (lexical)
-
-  // assign the arguments
-  int nargs = tuple_len(values)-1;
-  for(int i = 0; i < nargs; i++) {
-    object_t pattern = tuple_get(signature, i);
-    if (!pattern)
-      rha_error("(eval) signature is not valid");
-    object_t s_o = eval(pattern, WRAP_SYMBOL(symbol_new("patternsymbol")));
-    if (!s_o || ptype(s_o)!=SYMBOL_T)
-      rha_error("(eval) symbol expected, found %o", s_o);
-    symbol_t s = UNWRAP_SYMBOL(s_o);
-    //debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
-    assign(local, s, tuple_get(values, i+1));
-  }
-
   // call the function
   object_t res = 0;
-  begin_frame(FUNCTION_FRAME)
-    // don't put 'return' inside here
-    res = eval(local, fnbody);
-  end_frame(res);
+  if (ptype(fnbody) == BUILTIN_T) {
+    // (1) function with C code
+    builtin_t f = UNWRAP_BUILTIN(fnbody);
+//    begin_frame(FUNCTION_FRAME)
+      res = f(values);
+//    end_frame(res);
+  }
+  else {
+    // (2) function with rhabarber code
+    assign(local, parent_sym, scope);  // the defining scope (lexical)
+    
+    // assign the arguments
+    int nsig = tuple_len(signature);
+    for(int i = 0; i < nsig; i++) {
+      object_t pattern = tuple_get(signature, i);
+      if (!pattern)
+	rha_error("(eval) signature is not valid");
+      object_t s_o = lookup(pattern, symbol_new("patternsymbol"));
+      if (!s_o || ptype(s_o)!=SYMBOL_T)
+	rha_error("(eval) symbol expected, found %o", s_o);
+      symbol_t s = UNWRAP_SYMBOL(s_o);
+      //debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
+      assign(local, s, tuple_get(values, i));
+    }
+    begin_frame(FUNCTION_FRAME)
+      res = eval(local, fnbody);
+    end_frame(res);
+  }
   return res;
 }
 
 
-bool_t signature_matches(tuple_t signature, tuple_t values)
+bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
 {
-  int_t narg = tuple_len(values) - 1;
-  if (tuple_len(signature) != narg)
-    return false;
-  for (int i = 0; i < narg; i++) {
+  int_t nsig = tuple_len(signature);
+  int_t narg = tuple_len(values);
+  // check whether there are enough arguments
+  if (varargs) {
+    if (nsig > narg)
+      return false;
+  }
+  else {
+    if (nsig != narg)
+      return false;
+  }
+
+  for (int i = 0; i < nsig; i++) {
     object_t pattern = tuple_get(signature, i);
     object_t thetype = lookup(pattern, symbol_new("patterntype"));
+    //debug("type %o\n", thetype);
     if (thetype) {
       // check the type
-      object_t res = callslot(thetype, symbol_new("check"), 1, tuple_get(values, i+1));
+      object_t res = callslot(thetype, check_sym, 1, tuple_get(values, i));
       if (!res || ptype(res)!=BOOL_T)
 	rha_error("(signature) type %o doesn't implement a valid 'check'", thetype);
-      if (!UNWRAP_BOOL(res))
+      if (!UNWRAP_BOOL(res)) {
+	//print("not matching\n");
 	return false;
+      }
     }
   }
   // all checks passed
@@ -252,23 +223,30 @@ bool_t signature_matches(tuple_t signature, tuple_t values)
 
 object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values)
 {
+  //debug("find_and_call_matching_impl(%o, %o, %o)\n", local, WRAP_PTR(LIST_T, fn_data_l), WRAP_PTR(TUPLE_T, values));
   string_t msg = "(eval) can't call %o, since it has a faulty entry in 'fn_data'";
   // go through the list to find a match
   for (list_it_t it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
     object_t impl = list_get(it);
     if (!impl) rha_error(msg);
-    object_t impl0 = eval(impl, WRAP_SYMBOL(signature_sym));
-    if (!impl0 || ptype(impl0)!=TUPLE_T)
+    object_t signature_o = lookup(impl, signature_sym);
+    if (!signature_o || ptype(signature_o)!=TUPLE_T)
       rha_error(msg);
-    tuple_t signature = UNWRAP_PTR(TUPLE_T, impl0);
-    if (signature_matches(signature, values)) {
+    tuple_t signature = UNWRAP_PTR(TUPLE_T, signature_o);
+    object_t varargs_o = lookup(impl, varargs_sym);
+    if (!varargs_o || ptype(varargs_o)!=BOOL_T)
+      rha_error(msg);
+    bool_t varargs = UNWRAP_BOOL(varargs_o);
+    if (signature_matches(signature, varargs, values)) {
       // match found!!!
-      object_t scope = eval(impl, WRAP_SYMBOL(scope_sym));
-      if (!scope)
-	rha_error("(eval) can't find defining scope");
-      object_t fnbody = eval(impl, WRAP_SYMBOL(fnbody_sym));
+      object_t fnbody = lookup(impl, fnbody_sym);
       if (!fnbody)
 	rha_error("(eval) can't find function body");
+      object_t scope = lookup(impl, scope_sym);
+      // note that for builtin functions the 'scope' is ignored and
+      // can thus also be 'void'
+      if (!scope && ptype(fnbody)!=BUILTIN_T)
+	rha_error("(eval) can't find defining scope");
       return call_matching_impl(local, scope, fnbody, signature, values);
     }
   }
@@ -279,20 +257,21 @@ object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t v
 
 
 
-/* Call a rhabarber function 
+/* Call a function 
  *
  * Checks if the number of argument matches, constructs the local
  * environment of the callee and executes the function
  *
  * callable objects must have slots "argnames", "scope", and "fnbody".
  */
-object_t call_rha_fun(object_t this, int tlen, tuple_t values)
+object_t call_fun(object_t this, tuple_t values)
 {
-  assert(tlen == tuple_len(values));
+  list_t values_l = tuple_to_list(values);
 
   // get the function to be called
-  object_t fn = tuple_get(values, 0);
-
+  object_t fn = list_popfirst(values_l);
+  values = list_to_tuple(values_l);
+  
   // look for 'fn_data' which contains all information for the
   // overloaded function
   object_t fn_data = lookup(fn, fn_data_sym);
@@ -310,6 +289,7 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t values)
   assign(local, local_sym, local);   // the scope local to the function
   assign(local, this_sym, this);     // the calling scope
   assign(local, static_sym, fn);     // for static variables
+  assign(local, args_sym, WRAP_PTR(TUPLE_T, values)); // all passed arguments
 
   // find and call the matching implementation
   return find_and_call_matching_impl(local, fn_data_l, values);
@@ -321,23 +301,28 @@ object_t call_rha_fun(object_t this, int tlen, tuple_t values)
 // note on "variable argument lists" in rhabarber:
 // to pull in a function like 'callslot' with '...' automatically, we
 // need to implement a function 'vcallclot' with the '...' replaced by
-// a 'list_t' argument:
-object_t vcallslot(object_t obj, symbol_t slotname, int_t narg, list_t args)
+// a 'list_t' argument.
+// NOTE: we assume that the last required argument is an integer that
+// tells the C function (e.g. 'callslot') how long the list really
+// is.  The 'v' version of the function doesn't have it.
+object_t vcallslot(object_t obj, symbol_t slotname, tuple_t args)
 {
   // note that 'callslot' assumes that all arguments are already
   // evaluated in the outer calling scope.  this is important since we
   // have no longer access to the outer calling scope.  the inner
   // calling scope ('this') will be set to 'obj'
+  //debug("callslot(%o, %o, %o)\n", obj, WRAP_SYMBOL(slotname), WRAP_PTR(TUPLE_T, args));
   object_t slot = lookup(obj, slotname);
   if (!slot)
     throw(excp_newf("(call_slot) object %o doesn't have slot '%s'",
 		    obj, symbol_name(slotname)));
   
   // construct the call
-  list_prepend(args, slot);
+  list_t args_l = tuple_to_list(args);
+  list_prepend(args_l, slot);
 
   // call the slot with the scope being the object
-  return call_fun(obj, narg+1, list_to_tuple(args));
+  return call_fun(obj, list_to_tuple(args_l));
 }
 
 
@@ -349,10 +334,10 @@ object_t callslot(object_t obj, symbol_t slotname, int_t narg, ...)
   //debug("callslot(%o, %o, %d, ...)\n", obj, WRAP_SYMBOL(slotname), narg);
   va_list ap;
   va_start(ap, narg);
-  list_t args = list_new();
+  tuple_t args = tuple_new(narg);
   for (int i = 0; i < narg; i++)
-    list_append(args, va_arg(ap, object_t));
+    tuple_set(args, i, va_arg(ap, object_t));
   va_end(ap);
   
-  return vcallslot(obj, slotname, narg, args);
+  return vcallslot(obj, slotname, args);
 }

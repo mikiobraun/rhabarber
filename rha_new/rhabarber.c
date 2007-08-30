@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <assert.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -23,6 +24,30 @@
 
 int main(int argc, char **argv)
 {
+  // handle command line arguments
+  int flag;
+  bool_t dflag = false, tflag = false;
+  while ((flag = getopt(argc, argv, "dht")) != -1)
+    switch (flag) {
+    case 'h':  // show command line help
+      printf("\n"
+	     "Rhabarber, compiled at " __TIME__ " on " __DATE__ "\n"
+	     "\n"
+	     "usage: rhabarber [-dht]\n"
+	     "\n"
+	     "  d : do not load 'prelude.rha'\n"
+	     "  h : print this help message and ignore other options\n"
+	     "  t : load 'prelude.rha', run 'test.rha' and quit\n"
+	     "\n");
+      exit(0);
+    case 'd':  // debug mode, i.e. without anything else loaded
+      dflag = true;
+      break;
+    case 't':  // test mode, run 'prelude.rha' and 'test.rha' and quit
+      tflag = true;
+      break;
+    }
+
   // initialize garbage collection
   GC_INIT();
   GC_set_max_heap_size(512*1048576);
@@ -37,20 +62,30 @@ int main(int argc, char **argv)
 
   // set up root object
   object_t root = rha_init();
+  object_t excp = 0;   // exception object
 
-  // load basic stuff implemented in rhabarber
-  #define FNAMES_LEN 3
-  string_t fnames[FNAMES_LEN] = {"prelude.rha", "types.rha", "overloaded.rha"};
-  object_t excp;   // exception object
-  try { 
-    for (int i = 0; i < FNAMES_LEN; i++) {
-      run_fn(root, fnames[i]);
-      print("--loaded and run \"%s\"\n", fnames[i]);
+  if (!dflag) {
+    // load basic stuff implemented in rhabarber
+    string_t fname = "prelude.rha";
+    try { 
+      run_fn(root, fname);
+      print("--loaded and run \"%s\"\n", fname);
     }
-  } 
-  catch(excp) { 
-    excp_show(excp);
-  } 
+    catch(excp) { 
+      excp_show(excp);
+    } 
+  }
+  if (tflag) {
+    string_t fname = "test.rha";
+    try { 
+      run_fn(root, fname);
+      print("--loaded and run \"%s\"\n", fname);
+    }
+    catch(excp) { 
+      excp_show(excp);
+    }
+    exit(0);
+  }    
 
   // for the prompt
   int lineno = 0;
@@ -65,7 +100,6 @@ int main(int argc, char **argv)
     string_t line = readline(prompt);
     if (!line) break;
     add_history(line);
-
     try {
       object_t p = parse(root, line);
       if (p) {

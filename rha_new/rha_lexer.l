@@ -48,6 +48,10 @@ extern int yylineno;
                    yylval.obj = WRAP_REAL(atof(yytext)); 
 		   return REAL; 
                  }
+\.\.\.           {
+                   yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); 
+		   return SYMBOL; 
+                 }
 ([+\-*/<>^!=.]+|"&&"|"||"|"\\"|"?"|"#"|";"|","|":") {
                    yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); 
 		   return SYMBOL; 

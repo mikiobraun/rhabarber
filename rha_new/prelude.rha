@@ -2,13 +2,37 @@
 
 // the only stuff that exists in 'root' is:
 
-// (1.1) right now we can't even do assignments like 'x=1'
-modules.object.assign(root, \assign, modules.object.assign);
+// (1.1) work done by rha_init() in rha_init.c
+//
+//   type = new();
+//   type.proto = type;
+//   type.check = fn (x) modules.object.check(this, x);
+//
+//   bool.check = fn (x) modules.object.pcheck(this, x);
+//   int.check = fn (x) modules.object.pcheck(this, x);
+//   ...
+//
+//   pattern = clone(type);
+//   pattern.proto = new();
+//
+//   assign = modules.object.assign;
+//   extend = modules.object.extend;
+
 
 // (1.2) let's get more stuff from the object module
 new      = modules.object.new;
+// let's overloaded that builtin function!!!
+new(type:t) = {
+  x = new(); // creates new object
+  x.parent = t.proto;
+  return x;
+}
+// note that if 't' doesn't have a slot 'proto' this code raises an 
+// look-up-failed exception, which is the intended behavior. 
+// to get an empty object with a certain parent pointer 
+// use 'clone'
 clone    = modules.object.clone;
-extend   = modules.object.extend;
+rm       = modules.object.rm;
 ls       = modules.object.ls;
 new      = modules.object.new;
 has      = modules.object.has;
@@ -18,15 +42,16 @@ location = modules.object.location;
 clone    = modules.object.clone;
 addr     = modules.object.addr;
 run      = modules.core.run_fn;
+error    = modules.messages.error;
+warning  = modules.messages.warning;
 
-// functions for prules
+// (1.3) functions that are accessed after applying prules
 if_fn      = modules.core.if_fn;
 fn_fn      = modules.core.fn_fn;
 macro_fn   = modules.core.macro_fn;
 for_fn     = modules.core.for_fn;
 while_fn   = modules.core.while_fn;
 try_fn     = modules.core.try_fn;
-//colon_fn   = modules.core.colon_fn;  // now implemented below
 literal    = modules.core.literal;
 return_fn  = modules.core.return_fn;
 deliver_fn = modules.core.deliver_fn;
@@ -34,53 +59,50 @@ break_fn   = modules.core.break_fn;
 throw_fn   = modules.core.throw_fn;
 print      = modules.object.print_fn;
 
-neww = fn (t) { 
-  x = new(); // creates new object 
-  x.parent = t.proto; 
-  return x; 
-}
-// note that if 't' doesn't have a slot 'proto' this code raises an 
-// look-up-failed exception, which is the intended behavior. 
-// to get an empty object with a certain parent pointer 
-// use 'clone'
-
-
-
-// proxy stuff
+// (1.4) proxy and other useful stuff
 proxy = fn (s) root.modules.core.proxy_fn(this, s);
-
-// other stuff
-load = fn(filename) run(this, filename);
+run(filename) = run(root, filename);
 defined = macro (symbolname) has(local, \symbolname);
 undefined = macro( symbolname) has(local, symbolname);
 //assert = macro (cond) if (!cond) throw to_string(cond) + " FAILED";
 
-// for writing tests:
-load("testing.rha");
+// (1.5) macros for writing tests (see test.rha for an example)
+test = macro (x) {
+  failure = 0;
+  success = 0;
+  name = x;
+}
+check = macro (x) {
+  if (eval(local, x))
+    success++;
+  else {
+    print("FAILED:" ,\x);
+    failure++;
+  }
+}
+summarize = macro () {
+  if (failure > 0)
+    print ("[test]", failure, "/", failure+success, "SOME FAILED", name);
+  else
+    print ("[test]", success, "/", failure+success, "ALL PASSED", name);
+}
+runtest = fn () run(root, "test.rha");
 
-// symbol stuff
+// (1.6) symbol stuff
 // usually we can create symbol with quote, e.g. '\x', however
 // operators can only be created by 'symbol("+")'
 symbol(name) = modules.symbol_fn.symbol_new(name);
-
-// 'in' element test
-in_fn = fn (a, b) {
-  // checks whether a is in b
-  for (x in b)
-    if (a==x) return true;
-  return false;
-};
 
 
 // typing stuff
 
 // type    = new();        // in rha_init.c (used by 'ptype')
-type.proto = type;         // 'type' is its own prototype
+// type.proto = type;
+// type.check = fn (x) modules.object.check(this, x)
 type.name  = "type";
 type.to_string = fn () this.name;
 type.type  = type;         // 'type' is of type 'type'
-type.check = fn (x) modules.object.check(this, x);
-typename(x) = x.type.name;     // try 'typename(17)'
+typename = fn (x) x.type.name;     // try 'typename(17)'
 	    // note that 'type(x) = x.type.name' is not a good idea,
 	    // since then also 'bool(17)' will do '17.type.name'
 	    // instead of casting.
@@ -102,10 +124,10 @@ typename(x) = x.type.name;     // try 'typename(17)'
 // can appear.  the usual way to subtype is by 'clone', however this
 // doesn't work for types, but only non-types.
 subtype = fn (t) {
-  new_t = clone(t);
+  st = clone(t);
   if (has(t, \proto))
-    new_t.proto = clone(t.proto);
-  return new_t;
+    st.proto = clone(t.proto);
+  return st;
 }
 
 // is 'x' an instance of a subtype of 't'?
@@ -142,3 +164,184 @@ colon_fn = fn (a, b) {
 }
 
 
+// overloaded functions
+
+// == and != are special
+// the problem with overloading here is that type checking might use
+// certain function which are overloaded themselves, which needs to be
+// resolved with type checking and so on...
+equalequal_fn = modules.object.equalequal_fn;
+notequal_fn   = modules.object.notequal_fn;
+
+// temporarily for testing purposes
+inc             = modules.object.inc;
+dec             = modules.object.dec;
+inc_copy        = modules.object.inc_copy;
+dec_copy        = modules.object.dec_copy;
+to_string       = modules.object.to_string;
+
+
+// bools
+not_fn(bool:x)         = modules.bool_fn.bool_not(x);
+and_fn(bool:x, bool:y) = modules.bool_fn.bool_and(x, y);
+or_fn(bool:x, bool:y)  = modules.bool_fn.bool_or(x, y);
+//equalequal_fn(bool:x, bool:y) = modules.bool_fn.bool_equalequal(x, y);
+
+
+// strings
+plus_fn(string:x, string:y) = modules.string_fn.string_concat(x, y);
+string.proto.len = fn () modules.string_fn.string_len(this);
+//equalequal_fn(string:x, string:y) = modules.string_fn.string_equalequal(x, y);
+
+
+// types
+less_fn(type:x, type:y) = x:y;
+//plus_fn(type:t1, type:t2) = {
+//  // (t1+t2):x  == t1:x && t2:x
+//  t = neww(type);
+//  t.check = fn (x) t1:x && t2:x;
+//  return t;
+//}
+times_fn(type:t1, type:t2) = { 
+  // int*real*string   (tuples of types)
+  t = neww(type); 
+  t.check = fn (x) tuple.check(x) 
+                   && x.len() == 2 
+                   && t1:x(0) && t2:x(1); 
+  return t;
+}
+
+
+// integers
+plus_fn(int:x, int:y) = modules.int_fn.int_plus(x, y);
+neg_fn(int:x) = modules.int_fn.int_neg(x);
+minus_fn(int:x, int:y) = modules.int_fn.int_minus(x, y);
+times_fn(int:x, int:y) = modules.int_fn.int_times(x, y);
+divide_fn(int:x, int:y) = modules.int_fn.int_divide(x, y);
+less_fn(int:x, int:y) = modules.int_fn.int_less(x, y);
+lessequal_fn(int:x, int:y) = modules.int_fn.int_lessequal(x, y);
+greater_fn(int:x, int:y) = modules.int_fn.int_greater(x, y);
+greaterequal_fn(int:x, int:y) = modules.int_fn.int_greaterequal(x, y);
+int(real:x) = modules.int_fn.int_cast(x);  // try 'int(3.14)'
+//equalequal_fn(int:x, int:y) = modules.int_fn.int_equalequal(x, y);
+
+
+// tuples
+tuple.proto.len = fn () modules.tuple_fn.tuple_len(this);
+tuple.proto.set = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
+tuple.proto.get = fn (i) modules.tuple_fn.tuple_get(this, i);
+// a simple constructor for tuples is defined by:
+tuple.new = modules.tuple_fn.tuple_new;
+// this allows stuff like: t = tuple.new(4);
+// however, let's try to be fancy and make 'tuple' a function itself:
+tuple(len) = modules.tuple_fn.tuple_new(len);
+tuple.proto.iter = fn () {
+  i = new();
+  i.counter = 0;
+  i.tuple = this;
+  i.done = fn () i.counter == i.tuple.len();
+  i.next = fn () this.counter++;
+  i.get = fn () this.tuple.get(this.counter);
+  return i;
+}
+rm(tuple.proto, \fn_data);
+tuple.proto(int:i) = static.get(i); // member access, e.g. t(0)
+tuple.proto(tuple:idx) = {
+  t = tuple(idx.len());
+  j = 0;
+  for (i in idx)
+    t.set(j++, static.get(i));
+  return t;
+}
+
+// lists
+list.new = modules.list_fn.list_new;
+list() = modules.list_fn.list_new();
+list.proto.len      = fn () modules.list_fn.list_len(this);
+list.proto.copy     = fn () modules.list_fn.list_copy(this);
+list.proto.append   = fn (x) modules.list_fn.list_append(this, x);
+list.proto.prepend  = fn (x) modules.list_fn.list_prepend(this, x);
+list.proto.extend   = fn (l) modules.list_fn.list_extend(this, l);
+list.proto.first    = fn () modules.list_fn.list_first(this);
+list.proto.last     = fn () modules.list_fn.list_last(this);
+list.proto.pop      = fn () modules.list_fn.list_poplast(this);
+list.proto.push     = fn (x) modules.list_fn.list_append(this, x);
+list.proto.shift    = fn () modules.list_fn.list_popfirst(this);
+list.proto.unshift  = fn (x) modules.list_fn.list_prepend(this, x);
+list.proto.to_tuple = fn () modules.list_fn.list_to_tuple(this);
+list.proto.iter     = fn () {
+  i = modules.list_fn.list_begin(this);
+  i.next = fn () modules.list_fn.list_next(this);
+  i.done = fn () modules.list_fn.list_done(this);
+  i.get  = fn () modules.list_fn.list_get(this);
+  return i;
+}
+rm(list.proto, \fn_data);
+list.proto(i) = {
+  if (0 <= i < static.len()) {
+    iterator = static.iter();
+    for (count in 0:i)
+      iterator.next();
+    return iterator.get();
+  }
+  else
+    error("(list) index out of bounds");
+}
+
+
+
+// (1.7) 'in' element test
+in_fn = fn (a, b) {
+  // checks whether a is in b
+  for (x in b)
+    if (a==x) return true;
+  return false;
+};
+
+// what is a pattern?
+//   pattern = new(type);     // in rha_init.c
+//   pattern.proto = new();   // in rha_init.c
+// a pattern constructor
+pattern(symbol:s) = {
+  p = instance(pattern);
+  p.patternsymbol = s;
+  return p;
+}
+pattern(type:x, symbol:s) = {
+  p = pattern(s);
+  p.patterntype = x;
+  return p;
+}
+pattern.proto.to_string() = {
+  if (this == pattern.proto)
+    return "<pattern.proto>";
+  s = to_string(this.patternsymbol);
+  if (has(this, \patterntype))
+    s = to_string(this.patterntype)+":"+s;
+  return s;
+}
+
+// what is iterable?
+iterable = new(type);
+iterable.check = fn (x) {
+  if (!has(x, \iter)) return false;
+  i = x.iter();
+  if (!has(i, \done)) return false;
+  if (!has(i, \next)) return false;
+  if (!has(i, \get)) return false;
+  return true;
+}
+
+// what is comparable?
+comparable = new(type);
+comparable.check = fn (x) {
+  // check here whether x can be argument of cmp
+  //  try {
+  //  cmp(x, x)
+  // }
+  //catch (xxx) {
+  //  return false;
+  /// }
+  //return true;
+  return true;
+}

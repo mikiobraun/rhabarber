@@ -1,4 +1,93 @@
+2007-08-30  Stefan Harmeling  <harmeling@gmail.com>
+
+	* eval.c:  rewritten the calling mechanism, which now doesn't
+	distinguish between pure rhabarber functions and C-function until
+	the very end of calling them.  Before the type-checking mechanism
+	is the same.  note that if a builtin function is happy with
+	OBJECT_T arg then no type check is triggered.  also for primitive
+	types a simplified faster type check is done (object.c:pcheck()).
+
+	* core.c (create_pattern): added
+	(create_fn_data_entry): adjusted for ellipsis
+
+	* test_run_test.rha: added a simple file which is used to test
+	'run' and 'load'.
+
+	* rha_lexer.l: added lexer support for ellipsis, i.e now should be
+	able to define in rhabarber:
+
+	f = fn (x, ...) for (y in args(1:args.len())) x+=y
+	f(1,2,3,4) == 10
+
+	* prelude.rha: the most important stuff for defining and
+	overloading function has been moved out of prelude.rha to
+	rha_init.c.  This makes editing prelude.rha much more robust and
+	we actually need only a single file for all stuff, which I think
+	is nice.  
+
+	* overloaded.rha, tuple.rha, list.rha, testing.rha, types.rha: all
+	removed and its content went to prelude.rha.
+
+	* rhabarber.c (main): added POSIX style command line flag.  type:
+
+	rhabarber -h    # for help
+	rhabarber -t    # to run all tests in 'test.rha'
+	rhabarber -d    # to avoid loading 'prelude.rha' at the beginning
+
+	for current options (not many right now...).
+
+	* tuple_fn.c (vtuple_make), object.c (vprint_fn), eval.c
+	(vcallslot): now the policy for C-function with arbitrary argument
+	lists has changed, e.g.
+
+	object_t vcallslot(object_t obj, symbol_t slotname, tuple_t args);
+	object_t callslot(object_t obj, symbol_t slotname, int_t narg, ...);
+
+	Now the 'v-'function doesn't have 'int_t narg' anymore, since that
+	information is also in 'tuple_t args'.
+	
+	* rha_config.d: since now 'builtin_t' is stored as 'fn_body' in
+	functions, there is no need that 'builtin_t' is a struct.  From
+	now on 'varag', 'signature', 'scope' is stored as slots.
+
+	* rha_config.pl (create_init_c): added some very basic stuff to
+	rha_init() like (in rhabarber-notation):
+
+	type = new();
+	type.proto = type;
+	type.check = fn (x) modules.object.check(this, x);
+	
+	bool.check = fn (x) modules.object.pcheck(this, x);
+	int.check = fn (x) modules.object.pcheck(this, x);
+	...
+
+	pattern = clone(type);
+	pattern.proto = new();
+	
+	assign = modules.object.assign;
+	extend = modules.object.extend;
+
+	* object.c (pcheck): added a fast type check for primtypes
+
 2007-08-29  Stefan Harmeling  <harmeling@gmail.com>
+
+	* eval.c (signature_matches): added support for variable argument
+	lists.  Consider 
+
+	f = fn (x, ...) for (y in args(1:args.len())) x+=y
+	f(1,2,3,4) == 10
+
+	or 
+
+	f = fn (...) { s = 0; for (y in args) s += y }
+	
+
+	* overloaded.rha: added direct access for lists, now you can do:
+
+	l = list().push(17).push(42);
+	assert(l(0) == 17);
+	assert(l(1) == 42);
+	l(2)   ->  error
 
 	* object.c (check): added check(), and kept equalequal_fn() and
 	notequal() since they are very basic and should not always be

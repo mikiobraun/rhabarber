@@ -72,6 +72,7 @@ $prules =~ s/\/\/[^\n]*//g;
 $type_h_types = $types;
 $type_h_ids = "";
 $type_h_prototypes = "";
+$type_h_typeobjects = "";
 $type_h_symbols = "";
 $type_h_macros = $macros;
 
@@ -155,26 +156,27 @@ foreach $module (@mods) {
 	    push(@args, $dots);
 	    # adjust $narg, take off for 'int_t narg' and one for '...'
 	    $narg = $narg - 2;
-	    # the b_* function needs additional code
-	    $init_c_functions .= "  int_t tlen = tuple_len(t);\n";
-	    $init_c_functions .= "  list_t l = list_new();\n";
-	    $init_c_functions .= "  for (int i=$narg+1; i<tlen; i++)\n";
-	    $init_c_functions .= "    list_append(l, tuple_get(t, i));\n";
+            # the b_* function needs additional code
+            $init_c_functions .= "  int_t tlen = tuple_len(t);\n";
+            $init_c_functions .= "  tuple_t args = tuple_new(tlen-$narg);\n";
+            $init_c_functions .= "  for (int i=$narg; i<tlen; i++)\n";
+            $init_c_functions .= "    tuple_set(args, i-$narg, tuple_get(t, i));\n";
 	    # instead of calling the function itself, we call the
 	    # function with the same name with a prepended 'v'
 	    $fncall_str = "v" . $fncall_str;
 	}
-	$i = 1;
+	$start = 0;
+	$i = $start;
 	foreach $item (@args) {
 	    if ($item eq "void") { die "'void' is not allowed as argument" }
-	    if ($i>1) { $fncall_str .= ", " }
+	    if ($i>$start) { $fncall_str .= ", " }
 	    $fnarg_str = "tuple_get(t, $i)";
 	    $ucitem = uc($item);
 	    if ($item eq "int_t") { $fnarg_str = "UNWRAP_INT($fnarg_str)" }
 	    elsif ($item eq "bool_t") { $fnarg_str = "UNWRAP_BOOL($fnarg_str)" }
 	    elsif ($item eq "symbol_t") { $fnarg_str = "UNWRAP_SYMBOL($fnarg_str)" }
 	    elsif ($item eq "real_t") { $fnarg_str = "UNWRAP_REAL($fnarg_str)" }
-	    elsif ($item eq "...") {$fnarg_str = "tlen-$narg-1, l" }
+	    elsif ($item eq "...") {$fnarg_str = "args" }
 	    elsif ($item ne "object_t") { $fnarg_str = "UNWRAP_PTR($ucitem, $fnarg_str)" }
 	    $fncall_str .= $fnarg_str;
 	    $i++;
@@ -273,24 +275,26 @@ sub create_prototypes {
     $type_h_prototypes .= "extern object_t pattern_proto;\n";
     $init_c_prototypes .= "object_t prototypes[$ntdefs];\n";
     $init_c_prototypes .= "object_t pattern_proto = 0;\n";
+    $type_h_typeobjects .= "extern object_t typeobjects[$ntdefs];\n";
+    $init_c_typeobjects .= "object_t typeobjects[$ntdefs];\n";
     $init_c_init_prototypes .= "  prototypes[0] = 0; // void prototype\n";
     $init_c_init_prototypes .= "  for (int i = 1; i < $ntdefs; i++) {\n";
     $init_c_init_prototypes .= "    prototypes[i] = create_pt(i);\n";
+    $init_c_init_prototypes .= "    typeobjects[i] = new();\n";
     $init_c_init_prototypes .= "  }\n";
+    $init_c_init_prototypes .= "  typeobjects[OBJECT_T] = 0;\n";
     $i = 1;
     foreach $item (@tdefs) {
 	$ucitem = uc($item);
 	$iitem = substr($item, 0, -2);
 	$uciitem = uc($iitem);
 	if ($item ne "object_t") {
-	    $type_h_typeobjects .= "extern object_t $iitem"."_obj;\n";
-	    $init_c_typeobjects .= "object_t $iitem"."_obj;\n";
 	    $init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
 	    # note that we omit OBJECT_T for the type slot
-	    $init_c_extend_prototypes .= "  assign(prototypes[$i], type_sym, $iitem"."_obj);\n";
+	    $init_c_extend_prototypes .= "  assign(prototypes[$i], type_sym, typeobjects[$i]);\n";
 	}
 	else{
-	    $init_c_extend_prototypes .= "  //assign(prototypes[$i], type_sym, $iitem"."_obj); // omitted on purpose\n";
+	    $init_c_extend_prototypes .= "  //assign(prototypes[$i], type_sym, typeobjects[$i]); // omitted on purpose\n";
 
 	}
 	$i = $i+1;
@@ -407,15 +411,15 @@ $init_c_ptypenames
 $init_c_functions
 
 // (6) init
-#define ADD_TYPE(ttt, TTT)                                 \\
-  ttt ## _obj = new();                                     \\
-  assign(root, ttt ## _sym, ttt ## _obj);                  \\
-  assign(ttt ## _obj, proto_sym, prototypes[TTT ## _T]);   \\
-  assign(ttt ## _obj, parent_sym, type_obj);               \\
-  assign(ttt ## _obj, name_sym, WRAP_PTR(STRING_T, #ttt));
+#define ADD_TYPE(ttt, TTT)                                            \\
+  assign(root, ttt ## _sym, typeobjects[TTT ## _T]);                  \\
+  assign(typeobjects[TTT ## _T], proto_sym, prototypes[TTT ## _T]);   \\
+  assign(typeobjects[TTT ## _T], parent_sym, type_obj);               \\
+  assign(typeobjects[TTT ## _T], name_sym, WRAP_PTR(STRING_T, #ttt)); \\
+  assign(typeobjects[TTT ## _T], check_sym, fn_fn(module, signature, fnbody));
 
-#define ADD_MODULE(mmm)                                  \\
-  module = new();                                        \\
+#define ADD_MODULE(mmm)                                               \\
+  module = new();                                                     \\
   assign(modules, mmm ## _sym, module);
 
 void add_function(object_t module, symbol_t s, 
@@ -432,7 +436,8 @@ void add_function(object_t module, symbol_t s,
 
 object_t rha_init()
 {
-  // (6.1) create prototypes (TYPES)
+  // (6.1) prototypes (TYPES)
+  pattern_proto = new();
 $init_c_init_prototypes
 
   // (6.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
@@ -442,24 +447,44 @@ $init_c_init_symbols
   assign(root, root_sym, root);
   assign(root, local_sym, root); // the outer-most local scope
 
-  // (6.3) create type objects (TYPES)
-  object_t type_obj = new();
-  assign(type_obj, symbol_new("check"), WRAP_PTR(STRING_T, "not implemented"));
-  assign(root, type_sym, type_obj);
-  object_t pattern_obj = clone(type_obj);
-  pattern_proto = new();
-  assign(pattern_obj, proto_sym, pattern_proto);
-  assign(root, symbol_new("pattern"), pattern_obj);
-$init_c_init_typeobjects
-
-  // (6.4) add type slots to the prototypes
-$init_c_extend_prototypes
-
-  // (6.5) add modules (MODULES, functions)
+  // (6.3) add modules (MODULES, functions)
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;
 $init_c_add_modules
+
+  // (6.4) create type objects (TYPES)
+  object_t type_obj = new();
+  assign(root, type_sym, type_obj);
+  object_t pattern_obj = clone(type_obj);
+  assign(root, symbol_new("pattern"), pattern_obj);
+  assign(pattern_obj, proto_sym, pattern_proto);
+  // add slot 'check' to all primitive objects and to 'type'
+  // in rhabarber this looks like this:
+  //     type.check = fn (x) modules.check(this, x);  // note 'check'
+  //     bool.check = fn (x) modules.pcheck(this, x); // note 'pcheck'
+  //     int.check = fn (x) modules.pcheck(this, x);
+  // however, in C we have to work harder
+  module = lookup(modules, symbol_new("object"));
+  symbol_t x_sym = symbol_new("x");
+  tuple_t signature = tuple_make(1, create_pattern(0, WRAP_SYMBOL(x_sym)));
+  tuple_t fnbody_t = tuple_make(3, WRAP_SYMBOL(symbol_new("check")),
+                                   WRAP_SYMBOL(this_sym),
+                                   WRAP_SYMBOL(symbol_new("x")));
+  object_t fnbody = WRAP_PTR(TUPLE_T, fnbody_t);
+  assign(type_obj, check_sym, fn_fn(module, signature, fnbody));
+  assign(type_obj, proto_sym, type_obj);
+  tuple_set(fnbody_t, 0, WRAP_SYMBOL(symbol_new("pcheck")));
+  fnbody = WRAP_PTR(TUPLE_T, fnbody_t);
+$init_c_init_typeobjects
+
+  // (6.5) add type slots to the prototypes
+$init_c_extend_prototypes
+
+  // (6.6) add essential stuff
+  module = lookup(modules, symbol_new("object"));
+  assign(root, symbol_new("assign"), lookup(module, symbol_new("assign")));
+  assign(root, symbol_new("extend"), lookup(module, symbol_new("extend")));
 
   return root;
 }

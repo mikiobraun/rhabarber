@@ -21,23 +21,19 @@
 #include "gtuple.h"
 #include "glist.h"
 struct rha_object;
-typedef int                 _rha_ symbol_t;
-typedef struct rha_object * _rha_ object_t;
-typedef int                 _rha_ int_t; 
-typedef bool                _rha_ bool_t;
-typedef struct gtuple*      _rha_ tuple_t;
-typedef struct _builtin_t_ { 
-  object_t (*code)(tuple_t);
-  bool_t varargs;           // does it have variable many arguments?
-  int_t narg;
-  int_t *argptypes;
-}*                          _rha_ builtin_t;
-typedef double              _rha_ real_t;
-typedef double *            _rha_ mat_t;
-typedef char *              _rha_ string_t;
-typedef void *              _rha_ address_t;
-typedef struct glist *      _rha_ list_t;
-typedef glist_iterator_t *  _rha_ list_it_t;
+typedef int                       _rha_ symbol_t;
+typedef struct rha_object *       _rha_ object_t;
+typedef int                       _rha_ int_t; 
+typedef bool                      _rha_ bool_t;
+typedef struct gtuple*            _rha_ tuple_t;
+typedef object_t (*_builtin_t)(tuple_t);
+typedef _builtin_t                _rha_ builtin_t;
+typedef double                    _rha_ real_t;
+typedef double *                  _rha_ mat_t;
+typedef char *                    _rha_ string_t;
+typedef void *                    _rha_ address_t;
+typedef struct glist *            _rha_ list_t;
+typedef glist_iterator_t *        _rha_ list_it_t;
 
 //SYMBOLS
 // the most basic symbols
@@ -70,6 +66,8 @@ extern symbol_t msg_sym;
 extern symbol_t ismacro_sym;
 extern symbol_t check_sym;
 extern symbol_t name_sym;
+extern symbol_t args_sym;
+extern symbol_t varargs_sym;
 
 // special slots in root
 extern symbol_t modules_sym;
@@ -102,16 +100,18 @@ extern symbol_t greater_fn_sym;
 extern symbol_t greaterequal_fn_sym;
 
 //MACROS
-#define UNWRAP_INT(o)    (unwrap_int(INT_T, o))
-#define UNWRAP_BOOL(o)   (unwrap_int(BOOL_T, o))
-#define UNWRAP_SYMBOL(o) (unwrap_int(SYMBOL_T, o))
-#define UNWRAP_REAL(o)   (unwrap_double(REAL_T, o))
+#define UNWRAP_INT(o)     (unwrap_int(INT_T, o))
+#define UNWRAP_BOOL(o)    (unwrap_int(BOOL_T, o))
+#define UNWRAP_SYMBOL(o)  (unwrap_int(SYMBOL_T, o))
+#define UNWRAP_REAL(o)    (unwrap_double(REAL_T, o))
+#define UNWRAP_BUILTIN(o) (unwrap_builtin(BUILTIN_T, o))
 #define UNWRAP_PTR(pt, o) (unwrap_ptr(pt, o))
 
-#define WRAP_INT(i)    (wrap_int(INT_T, i))
-#define WRAP_BOOL(b)   (wrap_int(BOOL_T, b))
-#define WRAP_SYMBOL(s) (wrap_int(SYMBOL_T, s))
-#define WRAP_REAL(d)   (wrap_double(REAL_T, d))
-#define WRAP_PTR(pt, p)    (wrap_ptr(pt, p))
+#define WRAP_INT(i)       (wrap_int(INT_T, i))
+#define WRAP_BOOL(b)      (wrap_int(BOOL_T, b))
+#define WRAP_SYMBOL(s)    (wrap_int(SYMBOL_T, s))
+#define WRAP_REAL(d)      (wrap_double(REAL_T, d))
+#define WRAP_BUILTIN(p)   (wrap_builtin(BUILTIN_T, p))
+#define WRAP_PTR(pt, p)   (wrap_ptr(pt, p))
 
 //PRULES

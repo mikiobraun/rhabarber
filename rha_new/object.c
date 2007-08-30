@@ -136,6 +136,14 @@ object_t wrap_double(int pt, double d)
   return o;
 }
 
+object_t wrap_builtin(int pt, builtin_t b)
+{
+  assert(pt==BUILTIN_T);
+  object_t o = new_pt(pt);
+  o->raw.b = b;
+  return o;
+}
+
 object_t wrap_ptr(int pt, void *p)
 {
   assert(pt!=BOOL_T);
@@ -181,6 +189,13 @@ double unwrap_double(int pt, object_t o)
   return o->raw.d;
 }
 
+builtin_t unwrap_builtin(int pt, object_t o)
+{
+  assert(pt==BUILTIN_T);
+  assert(pt==ptype(o));
+  return o->raw.b;
+}
+
 void *unwrap_ptr(int pt, object_t o)
 {
   assert(pt != OBJECT_T || ptype(o) == pt);
@@ -217,27 +232,31 @@ void *uw(int pt, object_t o, string_t msg)
  * Creating builtin functions
  *
  */
-object_t vcreate_function(object_t (*code)(tuple_t),
-			  bool_t varargs, int narg, va_list args)
+object_t vcreate_function(builtin_t code, bool_t varargs, int narg, va_list args)
 {
-  // create a struct containing all info about the builtin function
-  builtin_t f = ALLOC_SIZE(sizeof(struct _builtin_t_));
-  f->code = code;
-  f->varargs = varargs;
-  f->narg = narg;
-  f->argptypes = ALLOC_SIZE(narg*sizeof(enum ptypes));
-
-  // read out the argument types
-  for (int i=0; i<narg; i++)
-    f->argptypes[i] = va_arg(args, int_t);
+  // built a signature to be passed to 'create_fn_data_entry'
+  tuple_t signature = 0;
+  if (varargs) {
+    // reserve a spot for the ellipsis
+    signature = tuple_new(narg+1);
+    tuple_set(signature, narg, create_pattern(0, WRAP_SYMBOL(symbol_new("..."))));
+  }
+  else
+    signature = tuple_new(narg);
+  for (int i=0; i<narg; i++) {
+    int_t pt = va_arg(args, int_t);
+    // we assume that the typeobject for OBJECT_T is zero
+    // this allows us later to avoid testing at all!
+    assert(pt!=OBJECT_T || typeobjects[pt]==0);
+    tuple_set(signature, i, create_pattern(typeobjects[pt], 0));
+  }
 
   // create a new object and return it
-  return wrap_ptr(BUILTIN_T, f);
+  return fn_fn(0, signature, WRAP_BUILTIN(code));
 }
 
 
-object_t create_function(object_t (*code)(tuple_t),
-			 bool_t varargs, int narg, ...)
+object_t create_function(builtin_t code, bool_t varargs, int narg, ...)
 {
   // read out the argument types
   va_list args;
@@ -334,7 +353,12 @@ object_t extend(object_t this, symbol_t s, tuple_t signature,
   // if an ancestor of 'obj' is already a function, 'obj' will be a
   // new function
   list_t fn_data_l = 0;
-  if (location(obj, fn_data_sym) != obj) {
+  object_t ancestor = location(obj, fn_data_sym);  // the ancestor
+                                                   // defining a function
+  if (ancestor != obj) {
+    if (ancestor)
+      rha_warning("creating in %o a new function which will hide the "
+		  "function defined by its ancestor %o", obj, ancestor);
     fn_data_l = list_new();
   }
   else {
@@ -350,7 +374,7 @@ object_t extend(object_t this, symbol_t s, tuple_t signature,
 }
 
 
-void rmslot(object_t o, symbol_t s) 
+void rm(object_t o, symbol_t s) 
 {
   symtable_delete( o->table, s );
 }
@@ -448,15 +472,6 @@ string_t to_string(object_t o)
 	}
 	return string_concat(s, "]");
       }
-      case BUILTIN_T: {
-	builtin_t f = UNWRAP_PTR(BUILTIN_T, o);
-	s = sprint("<builtin (");
-	for(int i = 0; i < f->narg; i++) {
-	  if (i > 0) s = string_concat(s, ", ");
-	  s = string_concat(s, ptype_names[f->argptypes[i]]);
-	}
-	return string_concat(s, ")>");
-      }
       case ADDRESS_T: {
 	return sprint("%p", (void *) UNWRAP_PTR(ADDRESS_T, o));
       }
@@ -467,10 +482,10 @@ string_t to_string(object_t o)
   }
 }
 
-void vprint_fn(int_t narg, list_t args)
+void vprint_fn(tuple_t args)
 {
-  for (int i=0; i<narg; i++)
-    fprintf(stdout, "%s ", to_string(list_popfirst(args)));
+  for (int i=0; i<tuple_len(args); i++)
+    fprintf(stdout, "%s ", to_string(tuple_get(args, i)));
   fprintf(stdout, "\n");
 }
 
@@ -478,12 +493,12 @@ void print_fn(int_t narg, ...)
 {
   va_list ap;
   va_start(ap, narg);
-  list_t args = list_new();
+  tuple_t args = tuple_new(narg);
   for (int i = 0; i < narg; i++)
-    list_append(args, va_arg(ap, object_t));
+    tuple_set(args, i,va_arg(ap, object_t));
   va_end(ap);
   
-  vprint_fn(narg, args);
+  vprint_fn(args);
 }
 
 
@@ -567,14 +582,25 @@ object_t dec_copy(object_t o)
 }
 
 
+// 'check' does a type check by looking along the parent hierarchy
 bool_t check(object_t t, object_t o)
 {
   object_t proto = lookup(t, proto_sym);
   if (!proto)
-    rha_error("(check) object %o doesn't have a slot 'check'", t);
+    rha_error("(check) object %o doesn't have a slot 'proto'", t);
   do
     if (addr(o) == addr(proto))
       return true;
   while ((o = lookup(o, parent_sym)));
   return false;
+}
+
+// 'pcheck' does a primitive type check which is sufficient (and much
+// faster) for ptypes
+bool_t pcheck(object_t t, object_t o)
+{
+  object_t proto = lookup(t, proto_sym);
+  if (!proto)
+    rha_error("(check) object %o doesn't have a slot 'proto'", t);
+  return ptype(proto) == ptype(o);
 }

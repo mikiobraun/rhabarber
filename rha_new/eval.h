@@ -8,11 +8,11 @@
 extern       void     eval_init(object_t root, object_t module);
 extern _rha_ object_t eval(object_t, object_t);
 extern _rha_ object_t callslot(object_t obj, symbol_t slotname, int_t narg, ...);
-extern       object_t vcallslot(object_t obj, symbol_t slotname, int_t narg, list_t);
+extern       object_t vcallslot(object_t obj, symbol_t slotname, tuple_t args);
 
 // used by parse.c
 // using call_fun instead of "wraping, eval, unwrapping" saves some time
-extern object_t call_fun(object_t env, int_t tlen, tuple_t expr);
+extern object_t call_fun(object_t env, tuple_t expr);
 
 //////////////////
 extern object_t eval_currentlocation;
