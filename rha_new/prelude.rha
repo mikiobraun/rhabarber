@@ -227,14 +227,19 @@ int(real:x) = modules.int_fn.int_cast(x);  // try 'int(3.14)'
 
 
 // tuples
+tuple(int:len) = modules.tuple_fn.tuple_new(len);
+tuple(list:l) = modules.list_fn.list_to_tuple(l);
+plus_fn(tuple:a, tuple:b) = {
+  l = list();
+  for (x in a)
+    l.push(x);
+  for (x in b)
+    l.push(x);
+  return tuple(l);
+}
 tuple.proto.len = fn () modules.tuple_fn.tuple_len(this);
 tuple.proto.set = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
 tuple.proto.get = fn (i) modules.tuple_fn.tuple_get(this, i);
-// a simple constructor for tuples is defined by:
-tuple.new = modules.tuple_fn.tuple_new;
-// this allows stuff like: t = tuple.new(4);
-// however, let's try to be fancy and make 'tuple' a function itself:
-tuple(len) = modules.tuple_fn.tuple_new(len);
 tuple.proto.iter = fn () {
   i = new();
   i.counter = 0;
@@ -244,8 +249,11 @@ tuple.proto.iter = fn () {
   i.get = fn () this.tuple.get(this.counter);
   return i;
 }
-rm(tuple.proto, \fn_data);
+rm(tuple.proto, \fn_data); // to make sure we get a new implementation
+rm(tuple.proto, \extend);  // otherwise we can't overload
+// member access, e.g. t(0)
 tuple.proto(int:i) = static.get(i); // member access, e.g. t(0)
+// slices, e.g. t(1:3)
 tuple.proto(tuple:idx) = {
   t = tuple(idx.len());
   j = 0;
@@ -253,21 +261,33 @@ tuple.proto(tuple:idx) = {
     t.set(j++, static.get(i));
   return t;
 }
+// member replace, e.g. t(0)=17
+tuple.proto.extend = fn (signature, scope, rhs) {
+  if (signature.len() != 1)
+    error("(tuple) invalid tuple index");
+  index = signature(0).patternsymbol;
+  value = eval(scope, rhs);
+  this.set(index, value);
+  return value;
+}
 
 // lists
-list.new = modules.list_fn.list_new;
 list() = modules.list_fn.list_new();
+list(tuple:t) = modules.tuple_fn.tuple_to_list(t);
 list.proto.len      = fn () modules.list_fn.list_len(this);
 list.proto.copy     = fn () modules.list_fn.list_copy(this);
 list.proto.append   = fn (x) modules.list_fn.list_append(this, x);
 list.proto.prepend  = fn (x) modules.list_fn.list_prepend(this, x);
-list.proto.extend   = fn (l) modules.list_fn.list_extend(this, l);
+//  note that right now we have a name clash for 'extend' with the one
+//  that is lookup for stuff like:    list(17)
+//list.proto.extend   = fn (l) modules.list_fn.list_extend(this, l);
+plus_fn(list:a, list:b) = modules.list_fn.list_extend(a, b);
 list.proto.first    = fn () modules.list_fn.list_first(this);
 list.proto.last     = fn () modules.list_fn.list_last(this);
 list.proto.pop      = fn () modules.list_fn.list_poplast(this);
-list.proto.push     = fn (x) modules.list_fn.list_append(this, x);
+list.proto.push     = fn (...) for (x in args) modules.list_fn.list_append(this, x);
 list.proto.shift    = fn () modules.list_fn.list_popfirst(this);
-list.proto.unshift  = fn (x) modules.list_fn.list_prepend(this, x);
+list.proto.unshift  = fn (...) for (x in args) modules.list_fn.list_prepend(this, x);
 list.proto.to_tuple = fn () modules.list_fn.list_to_tuple(this);
 list.proto.iter     = fn () {
   i = modules.list_fn.list_begin(this);
@@ -277,7 +297,7 @@ list.proto.iter     = fn () {
   return i;
 }
 rm(list.proto, \fn_data);
-list.proto(i) = {
+list.proto(int:i) = {
   if (0 <= i < static.len()) {
     iterator = static.iter();
     for (count in 0:i)
@@ -290,7 +310,7 @@ list.proto(i) = {
 
 
 
-// (1.7) 'in' element test
+// 'in' element test
 in_fn = fn (a, b) {
   // checks whether a is in b
   for (x in b)

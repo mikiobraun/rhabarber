@@ -1,5 +1,20 @@
 2007-08-30  Stefan Harmeling  <harmeling@gmail.com>
 
+	* object.c (extend): added a case for objects that implement
+	'extend' themselves, like tuples.
+
+	* prelude.rha: more fun stuff!!!  Try:
+
+  	  l = list().push(17, 42, 66).unshift(10, 100);
+	  t = tuple(l);
+	  t(3) = "cool";
+	  t = t + t;
+	  l = list(t) + l;
+
+	Now we have
+
+	  l == [100, 10, 17, "cool", 66, 100, 10, 17, "cool", 66, 100, 10, 17, 42, 66]
+	
 	* eval.c:  rewritten the calling mechanism, which now doesn't
 	distinguish between pure rhabarber functions and C-function until
 	the very end of calling them.  Before the type-checking mechanism

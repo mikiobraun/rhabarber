@@ -349,7 +349,13 @@ object_t extend(object_t this, symbol_t s, tuple_t signature,
     return assign(this, s, fn_fn(env, signature, rhs));
   // else extend 'obj'
 
-  // (2) is 'obj' itself already a function?
+  // (2) does 'obj' have its own 'extend' mechanism (like tuples)
+  if (has(obj, extend_sym)) {
+    // ignore the rest of this function and call it!
+    return callslot(obj, extend_sym, 3, WRAP_PTR(TUPLE_T, signature), env, rhs);
+  }
+
+  // (3) is 'obj' itself already a function?
   // if an ancestor of 'obj' is already a function, 'obj' will be a
   // new function
   list_t fn_data_l = 0;
