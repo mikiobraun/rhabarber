@@ -147,12 +147,6 @@ object_t if_fn(object_t this, bool_t cond, object_t then_code, object_t else_cod
 
 void return_fn(object_t retval)
 {
-  // note that 'return_fn' also added a FUNCTION_FRAME to the frame
-  // stack, which we have to ignore in the following 'frame_jump',
-  // thus
-  frame_tos--;
-
-  // throw_fn does not return!
   frame_jump(FUNCTION_FRAME, retval);
   // never reaches this point
 }
@@ -160,12 +154,6 @@ void return_fn(object_t retval)
 
 void deliver_fn(object_t retval)
 {
-  // note that 'deliver_fn' also added a FUNCTION_FRAME to the frame
-  // stack, which we have to ignore in the following 'frame_jump',
-  // thus
-  frame_tos--;
-
-  // throw_fn does not return!
   frame_jump(BLOCK_FRAME, retval);
   // never reaches this point
 }
@@ -173,12 +161,6 @@ void deliver_fn(object_t retval)
 
 void break_fn(object_t retval)
 {
-  // note that 'break_fn' also added a FUNCTION_FRAME to the frame
-  // stack, which we have to ignore in the following 'frame_jump',
-  // thus
-  frame_tos--;
-
-  // throw_fn does not return!
   frame_jump(LOOP_FRAME, retval);
   // never reaches this point
 }

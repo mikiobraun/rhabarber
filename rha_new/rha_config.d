@@ -68,6 +68,7 @@ extern symbol_t check_sym;
 extern symbol_t name_sym;
 extern symbol_t args_sym;
 extern symbol_t varargs_sym;
+extern symbol_t no_frame_sym;
 
 // special slots in root
 extern symbol_t modules_sym;

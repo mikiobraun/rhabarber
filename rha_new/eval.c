@@ -24,10 +24,11 @@ void eval_init(object_t root, object_t module)
 // forward declarations
 static object_t eval_sequence(object_t env, tuple_t t);
 static object_t eval_args_and_call_fun(object_t env, tuple_t expr);
-static object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values);
+static object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values, 
+					    bool_t no_frame);
 static bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values);
 static object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
-			    tuple_t signature, tuple_t values);
+			    tuple_t signature, tuple_t values, bool_t no_frame);
 
 /*************************************************************
  *
@@ -38,14 +39,31 @@ static object_t call_matching_impl(object_t local, object_t scope, object_t fnbo
 // Frames can be opened by functions, loops.  The keyword
 // 'return' finishes the most recent function and returns its
 // argument, 'break' the most recent loop
+//
+// Note that these stacks must be only changed via the macros defined
+// in eval.h.
 
 jmp_buf frame_stack[FRAME_MAX_NESTING];
 object_t frame_value[FRAME_MAX_NESTING];
 int frame_type[FRAME_MAX_NESTING];
 int frame_tos = -1;
+char *frame_names[] = { "function", "loop", "block", "try" };
 
-// Note, that these stacks must be only changed via the macros defined
-// in eval.h.
+void _print_frames()
+{
+  fprintf(stderr, "FRAME[");
+  for(int i = 0; i <= frame_tos; i++) {
+    fprintf(stderr, frame_names[frame_type[i]]);
+    if (i != frame_tos)
+      fprintf(stderr, ", ");
+  }
+  fprintf(stderr, "]\n");
+}
+
+//////////////////////////////////////////////////////////////////////
+//
+// The EVALuator
+//
 
 object_t eval(object_t env, object_t expr)
 {
@@ -179,6 +197,8 @@ object_t call_fun(object_t this, tuple_t values)
     rha_error("(eval) %o can't be called, since it "
 	      "has a faulty 'fn_data' slot", fn);
 
+  bool_t no_frame = has(fn_data, no_frame_sym);
+
   // construct the inner scope
   object_t local = new();
   assign(local, local_sym, local);   // the scope local to the function
@@ -187,7 +207,7 @@ object_t call_fun(object_t this, tuple_t values)
   assign(local, args_sym, WRAP_PTR(TUPLE_T, values)); // all passed arguments
 
   // find and call the matching implementation
-  return find_and_call_matching_impl(local, fn_data_l, values);
+  return find_and_call_matching_impl(local, fn_data_l, values, no_frame);
 }
 
 
@@ -195,7 +215,8 @@ object_t call_fun(object_t this, tuple_t values)
 //
 // calls: signature_matches, call_matching_impl
 static 
-object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values)
+object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values,
+				     bool_t no_frame)
 {
   //debug("find_and_call_matching_impl(%o, %o, %o)\n", local, WRAP_PTR(LIST_T, fn_data_l), WRAP_PTR(TUPLE_T, values));
   string_t msg = "(eval) can't call %o, since it has a faulty entry in 'fn_data'";
@@ -221,7 +242,7 @@ object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t v
       // can thus also be 'void'
       if (!scope && ptype(fnbody)!=BUILTIN_T)
 	rha_error("(eval) can't find defining scope");
-      return call_matching_impl(local, scope, fnbody, signature, values);
+      return call_matching_impl(local, scope, fnbody, signature, values, no_frame);
     }
   }
   // we did not find anything matching
@@ -269,16 +290,20 @@ bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
 // call the found matching implementation
 static 
 object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
-			    tuple_t signature, tuple_t values)
+			    tuple_t signature, tuple_t values, bool_t no_frame)
 {
   // call the function
   object_t res = 0;
   if (ptype(fnbody) == BUILTIN_T) {
     // (1) function with C code
     builtin_t f = UNWRAP_BUILTIN(fnbody);
-//    begin_frame(FUNCTION_FRAME)
+    if(no_frame)
       res = f(values);
-//    end_frame(res);
+    else {
+      begin_frame(FUNCTION_FRAME)
+	res = f(values);
+      end_frame(res);
+    }
   }
   else {
     // (2) function with rhabarber code
@@ -297,9 +322,13 @@ object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
       //debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
       assign(local, s, tuple_get(values, i));
     }
-    begin_frame(FUNCTION_FRAME)
+    if(no_frame)
       res = eval(local, fnbody);
-    end_frame(res);
+    else {
+      begin_frame(FUNCTION_FRAME)
+	res = eval(local, fnbody);
+      end_frame(res);
+    }
   }
   return res;
 }

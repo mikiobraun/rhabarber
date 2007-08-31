@@ -1,5 +1,13 @@
 2007-08-31  Mikio Braun  <mikiobraun@gmail.com>
 
+	* eval.c (call_fun, call_matching_impl): construct of
+	FUNCTION_FRAME now depends on whether fn_data.no_frame exists or
+	not. This should allow to 'break' or 'return' from 'if'
+	expressions.
+
+	* core.c (deliver_fn, return_fn, throw_fn, break_fn): removed
+	'frame_tos--'. This is now handled by defining 'fn_data.no_frame'
+
 	* eval.c, eval.h: cleaned up both files. Removed obsolete
 	functions, declared all internal functions as "static", reordered
 	functions to match top-down call order.

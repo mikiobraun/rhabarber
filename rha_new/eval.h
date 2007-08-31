@@ -19,10 +19,16 @@ extern object_t call_fun(object_t env, tuple_t expr);
 extern jmp_buf frame_stack[FRAME_MAX_NESTING];  // the stacked frames
 extern object_t frame_value[FRAME_MAX_NESTING]; // the value to return
 extern int frame_type[FRAME_MAX_NESTING];       // the type of the frame
-#define FUNCTION_FRAME 0
-#define LOOP_FRAME     1
-#define BLOCK_FRAME    2
-#define TRY_FRAME      3
+enum FRAME_TYPES {
+  FUNCTION_FRAME = 0,
+  LOOP_FRAME = 1,
+  BLOCK_FRAME = 2,
+  TRY_FRAME = 3
+};
+
+extern char *frame_names[];
+extern void _print_frames();
+
 extern int frame_tos;                           // frame counter
 // Note, that the frames would be better stored in a dynamic data
 // structure, because recursion can easily reach the maximum nesting.
@@ -51,9 +57,14 @@ extern int frame_tos;                           // frame counter
 #include "excp.h"
 
 #define frame_jump(_type, _expr) do {					\
-    while ( (frame_tos >= 0)						\
-            && ((_type) != frame_type[frame_tos]) )			\
-      frame_tos--;							\
+    if ((_type) == TRY_FRAME)                                           \
+      while ( (frame_tos >= 0)                                          \
+              && ((_type) != frame_type[frame_tos]) )                   \
+        frame_tos--;                                                    \
+    while ( (frame_tos >= 0)                                            \
+            && ((_type) != frame_type[frame_tos])                       \
+            && (frame_type[frame_tos] != FUNCTION_FRAME) )              \
+      frame_tos--;                                                      \
     if ((frame_tos < 0) || ((_type) != frame_type[frame_tos])) {	\
       frame_tos = 0;							\
       if ((_type == FUNCTION_FRAME))					\
@@ -73,7 +84,7 @@ extern int frame_tos;                           // frame counter
       frame_value[frame_tos] = (_expr);					\
       longjmp(frame_stack[frame_tos], 1);				\
     }									\
-  } while (0);
+  } while (0)
 
 
 // WARNING: don't call 'return' inside 'try-catch' blocks!!!
