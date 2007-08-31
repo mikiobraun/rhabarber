@@ -14,12 +14,18 @@
 //
 //   pattern = clone(type);
 //   pattern.proto = new();
+//   pattern(type:t, symbol:s) = {
+//     p = new(pattern);
+//     p.patterntype = t;
+//     p.patternsymbol = s;
+//     return p;
+//   }
 //
 //   assign = modules.object.assign;
 //   extend = modules.object.extend;
 
 
-// (1.2) let's get more stuff from the object module
+// (1.2) more essential stuff
 new      = modules.object.new;
 // let's overloaded that builtin function!!!
 new(type:t) = {
@@ -175,8 +181,6 @@ colon_fn = fn (a, b) {
 }
 
 
-// overloaded functions
-
 // == and != are special
 // the problem with overloading here is that type checking might use
 // certain function which are overloaded themselves, which needs to be
@@ -192,6 +196,32 @@ dec_copy        = modules.object.dec_copy;
 to_string       = modules.object.to_string;
 
 
+// patterns
+pattern.proto.string = fn () this.patterntype + ":" + this.patternsymbol;
+
+// types
+less_fn(type:x, type:y) = x:y;
+or_fn(type:t1, type:t2) = {
+  t = new(type);
+  t.check = fn (x) t1:x || t2:x;
+  return t;
+}
+plus_fn(type:t1, type:t2) = {
+  // (t1+t2):x  == t1:x && t2:x
+  t = new(type);
+  t.check = fn (x) t1:x && t2:x;
+  return t;
+}
+times_fn(type:t1, type:t2) = { 
+  // int*real*string   (tuples of types)
+  t = new(type); 
+  t.check = fn (x) tuple.check(x) 
+                   && x.len() == 2 
+                   && t1:x(0) && t2:x(1); 
+  return t;
+}
+
+
 // bools
 not_fn(bool:x)         = modules.bool_fn.bool_not(x);
 and_fn(bool:x, bool:y) = modules.bool_fn.bool_and(x, y);
@@ -200,27 +230,10 @@ or_fn(bool:x, bool:y)  = modules.bool_fn.bool_or(x, y);
 
 
 // strings
+//string((bool||int||real||symbol||tuple||list||address):x) = modules.object.to_string(x);
 plus_fn(string:x, string:y) = modules.string_fn.string_concat(x, y);
 string.proto.len = fn () modules.string_fn.string_len(this);
 //equalequal_fn(string:x, string:y) = modules.string_fn.string_equalequal(x, y);
-
-
-// types
-less_fn(type:x, type:y) = x:y;
-//plus_fn(type:t1, type:t2) = {
-//  // (t1+t2):x  == t1:x && t2:x
-//  t = neww(type);
-//  t.check = fn (x) t1:x && t2:x;
-//  return t;
-//}
-times_fn(type:t1, type:t2) = { 
-  // int*real*string   (tuples of types)
-  t = neww(type); 
-  t.check = fn (x) tuple.check(x) 
-                   && x.len() == 2 
-                   && t1:x(0) && t2:x(1); 
-  return t;
-}
 
 
 //----------------------------------------------------------------------

@@ -335,29 +335,33 @@ object_t resolve_pattern(object_t env, list_t source)
   object_t thesymbol = 0;
   object_t thetype = 0;
   if (list_len(source) > 0) {
-    // there is a type
-    // in order to check it we must evaluate it
-    thetype = eval(env, resolve(env, lhs));
-    if (!has(thetype, symbol_new("check")))
-      rha_error("the lhs of colon (%o) must implement 'check'", thetype);
+    // there is a type (we evaluate it later in 'eval')
+    thetype = resolve(env, lhs);
     thesymbol = resolve(env, source);
   }
   else
     thesymbol = resolve(env, lhs);
 
-  return create_pattern(thetype, thesymbol);
+  if (thetype)
+    return WRAP_PTR(TUPLE_T, tuple_make(2, quoted(thesymbol), thetype));
+  else
+    return WRAP_PTR(TUPLE_T, tuple_make(1, quoted(thesymbol)));
 }
 
 object_t resolve_patterns(object_t env, list_t source)
 {
-  list_t sink = list_new();
+  tuple_t t = tuple_new(list_len(source));
   object_t entry = 0;
+  int i = 0;
   while ((entry = list_popfirst(source))) {
     // resolve the entries as patterns
     assert(entry && ptype(entry)==LIST_T);
-    list_append(sink, resolve_pattern(env, UNWRAP_PTR(LIST_T, entry)));
+    tuple_set(t, i++, resolve_pattern(env, UNWRAP_PTR(LIST_T, entry)));
   }
-  return WRAP_PTR(TUPLE_T, list_to_tuple(sink));
+  return WRAP_PTR(TUPLE_T, tuple_make(4, WRAP_SYMBOL(symbol_new("map_fn")),
+				      WRAP_SYMBOL(local_sym),
+				      WRAP_SYMBOL(symbol_new("pattern")),
+				      quoted(WRAP_PTR(TUPLE_T, t))));
 }
 
 

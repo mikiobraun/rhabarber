@@ -505,7 +505,7 @@ tuple_t fn_pr(object_t env, list_t parsetree)
   object_t obj = tuple_get(pre_t, 1);
   assert(obj && ptype(obj)==LIST_T);  // otherwise bug in resolve_freefix*
   list_t obj_l = UNWRAP_PTR(LIST_T, obj);
-  tuple_set(t, 2, quoted(resolve_patterns(env, obj_l)));
+  tuple_set(t, 2, resolve_patterns(env, obj_l));
   tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   //debug("(fn_pr) %o\n", WRAP_PTR(TUPLE_T, t));
   return t;
@@ -971,7 +971,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
     tuple_set(t, 0, WRAP_SYMBOL(extend_sym));
     tuple_set(t, 1, scope);      // later on calling scope
     tuple_set(t, 2, symb);
-    tuple_set(t, 3, quoted(signature));
+    tuple_set(t, 3, signature);
     tuple_set(t, 4, WRAP_SYMBOL(local_sym));
     tuple_set(t, 5, quoted(rhs));
   }

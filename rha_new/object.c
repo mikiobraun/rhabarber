@@ -232,14 +232,14 @@ void *uw(int pt, object_t o, string_t msg)
  * Creating builtin functions
  *
  */
-object_t vcreate_function(builtin_t code, bool_t varargs, int narg, va_list args)
+object_t vcreate_builtin(builtin_t code, bool_t varargs, int narg, va_list args)
 {
   // built a signature to be passed to 'create_fn_data_entry'
   tuple_t signature = 0;
   if (varargs) {
     // reserve a spot for the ellipsis
     signature = tuple_new(narg+1);
-    tuple_set(signature, narg, create_pattern(0, WRAP_SYMBOL(symbol_new("..."))));
+    tuple_set(signature, narg, create_pattern(1, WRAP_SYMBOL(symbol_new("..."))));
   }
   else
     signature = tuple_new(narg);
@@ -248,7 +248,9 @@ object_t vcreate_function(builtin_t code, bool_t varargs, int narg, va_list args
     // we assume that the typeobject for OBJECT_T is zero
     // this allows us later to avoid testing at all!
     assert(pt!=OBJECT_T || typeobjects[pt]==0);
-    tuple_set(signature, i, create_pattern(typeobjects[pt], 0));
+    // note that 'thesymbol' of the pattern is void
+    // note that for pt==OBJECT_T also 'thetype' is void
+    tuple_set(signature, i, create_pattern(2, 0, typeobjects[pt]));
   }
 
   // create a new object and return it
@@ -256,12 +258,12 @@ object_t vcreate_function(builtin_t code, bool_t varargs, int narg, va_list args
 }
 
 
-object_t create_function(builtin_t code, bool_t varargs, int narg, ...)
+object_t create_builtin(builtin_t code, bool_t varargs, int narg, ...)
 {
   // read out the argument types
   va_list args;
   va_start(args, narg);
-  object_t f = vcreate_function(code, varargs, narg, args);
+  object_t f = vcreate_builtin(code, varargs, narg, args);
   va_end(args);
 
   return f;
@@ -441,7 +443,7 @@ string_t to_string(object_t o)
     }
     case SYMBOL_T: {
       symbol_t s = UNWRAP_SYMBOL(o);
-      return sprint("\\%s", symbol_name(s));
+      return sprint("%s", symbol_name(s));
     }
     case REAL_T: {
       return sprint("%f", UNWRAP_REAL(o));
@@ -455,7 +457,7 @@ string_t to_string(object_t o)
       switch (pt) {
       case STRING_T: {
 	s = UNWRAP_PTR(STRING_T, o);
-	return sprint("\"%s\"", s); 
+	return sprint("%s", s); 
       }
       case TUPLE_T: {
 	tuple_t t = UNWRAP_PTR(TUPLE_T, o);

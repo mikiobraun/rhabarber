@@ -45,10 +45,10 @@ extern       void       object_init(object_t root, object_t module);
 extern _rha_ object_t   new();
 extern       object_t   create_pt(int_t pt);
 extern       object_t   new_pt(int_t pt);
-extern       object_t   create_function(object_t (*code)(tuple_t),
-					bool_t varargs, int narg, ...);
-extern       object_t   vcreate_function(object_t (*code)(tuple_t),
-					 bool_t varargs, int narg, va_list);
+extern       object_t   create_builtin(object_t (*code)(tuple_t),
+				       bool_t varargs, int narg, ...);
+extern       object_t   vcreate_builtin(object_t (*code)(tuple_t),
+					bool_t varargs, int narg, va_list);
 
 extern       object_t   copy_pt(object_t o);
 extern _rha_ address_t  addr(object_t o);
@@ -58,7 +58,7 @@ extern _rha_ string_t   ptypename(object_t o);
 extern       void       setptype(object_t, int_t);
 
 extern _rha_ void       print_fn(int_t narg, ...);
-extern       void       vprint_fn(tuple_t args);
+extern _rha_ void       vprint_fn(tuple_t args);
 extern _rha_ string_t   to_string(object_t);
 
 extern _rha_ void       ls(object_t);

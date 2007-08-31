@@ -6,13 +6,17 @@
 
 extern _rha_ object_t  proxy_fn(object_t this, symbol_t s);
 
-object_t create_pattern(object_t thetype, object_t thesymbol);
+extern _rha_ object_t  create_function(object_t fn_data);
+
+extern _rha_ object_t  create_pattern(int_t narg, ...);
+extern _rha_ object_t  vcreate_pattern(tuple_t args);
 extern _rha_ object_t  create_fn_data(object_t env, tuple_t argnames, 
 				      object_t fnbody);
 extern _rha_ object_t  create_fn_data_entry(object_t env, tuple_t argnames, 
 					    object_t fnbody);
 extern _rha_ object_t  fn_fn(object_t env, tuple_t patterns, object_t fnbody);
 extern _rha_ object_t  macro_fn(tuple_t argnames, object_t fnbody);
+
 extern _rha_ object_t  if_fn(object_t this, bool_t cond, 
 			     object_t then_code, object_t else_code);
 extern _rha_ void      return_fn(object_t);
@@ -33,5 +37,8 @@ extern _rha_ void      tic_fn();
 extern _rha_ real_t    toc_fn();
 extern _rha_ void      exit_fn(int_t);
 extern _rha_ object_t  run_fn(object_t root, string_t fname);
+
+extern _rha_ tuple_t   map_fn(object_t this, object_t f, tuple_t t);
+
 
 #endif

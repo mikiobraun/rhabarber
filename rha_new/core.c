@@ -47,9 +47,40 @@ object_t proxy_fn(object_t this, symbol_t s)
   return obj;
 }
 
-object_t create_pattern(object_t thetype, object_t thesymbol)
+object_t create_pattern(int_t narg, ...)
 {
-  // note that a pattern could be the empty object
+  va_list ap;
+  va_start(ap, narg);
+  tuple_t args = tuple_new(narg);
+  for (int i = 0; i < narg; i++)
+    tuple_set(args, i,va_arg(ap, object_t));
+  va_end(ap);
+  return vcreate_pattern(args);
+}
+
+object_t vcreate_pattern(tuple_t args)
+{
+  object_t thesymbol = 0;
+  object_t thetype = 0;
+  int narg = tuple_len(args);
+  if (narg > 0) {
+    // check the type of the first argument by hand
+    thesymbol = tuple_get(args, 0);
+    if (thesymbol && ptype(thesymbol) != SYMBOL_T)
+      rha_error("(pattern) the symbol is not of type 'symbol'");
+  }
+  if (narg > 1) {
+    thetype = tuple_get(args, 1);
+    // do type checking here by hand!
+    if (thetype && !has(thetype, check_sym))
+      rha_error("(pattern) the type does not have slot 'check'");
+  }
+  if (narg > 2) {
+    rha_error("(pattern) can't create pattern");
+  }
+  // note that both 'thetype' and 'thesymbol' could be void.  this
+  // happens for builtin function that only have OBJECT_T arguments
+  // then the resulting 'pattern' is the empty object
   object_t pattern = new();
   assign(pattern, parent_sym, pattern_proto);
   if (thetype)
@@ -58,6 +89,7 @@ object_t create_pattern(object_t thetype, object_t thesymbol)
     assign(pattern, symbol_new("patternsymbol"), thesymbol);
   return pattern;
 }
+
 
 object_t create_fn_data_entry(object_t env, tuple_t signature, object_t fnbody)
 {
@@ -104,12 +136,17 @@ object_t create_fn_data(object_t env, tuple_t signature, object_t fnbody)
   return WRAP_PTR(LIST_T, fn_data_l);
 }
 
-object_t fn_fn(object_t env, tuple_t signature, object_t fnbody)
+object_t create_function(object_t fn_data)
 {
   // defines a new function
   object_t f = new();
-  assign(f, fn_data_sym, create_fn_data(env, signature, fnbody));
+  assign(f, fn_data_sym, fn_data);
   return f;
+}
+
+object_t fn_fn(object_t env, tuple_t signature, object_t fnbody)
+{
+  return create_function(create_fn_data(env, signature, fnbody));
 }
 
 object_t macro_fn(tuple_t argnames, object_t fnbody)
@@ -133,6 +170,30 @@ object_t prule_fn(object_t this, tuple_t argnames, object_t fnbody, real_t prior
   object_t p = fn_fn(this, argnames, fnbody);
   assign(p, priority_sym, WRAP_REAL(priority));
   return p;
+}
+
+tuple_t map_fn(object_t this, object_t f, tuple_t t)
+{
+  // applies function f to all entries in the tuple
+  // each entry is assumed to be a single entry itself or a tuple
+  int tlen = tuple_len(t);
+  tuple_t sink_t = tuple_new(tlen);
+  tuple_t call_t = 0;
+  for (int i = 0; i < tlen; i++) {
+    object_t entry = tuple_get(t, i);
+    if (ptype(entry) == TUPLE_T) {
+      list_t l = tuple_to_list(UNWRAP_PTR(TUPLE_T, entry));
+      list_prepend(l, quoted(f));
+      call_t = list_to_tuple(l);
+    }
+    else {
+      call_t = tuple_new(2);
+      tuple_set(call_t, 0, quoted(f));
+      tuple_set(call_t, 1, entry);
+    }
+    tuple_set(sink_t, i, eval(this, WRAP_PTR(TUPLE_T, call_t)));
+  }
+  return sink_t;
 }
 
 object_t if_fn(object_t this, bool_t cond, object_t then_code, object_t else_code)

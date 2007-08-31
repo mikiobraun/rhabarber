@@ -87,7 +87,9 @@ $init_c_init_prototypes = "";
 $init_c_extend_prototypes = "";
 $init_c_init_symbols = "";
 $init_c_init_typeobjects = "";
+$init_c_add_pchecks = "";
 $init_c_add_modules = "";
+$init_c_add_functions = "";
 
 
 ##############################
@@ -99,6 +101,7 @@ $init_c_add_modules = "";
 foreach $module (@mods) {
     # add some stuff
     $init_c_add_modules .= "  ADD_MODULE($module);\n";
+    $init_c_add_functions .= "  module = lookup(modules, $module"."_sym);\n";
     # also add a symbol
     push(@symbs, $module);
 
@@ -196,39 +199,39 @@ foreach $module (@mods) {
 	$init_c_functions .= "}\n";
 
 	# add code to add functions
-	$init_c_add_modules .= "  add_function(module, $fnname"."_sym";
-	$init_c_add_modules .= ", b_$fnname";
+	$init_c_add_functions .= "  add_function(module, $fnname"."_sym";
+	$init_c_add_functions .= ", b_$fnname";
 	if ($ellipses) {
 	    # note that negative 'narg' will mean, at least 'narg' arguments
-	    $init_c_add_modules .= ", true";
+	    $init_c_add_functions .= ", true";
 	}
 	else {
-	    $init_c_add_modules .= ", false";
+	    $init_c_add_functions .= ", false";
 	}
-	$init_c_add_modules .= ", $narg";
+	$init_c_add_functions .= ", $narg";
 	foreach $item (@args) {
 	    if ($item ne "...") {
 		$ucitem = uc($item);
-		$init_c_add_modules .= ", $ucitem";
+		$init_c_add_functions .= ", $ucitem";
 	    }
 	}
-	$init_c_add_modules .= ");\n";
+	$init_c_add_functions .= ");\n";
     }
 
     # check for $module_init function
     if ($input =~ /$module\_init/) {
 	if ($input =~ /void\s+$module\_init\(object_t\s*(\s$id\s*)?,\s*object_t\s*(\s$id\s*)?\)/) {
 	    print $module, "_init(object_t, object_t) found\n" if $debug;
-	    $init_c_add_modules .= "  $module"."_init(root, module);\n";
+	    $init_c_add_functions .= "  $module"."_init(root, module);\n";
 	}
 	else {
 	    die "type error, correct signature: 'void $module"."_init(object_t, object_t)'";
 	}
     }
-    $init_c_add_modules .= "\n";
+    $init_c_add_functions .= "\n";
 }
-chop($init_c_add_modules);
-chop($init_c_add_modules);
+chop($init_c_add_functions);
+chop($init_c_add_functions);
 
 # after creating a list of symbols, now the easy stuff
 create_ids();
@@ -290,6 +293,7 @@ sub create_prototypes {
 	$uciitem = uc($iitem);
 	if ($item ne "object_t") {
 	    $init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
+	    $init_c_add_pchecks .= "  assign(typeobjects[$ucitem], check_sym, pcheck_f);\n";
 	    # note that we omit OBJECT_T for the type slot
 	    $init_c_extend_prototypes .= "  assign(prototypes[$i], type_sym, typeobjects[$i]);\n";
 	}
@@ -415,8 +419,7 @@ $init_c_functions
   assign(root, ttt ## _sym, typeobjects[TTT ## _T]);                  \\
   assign(typeobjects[TTT ## _T], proto_sym, prototypes[TTT ## _T]);   \\
   assign(typeobjects[TTT ## _T], parent_sym, type_obj);               \\
-  assign(typeobjects[TTT ## _T], name_sym, WRAP_PTR(STRING_T, #ttt)); \\
-  assign(typeobjects[TTT ## _T], check_sym, fn_fn(module, signature, fnbody));
+  assign(typeobjects[TTT ## _T], name_sym, WRAP_PTR(STRING_T, #ttt));
 
 #define ADD_MODULE(mmm)                                               \\
   module = new();                                                     \\
@@ -428,10 +431,51 @@ void add_function(object_t module, symbol_t s,
 {
   va_list args;
   va_start(args, narg);
-  object_t f = vcreate_function(code, varargs, narg, args);
+  object_t f = vcreate_builtin(code, varargs, narg, args);
   va_end(args);
 
   assign(module, s, f);
+}
+
+object_t create_special_fn_data(object_t module, bool_t method, 
+                                symbol_t fn_sym, int_t narg, ...)
+{
+  // "..." must be pairs of 'object_t' and 'symbol_t'
+  tuple_t signature = 0;
+  list_t fnbody_l = 0;
+  if (narg < 0) {
+    // rhabarber function with variable argument list
+    signature= tuple_new(1);
+    tuple_set(signature, 0, create_pattern(1, WRAP_SYMBOL(symbol_new("..."))));
+    fnbody_l = list_new();
+    list_append(fnbody_l, WRAP_SYMBOL(symbol_new("args")));
+  }
+  else {
+    va_list ap;
+    va_start(ap, narg);
+    signature = tuple_new(narg);
+    fnbody_l = list_new();
+    for (int i = 0; i < narg; i++) {
+      object_t thetype = va_arg(ap, object_t);
+      object_t thesymbol = WRAP_SYMBOL(va_arg(ap, symbol_t));
+      assert(thesymbol);
+      if (thetype) {
+	tuple_set(signature, i, create_pattern(2, thesymbol, thetype));
+      }
+      else {
+	tuple_set(signature, i, create_pattern(1, thesymbol));
+      }
+      list_append(fnbody_l, thesymbol);
+    }
+    va_end(ap);
+    // are we creating a method?
+    if (method) {
+      list_prepend(fnbody_l, WRAP_SYMBOL(this_sym));
+    }
+  }
+  list_prepend(fnbody_l, WRAP_SYMBOL(fn_sym));
+  return create_fn_data(module, signature, 
+			WRAP_PTR(TUPLE_T, list_to_tuple(fnbody_l)));
 }
 
 object_t rha_init()
@@ -447,44 +491,53 @@ $init_c_init_symbols
   assign(root, root_sym, root);
   assign(root, local_sym, root); // the outer-most local scope
 
-  // (6.3) add modules (MODULES, functions)
+  // (6.2) add modules
   object_t modules = new();
   assign(root, modules_sym, modules);
   object_t module = 0;
 $init_c_add_modules
 
-  // (6.4) create type objects (TYPES)
+  // (6.3) create type objects (TYPES)
+  object_t fn_data = 0;
   object_t type_obj = new();
   assign(root, type_sym, type_obj);
+  assign(type_obj, proto_sym, type_obj);
   object_t pattern_obj = clone(type_obj);
   assign(root, symbol_new("pattern"), pattern_obj);
   assign(pattern_obj, proto_sym, pattern_proto);
-  // add slot 'check' to all primitive objects and to 'type'
-  // in rhabarber this looks like this:
+$init_c_init_typeobjects
+  // in rhabarber the following looks like this:
   //     type.check = fn (x) modules.check(this, x);  // note 'check'
   //     bool.check = fn (x) modules.pcheck(this, x); // note 'pcheck'
   //     int.check = fn (x) modules.pcheck(this, x);
-  // however, in C we have to work harder
   module = lookup(modules, symbol_new("object"));
-  symbol_t x_sym = symbol_new("x");
-  tuple_t signature = tuple_make(1, create_pattern(0, WRAP_SYMBOL(x_sym)));
-  tuple_t fnbody_t = tuple_make(3, WRAP_SYMBOL(symbol_new("check")),
-                                   WRAP_SYMBOL(this_sym),
-                                   WRAP_SYMBOL(symbol_new("x")));
-  object_t fnbody = WRAP_PTR(TUPLE_T, fnbody_t);
-  assign(type_obj, check_sym, fn_fn(module, signature, fnbody));
-  assign(type_obj, proto_sym, type_obj);
-  tuple_set(fnbody_t, 0, WRAP_SYMBOL(symbol_new("pcheck")));
-  fnbody = WRAP_PTR(TUPLE_T, fnbody_t);
-$init_c_init_typeobjects
+  fn_data = create_special_fn_data(module, true, symbol_new("check"), 1,
+                                   0, symbol_new("x"));
+  assign(type_obj, check_sym, create_function(fn_data));
+  fn_data = create_special_fn_data(module, true, symbol_new("pcheck"), 1,
+		                   0, symbol_new("x"));
+  object_t pcheck_f = create_function(fn_data);
+$init_c_add_pchecks
 
-  // (6.5) add type slots to the prototypes
+  // (6.4) add type slots to the prototypes
 $init_c_extend_prototypes
+
+  // (6.5) add functions (functions)
+$init_c_add_functions
+
+  // (6.6) add more special functions to certain objects
+  //     pattern(...) = vcreate_pattern(args);
+  module = lookup(modules, symbol_new("core"));
+  fn_data = create_special_fn_data(module, false, symbol_new("vcreate_pattern"), -1);
+  assign(pattern_obj, fn_data_sym, fn_data);
+
 
   // (6.6) add essential stuff
   module = lookup(modules, symbol_new("object"));
   assign(root, symbol_new("assign"), lookup(module, symbol_new("assign")));
   assign(root, symbol_new("extend"), lookup(module, symbol_new("extend")));
+  module = lookup(modules, symbol_new("core"));
+  assign(root, symbol_new("map_fn"), lookup(module, symbol_new("map_fn")));
 
   return root;
 }

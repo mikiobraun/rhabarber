@@ -1,3 +1,29 @@
+2007-08-31  Stefan Harmeling  <harmeling@gmail.com>
+
+	* core.c, parse.c: the problem:  consider
+
+	    f(int:x, real:y) = 17
+
+	previously 'int' was evaluated in parse.c and a check was done
+	whether a slot 'check' exists.  This has now changed.  Instead
+	parse.c creates for such a signature:
+
+           (map_fn local pattern (\ (((\ x) int) ((\ y) real))))
+
+	which is evaluated later when the whole expression is evaluated.
+	Of course this required lots of changes all over the place.
+
+	* tuple_fn.h: made vtuple_make accessible inside rhabarber
+
+	* prules.c (resolve_assign_prule): the signature is now no longer
+	quoted, since it is an expression that needs to be evaluated to
+	generate a signature, which is a list of patterns.
+
+	* object.c (create_function): renamed it to create_builtin to
+	avoid name conflict with new 'create_function' in core.c
+
+	* object.c (to_string): removed \" from strings...
+
 2007-08-31  Mikio Braun  <mikiobraun@gmail.com>
 
 	* eval.c (call_fun, call_matching_impl): construct of

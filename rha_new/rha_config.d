@@ -99,6 +99,8 @@ extern symbol_t less_fn_sym;
 extern symbol_t lessequal_fn_sym;
 extern symbol_t greater_fn_sym;
 extern symbol_t greaterequal_fn_sym;
+extern symbol_t pattern_sym;
+extern symbol_t signature_sym;
 
 //MACROS
 #define UNWRAP_INT(o)     (unwrap_int(INT_T, o))
