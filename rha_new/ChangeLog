@@ -1,5 +1,12 @@
 2007-08-31  Stefan Harmeling  <harmeling@gmail.com>
 
+	* prelude.rha (fn): removed bug in split_parselist, try:
+
+   split_parselist(list().push(symbol(";"),symbol(",")),local,eval((\[1,2;3])(2)))
+	
+	as a note: (\[1,2;3])(2) is a cool way of generating  (\ [1, ,, 2, ;, 3])
+	which becomes [1, ,, 2, ;, 3] after applying eval...
+	
 	* core.c (while_fn): added check whether the condition returns BOOL_T.
 
 	* prules.c, prelude.rha: now complex literal start to work.  For

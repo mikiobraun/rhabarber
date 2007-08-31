@@ -37,6 +37,7 @@ new(type:t) = {
 // look-up-failed exception, which is the intended behavior. 
 // to get an empty object with a certain parent pointer 
 // use 'clone'
+eval(x)  = eval(this, x);
 clone    = modules.object.clone;
 rm       = modules.object.rm;
 ls       = modules.object.ls;
@@ -62,7 +63,6 @@ macro_fn   = modules.core.macro_fn;
 for_fn     = no_frame(modules.core.for_fn); 
 while_fn   = no_frame(modules.core.while_fn);
 try_fn     = modules.core.try_fn; 
-literal    = modules.core.literal;
 return_fn  = no_frame(modules.core.return_fn);
 deliver_fn = no_frame(modules.core.deliver_fn);
 break_fn   = no_frame(modules.core.break_fn); 
@@ -177,21 +177,28 @@ colon_fn = fn (a, b) {
 equalequal_fn = modules.object.equalequal_fn;
 notequal_fn   = modules.object.notequal_fn;
 
-// complex literals:
-literal = fn (env, parselist) list.literal(env, parselist);
-split_literal = fn (char, env, parselist) {
+// complex literal
+literal = fn (env, pl) list.literal(env, pl);
+split_parselist = fn (list:symlist, env, list:pl) {
+  if (symlist.len() == 0)
+    return resolve(env, pl);
+  // else we need to split by the next symbol
+  split = symlist.shift();
   sink = list();
   part = list();
-  for (head in parselist) {
-    if (head == char) {
+  for (x in pl) {
+    if (x == split) {
       // split here
-      sink.push(resolve(env, part));
+      print(part);
+      sink.push(split_parselist(symlist, env, part));
       part = list();
     }
     else
-      part.push(head);
+      part.push(x);
   }
-  sink.push(resolve(env, part));
+  print(part);
+  sink.push(split_parselist(symlist, env, part));
+  symlist.unshift(split);
   return sink;
 }
 
@@ -337,10 +344,11 @@ plus_fn(tuple:a, tuple:b) = {
     l.push(x);
   return tuple(l);
 }
-tuple.proto.string    = fn () modules.tuple_fn.tuple_to_string(this);
-tuple.proto.len       = fn () modules.tuple_fn.tuple_len(this);
-tuple.proto.set       = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
-tuple.proto.get       = fn (i) modules.tuple_fn.tuple_get(this, i);
+tuple.proto.string = fn () modules.tuple_fn.tuple_to_string(this);
+tuple.literal      = fn (env, pl) tuple(list.literal(env, pl));
+tuple.proto.len    = fn () modules.tuple_fn.tuple_len(this);
+tuple.proto.set    = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
+tuple.proto.get    = fn (i) modules.tuple_fn.tuple_get(this, i);
 tuple.proto.iter = fn () {
   i = new();
   i.counter = 0;
@@ -376,7 +384,7 @@ tuple.proto.extend = fn (signature, scope, rhs) {
 // lists
 list() = modules.list_fn.list_new();
 list(tuple:t) = modules.tuple_fn.tuple_to_list(t);
-list.literal(env, parselist) = split_literal(symbol(","), env, parselist);
+list.literal(env, list:pl) = split_parselist(list().push(symbol(",")), env, pl);
 list.proto.string    = fn () modules.list_fn.list_to_string(this);
 list.proto.len       = fn () modules.list_fn.list_len(this);
 list.proto.copy      = fn () modules.list_fn.list_copy(this);
