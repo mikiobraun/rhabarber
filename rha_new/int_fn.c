@@ -2,6 +2,7 @@
 
 #include "object.h"
 #include "messages.h"
+#include "utils.h"
 
 int_t int_plus(int_t x, int_t y) { return x+y; }
 int_t int_minus(int_t x, int_t y) { return x-y; }

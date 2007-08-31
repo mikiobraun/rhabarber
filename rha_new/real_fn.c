@@ -2,6 +2,7 @@
 
 #include "object.h"
 #include "messages.h"
+#include "utils.h"
 
 real_t real_plus(real_t x, real_t y) { return x+y; }
 real_t real_minus(real_t x, real_t y) { return x-y; }

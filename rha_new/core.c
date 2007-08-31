@@ -253,7 +253,10 @@ object_t while_fn(object_t this, object_t cond, object_t body)
   object_t res = 0; // must be initialized for "cond==false"
   begin_frame(LOOP_FRAME)
     while (1) {
-      if (UNWRAP_BOOL(eval(this, cond)))
+      object_t cond_o = eval(this, cond);
+      if (!cond_o || ptype(cond_o)!=BOOL_T)
+	rha_error("(while) condition must generate bool");
+      if (UNWRAP_BOOL(cond_o))
 	res = eval(this, body);
       else
 	break;

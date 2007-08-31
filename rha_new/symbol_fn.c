@@ -35,7 +35,7 @@ symbol_t symbol_new(string_t s)
   return i;
 }
 
-bool_t symbol_equal(symbol_t s, symbol_t t)
+bool_t symbol_equalequal(symbol_t s, symbol_t t)
 {
   return s == t;
 }

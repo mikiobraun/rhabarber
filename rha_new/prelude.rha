@@ -50,6 +50,7 @@ addr     = modules.object.addr;
 run      = modules.core.run_fn;
 error    = modules.messages.error;
 warning  = modules.messages.warning;
+resolve  = modules.parse.resolve;
 
 // take care of 'syntactic functions', which generate no frame to return from
 no_frame(f) = { f.fn_data.no_frame = true; f };
@@ -85,22 +86,18 @@ check = macro (x) {
   if (eval(local, x))
     success++;
   else {
-    print("FAILED:" ,\x);
+    print("FAILED: " ,\x);
     failure++;
   }
 }
 summarize = macro () {
   if (failure > 0)
-    print ("[test]", failure, "/", failure+success, "SOME FAILED", name);
+    print ("[test] ", failure, "/", failure+success, "\t SOME FAILED in ", name);
   else
-    print ("[test]", success, "/", failure+success, "ALL PASSED", name);
+    print ("[test] ", success, "/", failure+success, "\t ALL PASSED  in ", name);
 }
 runtest = fn () run(root, "test.rha");
 
-// (1.6) symbol stuff
-// usually we can create symbol with quote, e.g. '\x', however
-// operators can only be created by 'symbol("+")'
-symbol(name) = modules.symbol_fn.symbol_new(name);
 
 
 // typing stuff
@@ -180,6 +177,25 @@ colon_fn = fn (a, b) {
 equalequal_fn = modules.object.equalequal_fn;
 notequal_fn   = modules.object.notequal_fn;
 
+// complex literals:
+literal = fn (env, parselist) list.literal(env, parselist);
+split_literal = fn (char, env, parselist) {
+  sink = list();
+  part = list();
+  for (head in parselist) {
+    if (head == char) {
+      // split here
+      sink.push(resolve(env, part));
+      part = list();
+    }
+    else
+      part.push(head);
+  }
+  sink.push(resolve(env, part));
+  return sink;
+}
+
+
 // temporarily for testing purposes
 inc             = modules.object.inc;
 dec             = modules.object.dec;
@@ -228,6 +244,8 @@ implementation_proto.string = fn () {
 
 // symbol
 symbol.proto.string = fn () modules.symbol_fn.symbol_to_string(this);
+symbol(name) = modules.symbol_fn.symbol_new(name);
+//equalequal_fn(symbol:x, symbol:y) = modules.symbol_fn.symbol_equalequal(x, y);
 
 // pattern
 pattern.proto.string = fn () {
@@ -284,6 +302,7 @@ or_fn(bool:x, bool:y)  = modules.bool_fn.bool_or(x, y);
 
 // strings
 string.proto.string         = fn () modules.string_fn.string_to_string(this);
+string()                    = "<somescope>";
 string(x)                   = modules.object.to_string(x);
 plus_fn(string:x, string:y) = modules.string_fn.string_concat(x, y);
 string.proto.len            = fn () modules.string_fn.string_len(this);
@@ -318,10 +337,10 @@ plus_fn(tuple:a, tuple:b) = {
     l.push(x);
   return tuple(l);
 }
-tuple.proto.string   = fn () modules.tuple_fn.tuple_to_string(this);
-tuple.proto.len      = fn () modules.tuple_fn.tuple_len(this);
-tuple.proto.set      = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
-tuple.proto.get      = fn (i) modules.tuple_fn.tuple_get(this, i);
+tuple.proto.string    = fn () modules.tuple_fn.tuple_to_string(this);
+tuple.proto.len       = fn () modules.tuple_fn.tuple_len(this);
+tuple.proto.set       = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
+tuple.proto.get       = fn (i) modules.tuple_fn.tuple_get(this, i);
 tuple.proto.iter = fn () {
   i = new();
   i.counter = 0;
@@ -357,11 +376,12 @@ tuple.proto.extend = fn (signature, scope, rhs) {
 // lists
 list() = modules.list_fn.list_new();
 list(tuple:t) = modules.tuple_fn.tuple_to_list(t);
-list.proto.string   = fn () modules.list_fn.list_to_string(this);
-list.proto.len      = fn () modules.list_fn.list_len(this);
-list.proto.copy     = fn () modules.list_fn.list_copy(this);
-list.proto.append   = fn (x) modules.list_fn.list_append(this, x);
-list.proto.prepend  = fn (x) modules.list_fn.list_prepend(this, x);
+list.literal(env, parselist) = split_literal(symbol(","), env, parselist);
+list.proto.string    = fn () modules.list_fn.list_to_string(this);
+list.proto.len       = fn () modules.list_fn.list_len(this);
+list.proto.copy      = fn () modules.list_fn.list_copy(this);
+list.proto.append    = fn (x) modules.list_fn.list_append(this, x);
+list.proto.prepend   = fn (x) modules.list_fn.list_prepend(this, x);
 //  note that right now we have a name clash for 'extend' with the one
 //  that is lookup for stuff like:    list(17)
 //list.proto.extend   = fn (l) modules.list_fn.list_extend(this, l);

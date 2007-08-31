@@ -427,7 +427,7 @@ string_t to_string(object_t o)
   if (o==prototypes[pt])
     return sprint("<%s prototype>", ptype_names[pt]);
 
-  // SOMETHING WITH SLOT 'string'
+  // SOMETHING WITH SLOT 'to_string'
   if (has(o, string_sym)) {
     object_t s_o = callslot(o, string_sym, 0);
     if (!s_o || ptype(s_o) != STRING_T)
@@ -500,7 +500,7 @@ string_t to_string_only_in_c(object_t o)
 	int tlen = tuple_len(t);
 	for(int i = 0; i < tlen; i++) {
 	  if (i > 0) s = string_concat(s, " ");
-	  s = string_concat(s, to_string(tuple_get(t, i)));
+	  s = string_concat(s, to_string_only_in_c(tuple_get(t, i)));
 	}
 	return string_concat(s, ")");
       }
@@ -511,7 +511,7 @@ string_t to_string_only_in_c(object_t o)
 	list_it_t it;
 	for(it = list_begin(l), i = 0; !list_done(it); list_next(it), i++) {
 	  if (i > 0) s = string_concat(s, ", ");
-	  s = string_concat(s, to_string(list_get(it)));
+	  s = string_concat(s, to_string_only_in_c(list_get(it)));
 	}
 	return string_concat(s, "]");
       }
@@ -563,6 +563,8 @@ bool_t equalequal_fn(object_t a, object_t b)
 {
   if ((ptype(a) == ADDRESS_T) && (ptype(b) == ADDRESS_T))
     return UNWRAP_PTR(ADDRESS_T, a) == UNWRAP_PTR(ADDRESS_T, b);
+  if ((ptype(a) == SYMBOL_T) && (ptype(b) == SYMBOL_T))
+    return UNWRAP_PTR(SYMBOL_T, a) == UNWRAP_PTR(SYMBOL_T, b);
   if ((ptype(a) == BOOL_T) && (ptype(b) == BOOL_T))
     return UNWRAP_BOOL(a) == UNWRAP_BOOL(b);
   if ((ptype(a) == INT_T) && (ptype(b) == INT_T))

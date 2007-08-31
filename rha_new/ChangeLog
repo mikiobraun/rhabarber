@@ -1,5 +1,19 @@
 2007-08-31  Stefan Harmeling  <harmeling@gmail.com>
 
+	* core.c (while_fn): added check whether the condition returns BOOL_T.
+
+	* prules.c, prelude.rha: now complex literal start to work.  For
+	this colon_pr() and squared_pr() had to adjusted.  Now we can
+	implement complex literal behavior inside rhabarber.  See for
+	instance in prelude.rha
+
+	tuple.literal
+	list.literal
+	literal
+	split_parselist
+
+	However, some works needs to be done to make it convenient.
+
 	* prelude.rha: now everything looks great!
 
 	rha[0](-1)$ new.fn_data

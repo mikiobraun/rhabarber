@@ -179,8 +179,8 @@ void prules_init(object_t root, object_t module)
   //    x = \peter;         x = (\peter);
   //    \x = peter;         \(x = peter);
   MAKE_PRULES(quote, 10.0);     // quote
-  MAKE_PRULES(curlied, 20.0);   // curlied brackets
-  MAKE_PRULES(squared, 20.0);   // squared brackets
+  MAKE_PRULES(curlied, 10.0);   // curlied brackets
+  MAKE_PRULES(squared, 10.0);   // squared brackets
 }
 
 
@@ -323,10 +323,28 @@ tuple_t in_pr(object_t env, list_t parsetree)
 
 tuple_t colon_pr(object_t env, list_t parsetree) 
 {
-  // how about rightbinding?
-  // a:(b:c) would be checking type of the result of b:c
-  // however, doesn't make much sense!
-  return resolve_infix_prule(env, parsetree, colon_sym, symbol_new("colon_fn"), RIGHT_BIND);
+  tuple_t pre_t = resolve_infix_prule(env, parsetree, colon_sym, 
+				      symbol_new("colon_fn"), RIGHT_BIND);
+  // check wether the RHS is a complex literal
+  object_t rhs = tuple_get(pre_t, 2);
+  if (rhs && ptype(rhs)==TUPLE_T) {
+    tuple_t rhs_t = UNWRAP_PTR(TUPLE_T, rhs);
+    if (tuple_len(rhs_t) == 3) {
+      object_t rhs_t0 = tuple_get(rhs_t, 0);
+      if (rhs_t0 && ptype(rhs_t0) == SYMBOL_T 
+	  && UNWRAP_SYMBOL(rhs_t0)==literal_sym) {
+	// (callslot lhs \literal env [1 ,, 2 ,, 3])
+	tuple_t t = tuple_new(5);
+	tuple_set(t, 0, WRAP_SYMBOL(callslot_sym));
+	tuple_set(t, 1, tuple_get(pre_t, 1));
+	tuple_set(t, 2, quoted(rhs_t0));
+	tuple_set(t, 3, tuple_get(rhs_t, 1));
+	tuple_set(t, 4, tuple_get(rhs_t, 2));
+	return t;
+      }
+    }
+  }
+  return pre_t;
 }
 
 tuple_t less_pr(object_t env, list_t parsetree) 
@@ -590,9 +608,13 @@ tuple_t quote_pr(object_t env, list_t parsetree)
 tuple_t curlied_pr(object_t env, list_t parsetree)
 {
   //debug("curlied_pr(%o, %o)\n", env, WRAP_PTR(LIST_T, parsetree));
+  if (list_len(parsetree) == 0)
+    rha_error("(curlied_pr) nothing to resolve");
   assert(list_len(parsetree) > 0);
   object_t head = list_popfirst(parsetree);  // pop off curlied_sym
-  assert(head && is_symbol(curlied_sym, head));
+  assert(head);
+  if (!is_symbol(curlied_sym, head))
+    rha_error("(curlied_pr) don't call prules directly");
 
   list_t sink = list_new();
   list_t part = list_new();
@@ -662,10 +684,14 @@ tuple_t squared_pr(object_t env, list_t parsetree)
   // we delay the resolution of the subexpression until either the
   // default literal resolver is called or a special one
   //  [1,2,3] ==>  (literal_sym (tuple_sym [1,2,3]))
+  if (list_len(parsetree) == 0)
+    rha_error("(squared_pr) nothing to resolve");
   object_t head = list_popfirst(parsetree);  // pop off curlied_sym
-  assert(head && is_symbol(squared_sym, head));
+  assert(head);
+  if (!is_symbol(squared_sym, head))
+    rha_error("(squared_pr) don't call prules directly");
 
-  return tuple_make(3, WRAP_SYMBOL(literal_sym), env, 
+  return tuple_make(3, WRAP_SYMBOL(literal_sym), quoted(env), 
 		    quoted(WRAP_PTR(LIST_T, parsetree)));
 }
 
