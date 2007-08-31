@@ -30,7 +30,7 @@ check(42/17 == 2);
 summarize();
 
 test("tuple test");
-x = tuple.new(4);
+x = tuple(4);
 check(x.len() == 4);
 x.set(0, 42);
 x.set(1, "seventeen");
@@ -40,7 +40,7 @@ check(x.len() == 4);
 summarize();
 
 test("for loop test");
-x = tuple.new(4);
+x = tuple(4);
 x.set(0, 55);
 x.set(1, 33);
 x.set(2, 42);
