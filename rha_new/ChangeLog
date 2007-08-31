@@ -1,3 +1,9 @@
+2007-08-31  Mikio Braun  <mikiobraun@gmail.com>
+
+	* eval.c, eval.h: cleaned up both files. Removed obsolete
+	functions, declared all internal functions as "static", reordered
+	functions to match top-down call order.
+
 2007-08-30  Mikio Braun  <mikiobraun@gmail.com>
 
 	* eval.h (frame_jump): Quick fix for the 'break' and 'deliver'

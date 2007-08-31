@@ -22,12 +22,12 @@ void eval_init(object_t root, object_t module)
 }
 
 // forward declarations
-object_t eval_sequence(object_t env, tuple_t t);
-object_t eval_args_and_call_fun(object_t env, tuple_t expr);
-object_t call_fun(object_t env, tuple_t expr);
-void *call_C_fun(int tlen, tuple_t t);
-object_t call_rha_fun(object_t this, int narg, tuple_t expr);
-
+static object_t eval_sequence(object_t env, tuple_t t);
+static object_t eval_args_and_call_fun(object_t env, tuple_t expr);
+static object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values);
+static bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values);
+static object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
+			    tuple_t signature, tuple_t values);
 
 /*************************************************************
  *
@@ -89,24 +89,22 @@ object_t eval(object_t env, object_t expr)
   return 0; // make gcc happy!
 }
 
-object_t eval_sequence(object_t env, tuple_t t)
-{
-  // either the value of the last expression is delivered
-  // or the value following 'deliver'
-  // eval_sequence does not open a new scope
-  object_t res = 0;
-  int_t tlen = tuple_len(t);
-  begin_frame(BLOCK_FRAME)
-    // evaluate all, or stop earlier via 'deliver', 'break', 'return'
-    // note: the counter begins at 1 to ignore 'do_sym'
-    for (int i = 1; i < tlen; i++)
-      res = eval(env, tuple_get(t, i));
-  end_frame(res);
-  // return the result
-  return res;
-}
+//----------------------------------------------------------------------
+//
+// calling functions
+//
+// Overview: (this attempts to be something like a call graph)
+//
+// (do ...) -> eval_sequence
+// else -> evaluate all arguments
+//         call_fun
+//             construct local scope
+//             find_and_call_matching_impl
+//                  iterate over signatures
+//                      if signature_matches
+//                          call_matching_impl      
 
-
+static 
 object_t eval_args_and_call_fun(object_t env, tuple_t expr)
 {
   int tlen = tuple_len(expr);
@@ -134,15 +132,142 @@ object_t eval_args_and_call_fun(object_t env, tuple_t expr)
   return call_fun(env, values);
 }
 
-void check_ptypes_obsolete(object_t o, enum ptypes pt)
+// evaluate arguments sequentially
+//
+// opens a BLOCK_FRAME
+static 
+object_t eval_sequence(object_t env, tuple_t t)
 {
-  // note that OBJECT_T matches anything!
-  if ((pt != OBJECT_T) && (ptype(o) != pt))
-    rha_error("argument primtype missmatch (expected: %s, got: %s)",
-	      ptype_names[pt], ptype_names[ptype(o)]);
+  // either the value of the last expression is delivered
+  // or the value following 'deliver'
+  // eval_sequence does not open a new scope
+  object_t res = 0;
+  int_t tlen = tuple_len(t);
+  begin_frame(BLOCK_FRAME)
+    // evaluate all, or stop earlier via 'deliver', 'break', 'return'
+    // note: the counter begins at 1 to ignore 'do_sym'
+    for (int i = 1; i < tlen; i++)
+      res = eval(env, tuple_get(t, i));
+  end_frame(res);
+  // return the result
+  return res;
+}
+
+// Call a function 
+//
+// Checks if the number of argument matches, constructs the local
+// environment of the callee and executes the function
+//
+// callable objects must have the 'fn_data' slot
+object_t call_fun(object_t this, tuple_t values)
+{
+  list_t values_l = tuple_to_list(values);
+
+  // get the function to be called
+  object_t fn = list_popfirst(values_l);
+  values = list_to_tuple(values_l);
+  
+  // look for 'fn_data' which contains all information for the
+  // overloaded function
+  object_t fn_data = lookup(fn, fn_data_sym);
+  list_t fn_data_l = 0;
+  if (!fn_data)
+    rha_error("(eval) %o can't be called, since it "
+	      "has no 'fn_data' slot", fn);
+  if (ptype(fn_data)!=LIST_T
+      || list_len(fn_data_l=UNWRAP_PTR(LIST_T, fn_data)) == 0)
+    rha_error("(eval) %o can't be called, since it "
+	      "has a faulty 'fn_data' slot", fn);
+
+  // construct the inner scope
+  object_t local = new();
+  assign(local, local_sym, local);   // the scope local to the function
+  assign(local, this_sym, this);     // the calling scope
+  assign(local, static_sym, fn);     // for static variables
+  assign(local, args_sym, WRAP_PTR(TUPLE_T, values)); // all passed arguments
+
+  // find and call the matching implementation
+  return find_and_call_matching_impl(local, fn_data_l, values);
 }
 
 
+// go through available implementations and call the first one which matches
+//
+// calls: signature_matches, call_matching_impl
+static 
+object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values)
+{
+  //debug("find_and_call_matching_impl(%o, %o, %o)\n", local, WRAP_PTR(LIST_T, fn_data_l), WRAP_PTR(TUPLE_T, values));
+  string_t msg = "(eval) can't call %o, since it has a faulty entry in 'fn_data'";
+  // go through the list to find a match
+  for (list_it_t it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
+    object_t impl = list_get(it);
+    if (!impl) rha_error(msg);
+    object_t signature_o = lookup(impl, signature_sym); 
+    if (!signature_o || ptype(signature_o)!=TUPLE_T)
+      rha_error(msg);
+    tuple_t signature = UNWRAP_PTR(TUPLE_T, signature_o);
+    object_t varargs_o = lookup(impl, varargs_sym);
+    if (!varargs_o || ptype(varargs_o)!=BOOL_T)
+      rha_error(msg);
+    bool_t varargs = UNWRAP_BOOL(varargs_o);
+    if (signature_matches(signature, varargs, values)) {
+      // match found!!!
+      object_t fnbody = lookup(impl, fnbody_sym);
+      if (!fnbody)
+	rha_error("(eval) can't find function body");
+      object_t scope = lookup(impl, scope_sym);
+      // note that for builtin functions the 'scope' is ignored and
+      // can thus also be 'void'
+      if (!scope && ptype(fnbody)!=BUILTIN_T)
+	rha_error("(eval) can't find defining scope");
+      return call_matching_impl(local, scope, fnbody, signature, values);
+    }
+  }
+  // we did not find anything matching
+  rha_error("no matching signature found");
+  return 0;
+}
+
+
+// compare a signature against given arguments
+bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
+{
+  int_t nsig = tuple_len(signature);
+  int_t narg = tuple_len(values);
+  // check whether there are enough arguments
+  if (varargs) {
+    if (nsig > narg)
+      return false;
+  }
+  else {
+    if (nsig != narg)
+      return false;
+  }
+
+  for (int i = 0; i < nsig; i++) {
+    object_t pattern = tuple_get(signature, i);
+    object_t thetype = lookup(pattern, symbol_new("patterntype"));
+    //debug("type %o\n", thetype);
+    if (thetype) {
+      // check the type
+      object_t res = callslot(thetype, check_sym, 1, tuple_get(values, i));
+      if (!res || ptype(res)!=BOOL_T)
+	rha_error("(signature) type %o doesn't implement a valid 'check'", thetype);
+      if (!UNWRAP_BOOL(res)) {
+	//print("not matching\n");
+	return false;
+      }
+    }
+  }
+  // all checks passed
+  return true;
+}
+
+
+
+// call the found matching implementation
+static 
 object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
 			    tuple_t signature, tuple_t values)
 {
@@ -179,117 +304,10 @@ object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
   return res;
 }
 
-
-bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
-{
-  int_t nsig = tuple_len(signature);
-  int_t narg = tuple_len(values);
-  // check whether there are enough arguments
-  if (varargs) {
-    if (nsig > narg)
-      return false;
-  }
-  else {
-    if (nsig != narg)
-      return false;
-  }
-
-  for (int i = 0; i < nsig; i++) {
-    object_t pattern = tuple_get(signature, i);
-    object_t thetype = lookup(pattern, symbol_new("patterntype"));
-    //debug("type %o\n", thetype);
-    if (thetype) {
-      // check the type
-      object_t res = callslot(thetype, check_sym, 1, tuple_get(values, i));
-      if (!res || ptype(res)!=BOOL_T)
-	rha_error("(signature) type %o doesn't implement a valid 'check'", thetype);
-      if (!UNWRAP_BOOL(res)) {
-	//print("not matching\n");
-	return false;
-      }
-    }
-  }
-  // all checks passed
-  return true;
-}
-
-
-object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values)
-{
-  //debug("find_and_call_matching_impl(%o, %o, %o)\n", local, WRAP_PTR(LIST_T, fn_data_l), WRAP_PTR(TUPLE_T, values));
-  string_t msg = "(eval) can't call %o, since it has a faulty entry in 'fn_data'";
-  // go through the list to find a match
-  for (list_it_t it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
-    object_t impl = list_get(it);
-    if (!impl) rha_error(msg);
-    object_t signature_o = lookup(impl, signature_sym);
-    if (!signature_o || ptype(signature_o)!=TUPLE_T)
-      rha_error(msg);
-    tuple_t signature = UNWRAP_PTR(TUPLE_T, signature_o);
-    object_t varargs_o = lookup(impl, varargs_sym);
-    if (!varargs_o || ptype(varargs_o)!=BOOL_T)
-      rha_error(msg);
-    bool_t varargs = UNWRAP_BOOL(varargs_o);
-    if (signature_matches(signature, varargs, values)) {
-      // match found!!!
-      object_t fnbody = lookup(impl, fnbody_sym);
-      if (!fnbody)
-	rha_error("(eval) can't find function body");
-      object_t scope = lookup(impl, scope_sym);
-      // note that for builtin functions the 'scope' is ignored and
-      // can thus also be 'void'
-      if (!scope && ptype(fnbody)!=BUILTIN_T)
-	rha_error("(eval) can't find defining scope");
-      return call_matching_impl(local, scope, fnbody, signature, values);
-    }
-  }
-  // we did not find anything matching
-  rha_error("no matching signature found");
-  return 0;
-}
-
-
-
-/* Call a function 
- *
- * Checks if the number of argument matches, constructs the local
- * environment of the callee and executes the function
- *
- * callable objects must have slots "argnames", "scope", and "fnbody".
- */
-object_t call_fun(object_t this, tuple_t values)
-{
-  list_t values_l = tuple_to_list(values);
-
-  // get the function to be called
-  object_t fn = list_popfirst(values_l);
-  values = list_to_tuple(values_l);
-  
-  // look for 'fn_data' which contains all information for the
-  // overloaded function
-  object_t fn_data = lookup(fn, fn_data_sym);
-  list_t fn_data_l = 0;
-  if (!fn_data)
-    rha_error("(eval) %o can't be called, since it "
-	      "has no 'fn_data' slot", fn);
-  if (ptype(fn_data)!=LIST_T
-      || list_len(fn_data_l=UNWRAP_PTR(LIST_T, fn_data)) == 0)
-    rha_error("(eval) %o can't be called, since it "
-	      "has a faulty 'fn_data' slot", fn);
-
-  // construct the inner scope
-  object_t local = new();
-  assign(local, local_sym, local);   // the scope local to the function
-  assign(local, this_sym, this);     // the calling scope
-  assign(local, static_sym, fn);     // for static variables
-  assign(local, args_sym, WRAP_PTR(TUPLE_T, values)); // all passed arguments
-
-  // find and call the matching implementation
-  return find_and_call_matching_impl(local, fn_data_l, values);
-}
-
-
-
+//----------------------------------------------------------------------
+//
+// functions for calling a slot
+//
 
 // note on "variable argument lists" in rhabarber:
 // to pull in a function like 'callslot' with '...' automatically, we
