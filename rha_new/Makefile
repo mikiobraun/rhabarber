@@ -43,7 +43,7 @@ ifeq (.depend,$(wildcard .depend))
 include .depend
 endif
 
-TAGS: $(ALLSOURCES)
+TAGS: $(ALLSOURCES) $(wildcard $(subst .c,.h,$(ALLSOURCES)))
 	etags $^
 
 prepare: clean TAGS depend

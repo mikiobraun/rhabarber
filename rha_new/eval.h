@@ -14,9 +14,6 @@ extern       object_t vcallslot(object_t obj, symbol_t slotname, tuple_t args);
 // using call_fun instead of "wraping, eval, unwrapping" saves some time
 extern object_t call_fun(object_t env, tuple_t expr);
 
-//////////////////
-extern object_t eval_currentlocation;
-
 // some cool macros for 'try' and 'catch' stuff
 #define FRAME_MAX_NESTING 128
 extern jmp_buf frame_stack[FRAME_MAX_NESTING];  // the stacked frames
@@ -54,12 +51,8 @@ extern int frame_tos;                           // frame counter
 #include "excp.h"
 
 #define frame_jump(_type, _expr) do {					\
-    if ((_type) == TRY_FRAME)						\
-      while ( (frame_tos >= 0)						\
-              && ((_type) != frame_type[frame_tos]) )			\
-	frame_tos--;							\
     while ( (frame_tos >= 0)						\
-            && ((_type) < frame_type[frame_tos]) )			\
+            && ((_type) != frame_type[frame_tos]) )			\
       frame_tos--;							\
     if ((frame_tos < 0) || ((_type) != frame_type[frame_tos])) {	\
       frame_tos = 0;							\

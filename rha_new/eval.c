@@ -28,13 +28,6 @@ object_t call_fun(object_t env, tuple_t expr);
 void *call_C_fun(int tlen, tuple_t t);
 object_t call_rha_fun(object_t this, int narg, tuple_t expr);
 
-// some code for bug-tracking
-object_t eval_currentlocation = 0;
-
-#define ENTER     object_t savedloc = eval_currentlocation; eval_currentlocation = expr
-#define RETURN(x) do { object_t retval = (x); \
-                           eval_currentlocation = savedloc; \
-                           return retval; } while(0)
 
 /*************************************************************
  *

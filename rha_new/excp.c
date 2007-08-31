@@ -31,7 +31,7 @@ string_t excp_msg(object_t excp)
     return msg;
   }
   else {
-    return sprint("[error] <no message>");
+    return sprint("[error] exception raised without message!");
   }
 }
 

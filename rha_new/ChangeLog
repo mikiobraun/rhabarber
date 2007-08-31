@@ -1,3 +1,18 @@
+2007-08-30  Mikio Braun  <mikiobraun@gmail.com>
+
+	* eval.h (frame_jump): Quick fix for the 'break' and 'deliver'
+	issue. The problem was that break does not work anymore since
+	'for' itself is a function and 'break' does not cross function
+	boundaries.
+
+	The fix is: it crosses boundaries. This means that a function
+	which does not contain a 'for' loop might nevertheless call
+	'break' in order to break an outer for loop (and the same also for
+	'deliver') I guess there is no cleaner solution.
+
+	* eval.c, eval.h: removed code for location tracking (unused as of
+	now, we can put it back in later.
+
 2007-08-30  Stefan Harmeling  <harmeling@gmail.com>
 
 	* object.c (extend): added a case for objects that implement
