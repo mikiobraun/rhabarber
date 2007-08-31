@@ -1,5 +1,21 @@
 2007-08-31  Stefan Harmeling  <harmeling@gmail.com>
 
+	* prelude.rha: now everything looks great!
+
+	rha[0](-1)$ new.fn_data
+	0 builtin()
+	1 function(type:t)
+	rha[1](-1)$ new.fn_data(1)
+	function(type:t)
+	rha[2](-1)$ callslot.fn_data
+	0 builtin(object:<nosym>, symbol:<nosym>, ...)
+	rha[3](-1)$ 
+
+	* object.c: 'to_string' is now calling slot 'string' if possible.
+	For internal use there is the much more robust version
+	'to_string_only_in_c'.  The name is long, but right now it is only
+	used for the implementation of utils.c:sprint()
+
 	* core.c, parse.c: the problem:  consider
 
 	    f(int:x, real:y) = 17

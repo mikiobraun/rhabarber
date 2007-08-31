@@ -125,6 +125,7 @@ object_t create_fn_data_entry(object_t env, tuple_t signature, object_t fnbody)
     assign(entry, scope_sym, env);
   assign(entry, fnbody_sym, fnbody);
   assign(entry, varargs_sym, WRAP_BOOL(varargs));
+  assign(entry, parent_sym, implementation_proto);
   return entry;
 }
 
@@ -133,7 +134,11 @@ object_t create_fn_data(object_t env, tuple_t signature, object_t fnbody)
   // note the order
   list_t fn_data_l = list_new();
   list_append(fn_data_l, create_fn_data_entry(env, signature, fnbody));
-  return WRAP_PTR(LIST_T, fn_data_l);
+  object_t fn_data = WRAP_PTR(LIST_T, fn_data_l);
+  assign(fn_data, parent_sym, fn_data_proto); // this makes sure that
+					      // it can be converted
+					      // to string
+  return fn_data;
 }
 
 object_t create_function(object_t fn_data)

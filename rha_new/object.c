@@ -377,7 +377,9 @@ object_t extend(object_t this, symbol_t s, tuple_t signature,
     fn_data_l = UNWRAP_PTR(LIST_T, fn_data);
   }
   list_append(fn_data_l, create_fn_data_entry(env, signature, rhs));
-  assign(obj, fn_data_sym, WRAP_PTR(LIST_T, fn_data_l));
+  object_t fn_data = WRAP_PTR(LIST_T, fn_data_l);
+  assign(fn_data, parent_sym, fn_data_proto);
+  assign(obj, fn_data_sym, fn_data);
   return obj;
 }
 
@@ -413,8 +415,41 @@ void subscribe(object_t dest, object_t interface)
  *
  **********************************************************************/
 
-
 string_t to_string(object_t o)
+{
+  // VOID
+  if (!o) {
+    // in C it is zero, in rhabarber called void
+    return sprint("%s", "<void>");
+  }
+  // PRIMITIVE PROTOTYPES
+  int pt = ptype(o);
+  if (o==prototypes[pt])
+    return sprint("<%s prototype>", ptype_names[pt]);
+
+  // SOMETHING WITH SLOT 'string'
+  if (has(o, string_sym)) {
+    object_t s_o = callslot(o, string_sym, 0);
+    if (!s_o || ptype(s_o) != STRING_T)
+      rha_error("(to_string) slot 'string' found but does not create a string");
+    return UNWRAP_PTR(STRING_T, s_o);
+  }
+
+  // NO SLOT 'string'
+  return sprint("<object@%p>", (void *) addr(o));
+}
+
+string_t builtin_to_string(builtin_t b)
+{
+  return sprint("<builtin@%p>", b);
+}
+
+string_t address_to_string(address_t a)
+{
+  return sprint("%p", (void *) a);
+}
+
+string_t to_string_only_in_c(object_t o)
      // right now, this is a big switch, but eventually, this should
      // be done via symbol lookup :)
 {
@@ -483,6 +518,9 @@ string_t to_string(object_t o)
       case ADDRESS_T: {
 	return sprint("%p", (void *) UNWRAP_PTR(ADDRESS_T, o));
       }
+      case BUILTIN_T: {
+	return sprint("<builtin@%p>", (void *) UNWRAP_PTR(BUILTIN_T, o));
+      }
       default:
 	return sprint("<UNKNOWN ptype: addr=%p>", (void *) addr(o));
       }
@@ -493,7 +531,7 @@ string_t to_string(object_t o)
 void vprint_fn(tuple_t args)
 {
   for (int i=0; i<tuple_len(args); i++)
-    fprintf(stdout, "%s ", to_string(tuple_get(args, i)));
+    fprintf(stdout, "%s", to_string(tuple_get(args, i)));
   fprintf(stdout, "\n");
 }
 

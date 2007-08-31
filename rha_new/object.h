@@ -60,6 +60,9 @@ extern       void       setptype(object_t, int_t);
 extern _rha_ void       print_fn(int_t narg, ...);
 extern _rha_ void       vprint_fn(tuple_t args);
 extern _rha_ string_t   to_string(object_t);
+extern       string_t   to_string_only_in_c(object_t o);
+extern _rha_ string_t   builtin_to_string(builtin_t);
+extern _rha_ string_t   address_to_string(address_t);
 
 extern _rha_ void       ls(object_t);
 

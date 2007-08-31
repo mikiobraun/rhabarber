@@ -12,6 +12,7 @@
 #include "tuple_fn.h"
 #include "list_fn.h"
 #include "int_fn.h"
+#include "real_fn.h"
 #include "string_fn.h"
 #include "bool_fn.h"
 #include "messages.h"

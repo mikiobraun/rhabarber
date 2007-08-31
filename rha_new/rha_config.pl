@@ -179,6 +179,7 @@ foreach $module (@mods) {
 	    elsif ($item eq "bool_t") { $fnarg_str = "UNWRAP_BOOL($fnarg_str)" }
 	    elsif ($item eq "symbol_t") { $fnarg_str = "UNWRAP_SYMBOL($fnarg_str)" }
 	    elsif ($item eq "real_t") { $fnarg_str = "UNWRAP_REAL($fnarg_str)" }
+	    elsif ($item eq "builtin_t") { $fnarg_str = "UNWRAP_BUILTIN($fnarg_str)" }
 	    elsif ($item eq "...") {$fnarg_str = "args" }
 	    elsif ($item ne "object_t") { $fnarg_str = "UNWRAP_PTR($ucitem, $fnarg_str)" }
 	    $fncall_str .= $fnarg_str;
@@ -189,6 +190,7 @@ foreach $module (@mods) {
 	elsif ($fntype eq "bool_t") { $fncall_str = "WRAP_BOOL($fncall_str)" }
 	elsif ($fntype eq "symbol_t") { $fncall_str = "WRAP_SYMBOL($fncall_str)" }
 	elsif ($fntype eq "real_t") { $fncall_str = "WRAP_REAL($fncall_str)" }
+	elsif ($fntype eq "builtin_t") { $fncall_str = "WRAP_BUILTIN($fncall_str)" }
 	elsif ($fntype ne "object_t" && $fntype ne "void") {
 	    $ucfntype = uc($fntype);
 	    $ifntype = 	substr($fntype, 0, -2);
@@ -275,8 +277,12 @@ sub create_ids {
 sub create_prototypes {
     $ntdefs = scalar(@tdefs) + 1;
     $type_h_prototypes .= "extern object_t prototypes[$ntdefs];\n";
+    $type_h_prototypes .= "extern object_t fn_data_proto;\n";
+    $type_h_prototypes .= "extern object_t implementation_proto;\n";
     $type_h_prototypes .= "extern object_t pattern_proto;\n";
     $init_c_prototypes .= "object_t prototypes[$ntdefs];\n";
+    $init_c_prototypes .= "object_t fn_data_proto = 0;\n";
+    $init_c_prototypes .= "object_t implementation_proto = 0;\n";
     $init_c_prototypes .= "object_t pattern_proto = 0;\n";
     $type_h_typeobjects .= "extern object_t typeobjects[$ntdefs];\n";
     $init_c_typeobjects .= "object_t typeobjects[$ntdefs];\n";
@@ -425,6 +431,7 @@ $init_c_functions
   module = new();                                                     \\
   assign(modules, mmm ## _sym, module);
 
+static
 void add_function(object_t module, symbol_t s, 
                   object_t (*code)(tuple_t),
                   bool_t varargs, int narg, ...)
@@ -437,6 +444,7 @@ void add_function(object_t module, symbol_t s,
   assign(module, s, f);
 }
 
+static
 object_t create_special_fn_data(object_t module, bool_t method, 
                                 symbol_t fn_sym, int_t narg, ...)
 {
@@ -481,6 +489,8 @@ object_t create_special_fn_data(object_t module, bool_t method,
 object_t rha_init()
 {
   // (6.1) prototypes (TYPES)
+  fn_data_proto = new();
+  implementation_proto = new();
   pattern_proto = new();
 $init_c_init_prototypes
 
@@ -503,6 +513,10 @@ $init_c_add_modules
   assign(root, type_sym, type_obj);
   assign(type_obj, proto_sym, type_obj);
   object_t pattern_obj = clone(type_obj);
+  // note that for 'fn_data_proto' there is only the prototype but no
+  // object in root called 'fn_data'.  otherwise 'root' would be callable!
+  assign(root, symbol_new("fn_data_proto"), fn_data_proto);
+  assign(root, symbol_new("implementation_proto"), implementation_proto);
   assign(root, symbol_new("pattern"), pattern_obj);
   assign(pattern_obj, proto_sym, pattern_proto);
 $init_c_init_typeobjects

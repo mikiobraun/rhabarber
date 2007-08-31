@@ -49,3 +49,8 @@ string_t symbol_name(symbol_t s)
   assert(n);
   return n;
 }
+
+string_t symbol_to_string(symbol_t s)
+{
+  return symbol_name(s);
+}

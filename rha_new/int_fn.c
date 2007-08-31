@@ -33,3 +33,8 @@ int_t int_cast(object_t x)
     return 0;
   }
 }
+
+string_t int_to_string(int_t x)
+{
+  return sprint("%d", x);
+}

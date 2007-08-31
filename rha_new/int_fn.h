@@ -17,4 +17,6 @@ extern _rha_ bool_t int_greaterequal(int_t x, int_t y);
 
 extern _rha_ int_t  int_cmp(int_t x, int_t y);
 extern _rha_ int_t  int_cast(object_t x);
+
+extern _rha_ string_t int_to_string(int_t x);
 #endif

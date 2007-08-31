@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include "alloc.h"
+#include "utils.h"
 
 bool bool_equalequal(bool b1, bool b2)
 {
@@ -11,8 +12,8 @@ bool bool_equalequal(bool b1, bool b2)
 
 string_t bool_to_string(bool b)
 {
-  if (b) return gc_strdup("true");
-  else return gc_strdup("false");
+  if (b) return sprint("true");
+  else return sprint("false");
 }
 
 bool bool_not(bool b) 

@@ -109,7 +109,7 @@ symbol(name) = modules.symbol_fn.symbol_new(name);
 // type.proto = type;
 // type.check = fn (x) modules.object.check(this, x)
 type.name  = "type";
-type.to_string = fn () this.name;
+type.string = fn () this.name;
 type.type  = type;         // 'type' is of type 'type'
 typename = fn (x) x.type.name;     // try 'typename(17)'
 	    // note that 'type(x) = x.type.name' is not a good idea,
@@ -187,9 +187,61 @@ inc_copy        = modules.object.inc_copy;
 dec_copy        = modules.object.dec_copy;
 to_string       = modules.object.to_string;
 
+// fn_data_proto
+// note that there is no 'fn_data' in root, since otherwise 'root'
+// would be callable.  thus we only have 'fn_data_proto' which allows
+// us to get a pretty 'fn_data' view and other stuff
+fn_data_proto.parent = list.proto;   // basically, fn_data is a
+                                     // subtype of 'list'
+fn_data_proto.string = fn () {
+  if (fn_data_proto == this)
+    return "<fn_data prototype>";
+  s = "";
+  i = 0;
+  for (x in this) {
+    if (i > 0) s += "\n";
+    s += string(i++) + " ";
+    s += string(x);
+  }
+  return s;
+}
 
-// patterns
-pattern.proto.string = fn () this.patterntype + ":" + this.patternsymbol;
+
+// implemention_proto
+implementation_proto.string = fn () {
+  s = "";
+  if (builtin:this.fnbody)
+    s += "builtin(";
+  else
+    s += "function(";
+  if (has(this, \signature)) {
+    j = 0;
+    for (y in this.signature) {
+      if (j++ > 0) s += ", ";
+      s += string(y);
+    }
+  }
+  if (has(this, \varargs) && lookup(this, \varargs))
+    s += ", ...";
+  return s + ")";
+}
+
+// symbol
+symbol.proto.string = fn () modules.symbol_fn.symbol_to_string(this);
+
+// pattern
+pattern.proto.string = fn () {
+  s = "";
+  if (has(this, \patterntype))
+    s += string(this.patterntype) + ":";
+  else
+    s += "object:";
+  if (has(this, \patternsymbol))
+    s += string(this.patternsymbol);
+  else
+    s += "<nosym>";
+  return s;
+}
 
 // types
 less_fn(type:x, type:y) = x:y;
@@ -214,7 +266,16 @@ times_fn(type:t1, type:t2) = {
 }
 
 
+// builtins
+builtin.proto.string = fn () modules.object.builtin_to_string(this);
+
+
+// addresses
+address.proto.string = fn () modules.object.address_to_string(this);
+
+
 // bools
+bool.proto.string      = fn () modules.bool_fn.bool_to_string(this);
 not_fn(bool:x)         = modules.bool_fn.bool_not(x);
 and_fn(bool:x, bool:y) = modules.bool_fn.bool_and(x, y);
 or_fn(bool:x, bool:y)  = modules.bool_fn.bool_or(x, y);
@@ -222,24 +283,26 @@ or_fn(bool:x, bool:y)  = modules.bool_fn.bool_or(x, y);
 
 
 // strings
-//string((bool||int||real||symbol||tuple||list||address):x) = modules.object.to_string(x);
+string.proto.string         = fn () modules.string_fn.string_to_string(this);
+string(x)                   = modules.object.to_string(x);
 plus_fn(string:x, string:y) = modules.string_fn.string_concat(x, y);
-string.proto.len = fn () modules.string_fn.string_len(this);
+string.proto.len            = fn () modules.string_fn.string_len(this);
 //equalequal_fn(string:x, string:y) = modules.string_fn.string_equalequal(x, y);
 
 
 //----------------------------------------------------------------------
 // integers
-plus_fn(int:x, int:y) = modules.int_fn.int_plus(x, y);
-neg_fn(int:x) = modules.int_fn.int_neg(x);
-minus_fn(int:x, int:y) = modules.int_fn.int_minus(x, y);
-times_fn(int:x, int:y) = modules.int_fn.int_times(x, y);
-divide_fn(int:x, int:y) = modules.int_fn.int_divide(x, y);
-less_fn(int:x, int:y) = modules.int_fn.int_less(x, y);
-lessequal_fn(int:x, int:y) = modules.int_fn.int_lessequal(x, y);
-greater_fn(int:x, int:y) = modules.int_fn.int_greater(x, y);
+int.proto.string              = fn () modules.int_fn.int_to_string(this);
+plus_fn(int:x, int:y)         = modules.int_fn.int_plus(x, y);
+neg_fn(int:x)                 = modules.int_fn.int_neg(x);
+minus_fn(int:x, int:y)        = modules.int_fn.int_minus(x, y);
+times_fn(int:x, int:y)        = modules.int_fn.int_times(x, y);
+divide_fn(int:x, int:y)       = modules.int_fn.int_divide(x, y);
+less_fn(int:x, int:y)         = modules.int_fn.int_less(x, y);
+lessequal_fn(int:x, int:y)    = modules.int_fn.int_lessequal(x, y);
+greater_fn(int:x, int:y)      = modules.int_fn.int_greater(x, y);
 greaterequal_fn(int:x, int:y) = modules.int_fn.int_greaterequal(x, y);
-int(real:x) = modules.int_fn.int_cast(x);  // try 'int(3.14)'
+int(real:x)                   = modules.int_fn.int_cast(x);  
 //equalequal_fn(int:x, int:y) = modules.int_fn.int_equalequal(x, y);
 
 
@@ -255,9 +318,10 @@ plus_fn(tuple:a, tuple:b) = {
     l.push(x);
   return tuple(l);
 }
-tuple.proto.len = fn () modules.tuple_fn.tuple_len(this);
-tuple.proto.set = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
-tuple.proto.get = fn (i) modules.tuple_fn.tuple_get(this, i);
+tuple.proto.string   = fn () modules.tuple_fn.tuple_to_string(this);
+tuple.proto.len      = fn () modules.tuple_fn.tuple_len(this);
+tuple.proto.set      = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
+tuple.proto.get      = fn (i) modules.tuple_fn.tuple_get(this, i);
 tuple.proto.iter = fn () {
   i = new();
   i.counter = 0;
@@ -293,6 +357,7 @@ tuple.proto.extend = fn (signature, scope, rhs) {
 // lists
 list() = modules.list_fn.list_new();
 list(tuple:t) = modules.tuple_fn.tuple_to_list(t);
+list.proto.string   = fn () modules.list_fn.list_to_string(this);
 list.proto.len      = fn () modules.list_fn.list_len(this);
 list.proto.copy     = fn () modules.list_fn.list_copy(this);
 list.proto.append   = fn (x) modules.list_fn.list_append(this, x);
@@ -341,24 +406,6 @@ in_fn = fn (a, b) {
 //   pattern = new(type);     // in rha_init.c
 //   pattern.proto = new();   // in rha_init.c
 // a pattern constructor
-pattern(symbol:s) = {
-  p = instance(pattern);
-  p.patternsymbol = s;
-  return p;
-}
-pattern(type:x, symbol:s) = {
-  p = pattern(s);
-  p.patterntype = x;
-  return p;
-}
-pattern.proto.to_string() = {
-  if (this == pattern.proto)
-    return "<pattern.proto>";
-  s = to_string(this.patternsymbol);
-  if (has(this, \patterntype))
-    s = to_string(this.patterntype)+":"+s;
-  return s;
-}
 
 // what is iterable?
 iterable = new(type);

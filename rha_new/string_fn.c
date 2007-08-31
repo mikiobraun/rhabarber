@@ -28,3 +28,10 @@ bool_t string_equalequal(string_t s1, string_t s2)
 {
   return 0==strcmp(s1, s2);
 }
+
+string_t string_to_string(string_t s)
+{
+  // this is boring
+  // however, inside rhabarber we might want to overload it...
+  return s;
+}

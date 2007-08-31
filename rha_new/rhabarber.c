@@ -116,8 +116,9 @@ int main(int argc, char **argv)
 	object_t e = 0;
 	for (int i = 1; i < tlen; i++)
 	  e = eval(root, tuple_get(t, i));
-	if (e)
-	  fprint(stdout, "%o\n", e);
+	if (e) {
+	  fprintf(stdout, "%s\n", to_string(e));
+	}
       }
     }
     catch(excp) {

@@ -14,6 +14,7 @@ extern _rha_ list_t    list_extend(list_t, list_t);
 extern _rha_ list_t    list_literal(list_t parsetree);
 
 extern _rha_ tuple_t   list_to_tuple(list_t);
+extern _rha_ string_t  list_to_string(list_t);
 
 extern _rha_ object_t  list_first(list_t);
 extern _rha_ object_t  list_last(list_t);

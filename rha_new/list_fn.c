@@ -4,6 +4,8 @@
 #include "alloc.h"
 #include <assert.h>
 #include "object.h"
+#include "utils.h"
+#include "string_fn.h"
 #include "messages.h"
 
 list_t list_new()
@@ -66,6 +68,18 @@ tuple_t list_to_tuple(list_t l)
       tuple_set(t, i, glist_getp(&it)); 
     }
   return t;
+}
+
+string_t list_to_string(list_t l)
+{
+  string_t s = sprint("[");
+  list_it_t it;
+  int i = 0;
+  for(it = list_begin(l); !list_done(it); list_next(it)) {
+    if (i++ > 0) s = string_concat(s, ", ");
+    s = string_concat(s, to_string(list_get(it)));
+  }
+  return string_concat(s, "]");
 }
 
 object_t list_first(list_t l)

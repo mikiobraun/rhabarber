@@ -14,6 +14,8 @@
 #include "list_fn.h"
 #include "messages.h"
 #include "gtuple.h"
+#include "utils.h"
+#include "string_fn.h"
 
 tuple_t tuple_new(int_t len)
 {
@@ -66,4 +68,15 @@ list_t tuple_to_list(tuple_t t)
   for (int i=0; i<tlen; i++)
     list_append(l, tuple_get(t, i));
   return l;
+}
+
+string_t tuple_to_string(tuple_t t)
+{
+  string_t s = sprint("(");
+  int tlen = tuple_len(t);
+  for(int i = 0; i < tlen; i++) {
+    if (i > 0) s = string_concat(s, " ");
+    s = string_concat(s, to_string(tuple_get(t, i)));
+  }
+  return string_concat(s, ")");
 }
