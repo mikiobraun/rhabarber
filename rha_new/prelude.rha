@@ -51,30 +51,22 @@ run      = modules.core.run_fn;
 error    = modules.messages.error;
 warning  = modules.messages.warning;
 
+// take care of 'syntactic functions', which generate no frame to return from
+no_frame(f) = { f.fn_data.no_frame = true; f };
+
 // (1.3) functions that are accessed after applying prules
-if_fn      = modules.core.if_fn; 
+if_fn      = no_frame(modules.core.if_fn); 
 fn_fn      = modules.core.fn_fn;
 macro_fn   = modules.core.macro_fn;
-for_fn     = modules.core.for_fn; 
-while_fn   = modules.core.while_fn;
+for_fn     = no_frame(modules.core.for_fn); 
+while_fn   = no_frame(modules.core.while_fn);
 try_fn     = modules.core.try_fn; 
 literal    = modules.core.literal;
-return_fn  = modules.core.return_fn;
-deliver_fn = modules.core.deliver_fn;
-break_fn   = modules.core.break_fn; 
-throw_fn   = modules.core.throw_fn;
+return_fn  = no_frame(modules.core.return_fn);
+deliver_fn = no_frame(modules.core.deliver_fn);
+break_fn   = no_frame(modules.core.break_fn); 
+throw_fn   = no_frame(modules.core.throw_fn);
 print      = modules.object.print_fn;
-
-// take care of 'syntactic functions', which generate no frame to return from
-no_frame(f) = (f.fn_data.no_frame = true);
-no_frame(if_fn);
-no_frame(for_fn);
-no_frame(while_fn);
-no_frame(try_fn);
-no_frame(return_fn);
-no_frame(deliver_fn);
-no_frame(break_fn);
-no_frame(throw_fn);
 
 // (1.4) proxy and other useful stuff
 proxy = fn (s) root.modules.core.proxy_fn(this, s);
