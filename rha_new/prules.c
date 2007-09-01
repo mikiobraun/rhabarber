@@ -21,7 +21,9 @@ symbol_t not_sym = 0;
 symbol_t colon_sym = 0;    // for slices and typing 
 symbol_t in_sym = 0;       // for element check
 symbol_t divide_sym = 0;
+symbol_t dotdivide_sym = 0;
 symbol_t times_sym = 0;
+symbol_t dottimes_sym = 0;
 symbol_t minus_sym = 0;
 symbol_t plus_sym = 0;
 symbol_t less_sym = 0;
@@ -52,6 +54,7 @@ symbol_t divideequal_sym = 0;
 symbol_t quote_sym = 0;
 symbol_t semicolon_sym = 0;
 symbol_t comma_sym = 0;
+symbol_t apostrophe_sym = 0;
 
 
 glist_t assign_sym_list; // a list with = += -= *= /=
@@ -76,7 +79,9 @@ void prules_init(object_t root, object_t module)
   colon_sym        = symbol_new(":");
   in_sym           = symbol_new("in");
   divide_sym       = symbol_new("/");
+  dotdivide_sym    = symbol_new("./");
   times_sym        = symbol_new("*");
+  dottimes_sym     = symbol_new(".*");
   minus_sym        = symbol_new("-");
   plus_sym         = symbol_new("+");
   less_sym         = symbol_new("<");
@@ -107,6 +112,7 @@ void prules_init(object_t root, object_t module)
   quote_sym        = symbol_new("\\");  // note the quoted slash!
   semicolon_sym    = symbol_new(";");
   comma_sym        = symbol_new(",");
+  apostrophe_sym   = symbol_new("'");
 
   // make a list of the assign prule symbols
   glist_init(&assign_sym_list);
@@ -136,11 +142,14 @@ void prules_init(object_t root, object_t module)
   // note that 'dot' and funcalls are the strongest
   object_t f = 0;
   MAKE_PRULES(prefix_minus, 1.0);
+  MAKE_PRULES(apostrophe, 1.0); // matrix transpose
   MAKE_PRULES(plusplus, 1.0);   // increment, decrement
   MAKE_PRULES(minusminus, 1.0);
   MAKE_PRULES(colon, 2.0);     // for slicing and typing
   MAKE_PRULES(divide, 3.0);     // arithemics
+  MAKE_PRULES(dotdivide, 3.0);     // arithemics
   MAKE_PRULES(times, 4.0);
+  MAKE_PRULES(dottimes, 4.0);
   MAKE_PRULES(minus, 5.0);
   MAKE_PRULES(plus, 6.0);
   MAKE_PRULES(in, 6.5);         // element test for iterables
@@ -246,6 +255,17 @@ static object_t copy_expr(object_t expr);
 //
 // the 'env' is needed only if the prule resolves its arg itsself
 // (e.g. in minus_pr).
+tuple_t apostrophe_pr(object_t env, list_t parsetree) 
+{ 
+  // must be the last symbol
+  object_t last = list_poplast(parsetree);
+  if (list_len(parsetree) == 0)
+    rha_error("(parse) found apostrophe (') following nothing");
+  if (!last || ptype(last)!=SYMBOL_T || UNWRAP_SYMBOL(last)!=apostrophe_sym)
+    rha_error("(parse) apostrophe (') must be last in expression");
+  return tuple_make(2, WRAP_SYMBOL(apostrophe_fn_sym), resolve(env, parsetree));
+}
+
 tuple_t plusplus_pr(object_t env, list_t parsetree) 
 { 
   return resolve_incdec_prule(env, parsetree); 
@@ -273,9 +293,19 @@ tuple_t divide_pr(object_t env, list_t parsetree)
   return resolve_infix_prule(env, parsetree, divide_sym, divide_fn_sym, LEFT_BIND);
 }
 
+tuple_t dotdivide_pr(object_t env, list_t parsetree) 
+{
+  return resolve_infix_prule(env, parsetree, dotdivide_sym, dotdivide_fn_sym, LEFT_BIND);
+}
+
 tuple_t times_pr(object_t env, list_t parsetree) 
 {
   return resolve_infix_prule(env, parsetree, times_sym, times_fn_sym, LEFT_BIND);
+}
+
+tuple_t dottimes_pr(object_t env, list_t parsetree) 
+{
+  return resolve_infix_prule(env, parsetree, dottimes_sym, dottimes_fn_sym, LEFT_BIND);
 }
 
 

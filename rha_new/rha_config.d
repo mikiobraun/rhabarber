@@ -15,6 +15,7 @@
 #include "real_fn.h"
 #include "string_fn.h"
 #include "bool_fn.h"
+#include "mat_fn.h"
 #include "messages.h"
 
 //TYPES
@@ -30,7 +31,12 @@ typedef struct gtuple*            _rha_ tuple_t;
 typedef object_t (*_builtin_t)(tuple_t);
 typedef _builtin_t                _rha_ builtin_t;
 typedef double                    _rha_ real_t;
-typedef double *                  _rha_ mat_t;
+typedef struct _mat_t_ { 
+  real_t *array;
+  int_t  rows;
+  int_t  cols;
+  int_t  len;
+}*                                _rha_ mat_t;
 typedef char *                    _rha_ string_t;
 typedef void *                    _rha_ address_t;
 typedef struct glist *            _rha_ list_t;
@@ -94,6 +100,8 @@ extern symbol_t minus_fn_sym;
 extern symbol_t neg_fn_sym;
 extern symbol_t times_fn_sym;
 extern symbol_t divide_fn_sym;
+extern symbol_t dottimes_fn_sym;
+extern symbol_t dotdivide_fn_sym;
 extern symbol_t equalequal_fn_sym;
 extern symbol_t notequal_fn_sym;
 extern symbol_t less_fn_sym;
@@ -102,6 +110,7 @@ extern symbol_t greater_fn_sym;
 extern symbol_t greaterequal_fn_sym;
 extern symbol_t pattern_sym;
 extern symbol_t signature_sym;
+extern symbol_t apostrophe_fn_sym;
 
 //MACROS
 #define UNWRAP_INT(o)     (unwrap_int(INT_T, o))

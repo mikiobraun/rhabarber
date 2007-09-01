@@ -319,6 +319,7 @@ string.proto.len            = fn () modules.string_fn.string_len(this);
 //----------------------------------------------------------------------
 // integers
 int.proto.string              = fn () modules.int_fn.int_to_string(this);
+apostrophe_fn(int:x) = x;
 plus_fn(int:x, int:y)         = modules.int_fn.int_plus(x, y);
 neg_fn(int:x)                 = modules.int_fn.int_neg(x);
 minus_fn(int:x, int:y)        = modules.int_fn.int_minus(x, y);
@@ -329,8 +330,98 @@ lessequal_fn(int:x, int:y)    = modules.int_fn.int_lessequal(x, y);
 greater_fn(int:x, int:y)      = modules.int_fn.int_greater(x, y);
 greaterequal_fn(int:x, int:y) = modules.int_fn.int_greaterequal(x, y);
 int(real:x)                   = modules.int_fn.int_cast(x);  
+exp(int:x) = modules.real_fn.real_exp(real(x));
+sin(int:x) = modules.real_fn.real_sin(real(x));
+cos(int:x) = modules.real_fn.real_cos(real(x));
 //equalequal_fn(int:x, int:y) = modules.int_fn.int_equalequal(x, y);
 
+//----------------------------------------------------------------------
+// reals
+real.proto.string               = fn () modules.real_fn.real_to_string(this);
+apostrophe_fn(real:x) = x;
+plus_fn(real:x, real:y)         = modules.real_fn.real_plus(x, y);
+plus_fn(int:x, real:y)          = modules.real_fn.real_plus(real(x), y);
+plus_fn(real:x, int:y)          = modules.real_fn.real_plus(x, real(y));
+neg_fn(real:x)                  = modules.real_fn.real_neg(x);
+minus_fn(real:x, real:y)         = modules.real_fn.real_minus(x, y);
+minus_fn(int:x, real:y)          = modules.real_fn.real_minus(real(x), y);
+minus_fn(real:x, int:y)          = modules.real_fn.real_minus(x, real(y));
+times_fn(real:x, real:y)         = modules.real_fn.real_times(x, y);
+times_fn(int:x, real:y)          = modules.real_fn.real_times(real(x), y);
+times_fn(real:x, int:y)          = modules.real_fn.real_times(x, real(y));
+divide_fn(real:x, real:y)         = modules.real_fn.real_divide(x, y);
+divide_fn(int:x, real:y)          = modules.real_fn.real_divide(real(x), y);
+divide_fn(real:x, int:y)          = modules.real_fn.real_divide(x, real(y));
+less_fn(real:x, real:y)         = modules.real_fn.real_less(x, y);
+lessequal_fn(real:x, real:y)    = modules.real_fn.real_lessequal(x, y);
+greater_fn(real:x, real:y)      = modules.real_fn.real_greater(x, y);
+greaterequal_fn(real:x, real:y) = modules.real_fn.real_greaterequal(x, y);
+real(int:x)                     = modules.real_fn.real_cast(x);  
+exp(real:x) = modules.real_fn.real_exp(x);
+sin(real:x) = modules.real_fn.real_sin(x);
+cos(real:x) = modules.real_fn.real_cos(x);
+//equalequal_fn(real:x, real:y) = modules.real_fn.real_equalequal(x, y);
+
+
+
+
+//----------------------------------------------------------------------
+// matrices
+mat.literal(env, list:pl) = {
+  x = split_parsetree(list().push(symbol(";"), symbol(",")), env, pl);
+  rows = x.len();
+  for (row in x) {
+    print("not yet");
+  }
+}
+rand(int:rows, int:cols) = modules.mat_fn.mat_rand(rows, cols);
+randn(int:rows, int:cols) = modules.mat_fn.mat_randn(rows, cols);
+apostrophe_fn(mat:x) = modules.mat_fn.mat_transpose(x);
+mat.proto.string = fn () modules.mat_fn.mat_to_string(this);
+eye(int:n) = modules.mat_fn.mat_eye(n);
+mat(int:rows, int:cols) = modules.mat_fn.mat_new(rows, cols);
+mat.copy = fn () modules.mat_fn.mat_copy(this);
+mat.proto.rows = fn () modules.mat_fn.mat_rows(this);
+mat.proto.cols = fn () modules.mat_fn.mat_cols(this);
+mat.proto.len  = fn () modules.mat_fn.mat_len(this);
+mat.proto.getl = fn (int:i) modules.mat_fn.mat_getl(this, i);
+mat.proto.setl = fn (int:i, real:v) modules.mat_fn.mat_setl(this,i, v);
+mat.proto.get  = fn (int:i, int:j) modules.mat_fn.mat_get(this, i, j);
+mat.proto.set  = fn (int:i, int:j, real:v) modules.mat_fn.mat_get(this, i, j, v);
+mat.proto.norm = fn () modules.mat_fn.mat_norm(this);
+mat.proto.max  = fn () modules.mat_fn.mat_max(this);
+mat.proto.min  = fn () modules.mat_fn.mat_min(this);
+mat.proto.scale = fn (real:v) modules.mat_fn.mat_scale(this, v);
+mat.proto.repmat = fn (int:i, int:j) modules.mat_fn.mat_repmat(this, i, j);
+mat.proto.reshape = fn (int:i, int:j) modules.mat_fn.mat_reshape(this, i, j);
+mat.proto.neg  = fn () modules.mat_fn.mat_minus(this);
+plus_fn(mat:x, mat:y)  = modules.mat_fn.mat_plus_mat(x, y);
+plus_fn(int:x, mat:y)  = modules.mat_fn.real_plus_mat(real(x), y);
+plus_fn(mat:x, int:y)  = modules.mat_fn.mat_plus_real(x, real(y));
+plus_fn(mat:x, real:y) = modules.mat_fn.mat_plus_real(x, y);
+plus_fn(real:x, mat:y) = modules.mat_fn.real_plus_mat(x, y);
+minus_fn(mat:x, mat:y)  = modules.mat_fn.mat_minus_mat(x, y);
+minus_fn(int:x, mat:y)  = modules.mat_fn.real_minus_mat(real(x), y);
+minus_fn(mat:x, int:y)  = modules.mat_fn.mat_minus_real(x, real(y));
+minus_fn(mat:x, real:y) = modules.mat_fn.mat_minus_real(x, y);
+minus_fn(real:x, mat:y) = modules.mat_fn.real_minus_mat(x, y);
+times_fn(mat:x, mat:y)  = modules.mat_fn.mat_times_mat(x, y);
+times_fn(int:x, mat:y)  = modules.mat_fn.real_times_mat(real(x), y);
+times_fn(mat:x, int:y)  = modules.mat_fn.mat_times_real(x, real(y));
+times_fn(mat:x, real:y) = modules.mat_fn.mat_times_real(x, y);
+times_fn(real:x, mat:y) = modules.mat_fn.real_times_mat(x, y);
+dottimes_fn(mat:x, mat:y)  = modules.mat_fn.mat_dottimes_mat(x, y);
+dottimes_fn(int:x, mat:y)  = modules.mat_fn.real_times_mat(real(x), y);
+dottimes_fn(mat:x, int:y)  = modules.mat_fn.mat_times_real(x, real(y));
+dottimes_fn(mat:x, real:y) = modules.mat_fn.mat_times_real(x, y);
+dottimes_fn(real:x, mat:y) = modules.mat_fn.real_times_mat(x, y);
+dotdivide_fn(mat:x, mat:y)  = modules.mat_fn.mat_dotdivide_mat(x, y);
+dotdivide_fn(mat:x, int:y)  = modules.mat_fn.mat_divide_real(x, real(y));
+dotdivide_fn(mat:x, real:y) = modules.mat_fn.mat_divide_real(x, y);
+dotdivide_fn(real:x, mat:y) = modules.mat_fn.real_divide_mat(x, y);
+exp(mat:x) = modules.mat_fn.mat_exp(x);
+sin(mat:x) = modules.mat_fn.mat_sin(x);
+sinc(mat:x) = modules.mat_fn.mat_sinc(x);
 
 //----------------------------------------------------------------------
 // tuples

@@ -24,11 +24,14 @@ extern _rha_ object_t prule_new_freefix();
 // predefined prules
 extern _rha_ tuple_t curlied_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t squared_pr(object_t env, list_t parsetree);
+extern _rha_ tuple_t apostrophe_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t plusplus_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t minusminus_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t not_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t divide_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t times_pr(object_t env, list_t parsetree);
+extern _rha_ tuple_t dotdivide_pr(object_t env, list_t parsetree);
+extern _rha_ tuple_t dottimes_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t prefix_minus_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t minus_pr(object_t env, list_t parsetree);
 extern _rha_ tuple_t plus_pr(object_t env, list_t parsetree);

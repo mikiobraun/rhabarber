@@ -171,3 +171,7 @@ f(real:x) = 42;
 check(f(1)==17);
 check(f(1.0)==42);
 summarize();
+
+test("matrix");
+
+summarize();

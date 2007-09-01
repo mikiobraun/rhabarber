@@ -3,14 +3,15 @@ CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include -Wall -pedantic
 #CFLAGS=-std=c99 -I../ -O3 -I/opt/local/include -Wall -pedantic
 
 LDFLAGS=-L/opt/local/lib
-LOADLIBES=-lgc -lreadline
+LOADLIBES=-lgc -lreadline -lcblas
 
 ALLSOURCES=$(wildcard *.c)
 SOURCES=alloc.o eval.o core.o \
 	glist.o gtree.o gtuple.o list_fn.o messages.o object.o \
 	parse.o rha_init.o rha_lexer.o rha_parser.tab.o symbol_fn.o \
 	symtable.o tuple_fn.o utils.o utilalloc.o fmt.o cstream.o \
-	int_fn.o real_fn.o prules.o string_fn.o debug.o excp.o bool_fn.o
+	int_fn.o real_fn.o prules.o string_fn.o debug.o excp.o \
+	bool_fn.o mat_fn.o
 UTILOBJ=gtree.o utilalloc.o gtuple.o
 
 TESTCASES=$(subst .c,,$(wildcard test_*.c))

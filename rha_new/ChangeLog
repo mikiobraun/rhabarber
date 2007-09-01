@@ -1,3 +1,15 @@
+2007-09-01  Stefan Harmeling  <harmeling@gmail.com>
+
+	* prelude.rha, mat_fn.[hc], prules.[hc], rha_lexer.l, real_fn.[hc]: 
+	added matrix support, including transpose, Hadamard product, etc.
+	E.g. 
+
+	a = randn(3,4);
+	b = randn(4,5);
+	c = a*(b.*b)*2;
+	d = 3.14*a*(b.*b)*2.0/1;
+	e = a*a';
+	
 2007-08-31  Stefan Harmeling  <harmeling@gmail.com>
 
 	* prelude.rha (fn): removed bug in split_parselist, try:

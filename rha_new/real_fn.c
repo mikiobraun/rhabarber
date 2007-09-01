@@ -1,5 +1,6 @@
 #include "real_fn.h"
 
+#include <math.h>
 #include "object.h"
 #include "messages.h"
 #include "utils.h"
@@ -15,6 +16,9 @@ bool_t real_less(real_t x, real_t y) { return x<y; }
 bool_t real_lessequal(real_t x, real_t y) { return x<=y; }
 bool_t real_greater(real_t x, real_t y) { return x>y; }
 bool_t real_greaterequal(real_t x, real_t y) { return x>=y; }
+real_t real_exp(real_t x) { return exp(x); }
+real_t real_cos(real_t x) { return cos(x); }
+real_t real_sin(real_t x) { return sin(x); }
 
 real_t real_cmp(real_t x, real_t y) {
   if (x==y) return 0;
