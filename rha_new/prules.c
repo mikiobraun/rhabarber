@@ -470,7 +470,9 @@ tuple_t if_pr(object_t env, list_t parsetree)
 
 tuple_t try_pr(object_t env, list_t parsetree)
 { 
-  tuple_t pre_t = resolve_freefix_prule2(env, parsetree, try_fn_sym, try_sym, 1, catch_sym, 2);
+  tuple_t pre_t = resolve_freefix_prule2(env, parsetree, try_fn_sym,
+					 try_sym, 1, catch_sym, 2);
+  debug("pre_t==%o\n", WRAP_PTR(TUPLE_T, pre_t));
   assert(tuple_len(pre_t) == 4);
   tuple_t t = tuple_new(5);
   tuple_set(t, 0, tuple_get(pre_t, 0));
@@ -481,7 +483,9 @@ tuple_t try_pr(object_t env, list_t parsetree)
   list_t obj_l = UNWRAP_PTR(LIST_T, obj);
   if (list_len(obj_l) != 1)
     rha_error("(parsing) symbol for exception expected, found %o", obj);
-  object_t s = list_popfirst(obj_l);
+  obj = list_popfirst(obj_l);
+  assert(obj && ptype(obj)==LIST_T);
+  object_t s = resolve(env, UNWRAP_PTR(LIST_T, obj));
   if (ptype(s) != SYMBOL_T)
     rha_error("in 'try 17 catch (x) 42', 'x' must be a symbol");
   tuple_set(t, 3, quoted(s));

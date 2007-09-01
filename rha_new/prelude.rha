@@ -178,7 +178,18 @@ equalequal_fn = modules.object.equalequal_fn;
 notequal_fn   = modules.object.notequal_fn;
 
 // complex literal
-literal = fn (env, pl) list.literal(env, pl);
+literal = fn (env, list:pl) {
+  m = 0;
+  try {
+    m = mat.literal(env, pl);
+  }
+  catch (e) {
+    m = list.literal(env, pl);
+  }
+  if (m == 0)
+    error("(literal) can't parse complex literal");
+  return m;
+}
 split_parselist = fn (list:symlist, env, list:pl) {
   if (symlist.len() == 0)
     return resolve(env, pl);
@@ -188,15 +199,17 @@ split_parselist = fn (list:symlist, env, list:pl) {
   part = list();
   for (x in pl) {
     if (x == split) {
+      if (part.len()==0)
+	error("(literal) too many "+string(split));
       // split here
-      print(part);
       sink.push(split_parselist(symlist, env, part));
       part = list();
     }
     else
       part.push(x);
   }
-  print(part);
+  if (part.len()==0)
+    error("(literal) too many "+string(split));
   sink.push(split_parselist(symlist, env, part));
   symlist.unshift(split);
   return sink;
@@ -367,12 +380,26 @@ cos(real:x) = modules.real_fn.real_cos(x);
 
 //----------------------------------------------------------------------
 // matrices
-mat.literal(env, list:pl) = {
-  x = split_parsetree(list().push(symbol(";"), symbol(",")), env, pl);
+mat.literal = fn (env, list:pl) {
+  x = split_parselist(list().push(symbol(";"), symbol(",")), env, pl);
   rows = x.len();
-  for (row in x) {
-    print("not yet");
-  }
+  cols = x(0).len();
+  // check that all rows have same size
+  for (row in x)
+    if (row.len() != cols)
+      error("(literal) all rows must have same number of entries");
+  // check that all entries are type 'real'
+  m = mat(cols, rows);  // we transpose later
+  i = 0;
+  for (row in x)
+    for (a in row) {
+      if (!real:a && !int:a) {
+	error("(literal) all entries of a matrix must be of type 'real' or 'int'");
+      }
+      else
+	m.setl(i++, real(a));
+    }
+  return modules.mat_fn.mat_transpose(m);
 }
 rand(int:rows, int:cols) = modules.mat_fn.mat_rand(rows, cols);
 randn(int:rows, int:cols) = modules.mat_fn.mat_randn(rows, cols);
