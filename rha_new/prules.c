@@ -472,7 +472,7 @@ tuple_t try_pr(object_t env, list_t parsetree)
 { 
   tuple_t pre_t = resolve_freefix_prule2(env, parsetree, try_fn_sym,
 					 try_sym, 1, catch_sym, 2);
-  debug("pre_t==%o\n", WRAP_PTR(TUPLE_T, pre_t));
+  //debug("pre_t==%o\n", WRAP_PTR(TUPLE_T, pre_t));
   assert(tuple_len(pre_t) == 4);
   tuple_t t = tuple_new(5);
   tuple_set(t, 0, tuple_get(pre_t, 0));

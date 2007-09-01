@@ -224,6 +224,11 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
   //   a.x.y(z)      (callslot (eval a \x) \y z)
   //   a.x(z)(zz)    ((callslot a \x z) zz)
   //   a.x.y(z)(zz)  ((callslot (eval a \x) \y z) zz)
+
+  // now also for literals:
+  //   list[1,2,3]
+  //   [1,2,3]
+  //   mat[1,2,3]
   
   // ok there is more:
   //   list().append(17);
@@ -247,6 +252,9 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
       if (list_len(l) != 1)
 	rha_error("grouped expression expected, found", obj);
     }
+    //    else if (is_marked_list(squared_sym, obj)) {
+    //  
+    //}
     else
       l = UNWRAP_PTR(LIST_T, obj);
     // and resolve it

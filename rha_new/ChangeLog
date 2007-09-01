@@ -1,5 +1,17 @@
 2007-09-01  Stefan Harmeling  <harmeling@gmail.com>
 
+	* rha_lexer.l (escexpand): now 'escexpand' only expands but
+	doesn't copy, i.e. the string is expanded in place and will be
+	shorter accordingly.
+	(\"): instead of ALLOW_RAW in escexpand, we now use gc_strup()
+	from alloc.h.
+	(\"\"): to avoid conflicts with matrix transpose (which is a'), we
+	now use double "" for string that are not expanded.  Note that the
+	rule for the double quotes must come before the rule for the
+	single quotes, to deal correctly with the empty string.
+	(...): sorted the operators according to their length to make
+	explicit which operators exist and which not.
+
 	* prules.c (try_pr): removed bug, which ignored one level of
 	list-lists...  the solution is a dirty hack as well and doesn't
 	make the code nicer, but it looks like it works! 

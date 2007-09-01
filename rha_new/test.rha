@@ -172,6 +172,11 @@ check(f(1)==17);
 check(f(1.0)==42);
 summarize();
 
+test("string");
+//check("test\n"(-1))
+summarize();
+
+
 test("matrix");
 
 summarize();

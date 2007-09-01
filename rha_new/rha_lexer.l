@@ -38,23 +38,32 @@ extern int yylineno;
                    yylval.obj = WRAP_SYMBOL(symbol_new(yytext));
                    return SYMBOL; 
                  }
-(\"[^\"]*\"|\'[^\']*\')	 { 
+("...")          { // operators with three symbols
+                   yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); 
+		   return SYMBOL; 
+                 }
+("++"|"--"|"=="|"!="|"<="|">="|"!="|".*"|"./"|"+="|"-="|"*="|"/="|"&&"|"||"|"\\") { // operators with two symbols
+                   yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); 
+		   return SYMBOL; 
+                 }
+("."|"<"|">"|"!"|"+"|"-"|"*"|"/"|"="|"?"|"#"|";"|","|":"|"'") { // operators with one symbol
+                   yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); 
+		   return SYMBOL; 
+                 }
+\"\"[^\"]*\"\"   { // w/o expansion of esc characters 
+                   yytext[strlen(yytext) - 2] = 0;
+                   yylval.obj = WRAP_PTR(STRING_T, gc_strdup(yytext + 2));
+                   return STRING;
+                 }
+\"[^\"]*\"       { // with expansion of esc characters
                    yytext[strlen(yytext) - 1] = 0;
-                   yylval.obj = WRAP_PTR(STRING_T, escexpand(yytext + 1));
+                   yylval.obj = WRAP_PTR(STRING_T, gc_strdup(escexpand(yytext + 1)));
                    return STRING;
                  }
 [0-9]+		 { yylval.obj = WRAP_INT(atoi(yytext)); return INT; }
 ([0-9]+\.[0-9])|([0-9]*\.[0-9]+) { 
                    yylval.obj = WRAP_REAL(atof(yytext)); 
 		   return REAL; 
-                 }
-\.\.\.           {
-                   yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); 
-		   return SYMBOL; 
-                 }
-([+\-*/<>^!=.]+|"&&"|"||"|"\\"|"?"|"#"|";"|","|":"|"'") {
-                   yylval.obj = WRAP_SYMBOL(symbol_new(yytext)); 
-		   return SYMBOL; 
                  }
 \n		 yylineno++;
 .		 rha_warning("unrecognized character \"%s\"", yytext);
@@ -91,8 +100,7 @@ void thisfunctioncallsyyunputsowillyoupleaseshutupnowgcc()
 
 char *escexpand(char *in)
 {
-  int l = strlen(in);
-  char *out = ALLOC_RAW(l+1);
+  char *out = in;
   char *p = out;
 
   while(*in) {

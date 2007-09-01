@@ -399,7 +399,7 @@ mat.literal = fn (env, list:pl) {
       else
 	m.setl(i++, real(a));
     }
-  return modules.mat_fn.mat_transpose(m);
+  return m';
 }
 rand(int:rows, int:cols) = modules.mat_fn.mat_rand(rows, cols);
 randn(int:rows, int:cols) = modules.mat_fn.mat_randn(rows, cols);
