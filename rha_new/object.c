@@ -347,8 +347,10 @@ any_t extend(any_t this, symbol_t s, tuple_t signature,
 
   // (1) does 's' exists already?  if not, create a new function.
   any_t obj = lookup(this, s);
-  if (!obj)
-    return assign(this, s, fn_fn(env, signature, rhs));
+  if (!obj) {
+    assign(this, s, fn_fn(env, signature, rhs));
+    return 0;
+  }
   // else extend 'obj'
 
   // (2) does 'obj' have its own 'extend' mechanism (like tuples)
@@ -380,7 +382,7 @@ any_t extend(any_t this, symbol_t s, tuple_t signature,
   any_t fn_data = WRAP_PTR(LIST_T, fn_data_l);
   assign(fn_data, parent_sym, fn_data_proto);
   assign(obj, fn_data_sym, fn_data);
-  return obj;
+  return 0;
 }
 
 

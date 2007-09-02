@@ -262,9 +262,11 @@ bool_t pattern_matches(any_t pattern, any_t value)
 		    // have slots.
   any_t theliteral = lookup(pattern, symbol_new("patternliteral"));
   any_t thetype = lookup(pattern, symbol_new("patterntype"));
-  if (theliteral && ptype(theliteral)!=SYMBOL_T
-      && equalequal_fn(theliteral, value)) {
-    return true;
+  if (theliteral && ptype(theliteral)!=SYMBOL_T) {
+    if (equalequal_fn(theliteral, value))
+      return true;
+    else
+      return false;
   }
   else {
     if (thetype) {

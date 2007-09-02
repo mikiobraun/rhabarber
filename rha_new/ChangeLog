@@ -1,5 +1,24 @@
 2007-09-02  Stefan Harmeling  <harmeling@gmail.com>
 
+	* eval.c (pattern_matches), object.c (extend): removed bug that
+	prevented the literal mechanism to work: now we can do the
+	following cool stuff:
+
+	f(1) = 1;
+	f(2) = 1;
+	f(n) = f(n-1) + f(n-2);
+
+	Return value is void for 'f(x) = 2*x'.  The problem is when typing
+
+	f(1) = f(2) = 17;
+
+	we really get:
+
+	f(2) = 17;
+	f(1) = (f(2) = 17);
+
+	since the RHS is *not* evaluated for this syntactic sugar.
+
 	* prelude.rha: added support for matrix access:
 
 	m = rand(4,3);
