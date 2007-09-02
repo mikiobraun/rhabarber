@@ -6,6 +6,8 @@
 extern       void     prules_init(any_t root, any_t module);
 
 // helper
+extern       list_t split_by_semicolon(list_t parsetree);
+
 extern       bool_t   is_symbol(symbol_t a_symbol, any_t expr);
 extern       any_t quoted(any_t obj);
 extern       bool_t   is_marked_list(symbol_t mark, any_t obj);

@@ -68,26 +68,6 @@ static double get_priority(any_t prule);
 static any_t replace_expr(any_t expr, symbol_t s, any_t sub);
 
 
-any_t parse(any_t root, string_t s)
-{
-  // (0) run bison code
-  list_t source = rhaparsestring(s);
-  if (list_len(source)==0) return 0;
-
-  // (1) resolve prules and macros creating a big function call
-  return resolve(root, source);
-}
-
-any_t parse_file(any_t root, string_t fname)
-{
-  // (0) run bison code
-  list_t source = rhaparsefile(fname);
-  
-  // (1) resolve prules and macros creating a big function call
-  return resolve(root, source);
-}
-
-
 //----------------------------------------------------------------------
 // resolving prules
 //

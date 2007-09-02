@@ -148,23 +148,29 @@ isa = fn (x, t) {
   }
 }
 
+// lazy 'and' and 'or'
+and_fn = macro (x, y) if (!eval(local, x)) false
+                      else if (!eval(local, y)) false
+                      else true;
+//and_fn = fn (bool:x, bool:y) modules.bool_fn.bool_and(x, y);
+or_fn = macro(x, y) if (eval(local, x)) true
+                    else if (eval(local, y)) true
+                    else false;
+//or_fn  = fn (bool:x, bool:y) modules.bool_fn.bool_or(x, y);
+
 // colon can be used for typechecks and to generate tuple
 colon_fn = fn (a, b) {
   // is 'a' a type?
-  if (type.check(a))
+  if (type.check(a)) // note that we can't use here 'type:a'
     // yes, perform type check
     return a.check(b);
   // otherwise generate a tuple
   // later on, this should be a true generator using 'yield'
-  if (int.check(a) && int.check(b)) {
-    if (a > b) return tuple(0);
-    t = tuple(b-a);
-    k = a;
-    while (k < b) {
-      t.set(k-a, k);
-      k += 1;  // note that k++ is wrong since it changes 'a'
-    }
-    return t;
+  if (int:a && int:b) {
+    l = list();
+    while (a < b)
+      l.push(a++);
+    return l;
   }
   throw "either 0:5 or int:x";
 }
@@ -316,8 +322,6 @@ address.proto.string = fn () modules.object.address_to_string(this);
 // bools
 bool.proto.string      = fn () modules.bool_fn.bool_to_string(this);
 not_fn(bool:x)         = modules.bool_fn.bool_not(x);
-and_fn(bool:x, bool:y) = modules.bool_fn.bool_and(x, y);
-or_fn(bool:x, bool:y)  = modules.bool_fn.bool_or(x, y);
 //equalequal_fn(bool:x, bool:y) = modules.bool_fn.bool_equalequal(x, y);
 
 
@@ -413,14 +417,14 @@ apostrophe_fn(mat:x) = modules.mat_fn.mat_transpose(x);
 mat.proto.string = fn () modules.mat_fn.mat_to_string(this);
 eye(int:n) = modules.mat_fn.mat_eye(n);
 mat(int:rows, int:cols) = modules.mat_fn.mat_new(rows, cols);
-mat.proto(int:i, int:j) = static.get(this, i, j);
+mat.proto(int:i, int:j) = static.get(i, j);
 mat.proto.extend = fn (signature, scope, rhs) {
   if (signature.len() != 2)
     error("(mat) index must be pair");
   row = signature(0).patternliteral;
-  col = signature(0).patternliteral;
+  col = signature(1).patternliteral;
   value = eval(scope, rhs);
-  this.set(row, col, value);
+  this.set(row, col, real(value));
   return value;
 }
 mat.copy = fn () modules.mat_fn.mat_copy(this);
@@ -430,7 +434,7 @@ mat.proto.len  = fn () modules.mat_fn.mat_len(this);
 mat.proto.getl = fn (int:i) modules.mat_fn.mat_getl(this, i);
 mat.proto.setl = fn (int:i, real:v) modules.mat_fn.mat_setl(this,i, v);
 mat.proto.get  = fn (int:i, int:j) modules.mat_fn.mat_get(this, i, j);
-mat.proto.set  = fn (int:i, int:j, real:v) modules.mat_fn.mat_get(this, i, j, v);
+mat.proto.set  = fn (int:i, int:j, real:v) modules.mat_fn.mat_set(this, i, j, v);
 mat.proto.norm = fn () modules.mat_fn.mat_norm(this);
 mat.proto.max  = fn () modules.mat_fn.mat_max(this);
 mat.proto.min  = fn () modules.mat_fn.mat_min(this);

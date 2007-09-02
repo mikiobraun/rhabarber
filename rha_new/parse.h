@@ -3,11 +3,6 @@
 
 #include "rha_types.h"
 
-extern _rha_ any_t parse(any_t root, string_t s);
-extern _rha_ any_t parse_file(any_t root, string_t fname);
-
-
-
 extern _rha_ any_t resolve(any_t root, list_t source);
 extern       any_t resolve_patterns(any_t env, list_t source);
 

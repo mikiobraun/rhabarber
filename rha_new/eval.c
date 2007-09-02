@@ -258,10 +258,14 @@ bool_t pattern_lessthan_pattern(any_t p1, any_t p2)
 
 bool_t pattern_matches(any_t pattern, any_t value)
 {
+  assert(pattern);  // at least it should exist, even if it doesn't
+		    // have slots.
   any_t theliteral = lookup(pattern, symbol_new("patternliteral"));
   any_t thetype = lookup(pattern, symbol_new("patterntype"));
-  if (ptype(theliteral)!=SYMBOL_T
-      && equalequal_fn(theliteral, value)) return true; 
+  if (theliteral && ptype(theliteral)!=SYMBOL_T
+      && equalequal_fn(theliteral, value)) {
+    return true;
+  }
   else {
     if (thetype) {
       // check the type
@@ -270,13 +274,15 @@ bool_t pattern_matches(any_t pattern, any_t value)
 	rha_error("(signature) type %o doesn't implement a valid 'check'", thetype);
       if (UNWRAP_BOOL(res))
 	return true;
+      else
+	return false;
     }
     else
       // don't check the type
       return true;
   }
-  return false;
 }
+
 
 // compare a signature against given arguments
 bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
@@ -292,6 +298,7 @@ bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
     if (nsig != narg)
       return false;
   }
+  // lexicographical order
   for (int i = 0; i < nsig; i++) {
     any_t pattern = tuple_get(signature, i);
     if (!pattern_matches(pattern, tuple_get(values, i)))

@@ -639,17 +639,10 @@ tuple_t quote_pr(any_t env, list_t parsetree)
 // code blocks  -->  returns a tuple_t
 // for example: { x = 1; y = 7; deliver 5; { a=5; } x=5 }
 // split by semicolon, comma is not allowed
-tuple_t curlied_pr(any_t env, list_t parsetree)
-{
-  //debug("curlied_pr(%o, %o)\n", env, WRAP_PTR(LIST_T, parsetree));
-  if (list_len(parsetree) == 0)
-    rha_error("(curlied_pr) nothing to resolve");
-  assert(list_len(parsetree) > 0);
-  any_t head = list_popfirst(parsetree);  // pop off curlied_sym
-  assert(head);
-  if (!is_symbol(curlied_sym, head))
-    rha_error("(curlied_pr) don't call prules directly");
 
+list_t split_by_semicolon(list_t parsetree)
+{
+  // split but don't resolve!
   list_t sink = list_new();
   list_t part = list_new();
   any_t obj = list_popfirst(parsetree);
@@ -661,7 +654,7 @@ tuple_t curlied_pr(any_t env, list_t parsetree)
       if (!obj) break;
       if (!is_second_order_keyword(obj) && list_len(part)>0) {
 	// split here
-	list_append(sink, resolve(env, part));
+	list_append(sink, WRAP_PTR(LIST_T, part));
 	part = list_new();
 	// ignore the semicolon
       }
@@ -682,7 +675,7 @@ tuple_t curlied_pr(any_t env, list_t parsetree)
       if (!obj) break;
       if (!is_second_order_keyword(obj)) {
 	// split
-	list_append(sink, resolve(env, part));
+	list_append(sink, WRAP_PTR(LIST_T, part));
 	part = list_new();
       }
       continue;
@@ -693,7 +686,26 @@ tuple_t curlied_pr(any_t env, list_t parsetree)
     obj = list_popfirst(parsetree);
   }
   if (list_len(part)>0)
-    list_append(sink, resolve(env, part));
+    list_append(sink, WRAP_PTR(LIST_T, part));
+  return sink;
+}
+
+tuple_t curlied_pr(any_t env, list_t parsetree)
+{
+  //debug("curlied_pr(%o, %o)\n", env, WRAP_PTR(LIST_T, parsetree));
+  assert(list_len(parsetree)>0);
+  any_t head = list_popfirst(parsetree);  // pop off curlied_sym
+  assert(head);
+  if (!is_symbol(curlied_sym, head))
+    rha_error("(split_by_semicolon) don't call this directly");
+  list_t source = split_by_semicolon(parsetree);
+  list_t sink = list_new();
+  // note that the first is ignored, since it is the 'do_sym'
+  any_t obj = 0;
+  while ((obj = list_popfirst(source))) {
+    assert(ptype(obj) == LIST_T);
+    list_append(sink, resolve(env, UNWRAP_PTR(LIST_T, obj)));
+  }
   list_prepend(sink, WRAP_SYMBOL(do_sym));
   return list_to_tuple(sink);
 }

@@ -17,6 +17,8 @@
 #include <gc/gc.h>
 
 #include "messages.h"
+#include "rha_parser.h" // for 'rhaparsestring'
+#include "prules.h"     // for 'split_by_semicolon'
 #include "utils.h"
 #include "excp.h"
 #include "rha_init.h"
@@ -101,25 +103,12 @@ int main(int argc, char **argv)
     if (!line) break;
     add_history(line);
     try {
-      any_t p = parse(root, line);
-      if (p) {
-	// note that the outer tuple containing a "do" is dealt with
-	// here, because this way we can avoid opening a BLOCK_FRAME.
-	// this makes sure that at the prompt 'deliver 17' will issue
-	// an error as wanted
-	assert(ptype(p) == TUPLE_T);
-	tuple_t t = UNWRAP_PTR(TUPLE_T, p);
-	int_t tlen = tuple_len(t);
-	assert(tlen > 0);
-	assert(ptype(tuple_get(t, 0)) == SYMBOL_T);
-	assert(UNWRAP_SYMBOL(tuple_get(t, 0)) == do_sym);
-	any_t e = 0;
-	for (int i = 1; i < tlen; i++)
-	  e = eval(root, tuple_get(t, i));
-	if (e) {
-	  fprintf(stdout, "%s\n", to_string(e));
-	}
-      }
+      // parse split by semicolon (and other tricks)
+      any_t value = split_resolve_and_eval(root, rhaparsestring(line), 0);
+
+      // and print the result
+      if (value)
+	fprintf(stdout, "%s\n", to_string(value));
     }
     catch(excp) {
       excp_show(excp);

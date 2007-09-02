@@ -4,6 +4,8 @@
 #include "rha_types.h"
 #include "glist.h"
 
+extern       any_t  split_resolve_and_eval(any_t root, list_t source, string_t context);
+
 extern _rha_ any_t  proxy_fn(any_t this, symbol_t s);
 
 extern _rha_ any_t  create_function(any_t fn_data);

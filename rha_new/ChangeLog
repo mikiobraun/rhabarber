@@ -1,3 +1,33 @@
+2007-09-02  Stefan Harmeling  <harmeling@gmail.com>
+
+	* prelude.rha: added support for matrix access:
+
+	m = rand(4,3);
+	m(2,3) = 0;
+	m(1,2);
+
+	added macros for lazy 'and' and 'or', which now work the next line
+	of 'prelude.rha'.
+	
+	* parse.c: removed 'parse()' and 'parse_file()' which are now
+	obsolete since the introduction of 'split_resolve_and_eval'.
+	
+	* Makefile (test): added case that allows a clean built and
+	running of the test cases in test.rha by typing 'make test'.
+
+	* core.c (split_resolve_and_eval): new function that splits a
+	bison-parsed string into semicolon separated expression, which are
+	evaluated immediately after resolving prules.  The advantage is
+	that macros defined in some file (e.g. lazy 'and_fn') can be used
+	a few lines later already (e.g. in 'colon_fn').
+	(run_fn), rhabarber.c: now the main read-eval-print loop and
+	'run_fn' are using the 'split_resolve_and_eval' function.  this
+	also removed some of the uglyness of having a loop in 'main'.
+
+	* prules.c (curlied_pr): separated a new function
+	'split_by_semicolon' which is also used in
+	'split_resolve_and_eval' in core.c
+
 2007-09-01  Stefan Harmeling  <harmeling@gmail.com>
 
 	* Changed all "object_t" to "any_t" which is a better description

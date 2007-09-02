@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <assert.h>
 #include "rha_types.h"
+#include "rha_parser.h"
 #include "messages.h"
 
 #include "eval.h"
@@ -350,36 +351,33 @@ real_t toc_fn()
  *
  *************************************************************/
 
+any_t split_resolve_and_eval(any_t root, list_t source, string_t context)
+{
+  // parse split by semicolon (and other tricks)
+  list_t l = split_by_semicolon(source);
+  
+  // resolve and eval each expression
+  any_t obj=0, expr=0, value=0, excp=0;
+  while ((obj = list_popfirst(l))) {
+    assert(ptype(obj) == LIST_T);
+    try {
+      expr = resolve(root, UNWRAP_PTR(LIST_T, obj));
+      value = eval(root, expr);
+    }
+    catch (excp) {
+      if (context)
+	excp = excp_new(string_concat(excp_msg(excp), 
+				      sprint("\n[%s] %o", context, obj)));
+      throw(excp);
+    }
+  }
+  // return the last one
+  return value;
+}
+
 any_t run_fn(any_t root, string_t fname)
 {
-  any_t p = parse_file(root, fname);
-  if (p) { // otherwise, input was empty
-    // note that the outer tuple containing a "do" is dealt with
-    // here, because this way we can avoid opening a BLOCK_FRAME.
-    // this makes sure that at the prompt 'deliver 17' will issue
-    // an error as wanted
-    assert(ptype(p) == TUPLE_T);
-    tuple_t t = UNWRAP_PTR(TUPLE_T, p);
-    int_t tlen = tuple_len(t);
-    assert(tlen > 0);
-    assert(ptype(tuple_get(t, 0)) == SYMBOL_T);
-    assert(UNWRAP_SYMBOL(tuple_get(t, 0)) == do_sym);
-    any_t e = 0;
-    any_t excp = 0;
-    for (int i = 1; i < tlen; i++) {
-      try {
-	e = eval(root, tuple_get(t, i));
-      }
-      catch (excp) {
-	excp = excp_new(string_concat(excp_msg(excp), 
-				      sprint("\n[%s] %o", fname, tuple_get(t, i))));
-	throw(excp);
-      }
-    }
-    return e;
-  }
-  else
-    return 0;
+  return split_resolve_and_eval(root, rhaparsefile(fname), fname);
 }
 
 /************************************************************

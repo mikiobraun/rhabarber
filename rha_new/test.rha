@@ -10,6 +10,19 @@ check("test"!="tests");
 summarize();
 
 
+test("bool test");
+check(!(true) == false);
+check(!(false) == true);
+check((true && true) == true);
+check((false && true) == false);
+check((true && false) == false);
+check((false && false) == false);
+check((true || true) == true);
+check((false || true) == true);
+check((true || false) == true);
+check((false || false) == false);
+summarize();
+
 test("proxy tests");
 a = 17;
 b = proxy(\a);
@@ -60,21 +73,21 @@ for (x in l) y += x;
 check(y == 170);
 summarize();
 
-//test("return test");
-//x = (fn () { y = new(); y.a = 17; return y; z == zz })();
-//check(x.a == 17);
-//summarize();
+test("return test");
+x = (fn () { y = new(); y.a = 17; return y; z == zz })();
+check(x.a == 17);
+summarize();
 
-//test("deliver test");
-//x = { y = new(); y.a = 17; deliver y; z == zz };
-//check(x.a == 17);
-//summarize();
+test("deliver test");
+x = { y = new(); y.a = 17; deliver y; z == zz };
+check(x.a == 17);
+summarize();
 
-//test("break test");
-//for (i in 0:5)
-//  if (i==2) break;
-//check(i == 2);
-//summarize();
+test("break test");
+for (i in 0:5)
+  if (i==2) break;
+check(i == 2);
+summarize();
 
 test("colon test");
 x = tuple(5);
@@ -86,7 +99,7 @@ x.set(4, 9);
 y = 5:10;
 check(y.len() == 5);
 for (i in 0:5)
-  check(x.get(i) == y.get(i));
+  check(x.get(i) == y.shift());
 summarize();
 
 test("multiple arguments");
@@ -187,4 +200,7 @@ summarize();
 test("matrix");
 a = [1,2,3;
      4,5,6];
+check((a*a')(0,1) == 32);
+a(1,1) = 17;
+check((a.*a)(0,1) == 4);
 summarize();
