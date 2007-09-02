@@ -173,10 +173,18 @@ check(f(1.0)==42);
 summarize();
 
 test("string");
-//check("test\n"(-1))
+check("test"(-4) == "t");
+check("test"(-3) == "e");
+check("test"(-2) == "s");
+check("test"(-1) == "t");
+check("test"(0) == "t");
+check("test"(1) == "e");
+check("test"(2) == "s");
+check("test"(3) == "t");
 summarize();
 
 
 test("matrix");
-
+a = [1,2,3;
+     4,5,6];
 summarize();

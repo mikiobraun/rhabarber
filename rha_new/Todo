@@ -5,4 +5,6 @@
 
 * break is broken
 
-* in default case of 'to_string' look for slot 'to_string'
+* why does "test"/ not produce an error
+
+* get rid of "failed to catch an exception"

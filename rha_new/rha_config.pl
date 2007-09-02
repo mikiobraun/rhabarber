@@ -148,7 +148,7 @@ foreach $module (@mods) {
 	push(@symbs, $fnname);
 	
 	# add wrapper code
-	$init_c_functions .= "object_t b_$fnname(tuple_t t) {\n";
+	$init_c_functions .= "any_t b_$fnname(tuple_t t) {\n";
 	$fncall_str = "$fnname(";
 	
 	if ($ellipses) {
@@ -181,7 +181,7 @@ foreach $module (@mods) {
 	    elsif ($item eq "real_t") { $fnarg_str = "UNWRAP_REAL($fnarg_str)" }
 	    elsif ($item eq "builtin_t") { $fnarg_str = "UNWRAP_BUILTIN($fnarg_str)" }
 	    elsif ($item eq "...") {$fnarg_str = "args" }
-	    elsif ($item ne "object_t") { $fnarg_str = "UNWRAP_PTR($ucitem, $fnarg_str)" }
+	    elsif ($item ne "any_t") { $fnarg_str = "UNWRAP_PTR($ucitem, $fnarg_str)" }
 	    $fncall_str .= $fnarg_str;
 	    $i++;
 	}
@@ -191,7 +191,7 @@ foreach $module (@mods) {
 	elsif ($fntype eq "symbol_t") { $fncall_str = "WRAP_SYMBOL($fncall_str)" }
 	elsif ($fntype eq "real_t") { $fncall_str = "WRAP_REAL($fncall_str)" }
 	elsif ($fntype eq "builtin_t") { $fncall_str = "WRAP_BUILTIN($fncall_str)" }
-	elsif ($fntype ne "object_t" && $fntype ne "void") {
+	elsif ($fntype ne "any_t" && $fntype ne "void") {
 	    $ucfntype = uc($fntype);
 	    $ifntype = 	substr($fntype, 0, -2);
 	    $fncall_str = "WRAP_PTR($ucfntype, $fncall_str)";
@@ -222,12 +222,12 @@ foreach $module (@mods) {
 
     # check for $module_init function
     if ($input =~ /$module\_init/) {
-	if ($input =~ /void\s+$module\_init\(object_t\s*(\s$id\s*)?,\s*object_t\s*(\s$id\s*)?\)/) {
-	    print $module, "_init(object_t, object_t) found\n" if $debug;
+	if ($input =~ /void\s+$module\_init\(any_t\s*(\s$id\s*)?,\s*any_t\s*(\s$id\s*)?\)/) {
+	    print $module, "_init(any_t, any_t) found\n" if $debug;
 	    $init_c_add_functions .= "  $module"."_init(root, module);\n";
 	}
 	else {
-	    die "type error, correct signature: 'void $module"."_init(object_t, object_t)'";
+	    die "type error, correct signature: 'void $module"."_init(any_t, any_t)'";
 	}
     }
     $init_c_add_functions .= "\n";
@@ -276,31 +276,31 @@ sub create_ids {
 
 sub create_prototypes {
     $ntdefs = scalar(@tdefs) + 1;
-    $type_h_prototypes .= "extern object_t prototypes[$ntdefs];\n";
-    $type_h_prototypes .= "extern object_t fn_data_proto;\n";
-    $type_h_prototypes .= "extern object_t implementation_proto;\n";
-    $type_h_prototypes .= "extern object_t pattern_proto;\n";
-    $init_c_prototypes .= "object_t prototypes[$ntdefs];\n";
-    $init_c_prototypes .= "object_t fn_data_proto = 0;\n";
-    $init_c_prototypes .= "object_t implementation_proto = 0;\n";
-    $init_c_prototypes .= "object_t pattern_proto = 0;\n";
-    $type_h_typeobjects .= "extern object_t typeobjects[$ntdefs];\n";
-    $init_c_typeobjects .= "object_t typeobjects[$ntdefs];\n";
+    $type_h_prototypes .= "extern any_t prototypes[$ntdefs];\n";
+    $type_h_prototypes .= "extern any_t fn_data_proto;\n";
+    $type_h_prototypes .= "extern any_t implementation_proto;\n";
+    $type_h_prototypes .= "extern any_t pattern_proto;\n";
+    $init_c_prototypes .= "any_t prototypes[$ntdefs];\n";
+    $init_c_prototypes .= "any_t fn_data_proto = 0;\n";
+    $init_c_prototypes .= "any_t implementation_proto = 0;\n";
+    $init_c_prototypes .= "any_t pattern_proto = 0;\n";
+    $type_h_typeobjects .= "extern any_t typeobjects[$ntdefs];\n";
+    $init_c_typeobjects .= "any_t typeobjects[$ntdefs];\n";
     $init_c_init_prototypes .= "  prototypes[0] = 0; // void prototype\n";
     $init_c_init_prototypes .= "  for (int i = 1; i < $ntdefs; i++) {\n";
     $init_c_init_prototypes .= "    prototypes[i] = create_pt(i);\n";
     $init_c_init_prototypes .= "    typeobjects[i] = new();\n";
     $init_c_init_prototypes .= "  }\n";
-    $init_c_init_prototypes .= "  typeobjects[OBJECT_T] = 0;\n";
+    $init_c_init_prototypes .= "  typeobjects[ANY_T] = 0;\n";
     $i = 1;
     foreach $item (@tdefs) {
 	$ucitem = uc($item);
 	$iitem = substr($item, 0, -2);
 	$uciitem = uc($iitem);
-	if ($item ne "object_t") {
+	if ($item ne "any_t") {
 	    $init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
 	    $init_c_add_pchecks .= "  assign(typeobjects[$ucitem], check_sym, pcheck_f);\n";
-	    # note that we omit OBJECT_T for the type slot
+	    # note that we omit ANY_T for the type slot
 	    $init_c_extend_prototypes .= "  assign(prototypes[$i], type_sym, typeobjects[$i]);\n";
 	}
 	else{
@@ -381,7 +381,7 @@ sub create_init_h {
 // (1) includes
 $init_h_modules
 // (2) 'rha_init' creates the whole object hierarchy
-extern object_t rha_init();
+extern any_t rha_init();
 ENDE
 }
 
@@ -432,23 +432,23 @@ $init_c_functions
   assign(modules, mmm ## _sym, module);
 
 static
-void add_function(object_t module, symbol_t s, 
-                  object_t (*code)(tuple_t),
+void add_function(any_t module, symbol_t s, 
+                  any_t (*code)(tuple_t),
                   bool_t varargs, int narg, ...)
 {
   va_list args;
   va_start(args, narg);
-  object_t f = vcreate_builtin(code, varargs, narg, args);
+  any_t f = vcreate_builtin(code, varargs, narg, args);
   va_end(args);
 
   assign(module, s, f);
 }
 
 static
-object_t create_special_fn_data(object_t module, bool_t method, 
+any_t create_special_fn_data(any_t module, bool_t method, 
                                 symbol_t fn_sym, int_t narg, ...)
 {
-  // "..." must be pairs of 'object_t' and 'symbol_t'
+  // "..." must be pairs of 'any_t' and 'symbol_t'
   tuple_t signature = 0;
   list_t fnbody_l = 0;
   if (narg < 0) {
@@ -464,16 +464,16 @@ object_t create_special_fn_data(object_t module, bool_t method,
     signature = tuple_new(narg);
     fnbody_l = list_new();
     for (int i = 0; i < narg; i++) {
-      object_t thetype = va_arg(ap, object_t);
-      object_t thesymbol = WRAP_SYMBOL(va_arg(ap, symbol_t));
-      assert(thesymbol);
+      any_t thetype = va_arg(ap, any_t);
+      any_t theliteral = WRAP_SYMBOL(va_arg(ap, symbol_t));
+      assert(theliteral);
       if (thetype) {
-	tuple_set(signature, i, create_pattern(2, thesymbol, thetype));
+	tuple_set(signature, i, create_pattern(2, theliteral, thetype));
       }
       else {
-	tuple_set(signature, i, create_pattern(1, thesymbol));
+	tuple_set(signature, i, create_pattern(1, theliteral));
       }
-      list_append(fnbody_l, thesymbol);
+      list_append(fnbody_l, theliteral);
     }
     va_end(ap);
     // are we creating a method?
@@ -486,7 +486,7 @@ object_t create_special_fn_data(object_t module, bool_t method,
 			WRAP_PTR(TUPLE_T, list_to_tuple(fnbody_l)));
 }
 
-object_t rha_init()
+any_t rha_init()
 {
   // (6.1) prototypes (TYPES)
   fn_data_proto = new();
@@ -497,22 +497,22 @@ $init_c_init_prototypes
   // (6.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
 $init_c_init_symbols
 
-  object_t root = new();
+  any_t root = new();
   assign(root, root_sym, root);
   assign(root, local_sym, root); // the outer-most local scope
 
   // (6.2) add modules
-  object_t modules = new();
+  any_t modules = new();
   assign(root, modules_sym, modules);
-  object_t module = 0;
+  any_t module = 0;
 $init_c_add_modules
 
   // (6.3) create type objects (TYPES)
-  object_t fn_data = 0;
-  object_t type_obj = new();
+  any_t fn_data = 0;
+  any_t type_obj = new();
   assign(root, type_sym, type_obj);
   assign(type_obj, proto_sym, type_obj);
-  object_t pattern_obj = clone(type_obj);
+  any_t pattern_obj = clone(type_obj);
   // note that for 'fn_data_proto' there is only the prototype but no
   // object in root called 'fn_data'.  otherwise 'root' would be callable!
   assign(root, symbol_new("fn_data_proto"), fn_data_proto);
@@ -530,7 +530,7 @@ $init_c_init_typeobjects
   assign(type_obj, check_sym, create_function(fn_data));
   fn_data = create_special_fn_data(module, true, symbol_new("pcheck"), 1,
 		                   0, symbol_new("x"));
-  object_t pcheck_f = create_function(fn_data);
+  any_t pcheck_f = create_function(fn_data);
 $init_c_add_pchecks
 
   // (6.4) add type slots to the prototypes

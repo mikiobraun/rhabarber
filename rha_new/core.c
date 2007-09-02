@@ -28,7 +28,7 @@
 #include "parse.h"
 
 
-object_t proxy_fn(object_t this, symbol_t s)
+any_t proxy_fn(any_t this, symbol_t s)
 {
   // note that this function can't be implemented fully in rhabarber itself!!!
   // failing attempt:
@@ -41,35 +41,48 @@ object_t proxy_fn(object_t this, symbol_t s)
   //
   // the problem is that after adding the slot 'proxy' to 'y', we can
   // not return 'y', since it is not accessible anymore.
-  object_t obj = new();
+  any_t obj = new();
   // create proxy function
   assign(obj, hasproxy_sym, fn_fn(this, tuple_new(0), WRAP_SYMBOL(s)));
   return obj;
 }
 
-object_t create_pattern(int_t narg, ...)
+any_t create_pattern(int_t narg, ...)
 {
   va_list ap;
   va_start(ap, narg);
   tuple_t args = tuple_new(narg);
   for (int i = 0; i < narg; i++)
-    tuple_set(args, i,va_arg(ap, object_t));
+    tuple_set(args, i,va_arg(ap, any_t));
   va_end(ap);
   return vcreate_pattern(args);
 }
 
-object_t vcreate_pattern(tuple_t args)
+any_t vcreate_pattern(tuple_t args)
 {
-  object_t thesymbol = 0;
-  object_t thetype = 0;
+  // what is a pattern?
+  // x
+  // int:x
+  // true
+  // 1
+  // 1.0
+  // anything that can be compared with other stuff
+  any_t theliteral = 0;
+  any_t thetype = 0;
   int narg = tuple_len(args);
   if (narg > 0) {
     // check the type of the first argument by hand
-    thesymbol = tuple_get(args, 0);
-    if (thesymbol && ptype(thesymbol) != SYMBOL_T)
-      rha_error("(pattern) the symbol is not of type 'symbol'");
+    theliteral = tuple_get(args, 0);
+    if (theliteral 
+	&& ptype(theliteral) != SYMBOL_T
+	&& ptype(theliteral) != BOOL_T
+	&& ptype(theliteral) != INT_T
+	&& ptype(theliteral) != REAL_T)
+      rha_error("(pattern) the arg must be symbol, bool, int or real");
   }
   if (narg > 1) {
+    if (theliteral && ptype(theliteral) != SYMBOL_T)
+      rha_error("(pattern) only symbols can be typed");
     thetype = tuple_get(args, 1);
     // do type checking here by hand!
     if (thetype && !has(thetype, check_sym))
@@ -78,31 +91,31 @@ object_t vcreate_pattern(tuple_t args)
   if (narg > 2) {
     rha_error("(pattern) can't create pattern");
   }
-  // note that both 'thetype' and 'thesymbol' could be void.  this
-  // happens for builtin function that only have OBJECT_T arguments
+  // note that both 'thetype' and 'theliteral' could be void.  this
+  // happens for builtin function that only have ANY_T arguments
   // then the resulting 'pattern' is the empty object
-  object_t pattern = new();
+  any_t pattern = new();
   assign(pattern, parent_sym, pattern_proto);
   if (thetype)
     assign(pattern, symbol_new("patterntype"), thetype);
-  if (thesymbol)
-    assign(pattern, symbol_new("patternsymbol"), thesymbol);
+  if (theliteral)
+    assign(pattern, symbol_new("patternliteral"), theliteral);
   return pattern;
 }
 
 
-object_t create_fn_data_entry(object_t env, tuple_t signature, object_t fnbody)
+any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
 {
   // check for ellipsis symbol
   // it is only allowed at the end of a signature
   list_t signature_l = list_new();
   int i, tlen = tuple_len(signature);
   for (i = 0; i < tuple_len(signature); i++) {
-    object_t pattern = tuple_get(signature, i);
-    object_t thesymbol = lookup(pattern, symbol_new("patternsymbol"));
-    if (thesymbol
-	&& ptype(thesymbol) == SYMBOL_T
-	&& UNWRAP_SYMBOL(thesymbol) == symbol_new("..."))
+    any_t pattern = tuple_get(signature, i);
+    any_t theliteral = lookup(pattern, symbol_new("patternliteral"));
+    if (theliteral
+	&& ptype(theliteral) == SYMBOL_T
+	&& UNWRAP_SYMBOL(theliteral) == symbol_new("..."))
       break;
     list_append(signature_l, pattern);
   }
@@ -119,7 +132,7 @@ object_t create_fn_data_entry(object_t env, tuple_t signature, object_t fnbody)
   }
 
   // built fn_data entry
-  object_t entry = new();
+  any_t entry = new();
   assign(entry, signature_sym, WRAP_PTR(TUPLE_T, signature));
   if (env)
     assign(entry, scope_sym, env);
@@ -129,41 +142,41 @@ object_t create_fn_data_entry(object_t env, tuple_t signature, object_t fnbody)
   return entry;
 }
 
-object_t create_fn_data(object_t env, tuple_t signature, object_t fnbody)
+any_t create_fn_data(any_t env, tuple_t signature, any_t fnbody)
 {
   // note the order
   list_t fn_data_l = list_new();
   list_append(fn_data_l, create_fn_data_entry(env, signature, fnbody));
-  object_t fn_data = WRAP_PTR(LIST_T, fn_data_l);
+  any_t fn_data = WRAP_PTR(LIST_T, fn_data_l);
   assign(fn_data, parent_sym, fn_data_proto); // this makes sure that
 					      // it can be converted
 					      // to string
   return fn_data;
 }
 
-object_t create_function(object_t fn_data)
+any_t create_function(any_t fn_data)
 {
   // defines a new function
-  object_t f = new();
+  any_t f = new();
   assign(f, fn_data_sym, fn_data);
   return f;
 }
 
-object_t fn_fn(object_t env, tuple_t signature, object_t fnbody)
+any_t fn_fn(any_t env, tuple_t signature, any_t fnbody)
 {
   return create_function(create_fn_data(env, signature, fnbody));
 }
 
-object_t macro_fn(tuple_t argnames, object_t fnbody)
+any_t macro_fn(tuple_t argnames, any_t fnbody)
 {
-  object_t m = new();
+  any_t m = new();
   assign(m, ismacro_sym, WRAP_BOOL(true));
   assign(m, argnames_sym, WRAP_PTR(TUPLE_T, argnames));
   assign(m, fnbody_sym, fnbody);
   return m;
 }
 
-object_t prule_fn(object_t this, tuple_t argnames, object_t fnbody, real_t priority)
+any_t prule_fn(any_t this, tuple_t argnames, any_t fnbody, real_t priority)
 {
   assert(1==0);  // is this ever used???
 
@@ -172,12 +185,12 @@ object_t prule_fn(object_t this, tuple_t argnames, object_t fnbody, real_t prior
   // * an object with a 'priority' slot
   if (tuple_len(argnames) != 1)
     rha_error("prules must have only a single argument for the parsetree");
-  object_t p = fn_fn(this, argnames, fnbody);
+  any_t p = fn_fn(this, argnames, fnbody);
   assign(p, priority_sym, WRAP_REAL(priority));
   return p;
 }
 
-tuple_t map_fn(object_t this, object_t f, tuple_t t)
+tuple_t map_fn(any_t this, any_t f, tuple_t t)
 {
   // applies function f to all entries in the tuple
   // each entry is assumed to be a single entry itself or a tuple
@@ -185,7 +198,7 @@ tuple_t map_fn(object_t this, object_t f, tuple_t t)
   tuple_t sink_t = tuple_new(tlen);
   tuple_t call_t = 0;
   for (int i = 0; i < tlen; i++) {
-    object_t entry = tuple_get(t, i);
+    any_t entry = tuple_get(t, i);
     if (ptype(entry) == TUPLE_T) {
       list_t l = tuple_to_list(UNWRAP_PTR(TUPLE_T, entry));
       list_prepend(l, quoted(f));
@@ -201,7 +214,7 @@ tuple_t map_fn(object_t this, object_t f, tuple_t t)
   return sink_t;
 }
 
-object_t if_fn(object_t this, bool_t cond, object_t then_code, object_t else_code)
+any_t if_fn(any_t this, bool_t cond, any_t then_code, any_t else_code)
 {
   // we assume that the condition is already evaluated
   if (cond)
@@ -211,28 +224,28 @@ object_t if_fn(object_t this, bool_t cond, object_t then_code, object_t else_cod
 }
 
 
-void return_fn(object_t retval)
+void return_fn(any_t retval)
 {
   frame_jump(FUNCTION_FRAME, retval);
   // never reaches this point
 }
 
 
-void deliver_fn(object_t retval)
+void deliver_fn(any_t retval)
 {
   frame_jump(BLOCK_FRAME, retval);
   // never reaches this point
 }
 
 
-void break_fn(object_t retval)
+void break_fn(any_t retval)
 {
   frame_jump(LOOP_FRAME, retval);
   // never reaches this point
 }
 
 
-void throw_fn(object_t excp)
+void throw_fn(any_t excp)
 {
   // thow_fn does not return!
   throw(excp);
@@ -248,12 +261,12 @@ void exit_fn(int_t exit_code)
 }
 
 
-object_t while_fn(object_t this, object_t cond, object_t body)
+any_t while_fn(any_t this, any_t cond, any_t body)
 {
-  object_t res = 0; // must be initialized for "cond==false"
+  any_t res = 0; // must be initialized for "cond==false"
   begin_frame(LOOP_FRAME)
     while (1) {
-      object_t cond_o = eval(this, cond);
+      any_t cond_o = eval(this, cond);
       if (!cond_o || ptype(cond_o)!=BOOL_T)
 	rha_error("(while) condition must generate bool");
       if (UNWRAP_BOOL(cond_o))
@@ -266,10 +279,10 @@ object_t while_fn(object_t this, object_t cond, object_t body)
 }
 
 
-object_t try_fn(object_t this, object_t tryblock, symbol_t catchvar, object_t catchblock)
+any_t try_fn(any_t this, any_t tryblock, symbol_t catchvar, any_t catchblock)
 {
-  object_t excp = 0;
-  object_t result = 0;
+  any_t excp = 0;
+  any_t result = 0;
   try {
     result = eval(this, tryblock);
   }
@@ -281,10 +294,10 @@ object_t try_fn(object_t this, object_t tryblock, symbol_t catchvar, object_t ca
 }
 
 
-object_t for_fn(object_t this, symbol_t var, object_t container, object_t body)
+any_t for_fn(any_t this, symbol_t var, any_t container, any_t body)
 {
-  object_t res = 0;
-  object_t iter = callslot(container, iter_sym, 0);
+  any_t res = 0;
+  any_t iter = callslot(container, iter_sym, 0);
   begin_frame(LOOP_FRAME)
     while (!UNWRAP_BOOL(callslot(iter, done_sym, 0))) {
       assign(this, var, callslot(iter, get_sym, 0));
@@ -337,9 +350,9 @@ real_t toc_fn()
  *
  *************************************************************/
 
-object_t run_fn(object_t root, string_t fname)
+any_t run_fn(any_t root, string_t fname)
 {
-  object_t p = parse_file(root, fname);
+  any_t p = parse_file(root, fname);
   if (p) { // otherwise, input was empty
     // note that the outer tuple containing a "do" is dealt with
     // here, because this way we can avoid opening a BLOCK_FRAME.
@@ -351,8 +364,8 @@ object_t run_fn(object_t root, string_t fname)
     assert(tlen > 0);
     assert(ptype(tuple_get(t, 0)) == SYMBOL_T);
     assert(UNWRAP_SYMBOL(tuple_get(t, 0)) == do_sym);
-    object_t e = 0;
-    object_t excp = 0;
+    any_t e = 0;
+    any_t excp = 0;
     for (int i = 1; i < tlen; i++) {
       try {
 	e = eval(root, tuple_get(t, i));
@@ -375,7 +388,7 @@ object_t run_fn(object_t root, string_t fname)
  *
  *************************************************************/
 
-object_t colon_fn(object_t a, object_t b)
+any_t colon_fn(any_t a, any_t b)
 {
   if (ptype(a) == INT_T && ptype(b) == INT_T) {
     int_t i = UNWRAP_INT(a);
@@ -397,14 +410,14 @@ object_t colon_fn(object_t a, object_t b)
 }
 
 
-object_t literal(object_t env, list_t parsetree)
+any_t literal(any_t env, list_t parsetree)
 {
   // this is the default complex literal handler
   // for now we simply generate a list by getting rid of all COMMA and
   // by calling resolve on each sublist
   list_t sink = list_new();
   list_t part = list_new();
-  object_t head = 0;
+  any_t head = 0;
   while ((head = list_popfirst(parsetree))) {
     if (is_symbol(symbol_new(","), head)) {
       if (list_len(part)>0) {

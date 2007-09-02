@@ -9,7 +9,7 @@
 /* print an object */
 static void fmt_object(STREAM *s, char *fmt, va_list *ap)
 {
-  strputs(s, to_string_only_in_c(va_arg(*ap, object_t)));
+  strputs(s, to_string_only_in_c(va_arg(*ap, any_t)));
 }
 
 void print(const char *fmt, ...)

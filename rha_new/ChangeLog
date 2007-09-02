@@ -1,5 +1,11 @@
 2007-09-01  Stefan Harmeling  <harmeling@gmail.com>
 
+	* Changed all "object_t" to "any_t" which is a better description
+	what 'object_t' is inside rhabarber if you ask for type
+	information.  I guess this is controversial and you might not
+	agree with me that that was a good idea.  Anyhow, I am happy to
+	revert it!
+	
 	* rha_lexer.l (escexpand): now 'escexpand' only expands but
 	doesn't copy, i.e. the string is expanded in place and will be
 	shorter accordingly.

@@ -29,13 +29,13 @@ int_t list_len(list_t l)
   return glist_length(l);
 }
 
-list_t list_append(list_t l, object_t o)
+list_t list_append(list_t l, any_t o)
 {
   glist_append(l, o);
   return l;
 }
 
-list_t list_prepend(list_t l, object_t o)
+list_t list_prepend(list_t l, any_t o)
 {
   glist_prepend(l, o);
   return l;
@@ -82,22 +82,22 @@ string_t list_to_string(list_t l)
   return string_concat(s, "]");
 }
 
-object_t list_first(list_t l)
+any_t list_first(list_t l)
 {
   return glist_frontp(l);
 }
 
-object_t list_last(list_t l)
+any_t list_last(list_t l)
 {
   return glist_backp(l);
 }
 
-object_t list_popfirst(list_t l)
+any_t list_popfirst(list_t l)
 {
   return glist_popp(l);
 }
 
-object_t list_poplast(list_t l)
+any_t list_poplast(list_t l)
 {
   return glist_removep(l);
 }
@@ -123,7 +123,7 @@ void list_next(list_it_t i)
   glist_next(i);
 }
 
-object_t list_get(list_it_t i)
+any_t list_get(list_it_t i)
 {
   return glist_getp(i);
 }
@@ -134,7 +134,7 @@ list_t list_chop_first(list_t l, symbol_t s)
 // and after it, the symbol itself in the initial list will be lost
 {
   list_t part = list_new();
-  object_t head;
+  any_t head;
   while ((head = list_popfirst(l))) {
     if (ptype(head) == SYMBOL_T)
       if (s == UNWRAP_SYMBOL(head))
@@ -149,7 +149,7 @@ list_t list_chop_first_list(list_t l, glist_t *sym_list)
 // generalizes list_chop_first() to multiple symbols given in sym_list
 {
   list_t part = list_new();
-  object_t head;
+  any_t head;
   while ((head = list_popfirst(l))) {
     if (ptype(head) == SYMBOL_T)
       if (glist_iselementi(sym_list, UNWRAP_SYMBOL(head)))
@@ -165,7 +165,7 @@ list_t list_chop_last(list_t l, symbol_t s)
 // and after it, the symbol itself in the initial list will be lost
 {
   list_t part = list_new();
-  object_t tail;
+  any_t tail;
   while ((tail = list_poplast(l))) {
     if (ptype(tail) == SYMBOL_T)
       if (s == UNWRAP_SYMBOL(tail))
@@ -180,7 +180,7 @@ list_t list_chop_last_list(list_t l, glist_t *sym_list)
 // generalizes list_chop_last() to multiple symbols given in sym_list
 {
   list_t part = list_new();
-  object_t tail;
+  any_t tail;
   while ((tail = list_poplast(l))) {
     if (ptype(tail) == SYMBOL_T)
       if (glist_iselementi(sym_list, UNWRAP_SYMBOL(tail)))
@@ -210,7 +210,7 @@ list_t list_chop_matching(list_t l, symbol_t left, symbol_t right)
   // once we are at zero we found ours...
   // this is similar to counting brackets
   list_t part = list_new();
-  object_t head = 0;
+  any_t head = 0;
   while ((head = list_popfirst(l))) {
     if (ptype(head) == SYMBOL_T) {
       symbol_t head_s = UNWRAP_SYMBOL(head);

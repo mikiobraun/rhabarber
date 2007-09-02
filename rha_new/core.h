@@ -4,41 +4,41 @@
 #include "rha_types.h"
 #include "glist.h"
 
-extern _rha_ object_t  proxy_fn(object_t this, symbol_t s);
+extern _rha_ any_t  proxy_fn(any_t this, symbol_t s);
 
-extern _rha_ object_t  create_function(object_t fn_data);
+extern _rha_ any_t  create_function(any_t fn_data);
 
-extern _rha_ object_t  create_pattern(int_t narg, ...);
-extern _rha_ object_t  vcreate_pattern(tuple_t args);
-extern _rha_ object_t  create_fn_data(object_t env, tuple_t argnames, 
-				      object_t fnbody);
-extern _rha_ object_t  create_fn_data_entry(object_t env, tuple_t argnames, 
-					    object_t fnbody);
-extern _rha_ object_t  fn_fn(object_t env, tuple_t patterns, object_t fnbody);
-extern _rha_ object_t  macro_fn(tuple_t argnames, object_t fnbody);
+extern _rha_ any_t  create_pattern(int_t narg, ...);
+extern _rha_ any_t  vcreate_pattern(tuple_t args);
+extern _rha_ any_t  create_fn_data(any_t env, tuple_t argnames, 
+				      any_t fnbody);
+extern _rha_ any_t  create_fn_data_entry(any_t env, tuple_t argnames, 
+					    any_t fnbody);
+extern _rha_ any_t  fn_fn(any_t env, tuple_t patterns, any_t fnbody);
+extern _rha_ any_t  macro_fn(tuple_t argnames, any_t fnbody);
 
-extern _rha_ object_t  if_fn(object_t this, bool_t cond, 
-			     object_t then_code, object_t else_code);
-extern _rha_ void      return_fn(object_t);
-extern _rha_ void      deliver_fn(object_t);
-extern _rha_ void      break_fn(object_t);
-extern _rha_ void      throw_fn(object_t);
-extern _rha_ object_t  while_fn(object_t this, object_t cond, object_t code);
-extern _rha_ object_t  for_fn(object_t this, symbol_t var, 
-			      object_t container, object_t code);
-extern _rha_ object_t  try_fn(object_t this, object_t tryblock, 
-			      symbol_t catchvar, object_t catchblock);
+extern _rha_ any_t  if_fn(any_t this, bool_t cond, 
+			     any_t then_code, any_t else_code);
+extern _rha_ void      return_fn(any_t);
+extern _rha_ void      deliver_fn(any_t);
+extern _rha_ void      break_fn(any_t);
+extern _rha_ void      throw_fn(any_t);
+extern _rha_ any_t  while_fn(any_t this, any_t cond, any_t code);
+extern _rha_ any_t  for_fn(any_t this, symbol_t var, 
+			      any_t container, any_t code);
+extern _rha_ any_t  try_fn(any_t this, any_t tryblock, 
+			      symbol_t catchvar, any_t catchblock);
 
-extern _rha_ object_t  colon_fn(object_t a, object_t b);
+extern _rha_ any_t  colon_fn(any_t a, any_t b);
 
-extern _rha_ object_t  literal(object_t env, list_t parsetree);
+extern _rha_ any_t  literal(any_t env, list_t parsetree);
 
 extern _rha_ void      tic_fn();
 extern _rha_ real_t    toc_fn();
 extern _rha_ void      exit_fn(int_t);
-extern _rha_ object_t  run_fn(object_t root, string_t fname);
+extern _rha_ any_t  run_fn(any_t root, string_t fname);
 
-extern _rha_ tuple_t   map_fn(object_t this, object_t f, tuple_t t);
+extern _rha_ tuple_t   map_fn(any_t this, any_t f, tuple_t t);
 
 
 #endif

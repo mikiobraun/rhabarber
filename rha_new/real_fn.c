@@ -26,7 +26,7 @@ real_t real_cmp(real_t x, real_t y) {
   return 1;
 }
 
-real_t real_cast(object_t x)
+real_t real_cast(any_t x)
 {
   switch (ptype(x)) {
   case REAL_T:

@@ -14,7 +14,7 @@
 #include "tuple_fn.h"
 #include "symbol_fn.h"
 
-void eval_init(object_t root, object_t module)
+void eval_init(any_t root, any_t module)
 {
   // the only two functions we need to pull by hand (and not in prelude.rha)
   assign(root, eval_sym, lookup(module, eval_sym));
@@ -22,12 +22,12 @@ void eval_init(object_t root, object_t module)
 }
 
 // forward declarations
-static object_t eval_sequence(object_t env, tuple_t t);
-static object_t eval_args_and_call_fun(object_t env, tuple_t expr);
-static object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values, 
+static any_t eval_sequence(any_t env, tuple_t t);
+static any_t eval_args_and_call_fun(any_t env, tuple_t expr);
+static any_t find_and_call_matching_impl(any_t local, list_t fn_data_l, tuple_t values, 
 					    bool_t no_frame);
 static bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values);
-static object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
+static any_t call_matching_impl(any_t local, any_t scope, any_t fnbody,
 			    tuple_t signature, tuple_t values, bool_t no_frame);
 
 /*************************************************************
@@ -44,7 +44,7 @@ static object_t call_matching_impl(object_t local, object_t scope, object_t fnbo
 // in eval.h.
 
 jmp_buf frame_stack[FRAME_MAX_NESTING];
-object_t frame_value[FRAME_MAX_NESTING];
+any_t frame_value[FRAME_MAX_NESTING];
 int frame_type[FRAME_MAX_NESTING];
 int frame_tos = -1;
 char *frame_names[] = { "function", "loop", "block", "try" };
@@ -65,11 +65,11 @@ void _print_frames()
 // The EVALuator
 //
 
-object_t eval(object_t env, object_t expr)
+any_t eval(any_t env, any_t expr)
 {
   //debug("eval(env=%p, expr=%o)\n", env, expr);
   
-  object_t value;
+  any_t value;
   
   switch (ptype(expr)) {
   case SYMBOL_T: {
@@ -123,12 +123,12 @@ object_t eval(object_t env, object_t expr)
 //                          call_matching_impl      
 
 static 
-object_t eval_args_and_call_fun(object_t env, tuple_t expr)
+any_t eval_args_and_call_fun(any_t env, tuple_t expr)
 {
   int tlen = tuple_len(expr);
   //debug("eval_args: %o\n", WRAP_PTR(TUPLE_T, expr));
   assert(tlen>0);  // otherwise repair 'rhaparser.y'
-  object_t f = tuple_get(expr, 0);
+  any_t f = tuple_get(expr, 0);
   // deal with special stuff
   if (ptype(f)==SYMBOL_T) {
     if (quote_sym == UNWRAP_SYMBOL(f)) {
@@ -154,12 +154,12 @@ object_t eval_args_and_call_fun(object_t env, tuple_t expr)
 //
 // opens a BLOCK_FRAME
 static 
-object_t eval_sequence(object_t env, tuple_t t)
+any_t eval_sequence(any_t env, tuple_t t)
 {
   // either the value of the last expression is delivered
   // or the value following 'deliver'
   // eval_sequence does not open a new scope
-  object_t res = 0;
+  any_t res = 0;
   int_t tlen = tuple_len(t);
   begin_frame(BLOCK_FRAME)
     // evaluate all, or stop earlier via 'deliver', 'break', 'return'
@@ -177,17 +177,17 @@ object_t eval_sequence(object_t env, tuple_t t)
 // environment of the callee and executes the function
 //
 // callable objects must have the 'fn_data' slot
-object_t call_fun(object_t this, tuple_t values)
+any_t call_fun(any_t this, tuple_t values)
 {
   list_t values_l = tuple_to_list(values);
 
   // get the function to be called
-  object_t fn = list_popfirst(values_l);
+  any_t fn = list_popfirst(values_l);
   values = list_to_tuple(values_l);
   
   // look for 'fn_data' which contains all information for the
   // overloaded function
-  object_t fn_data = lookup(fn, fn_data_sym);
+  any_t fn_data = lookup(fn, fn_data_sym);
   list_t fn_data_l = 0;
   if (!fn_data)
     rha_error("(eval) %o can't be called, since it "
@@ -200,7 +200,7 @@ object_t call_fun(object_t this, tuple_t values)
   bool_t no_frame = has(fn_data, no_frame_sym);
 
   // construct the inner scope
-  object_t local = new();
+  any_t local = new();
   assign(local, local_sym, local);   // the scope local to the function
   assign(local, this_sym, this);     // the calling scope
   assign(local, static_sym, fn);     // for static variables
@@ -215,29 +215,29 @@ object_t call_fun(object_t this, tuple_t values)
 //
 // calls: signature_matches, call_matching_impl
 static 
-object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t values,
+any_t find_and_call_matching_impl(any_t local, list_t fn_data_l, tuple_t values,
 				     bool_t no_frame)
 {
   //debug("find_and_call_matching_impl(%o, %o, %o)\n", local, WRAP_PTR(LIST_T, fn_data_l), WRAP_PTR(TUPLE_T, values));
   string_t msg = "(eval) can't call %o, since it has a faulty entry in 'fn_data'";
   // go through the list to find a match
   for (list_it_t it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
-    object_t impl = list_get(it);
+    any_t impl = list_get(it);
     if (!impl) rha_error(msg);
-    object_t signature_o = lookup(impl, signature_sym); 
+    any_t signature_o = lookup(impl, signature_sym); 
     if (!signature_o || ptype(signature_o)!=TUPLE_T)
       rha_error(msg);
     tuple_t signature = UNWRAP_PTR(TUPLE_T, signature_o);
-    object_t varargs_o = lookup(impl, varargs_sym);
+    any_t varargs_o = lookup(impl, varargs_sym);
     if (!varargs_o || ptype(varargs_o)!=BOOL_T)
       rha_error(msg);
     bool_t varargs = UNWRAP_BOOL(varargs_o);
     if (signature_matches(signature, varargs, values)) {
       // match found!!!
-      object_t fnbody = lookup(impl, fnbody_sym);
+      any_t fnbody = lookup(impl, fnbody_sym);
       if (!fnbody)
 	rha_error("(eval) can't find function body");
-      object_t scope = lookup(impl, scope_sym);
+      any_t scope = lookup(impl, scope_sym);
       // note that for builtin functions the 'scope' is ignored and
       // can thus also be 'void'
       if (!scope && ptype(fnbody)!=BUILTIN_T)
@@ -250,6 +250,33 @@ object_t find_and_call_matching_impl(object_t local, list_t fn_data_l, tuple_t v
   return 0;
 }
 
+
+bool_t pattern_lessthan_pattern(any_t p1, any_t p2)
+{
+  return true;
+}
+
+bool_t pattern_matches(any_t pattern, any_t value)
+{
+  any_t theliteral = lookup(pattern, symbol_new("patternliteral"));
+  any_t thetype = lookup(pattern, symbol_new("patterntype"));
+  if (ptype(theliteral)!=SYMBOL_T
+      && equalequal_fn(theliteral, value)) return true; 
+  else {
+    if (thetype) {
+      // check the type
+      any_t res = callslot(thetype, check_sym, 1, value);
+      if (!res || ptype(res)!=BOOL_T)
+	rha_error("(signature) type %o doesn't implement a valid 'check'", thetype);
+      if (UNWRAP_BOOL(res))
+	return true;
+    }
+    else
+      // don't check the type
+      return true;
+  }
+  return false;
+}
 
 // compare a signature against given arguments
 bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
@@ -265,21 +292,10 @@ bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
     if (nsig != narg)
       return false;
   }
-
   for (int i = 0; i < nsig; i++) {
-    object_t pattern = tuple_get(signature, i);
-    object_t thetype = lookup(pattern, symbol_new("patterntype"));
-    //debug("type %o\n", thetype);
-    if (thetype) {
-      // check the type
-      object_t res = callslot(thetype, check_sym, 1, tuple_get(values, i));
-      if (!res || ptype(res)!=BOOL_T)
-	rha_error("(signature) type %o doesn't implement a valid 'check'", thetype);
-      if (!UNWRAP_BOOL(res)) {
-	//print("not matching\n");
-	return false;
-      }
-    }
+    any_t pattern = tuple_get(signature, i);
+    if (!pattern_matches(pattern, tuple_get(values, i)))
+      return false;
   }
   // all checks passed
   return true;
@@ -289,11 +305,11 @@ bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
 
 // call the found matching implementation
 static 
-object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
+any_t call_matching_impl(any_t local, any_t scope, any_t fnbody,
 			    tuple_t signature, tuple_t values, bool_t no_frame)
 {
   // call the function
-  object_t res = 0;
+  any_t res = 0;
   if (ptype(fnbody) == BUILTIN_T) {
     // (1) function with C code
     builtin_t f = UNWRAP_BUILTIN(fnbody);
@@ -312,15 +328,17 @@ object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
     // assign the arguments
     int nsig = tuple_len(signature);
     for(int i = 0; i < nsig; i++) {
-      object_t pattern = tuple_get(signature, i);
+      any_t pattern = tuple_get(signature, i);
       if (!pattern)
 	rha_error("(eval) signature is not valid");
-      object_t s_o = lookup(pattern, symbol_new("patternsymbol"));
-      if (!s_o || ptype(s_o)!=SYMBOL_T)
-	rha_error("(eval) symbol expected, found %o", s_o);
-      symbol_t s = UNWRAP_SYMBOL(s_o);
-      //debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
-      assign(local, s, tuple_get(values, i));
+      any_t s_o = lookup(pattern, symbol_new("patternliteral"));
+      if (!s_o)
+	rha_error("(eval) patternliteral expected", s_o);
+      if (ptype(s_o) == SYMBOL_T) {
+	symbol_t s = UNWRAP_SYMBOL(s_o);
+	//debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
+	assign(local, s, tuple_get(values, i));
+      }
     }
     if(no_frame)
       res = eval(local, fnbody);
@@ -345,14 +363,14 @@ object_t call_matching_impl(object_t local, object_t scope, object_t fnbody,
 // NOTE: we assume that the last required argument is an integer that
 // tells the C function (e.g. 'callslot') how long the list really
 // is.  The 'v' version of the function doesn't have it.
-object_t vcallslot(object_t obj, symbol_t slotname, tuple_t args)
+any_t vcallslot(any_t obj, symbol_t slotname, tuple_t args)
 {
   // note that 'callslot' assumes that all arguments are already
   // evaluated in the outer calling scope.  this is important since we
   // have no longer access to the outer calling scope.  the inner
   // calling scope ('this') will be set to 'obj'
   //debug("callslot(%o, %o, %o)\n", obj, WRAP_SYMBOL(slotname), WRAP_PTR(TUPLE_T, args));
-  object_t slot = lookup(obj, slotname);
+  any_t slot = lookup(obj, slotname);
   if (!slot)
     throw(excp_newf("(call_slot) object %o doesn't have slot '%s'",
 		    obj, symbol_name(slotname)));
@@ -369,14 +387,14 @@ object_t vcallslot(object_t obj, symbol_t slotname, tuple_t args)
 // note that:
 // * calling 'callslot' in C calls 'callslot'
 // * calling 'callslot' in Rhaberber calls 'vcallslot'
-object_t callslot(object_t obj, symbol_t slotname, int_t narg, ...)
+any_t callslot(any_t obj, symbol_t slotname, int_t narg, ...)
 {
   //debug("callslot(%o, %o, %d, ...)\n", obj, WRAP_SYMBOL(slotname), narg);
   va_list ap;
   va_start(ap, narg);
   tuple_t args = tuple_new(narg);
   for (int i = 0; i < narg; i++)
-    tuple_set(args, i, va_arg(ap, object_t));
+    tuple_set(args, i, va_arg(ap, any_t));
   va_end(ap);
   
   return vcallslot(obj, slotname, args);

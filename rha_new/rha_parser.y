@@ -1,6 +1,6 @@
 /* context free grammar for rhabarber */
 %{
-  //#define YYSTYPE object_t
+  //#define YYSTYPE any_t
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -16,9 +16,9 @@ void yyerror (char const *);
 
 static list_t parsetree;   /* global var -> funny name */
 
-//static object_t wl(object_t t); /* with location: adds location to parsetree */
+//static any_t wl(any_t t); /* with location: adds location to parsetree */
 
-static object_t solidify(symbol_t s, list_t t);
+static any_t solidify(symbol_t s, list_t t);
 %}
 
 // %error-verbose
@@ -30,7 +30,7 @@ static object_t solidify(symbol_t s, list_t t);
  * types declaration
  */
 %union {
-  object_t obj;
+  any_t obj;
   list_t lis;
 }
 
@@ -61,7 +61,7 @@ expr        : BOOL            { $$=$1; }    // boolean literal
 char *currentfile;
 int numerrors;
 
-object_t solidify(symbol_t s, list_t l)
+any_t solidify(symbol_t s, list_t l)
 {
   list_prepend(l, WRAP_SYMBOL(s));
   return WRAP_PTR(LIST_T, l);

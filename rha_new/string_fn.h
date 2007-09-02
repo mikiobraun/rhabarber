@@ -7,6 +7,8 @@ extern _rha_ string_t string_copy(string_t other);
 extern _rha_ string_t string_concat(string_t s1, string_t s2);
 extern _rha_ int_t    string_len(string_t s);
 extern _rha_ bool_t   string_equalequal(string_t s1, string_t s2);
+extern _rha_ string_t string_get(string_t s, int_t i);
+extern _rha_ string_t string_set(string_t s, int_t i, string_t v);
 
 extern _rha_ string_t string_to_string(string_t s);
 #endif

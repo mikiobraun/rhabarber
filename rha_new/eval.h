@@ -5,19 +5,19 @@
 #include <setjmp.h>
 #include "object.h"
 
-extern       void     eval_init(object_t root, object_t module);
-extern _rha_ object_t eval(object_t, object_t);
-extern _rha_ object_t callslot(object_t obj, symbol_t slotname, int_t narg, ...);
-extern _rha_ object_t vcallslot(object_t obj, symbol_t slotname, tuple_t args);
+extern       void     eval_init(any_t root, any_t module);
+extern _rha_ any_t eval(any_t, any_t);
+extern _rha_ any_t callslot(any_t obj, symbol_t slotname, int_t narg, ...);
+extern _rha_ any_t vcallslot(any_t obj, symbol_t slotname, tuple_t args);
 
 // used by parse.c
 // using call_fun instead of "wraping, eval, unwrapping" saves some time
-extern object_t call_fun(object_t env, tuple_t expr);
+extern any_t call_fun(any_t env, tuple_t expr);
 
 // some cool macros for 'try' and 'catch' stuff
 #define FRAME_MAX_NESTING 128
 extern jmp_buf frame_stack[FRAME_MAX_NESTING];  // the stacked frames
-extern object_t frame_value[FRAME_MAX_NESTING]; // the value to return
+extern any_t frame_value[FRAME_MAX_NESTING]; // the value to return
 extern int frame_type[FRAME_MAX_NESTING];       // the type of the frame
 enum FRAME_TYPES {
   FUNCTION_FRAME = 0,

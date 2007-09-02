@@ -19,14 +19,14 @@
 // semicolon, otherwise we could make a list of keywords which are
 // allowed to extend expression also after a 'curlied' expression
 
-object_t prule_failed_excp = 0; // exception
+any_t prule_failed_excp = 0; // exception
 
-object_t prules = 0;  // the object containing all prules
+any_t prules = 0;  // the object containing all prules
 
 symbol_t dot_sym = 0;
 symbol_t ellipsis_sym = 0;  // ...
 
-void parse_init(object_t root, object_t module)
+void parse_init(any_t root, any_t module)
 {
   prule_failed_excp = excp_new("prule failed");
 
@@ -35,7 +35,7 @@ void parse_init(object_t root, object_t module)
 
   // the object 'prules' is used to lookup the prules
   // its location should be changed here
-  object_t modules = lookup(root, modules_sym);
+  any_t modules = lookup(root, modules_sym);
   if (!modules) {
     fprint(stderr, "WARNING (parse_init):\n");
     fprint(stderr, "    Lookup of 'root.modules' failed.\n");
@@ -55,20 +55,20 @@ void parse_init(object_t root, object_t module)
 // parsing from the outside to the inside //
 ////////////////////////////////////////////
 
-object_t resolve(object_t env, list_t source);
-object_t resolve_macro(object_t env, tuple_t t);
-object_t resolve_dots_and_fn_calls(object_t env, list_t source);
-object_t resolve_patterns(object_t env, list_t source);
+any_t resolve(any_t env, list_t source);
+any_t resolve_macro(any_t env, tuple_t t);
+any_t resolve_dots_and_fn_calls(any_t env, list_t source);
+any_t resolve_patterns(any_t env, list_t source);
 
 
 // auxillary functions
-static object_t call_prule(object_t env, list_t source, object_t prule);
-static object_t find_best_prule(object_t env, list_t source);
-static double get_priority(object_t prule);
-static object_t replace_expr(object_t expr, symbol_t s, object_t sub);
+static any_t call_prule(any_t env, list_t source, any_t prule);
+static any_t find_best_prule(any_t env, list_t source);
+static double get_priority(any_t prule);
+static any_t replace_expr(any_t expr, symbol_t s, any_t sub);
 
 
-object_t parse(object_t root, string_t s)
+any_t parse(any_t root, string_t s)
 {
   // (0) run bison code
   list_t source = rhaparsestring(s);
@@ -78,7 +78,7 @@ object_t parse(object_t root, string_t s)
   return resolve(root, source);
 }
 
-object_t parse_file(object_t root, string_t fname)
+any_t parse_file(any_t root, string_t fname)
 {
   // (0) run bison code
   list_t source = rhaparsefile(fname);
@@ -94,12 +94,12 @@ object_t parse_file(object_t root, string_t fname)
 // the main workhorse for resolving prules
 
 // find the best prule, and apply the prule
-object_t resolve(object_t env, list_t source)
+any_t resolve(any_t env, list_t source)
 {
   //debug("resolve(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
-  object_t prule = find_best_prule(env, source);
-  object_t excp = 0;
-  object_t result = 0;
+  any_t prule = find_best_prule(env, source);
+  any_t excp = 0;
+  any_t result = 0;
   if (prule) {
     // try to call that prule
     try {
@@ -130,7 +130,7 @@ object_t resolve(object_t env, list_t source)
 //
 // applies the associated function, resolves the arguments, and
 // resolve possible macro calls.
-object_t call_prule(object_t env, list_t source, object_t prule)
+any_t call_prule(any_t env, list_t source, any_t prule)
 {
   // resolve prule by constructing a call to that prule
   int tlen = 3;
@@ -141,7 +141,7 @@ object_t call_prule(object_t env, list_t source, object_t prule)
 
   // the list containing the parse tree
   // run the prule itself to resolve it
-  object_t expr = call_fun(env, prule_call);
+  any_t expr = call_fun(env, prule_call);
 
   // check what we got
   if (ptype(expr) == TUPLE_T) {
@@ -163,18 +163,18 @@ object_t call_prule(object_t env, list_t source, object_t prule)
 
 
 // find the prule with the lowest precendence
-static object_t find_best_prule(object_t env, list_t source)
+static any_t find_best_prule(any_t env, list_t source)
 {
   // loop over all entries and check the symbols whether they are prules 
 
   double best_priority = 0.0;  // initially the priority is like functions
-  object_t best_prule  = 0;    // the object containing the best prule
+  any_t best_prule  = 0;    // the object containing the best prule
   list_it_t it;
   for (it = list_begin(source); !list_done(it); glist_next(it)) {
-    object_t symbol_obj = list_get(it);
+    any_t symbol_obj = list_get(it);
 
     if (ptype(symbol_obj) == SYMBOL_T) {
-      object_t prule = lookup(prules, UNWRAP_SYMBOL(symbol_obj));
+      any_t prule = lookup(prules, UNWRAP_SYMBOL(symbol_obj));
       double priority = get_priority(prule);
 
       if(!isnan(priority) && priority > best_priority) {
@@ -196,10 +196,10 @@ static object_t find_best_prule(object_t env, list_t source)
 
 // return double value contained in prule.priority_sym or NAN if it
 // does not exist
-static double get_priority(object_t prule)
+static double get_priority(any_t prule)
 {
   if (prule) {
-    object_t prior = lookup(prule, priority_sym);
+    any_t prior = lookup(prule, priority_sym);
     if (prior && (ptype(prior) == REAL_T))
       return UNWRAP_REAL(prior);
   }
@@ -210,7 +210,7 @@ static double get_priority(object_t prule)
 
 
 
-object_t resolve_dots_and_fn_calls(object_t env, list_t source)
+any_t resolve_dots_and_fn_calls(any_t env, list_t source)
 {
   // what this function does:
   //   source        result
@@ -240,7 +240,7 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
     rha_error("(parsing) missing expression");
 
   // get the first piece and resolve it
-  object_t obj = list_popfirst(source);
+  any_t obj = list_popfirst(source);
   assert(obj);
   if ((ptype(obj)==SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym)
     rha_error("(parsing) something else than dot expected");
@@ -262,7 +262,7 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
   }
 
   // start the expression
-  object_t expr = obj;
+  any_t expr = obj;
 
   // we need to keep a flag which tells us later whether we have the
   // usual function call or whether the last dot results in a
@@ -296,7 +296,7 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
       // (3) function/method call
       list_t sink = list_new();
       list_t signature = split_rounded_list_obj(obj);
-      object_t arg = 0;
+      any_t arg = 0;
       while ((arg = list_popfirst(signature))) {
 	assert(arg && ptype(arg)==LIST_T);
 	list_append(sink, resolve(env, UNWRAP_PTR(LIST_T, arg)));
@@ -334,32 +334,32 @@ object_t resolve_dots_and_fn_calls(object_t env, list_t source)
 }
 
 
-object_t resolve_pattern(object_t env, list_t source)
+any_t resolve_pattern(any_t env, list_t source)
 {
   // right now we only look for an optional type and a symbol
   list_t lhs = list_chop_first(source, symbol_new(":"));
   if (list_len(lhs) == 0)
     rha_error("(parsing) pattern can't start with colon");
-  object_t thesymbol = 0;
-  object_t thetype = 0;
+  any_t theliteral = 0;
+  any_t thetype = 0;
   if (list_len(source) > 0) {
     // there is a type (we evaluate it later in 'eval')
     thetype = resolve(env, lhs);
-    thesymbol = resolve(env, source);
+    theliteral = resolve(env, source);
   }
   else
-    thesymbol = resolve(env, lhs);
+    theliteral = resolve(env, lhs);
 
   if (thetype)
-    return WRAP_PTR(TUPLE_T, tuple_make(2, quoted(thesymbol), thetype));
+    return WRAP_PTR(TUPLE_T, tuple_make(2, quoted(theliteral), thetype));
   else
-    return WRAP_PTR(TUPLE_T, tuple_make(1, quoted(thesymbol)));
+    return WRAP_PTR(TUPLE_T, tuple_make(1, quoted(theliteral)));
 }
 
-object_t resolve_patterns(object_t env, list_t source)
+any_t resolve_patterns(any_t env, list_t source)
 {
   tuple_t t = tuple_new(list_len(source));
-  object_t entry = 0;
+  any_t entry = 0;
   int i = 0;
   while ((entry = list_popfirst(source))) {
     // resolve the entries as patterns
@@ -382,7 +382,7 @@ object_t resolve_patterns(object_t env, list_t source)
 // check whether it is a function call, and called function is a macro
 // (having slot "ismacro".) Then, return function body with arguments
 // replaced.
-object_t resolve_macro(object_t env, tuple_t t)
+any_t resolve_macro(any_t env, tuple_t t)
 {
   // It might just be an empty tuple
   int tlen = tuple_len(t);
@@ -390,14 +390,14 @@ object_t resolve_macro(object_t env, tuple_t t)
     return WRAP_PTR(TUPLE_T, t);
 
   // or a tuple which does not contain a symbol at position 0
-  object_t t0 = tuple_get(t, 0);
+  any_t t0 = tuple_get(t, 0);
   if (ptype(t0) != SYMBOL_T)
     return WRAP_PTR(TUPLE_T, t);
   symbol_t s = UNWRAP_SYMBOL(t0);
 
   // okay, we're ready to gather all information and perform the
   // replacement
-  object_t macro, macro_body, _macro_args;  
+  any_t macro, macro_body, _macro_args;  
 
   if ( (macro = lookup(env, s))
        && lookup(macro, ismacro_sym) ) {
@@ -429,7 +429,7 @@ object_t resolve_macro(object_t env, tuple_t t)
 
 
 // replace all occurences of 's' in 'expr' by 'sub'
-static object_t replace_expr(object_t expr, symbol_t s, object_t sub)
+static any_t replace_expr(any_t expr, symbol_t s, any_t sub)
 {
   if (ptype(expr) == SYMBOL_T) {
     symbol_t sy = UNWRAP_SYMBOL(expr);

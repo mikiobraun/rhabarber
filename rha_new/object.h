@@ -40,79 +40,79 @@ struct rha_object {
 /*
  * Functions
  */
-extern       void       object_init(object_t root, object_t module);
+extern       void       object_init(any_t root, any_t module);
 
-extern _rha_ object_t   new();
-extern       object_t   create_pt(int_t pt);
-extern       object_t   new_pt(int_t pt);
-extern       object_t   create_builtin(object_t (*code)(tuple_t),
+extern _rha_ any_t   new();
+extern       any_t   create_pt(int_t pt);
+extern       any_t   new_pt(int_t pt);
+extern       any_t   create_builtin(any_t (*code)(tuple_t),
 				       bool_t varargs, int narg, ...);
-extern       object_t   vcreate_builtin(object_t (*code)(tuple_t),
+extern       any_t   vcreate_builtin(any_t (*code)(tuple_t),
 					bool_t varargs, int narg, va_list);
 
-extern       object_t   copy_pt(object_t o);
-extern _rha_ address_t  addr(object_t o);
-extern _rha_ object_t   clone(object_t parent);
-extern       int_t      ptype(object_t);      // primtype
-extern _rha_ string_t   ptypename(object_t o);
-extern       void       setptype(object_t, int_t);
+extern       any_t   copy_pt(any_t o);
+extern _rha_ address_t  addr(any_t o);
+extern _rha_ any_t   clone(any_t parent);
+extern       int_t      ptype(any_t);      // primtype
+extern _rha_ string_t   ptypename(any_t o);
+extern       void       setptype(any_t, int_t);
 
 extern _rha_ void       print_fn(int_t narg, ...);
 extern _rha_ void       vprint_fn(tuple_t args);
-extern _rha_ string_t   to_string(object_t);
-extern       string_t   to_string_only_in_c(object_t o);
+extern _rha_ string_t   to_string(any_t);
+extern       string_t   to_string_only_in_c(any_t o);
 extern _rha_ string_t   builtin_to_string(builtin_t);
 extern _rha_ string_t   address_to_string(address_t);
 
-extern _rha_ void       ls(object_t);
+extern _rha_ void       ls(any_t);
 
-extern _rha_ bool_t     equalequal_fn(object_t a, object_t b);
-extern _rha_ bool_t     notequal_fn(object_t a, object_t b);
-extern _rha_ object_t   inc(object_t);
-extern _rha_ object_t   dec(object_t);
-extern _rha_ object_t   inc_copy(object_t);
-extern _rha_ object_t   dec_copy(object_t);
+extern _rha_ bool_t     equalequal_fn(any_t a, any_t b);
+extern _rha_ bool_t     notequal_fn(any_t a, any_t b);
+extern _rha_ any_t   inc(any_t);
+extern _rha_ any_t   dec(any_t);
+extern _rha_ any_t   inc_copy(any_t);
+extern _rha_ any_t   dec_copy(any_t);
 
-extern       object_t   wrap_int(int ptype, int i);
-extern       object_t   wrap_double(int ptype, double d);
-extern       object_t   wrap_builtin(int ptype, builtin_t b);
-extern       object_t   wrap_ptr(int ptype, void *p);
-extern       int        unwrap_int(int ptype, object_t o);
-extern       double     unwrap_double(int ptype, object_t o);
-extern       builtin_t  unwrap_builtin(int ptype, object_t o);
-extern       void      *unwrap_ptr(int ptype, object_t o);
+extern       any_t   wrap_int(int ptype, int i);
+extern       any_t   wrap_double(int ptype, double d);
+extern       any_t   wrap_builtin(int ptype, builtin_t b);
+extern       any_t   wrap_ptr(int ptype, void *p);
+extern       int        unwrap_int(int ptype, any_t o);
+extern       double     unwrap_double(int ptype, any_t o);
+extern       builtin_t  unwrap_builtin(int ptype, any_t o);
+extern       void      *unwrap_ptr(int ptype, any_t o);
 
-extern       object_t   wrap(int ptype, ...);
+extern       any_t   wrap(int ptype, ...);
 
 
 //        z          -> lookup(local, \z);
 //        a.x        -> lookup(a, \x);
-extern _rha_ object_t   lookup(object_t env, symbol_t s);
-extern _rha_ object_t   lookup_local(object_t l, symbol_t s);
-extern _rha_ bool_t     check(object_t t, object_t o);
-extern _rha_ bool_t     pcheck(object_t t, object_t o);
+extern _rha_ any_t   lookup(any_t env, symbol_t s);
+extern _rha_ any_t   lookup_local(any_t l, symbol_t s);
+extern _rha_ bool_t     check(any_t t, any_t o);
+extern _rha_ bool_t     pcheck(any_t t, any_t o);
 
-extern _rha_ object_t   location(object_t l, symbol_t s);
+extern _rha_ any_t   location(any_t l, symbol_t s);
 
 //       x = 17;    ->  assign(local_sym, \x, 17);
 //       a.x = 42;  ->  assign(a, \x, 42);
-extern _rha_ object_t   assign(object_t obj, symbol_t s, object_t newobj);
+extern _rha_ any_t   assign(any_t obj, symbol_t s, any_t newobj);
 
-extern _rha_ object_t   extend(object_t this, symbol_t s, tuple_t args, 
-			       object_t env, object_t value);
+extern _rha_ any_t   extend(any_t this, symbol_t s, tuple_t args, 
+			       any_t env, any_t value);
 
 
 // 'has'
-extern _rha_ bool_t     has(object_t obj, symbol_t s);
+extern _rha_ bool_t     has(any_t obj, symbol_t s);
 
-extern _rha_ void       rm(object_t, symbol_t s);
+extern _rha_ void       rm(any_t, symbol_t s);
 
 // will be called by prule 'include'
-extern _rha_ void       include(object_t dest, object_t source);
+extern _rha_ void       include(any_t dest, any_t source);
 // will be called by prule 'subscribe'
-extern _rha_ void       subscribe(object_t dest, object_t interface);
+extern _rha_ void       subscribe(any_t dest, any_t interface);
 
-//extern object_t   ls(object_t o);
-//extern object_t   lsall(object_t o);
+//extern any_t   ls(any_t o);
+//extern any_t   lsall(any_t o);
 
 #endif

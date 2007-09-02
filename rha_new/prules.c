@@ -65,7 +65,7 @@ glist_t sec_sym_list;    // a list with 'else', 'catch'
   assign(f, priority_sym, WRAP_REAL(prio));				\
   assign(module, ttt ## _sym, f);
 
-void prules_init(object_t root, object_t module)
+void prules_init(any_t root, any_t module)
 {
   // additional symbols
   prefix_minus_sym = symbol_new("prefix_minus");
@@ -140,7 +140,7 @@ void prules_init(object_t root, object_t module)
   // and add those prules also as symbols
   // the strongest binding is the one with the smallest number!
   // note that 'dot' and funcalls are the strongest
-  object_t f = 0;
+  any_t f = 0;
   MAKE_PRULES(prefix_minus, 1.0);
   MAKE_PRULES(apostrophe, 1.0); // matrix transpose
   MAKE_PRULES(plusplus, 1.0);   // increment, decrement
@@ -195,40 +195,40 @@ void prules_init(object_t root, object_t module)
 
 // function to define simple prules
 // NOT YET
-object_t prule_new_infix(){ return 0; }
-object_t prule_new_prefix(){ return 0; }
-object_t prule_new_postfix(){ return 0; }
-object_t prule_new_freefix(){ return 0; }
+any_t prule_new_infix(){ return 0; }
+any_t prule_new_prefix(){ return 0; }
+any_t prule_new_postfix(){ return 0; }
+any_t prule_new_freefix(){ return 0; }
 
 
 // forward declaration of helper functions
 
-tuple_t resolve_incdec_prule(object_t env, list_t parsetree);
-tuple_t resolve_infix_prule(object_t env, list_t parsetree,
+tuple_t resolve_incdec_prule(any_t env, list_t parsetree);
+tuple_t resolve_infix_prule(any_t env, list_t parsetree,
 			    symbol_t prule_sym, symbol_t fun_sym, 
 			    bool_t left_binding);
-tuple_t resolve_infix_prule_list(object_t env, list_t parsetree, 
+tuple_t resolve_infix_prule_list(any_t env, list_t parsetree, 
 				 glist_t *prule_sym_list, 
 				 symbol_t fun_sym, bool_t left_binding);
-tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t
+tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t
 			     prule_sym, glist_t *assign_sym_list);
-tuple_t resolve_cmp_prule(object_t env, list_t parsetree);
-tuple_t resolve_freefix_prule1(object_t env, list_t parsetree,
+tuple_t resolve_cmp_prule(any_t env, list_t parsetree);
+tuple_t resolve_freefix_prule1(any_t env, list_t parsetree,
 			       symbol_t fun_sym,
 			       symbol_t key1, int_t narg1);
-tuple_t resolve_freefix_prule2(object_t env, list_t parsetree,
+tuple_t resolve_freefix_prule2(any_t env, list_t parsetree,
 			       symbol_t fun_sym,
 			       symbol_t key1, int_t narg1, 
 			       symbol_t key2, int_t narg2);
 
 
 // more auxiliaries
-bool is_symbol(symbol_t a_symbol, object_t expr);
-object_t quoted(object_t obj);
-bool_t   is_marked_list(symbol_t mark, object_t obj);
+bool is_symbol(symbol_t a_symbol, any_t expr);
+any_t quoted(any_t obj);
+bool_t   is_marked_list(symbol_t mark, any_t obj);
 
-static bool_t   is_second_order_keyword(object_t obj);
-static object_t copy_expr(object_t expr);
+static bool_t   is_second_order_keyword(any_t obj);
+static any_t copy_expr(any_t expr);
 
 
 /**********************************************************************
@@ -251,14 +251,14 @@ static object_t copy_expr(object_t expr);
 // 
 // the signature is 
 //
-//    tuple_t plusplus_pr(object_t env, list_t parsetree)
+//    tuple_t plusplus_pr(any_t env, list_t parsetree)
 //
 // the 'env' is needed only if the prule resolves its arg itsself
 // (e.g. in minus_pr).
-tuple_t apostrophe_pr(object_t env, list_t parsetree) 
+tuple_t apostrophe_pr(any_t env, list_t parsetree) 
 { 
   // must be the last symbol
-  object_t last = list_poplast(parsetree);
+  any_t last = list_poplast(parsetree);
   if (list_len(parsetree) == 0)
     rha_error("(parse) found apostrophe (') following nothing");
   if (!last || ptype(last)!=SYMBOL_T || UNWRAP_SYMBOL(last)!=apostrophe_sym)
@@ -266,17 +266,17 @@ tuple_t apostrophe_pr(object_t env, list_t parsetree)
   return tuple_make(2, WRAP_SYMBOL(apostrophe_fn_sym), resolve(env, parsetree));
 }
 
-tuple_t plusplus_pr(object_t env, list_t parsetree) 
+tuple_t plusplus_pr(any_t env, list_t parsetree) 
 { 
   return resolve_incdec_prule(env, parsetree); 
 }
 
-tuple_t minusminus_pr(object_t env, list_t parsetree) 
+tuple_t minusminus_pr(any_t env, list_t parsetree) 
 { 
   return resolve_incdec_prule(env, parsetree); 
 }
 
-tuple_t not_pr(object_t env, list_t parsetree) 
+tuple_t not_pr(any_t env, list_t parsetree) 
 { 
   list_popfirst(parsetree);	
   tuple_t t = tuple_new(2);					
@@ -288,28 +288,28 @@ tuple_t not_pr(object_t env, list_t parsetree)
   return t;
 }
 
-tuple_t divide_pr(object_t env, list_t parsetree) 
+tuple_t divide_pr(any_t env, list_t parsetree) 
 {
   return resolve_infix_prule(env, parsetree, divide_sym, divide_fn_sym, LEFT_BIND);
 }
 
-tuple_t dotdivide_pr(object_t env, list_t parsetree) 
+tuple_t dotdivide_pr(any_t env, list_t parsetree) 
 {
   return resolve_infix_prule(env, parsetree, dotdivide_sym, dotdivide_fn_sym, LEFT_BIND);
 }
 
-tuple_t times_pr(object_t env, list_t parsetree) 
+tuple_t times_pr(any_t env, list_t parsetree) 
 {
   return resolve_infix_prule(env, parsetree, times_sym, times_fn_sym, LEFT_BIND);
 }
 
-tuple_t dottimes_pr(object_t env, list_t parsetree) 
+tuple_t dottimes_pr(any_t env, list_t parsetree) 
 {
   return resolve_infix_prule(env, parsetree, dottimes_sym, dottimes_fn_sym, LEFT_BIND);
 }
 
 
-tuple_t prefix_minus_pr(object_t env, list_t parsetree) 
+tuple_t prefix_minus_pr(any_t env, list_t parsetree) 
 {
   if (list_len(parsetree) < 2)
     rha_error("(parsing) prefix-minus requires argument.");
@@ -317,7 +317,7 @@ tuple_t prefix_minus_pr(object_t env, list_t parsetree)
   return tuple_make(2, WRAP_SYMBOL(neg_fn_sym), resolve(env, parsetree));
 }
 
-tuple_t minus_pr(object_t env, list_t parsetree) 
+tuple_t minus_pr(any_t env, list_t parsetree) 
 {
   // here we also have to take care of the prefix minus, 
   // which actually has a higher priority (== lower precedence)
@@ -330,7 +330,7 @@ tuple_t minus_pr(object_t env, list_t parsetree)
   // look whether it is the left-most tuple-entry
   // if so, we replace it by a special symbol which will trigger a
   // prefix prule later on
-  object_t first = list_first(parsetree);
+  any_t first = list_first(parsetree);
   if ((ptype(first)==SYMBOL_T) && (UNWRAP_SYMBOL(first)==minus_sym)) {
     // replace it
     list_popfirst(parsetree);
@@ -341,26 +341,26 @@ tuple_t minus_pr(object_t env, list_t parsetree)
   return resolve_infix_prule(env, parsetree, minus_sym, minus_fn_sym, LEFT_BIND);
 }
 
-tuple_t plus_pr(object_t env, list_t parsetree) 
+tuple_t plus_pr(any_t env, list_t parsetree) 
 {
   return resolve_infix_prule(env, parsetree, plus_sym, plus_fn_sym, LEFT_BIND);
 }
 
-tuple_t in_pr(object_t env, list_t parsetree) 
+tuple_t in_pr(any_t env, list_t parsetree) 
 {
   return resolve_infix_prule(env, parsetree, in_sym, symbol_new("in_fn"), LEFT_BIND);
 }
 
-tuple_t colon_pr(object_t env, list_t parsetree) 
+tuple_t colon_pr(any_t env, list_t parsetree) 
 {
   tuple_t pre_t = resolve_infix_prule(env, parsetree, colon_sym, 
 				      symbol_new("colon_fn"), RIGHT_BIND);
   // check wether the RHS is a complex literal
-  object_t rhs = tuple_get(pre_t, 2);
+  any_t rhs = tuple_get(pre_t, 2);
   if (rhs && ptype(rhs)==TUPLE_T) {
     tuple_t rhs_t = UNWRAP_PTR(TUPLE_T, rhs);
     if (tuple_len(rhs_t) == 3) {
-      object_t rhs_t0 = tuple_get(rhs_t, 0);
+      any_t rhs_t0 = tuple_get(rhs_t, 0);
       if (rhs_t0 && ptype(rhs_t0) == SYMBOL_T 
 	  && UNWRAP_SYMBOL(rhs_t0)==literal_sym) {
 	// (callslot lhs \literal env [1 ,, 2 ,, 3])
@@ -377,42 +377,42 @@ tuple_t colon_pr(object_t env, list_t parsetree)
   return pre_t;
 }
 
-tuple_t less_pr(object_t env, list_t parsetree) 
+tuple_t less_pr(any_t env, list_t parsetree) 
 { 
   return resolve_cmp_prule(env, parsetree); 
 }
 
-tuple_t lessequal_pr(object_t env, list_t parsetree) 
+tuple_t lessequal_pr(any_t env, list_t parsetree) 
 { 
   return resolve_cmp_prule(env, parsetree); 
 }
 
-tuple_t greater_pr(object_t env, list_t parsetree) 
+tuple_t greater_pr(any_t env, list_t parsetree) 
 {
   return resolve_cmp_prule(env, parsetree); 
 }
 
-tuple_t greaterequal_pr(object_t env, list_t parsetree) 
+tuple_t greaterequal_pr(any_t env, list_t parsetree) 
 { 
   return resolve_cmp_prule(env, parsetree); 
 }
 
-tuple_t equalequal_pr(object_t env, list_t parsetree) 
+tuple_t equalequal_pr(any_t env, list_t parsetree) 
 { 
   return resolve_cmp_prule(env, parsetree); 
 }
 
-tuple_t notequal_pr(object_t env, list_t parsetree) 
+tuple_t notequal_pr(any_t env, list_t parsetree) 
 { 
   return resolve_cmp_prule(env, parsetree); 
 }
 
-tuple_t and_pr(object_t env, list_t parsetree) 
+tuple_t and_pr(any_t env, list_t parsetree) 
 { 
   return resolve_infix_prule(env, parsetree, and_sym, and_fn_sym, LEFT_BIND);
 }
 
-tuple_t or_pr(object_t env, list_t parsetree) 
+tuple_t or_pr(any_t env, list_t parsetree) 
 { 
   return resolve_infix_prule(env, parsetree, or_sym, or_fn_sym, LEFT_BIND);
 }
@@ -426,27 +426,27 @@ tuple_t or_pr(object_t env, list_t parsetree)
     tuple_set(t, 1, 0);						\
   return t;
 
-tuple_t return_pr(object_t env, list_t parsetree) 
+tuple_t return_pr(any_t env, list_t parsetree) 
 { 
   HANDLE_STUFF_LIKE_RETURN(return)
 }
 
-tuple_t deliver_pr(object_t env, list_t parsetree)
+tuple_t deliver_pr(any_t env, list_t parsetree)
 { 
   HANDLE_STUFF_LIKE_RETURN(deliver)
 }
 
-tuple_t break_pr(object_t env, list_t parsetree)
+tuple_t break_pr(any_t env, list_t parsetree)
 { 
   HANDLE_STUFF_LIKE_RETURN(break)
 }
 
-tuple_t throw_pr(object_t env, list_t parsetree)
+tuple_t throw_pr(any_t env, list_t parsetree)
 {
   HANDLE_STUFF_LIKE_RETURN(throw)
 }
 
-tuple_t if_pr(object_t env, list_t parsetree)
+tuple_t if_pr(any_t env, list_t parsetree)
 { 
   tuple_t pre_t = resolve_freefix_prule2(env, parsetree, if_fn_sym,
 					 if_sym, 2, else_sym, 1);
@@ -454,21 +454,21 @@ tuple_t if_pr(object_t env, list_t parsetree)
   tuple_t t = tuple_new(5);
   tuple_set(t, 0, tuple_get(pre_t, 0));
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
-  object_t obj = tuple_get(pre_t, 1);
+  any_t obj = tuple_get(pre_t, 1);
   assert(obj && ptype(obj)==LIST_T);  // otherwise bug in resolve_freefix*
   list_t obj_l = UNWRAP_PTR(LIST_T, obj);
   if (list_len(obj_l) != 1)
     rha_error("(parsing) condition expected, found %o", obj);
   obj = list_popfirst(obj_l);
   assert(obj && ptype(obj) == LIST_T);
-  object_t cond = resolve(env, UNWRAP_PTR(LIST_T, obj));
+  any_t cond = resolve(env, UNWRAP_PTR(LIST_T, obj));
   tuple_set(t, 2, cond);
   tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   tuple_set(t, 4, quoted(tuple_get(pre_t, 3)));
   return t;
 }
 
-tuple_t try_pr(object_t env, list_t parsetree)
+tuple_t try_pr(any_t env, list_t parsetree)
 { 
   tuple_t pre_t = resolve_freefix_prule2(env, parsetree, try_fn_sym,
 					 try_sym, 1, catch_sym, 2);
@@ -478,14 +478,14 @@ tuple_t try_pr(object_t env, list_t parsetree)
   tuple_set(t, 0, tuple_get(pre_t, 0));
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   tuple_set(t, 2, quoted(tuple_get(pre_t, 1)));
-  object_t obj = tuple_get(pre_t, 2);
+  any_t obj = tuple_get(pre_t, 2);
   assert(obj && ptype(obj)==LIST_T);  // otherwise bug in resolve_freefix*
   list_t obj_l = UNWRAP_PTR(LIST_T, obj);
   if (list_len(obj_l) != 1)
     rha_error("(parsing) symbol for exception expected, found %o", obj);
   obj = list_popfirst(obj_l);
   assert(obj && ptype(obj)==LIST_T);
-  object_t s = resolve(env, UNWRAP_PTR(LIST_T, obj));
+  any_t s = resolve(env, UNWRAP_PTR(LIST_T, obj));
   if (ptype(s) != SYMBOL_T)
     rha_error("in 'try 17 catch (x) 42', 'x' must be a symbol");
   tuple_set(t, 3, quoted(s));
@@ -493,7 +493,7 @@ tuple_t try_pr(object_t env, list_t parsetree)
   return t;
 }
 
-tuple_t while_pr(object_t env, list_t parsetree)
+tuple_t while_pr(any_t env, list_t parsetree)
 { 
   tuple_t pre_t = resolve_freefix_prule1(env, parsetree, while_fn_sym,
 					 while_sym, 2);
@@ -501,20 +501,20 @@ tuple_t while_pr(object_t env, list_t parsetree)
   tuple_t t = tuple_new(4);
   tuple_set(t, 0, tuple_get(pre_t, 0));
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
-  object_t obj = tuple_get(pre_t, 1);
+  any_t obj = tuple_get(pre_t, 1);
   assert(obj && ptype(obj)==LIST_T);  // otherwise bug in resolve_freefix*
   list_t obj_l = UNWRAP_PTR(LIST_T, obj);
   if (list_len(obj_l) != 1)
     rha_error("(parsing) condition expected, found %o", obj);
   obj = list_popfirst(obj_l);
   assert(obj && ptype(obj) == LIST_T);
-  object_t cond = resolve(env, UNWRAP_PTR(LIST_T, obj));
+  any_t cond = resolve(env, UNWRAP_PTR(LIST_T, obj));
   tuple_set(t, 2, quoted(cond));
   tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   return t;
 }
 
-tuple_t for_pr(object_t env, list_t parsetree)
+tuple_t for_pr(any_t env, list_t parsetree)
 { 
   tuple_t pre_t = resolve_freefix_prule1(env, parsetree, for_fn_sym, for_sym, 2);
   // the second argument (e.g. (x in l) must be splitted into two
@@ -523,23 +523,23 @@ tuple_t for_pr(object_t env, list_t parsetree)
   tuple_set(t, 0, tuple_get(pre_t, 0));
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   // check whether the first arg has the right form, i.e. "x in expr"
-  object_t obj = tuple_get(pre_t, 1);
+  any_t obj = tuple_get(pre_t, 1);
   assert(obj && ptype(obj)==LIST_T);  // otherwise bug in resolve_freefix*
   list_t obj_l = UNWRAP_PTR(LIST_T, obj);
   if (list_len(obj_l) != 1)
     rha_error("(parsing) second arg to 'for' must look like (x in l), found %o", obj);
-  object_t obj_t0 = list_popfirst(obj_l);
+  any_t obj_t0 = list_popfirst(obj_l);
   assert(obj_t0 && ptype(obj_t0)==LIST_T);  // otherwise bug in resolve_freefix*
   list_t part = UNWRAP_PTR(LIST_T, obj_t0);
   if (list_len(part) < 3)
     rha_error("(parsing) second arg to 'for' must look like (x in l), found %o", obj);
-  object_t s = list_popfirst(part);
+  any_t s = list_popfirst(part);
   if (ptype(s) != SYMBOL_T)
     rha_error("(parsing) symbol expected, found %o", s);
-  object_t in_o = list_popfirst(part);
+  any_t in_o = list_popfirst(part);
   if (!in_o || !is_symbol(in_sym, in_o))
     rha_error("(parsing) 'in' expected, found %o", in_o);
-  object_t l = resolve(env, part);
+  any_t l = resolve(env, part);
   tuple_set(t, 2, quoted(s));
   tuple_set(t, 3, l);
   tuple_set(t, 4, quoted(tuple_get(pre_t, 2)));
@@ -547,14 +547,14 @@ tuple_t for_pr(object_t env, list_t parsetree)
 }
 
 
-tuple_t fn_pr(object_t env, list_t parsetree)
+tuple_t fn_pr(any_t env, list_t parsetree)
 { 
   tuple_t pre_t = resolve_freefix_prule1(env, parsetree, fn_fn_sym, fn_sym, 2);
   assert(tuple_len(pre_t) == 3);
   tuple_t t = tuple_new(4);
   tuple_set(t, 0, WRAP_SYMBOL(fn_fn_sym));
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
-  object_t obj = tuple_get(pre_t, 1);
+  any_t obj = tuple_get(pre_t, 1);
   assert(obj && ptype(obj)==LIST_T);  // otherwise bug in resolve_freefix*
   list_t obj_l = UNWRAP_PTR(LIST_T, obj);
   tuple_set(t, 2, resolve_patterns(env, obj_l));
@@ -563,21 +563,21 @@ tuple_t fn_pr(object_t env, list_t parsetree)
   return t;
 }
 
-tuple_t macro_pr(object_t env, list_t parsetree)
+tuple_t macro_pr(any_t env, list_t parsetree)
 { 
   // currently this functions contains mainly a dirty hack!
   tuple_t pre_t = resolve_freefix_prule1(env, parsetree, macro_fn_sym, macro_sym, 2);
   assert(tuple_len(pre_t) == 3);
   tuple_t t = tuple_new(3);
   tuple_set(t, 0, WRAP_SYMBOL(macro_fn_sym));
-  object_t obj = tuple_get(pre_t, 1);
+  any_t obj = tuple_get(pre_t, 1);
   assert(obj && ptype(obj)==LIST_T);  // otherwise bug in resolve_freefix*
   tuple_t obj_t = list_to_tuple(UNWRAP_PTR(LIST_T, obj));
   for (int i = 0; i < tuple_len(obj_t); i++) {
     // simply check whether the args are symbols
-    object_t entry = tuple_get(obj_t, i);
+    any_t entry = tuple_get(obj_t, i);
     assert(entry && ptype(entry)==LIST_T);
-    object_t arg = resolve(env, UNWRAP_PTR(LIST_T, entry));
+    any_t arg = resolve(env, UNWRAP_PTR(LIST_T, entry));
     if (!arg || ptype(arg)!=SYMBOL_T)
       rha_error("(parsing) macro expects symbol, found", arg);
     tuple_set(obj_t, i, arg);
@@ -588,27 +588,27 @@ tuple_t macro_pr(object_t env, list_t parsetree)
   return t;
 }
 
-tuple_t equal_pr(object_t env, list_t parsetree) {
+tuple_t equal_pr(any_t env, list_t parsetree) {
   return resolve_assign_prule(env, parsetree, equal_sym, &assign_sym_list);
 }
 
-tuple_t plusequal_pr(object_t env, list_t parsetree) {
+tuple_t plusequal_pr(any_t env, list_t parsetree) {
   return resolve_assign_prule(env, parsetree, plusequal_sym, &assign_sym_list);
 }
 
-tuple_t minusequal_pr(object_t env, list_t parsetree) {
+tuple_t minusequal_pr(any_t env, list_t parsetree) {
   return resolve_assign_prule(env, parsetree, minusequal_sym, &assign_sym_list);
 }
 
-tuple_t timesequal_pr(object_t env, list_t parsetree) {
+tuple_t timesequal_pr(any_t env, list_t parsetree) {
   return resolve_assign_prule(env, parsetree, timesequal_sym, &assign_sym_list);
 }
 
-tuple_t divideequal_pr(object_t env, list_t parsetree) {
+tuple_t divideequal_pr(any_t env, list_t parsetree) {
   return resolve_assign_prule(env, parsetree, divideequal_sym, &assign_sym_list);
 }
 
-tuple_t quote_pr(object_t env, list_t parsetree)
+tuple_t quote_pr(any_t env, list_t parsetree)
 {
   list_popfirst(parsetree);	
   tuple_t t = tuple_new(2);					
@@ -639,20 +639,20 @@ tuple_t quote_pr(object_t env, list_t parsetree)
 // code blocks  -->  returns a tuple_t
 // for example: { x = 1; y = 7; deliver 5; { a=5; } x=5 }
 // split by semicolon, comma is not allowed
-tuple_t curlied_pr(object_t env, list_t parsetree)
+tuple_t curlied_pr(any_t env, list_t parsetree)
 {
   //debug("curlied_pr(%o, %o)\n", env, WRAP_PTR(LIST_T, parsetree));
   if (list_len(parsetree) == 0)
     rha_error("(curlied_pr) nothing to resolve");
   assert(list_len(parsetree) > 0);
-  object_t head = list_popfirst(parsetree);  // pop off curlied_sym
+  any_t head = list_popfirst(parsetree);  // pop off curlied_sym
   assert(head);
   if (!is_symbol(curlied_sym, head))
     rha_error("(curlied_pr) don't call prules directly");
 
   list_t sink = list_new();
   list_t part = list_new();
-  object_t obj = list_popfirst(parsetree);
+  any_t obj = list_popfirst(parsetree);
   while (obj) {
     if (is_symbol(semicolon_sym, obj)) {
       // split only if the next one is not a second order keyword like
@@ -698,7 +698,7 @@ tuple_t curlied_pr(object_t env, list_t parsetree)
   return list_to_tuple(sink);
 }
 
-tuple_t squared_pr(object_t env, list_t parsetree)
+tuple_t squared_pr(any_t env, list_t parsetree)
 {
   // complex literals
   // [x, 17] or [ 2*x for x in [1,2,3]]
@@ -720,7 +720,7 @@ tuple_t squared_pr(object_t env, list_t parsetree)
   //  [1,2,3] ==>  (literal_sym (tuple_sym [1,2,3]))
   if (list_len(parsetree) == 0)
     rha_error("(squared_pr) nothing to resolve");
-  object_t head = list_popfirst(parsetree);  // pop off curlied_sym
+  any_t head = list_popfirst(parsetree);  // pop off curlied_sym
   assert(head);
   if (!is_symbol(squared_sym, head))
     rha_error("(squared_pr) don't call prules directly");
@@ -740,14 +740,14 @@ tuple_t squared_pr(object_t env, list_t parsetree)
  *
  **********************************************************************/
 
-bool_t is_marked_list(symbol_t mark, object_t obj)
+bool_t is_marked_list(symbol_t mark, any_t obj)
 {
   if (ptype(obj) != LIST_T)
     return false;
   list_t l = UNWRAP_PTR(LIST_T, obj);
   if (list_len(l) == 0)
     return false;
-  object_t l0 = list_first(l);
+  any_t l0 = list_first(l);
   if (!l0 || !is_symbol(mark, l0))
     return false;
   // ok, it is a marked list
@@ -755,12 +755,12 @@ bool_t is_marked_list(symbol_t mark, object_t obj)
 }
 
 // check whether an expression is a specific symbol
-bool is_symbol(symbol_t a_symbol, object_t expr) {
+bool is_symbol(symbol_t a_symbol, any_t expr) {
   return (ptype(expr) == SYMBOL_T)
     && (UNWRAP_SYMBOL(expr) == a_symbol);
 }
 
-static bool_t is_second_order_keyword(object_t obj)
+static bool_t is_second_order_keyword(any_t obj)
 {
   // 2nd order keywords are for example 'else' or 'catch'
   if (ptype(obj) != SYMBOL_T)
@@ -772,13 +772,13 @@ static bool_t is_second_order_keyword(object_t obj)
     return false;
 }
 
-object_t quoted(object_t obj)
+any_t quoted(any_t obj)
 {
   return WRAP_PTR(TUPLE_T, 
 		  tuple_make(2, WRAP_SYMBOL(quote_sym), obj));
 }
 
-object_t copy_expr(object_t expr)
+any_t copy_expr(any_t expr)
 {
   // copy the structure (i.e. tuple and list structure)
   // but not the object elements
@@ -803,7 +803,7 @@ object_t copy_expr(object_t expr)
 }
 
 
-list_t split_rounded_list_obj(object_t list_obj)
+list_t split_rounded_list_obj(any_t list_obj)
 {
   // note that 'split_rounded_list_obj' only splits and doesn't call 'resolve'!!!
 
@@ -815,7 +815,7 @@ list_t split_rounded_list_obj(object_t list_obj)
   //debug("split_rounded_list_obj(%o)\n", list_obj);
   assert(list_obj && ptype(list_obj) == LIST_T);
   list_t source = UNWRAP_PTR(LIST_T, list_obj);
-  object_t head = list_popfirst(source);  // pop off curlied_sym
+  any_t head = list_popfirst(source);  // pop off curlied_sym
   assert(head && is_symbol(rounded_sym, head));
 
   if (list_len(source) == 0)
@@ -823,7 +823,7 @@ list_t split_rounded_list_obj(object_t list_obj)
 
   list_t sink = list_new();
   list_t part = list_new();
-  object_t obj = 0;
+  any_t obj = 0;
   while ((obj = list_popfirst(source))) {
     if (is_symbol(comma_sym, obj)) {
       if (list_len(source)==0)
@@ -849,7 +849,7 @@ list_t split_rounded_list_obj(object_t list_obj)
 }
 
 
-tuple_t resolve_incdec_prule(object_t env, list_t parsetree)
+tuple_t resolve_incdec_prule(any_t env, list_t parsetree)
 {
   // notes:
   //   ++x   =>  inc(x)
@@ -863,7 +863,7 @@ tuple_t resolve_incdec_prule(object_t env, list_t parsetree)
   if (list_len(parsetree) == 1)
     rha_error("++ and -- require an argument");
   // check whether ++ is used as prefix
-  object_t first = list_first(parsetree);
+  any_t first = list_first(parsetree);
   if (ptype(first) == SYMBOL_T) {
     symbol_t first_s = UNWRAP_SYMBOL(first);
     if ((first_s == plusplus_sym) || (first_s == minusminus_sym)) {
@@ -880,7 +880,7 @@ tuple_t resolve_incdec_prule(object_t env, list_t parsetree)
     }
   }
   // else
-  object_t last = list_last(parsetree);
+  any_t last = list_last(parsetree);
   if (ptype(last) == SYMBOL_T) {
     symbol_t last_s = UNWRAP_SYMBOL(last);
     if ((last_s == plusplus_sym) || (last_s == minusminus_sym)) {
@@ -903,7 +903,7 @@ tuple_t resolve_incdec_prule(object_t env, list_t parsetree)
 }
 
 
-tuple_t resolve_infix_prule(object_t env, list_t parsetree, symbol_t prule_sym, symbol_t fun_sym, bool_t left_binding)
+tuple_t resolve_infix_prule(any_t env, list_t parsetree, symbol_t prule_sym, symbol_t fun_sym, bool_t left_binding)
 {
   glist_t sym_list;
   glist_init(&sym_list);
@@ -912,7 +912,7 @@ tuple_t resolve_infix_prule(object_t env, list_t parsetree, symbol_t prule_sym, 
 }
 
 
-tuple_t resolve_infix_prule_list(object_t env, list_t parsetree, glist_t *prule_sym_list, symbol_t fun_sym, bool_t left_binding)
+tuple_t resolve_infix_prule_list(any_t env, list_t parsetree, glist_t *prule_sym_list, symbol_t fun_sym, bool_t left_binding)
 // a + (b + c)
 {
   // a generic infix prule which can deal with all infix operators
@@ -936,7 +936,7 @@ tuple_t resolve_infix_prule_list(object_t env, list_t parsetree, glist_t *prule_
   return t;
 }
 
-tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym, glist_t *assign_sym_list)
+tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, glist_t *assign_sym_list)
 {
   // x = 0            (assign local \x 0)
   // a.x = 0          (assign a     \x 0)
@@ -955,12 +955,12 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
   //         (assign lhs rhs)
 
   // all parts:
-  object_t scope = WRAP_SYMBOL(local_sym);
-  object_t symb = 0;
-  object_t signature = 0;
+  any_t scope = WRAP_SYMBOL(local_sym);
+  any_t symb = 0;
+  any_t signature = 0;
 
   // (1) analyse it
-  object_t lhs = 0;
+  any_t lhs = 0;
   if (list_len(parsetree) == 0)
     rha_error("(parsing) no rhs for assignment");
   if (list_len(lhs_l) == 0)
@@ -970,7 +970,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
   }
   else {
     // (1.1) do we have a rounded expression right-most?
-    object_t right_most = list_last(lhs_l);
+    any_t right_most = list_last(lhs_l);
     if (is_marked_list(rounded_sym, right_most)) {
       // something like f(x)=17
       list_poplast(lhs_l); // remove it
@@ -994,7 +994,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
     int_t tlen = tuple_len(t);
     if (tlen != 3)
 	rha_error("(parsing) can't assign to ", lhs);
-    object_t t0 = tuple_get(t, 0);
+    any_t t0 = tuple_get(t, 0);
     if (!t0 || ptype(t0) != SYMBOL_T || UNWRAP_SYMBOL(t0)!=eval_sym)
       rha_error("(parsing) can't assign to ", lhs);
     scope = tuple_get(t, 1);
@@ -1005,16 +1005,16 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
 
   // (2) to build the RHS we check whether the 'prule_sym' was
   // something else than 'equal_sym'
-  object_t rhs = resolve(env, parsetree);
+  any_t rhs = resolve(env, parsetree);
 
   // (3) we need to replace all 'eval_sym' in 'scope' by
   // 'lookup_local'
-  object_t i = scope;
+  any_t i = scope;
   while (ptype(i)==TUPLE_T) {
     // we only expect stuff like (eval x \s)
     tuple_t i_t = UNWRAP_PTR(TUPLE_T, i);
     assert(tuple_len(i_t) == 3);
-    object_t i_t0 = tuple_get(i_t, 0);
+    any_t i_t0 = tuple_get(i_t, 0);
     assert(ptype(i_t0)==SYMBOL_T);
     assert(UNWRAP_SYMBOL(i_t0) == eval_sym);
     tuple_set(i_t, 0, WRAP_SYMBOL(lookup_local_sym));
@@ -1070,7 +1070,7 @@ tuple_t resolve_assign_prule(object_t env, list_t parsetree, symbol_t prule_sym,
 
 
 
-object_t get_cmp_fn(symbol_t cmp_s)
+any_t get_cmp_fn(symbol_t cmp_s)
 {
   if (cmp_s==equalequal_sym)        return WRAP_SYMBOL(equalequal_fn_sym);
   else if (cmp_s==notequal_sym)     return WRAP_SYMBOL(notequal_fn_sym);
@@ -1086,14 +1086,14 @@ object_t get_cmp_fn(symbol_t cmp_s)
 
 
 
-tuple_t resolve_cmp_prule(object_t env, list_t parsetree)
+tuple_t resolve_cmp_prule(any_t env, list_t parsetree)
 // resolve stuff like a == b == c < d
 {
   // (1) chop the parsetree into pieces
   list_t pieces = list_new();
   list_t parts = list_new();
   list_t cmp_l = list_new();
-  object_t head;
+  any_t head;
   while ((head = list_popfirst(parsetree))) {
     if (ptype(head) == SYMBOL_T) {
       symbol_t s = UNWRAP_SYMBOL(head);
@@ -1113,11 +1113,11 @@ tuple_t resolve_cmp_prule(object_t env, list_t parsetree)
   list_append(pieces, resolve(env, parts));
 
   // (2) built the expression
-  object_t cmp_obj = list_popfirst(cmp_l);
-  object_t part1 = list_popfirst(pieces);
-  object_t part2 = list_popfirst(pieces);
+  any_t cmp_obj = list_popfirst(cmp_l);
+  any_t part1 = list_popfirst(pieces);
+  any_t part2 = list_popfirst(pieces);
   tuple_t call = tuple_make(3, cmp_obj, part1, part2);
-  object_t and_fn_obj = WRAP_SYMBOL(and_fn_sym);
+  any_t and_fn_obj = WRAP_SYMBOL(and_fn_sym);
   while ((cmp_obj = list_popfirst(cmp_l))) {
     part1 = part2;
     part2 = list_popfirst(pieces);
@@ -1130,13 +1130,13 @@ tuple_t resolve_cmp_prule(object_t env, list_t parsetree)
 }
 
 
-list_t read_freefix_args(object_t env, list_t parsetree, int_t narg)
+list_t read_freefix_args(any_t env, list_t parsetree, int_t narg)
 {
   if (list_len(parsetree) < narg)
     rha_error("(parsing) not enough arguments for freefix form");
   list_t args = list_new();
   for (int i=1; i<narg; i++) {
-    object_t obj = list_popfirst(parsetree);
+    any_t obj = list_popfirst(parsetree);
     if (!is_marked_list(rounded_sym, obj))
       rha_error("first argument of freefix form must be in round "
 		"brackets, found %o", obj);
@@ -1148,7 +1148,7 @@ list_t read_freefix_args(object_t env, list_t parsetree, int_t narg)
   return args;
 }
 
-tuple_t resolve_freefix_prule1(object_t env, list_t parsetree,
+tuple_t resolve_freefix_prule1(any_t env, list_t parsetree,
 			       symbol_t fun_sym,
 			       symbol_t key1, int_t narg1)
 {
@@ -1165,7 +1165,7 @@ tuple_t resolve_freefix_prule1(object_t env, list_t parsetree,
   // note that all but the last of several arguments to keys must be
   // in rounded brackets
   //debug("resolve_freefix_prule1(%o)\n", WRAP_PTR(LIST_T, parsetree));
-  object_t head = list_popfirst(parsetree);
+  any_t head = list_popfirst(parsetree);
   assert(head && is_symbol(key1, head));
   list_t call = read_freefix_args(env, parsetree, narg1);
   list_prepend(call, WRAP_SYMBOL(fun_sym));
@@ -1173,7 +1173,7 @@ tuple_t resolve_freefix_prule1(object_t env, list_t parsetree,
 }
 
 
-tuple_t resolve_freefix_prule2(object_t env, list_t parsetree,
+tuple_t resolve_freefix_prule2(any_t env, list_t parsetree,
 			       symbol_t fun_sym,
 			       symbol_t key1, int_t narg1, 
 			       symbol_t key2, int_t narg2)
@@ -1190,7 +1190,7 @@ tuple_t resolve_freefix_prule2(object_t env, list_t parsetree,
   // note that all but the last of several arguments to keys must be
   // in rounded brackets
   //debug("resolve_freefix_prule2(%o)\n", WRAP_PTR(LIST_T, parsetree));
-  object_t head = list_popfirst(parsetree);
+  any_t head = list_popfirst(parsetree);
   assert(head && is_symbol(key1, head));
   // split the parsetree
   int parsetree_len = list_len(parsetree);

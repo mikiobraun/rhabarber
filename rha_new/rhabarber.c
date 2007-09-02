@@ -61,8 +61,8 @@ int main(int argc, char **argv)
   sayhello();
 
   // set up root object
-  object_t root = rha_init();
-  object_t excp = 0;   // exception object
+  any_t root = rha_init();
+  any_t excp = 0;   // exception object
 
   if (!dflag) {
     // load basic stuff implemented in rhabarber
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
     if (!line) break;
     add_history(line);
     try {
-      object_t p = parse(root, line);
+      any_t p = parse(root, line);
       if (p) {
 	// note that the outer tuple containing a "do" is dealt with
 	// here, because this way we can avoid opening a BLOCK_FRAME.
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 	assert(tlen > 0);
 	assert(ptype(tuple_get(t, 0)) == SYMBOL_T);
 	assert(UNWRAP_SYMBOL(tuple_get(t, 0)) == do_sym);
-	object_t e = 0;
+	any_t e = 0;
 	for (int i = 1; i < tlen; i++)
 	  e = eval(root, tuple_get(t, i));
 	if (e) {

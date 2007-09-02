@@ -24,11 +24,11 @@
 #include "glist.h"
 struct rha_object;
 typedef int                       _rha_ symbol_t;
-typedef struct rha_object *       _rha_ object_t;
+typedef struct rha_object *       _rha_ any_t;
 typedef int                       _rha_ int_t; 
 typedef bool                      _rha_ bool_t;
 typedef struct gtuple*            _rha_ tuple_t;
-typedef object_t (*_builtin_t)(tuple_t);
+typedef any_t (*_builtin_t)(tuple_t);
 typedef _builtin_t                _rha_ builtin_t;
 typedef double                    _rha_ real_t;
 typedef struct _mat_t_ { 

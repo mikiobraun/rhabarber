@@ -17,7 +17,7 @@
 //   pattern(type:t, symbol:s) = {
 //     p = new(pattern);
 //     p.patterntype = t;
-//     p.patternsymbol = s;
+//     p.patternliteral = s;
 //     return p;
 //   }
 //
@@ -174,6 +174,7 @@ colon_fn = fn (a, b) {
 // the problem with overloading here is that type checking might use
 // certain function which are overloaded themselves, which needs to be
 // resolved with type checking and so on...
+
 equalequal_fn = modules.object.equalequal_fn;
 notequal_fn   = modules.object.notequal_fn;
 
@@ -265,7 +266,7 @@ implementation_proto.string = fn () {
 // symbol
 symbol.proto.string = fn () modules.symbol_fn.symbol_to_string(this);
 symbol(name) = modules.symbol_fn.symbol_new(name);
-//equalequal_fn(symbol:x, symbol:y) = modules.symbol_fn.symbol_equalequal(x, y);
+equalequal_fn(symbol:x, symbol:y) = modules.symbol_fn.symbol_equalequal(x, y);
 
 // pattern
 pattern.proto.string = fn () {
@@ -274,8 +275,8 @@ pattern.proto.string = fn () {
     s += string(this.patterntype) + ":";
   else
     s += "object:";
-  if (has(this, \patternsymbol))
-    s += string(this.patternsymbol);
+  if (has(this, \patternliteral))
+    s += string(this.patternliteral);
   else
     s += "<nosym>";
   return s;
@@ -325,7 +326,10 @@ string.proto.string         = fn () modules.string_fn.string_to_string(this);
 string()                    = "<somescope>";
 string(x)                   = modules.object.to_string(x);
 plus_fn(string:x, string:y) = modules.string_fn.string_concat(x, y);
-string.proto.len            = fn () modules.string_fn.string_len(this);
+string.proto.len = fn () modules.string_fn.string_len(this);
+string.proto.get = fn (int:i) modules.string_fn.string_get(this, i);
+string.proto.set = fn (int:i, string:v) modules.string_fn.string_set(this, i, v);
+string.proto(int:i) = static.get(i);
 //equalequal_fn(string:x, string:y) = modules.string_fn.string_equalequal(x, y);
 
 
@@ -374,6 +378,8 @@ exp(real:x) = modules.real_fn.real_exp(x);
 sin(real:x) = modules.real_fn.real_sin(x);
 cos(real:x) = modules.real_fn.real_cos(x);
 //equalequal_fn(real:x, real:y) = modules.real_fn.real_equalequal(x, y);
+//equalequal_fn(int:x, real:y) = modules.real_fn.real_equalequal(real(x), y);
+//equalequal_fn(real:x, int:y) = modules.real_fn.real_equalequal(x, real(y));
 
 
 
@@ -407,6 +413,16 @@ apostrophe_fn(mat:x) = modules.mat_fn.mat_transpose(x);
 mat.proto.string = fn () modules.mat_fn.mat_to_string(this);
 eye(int:n) = modules.mat_fn.mat_eye(n);
 mat(int:rows, int:cols) = modules.mat_fn.mat_new(rows, cols);
+mat.proto(int:i, int:j) = static.get(this, i, j);
+mat.proto.extend = fn (signature, scope, rhs) {
+  if (signature.len() != 2)
+    error("(mat) index must be pair");
+  row = signature(0).patternliteral;
+  col = signature(0).patternliteral;
+  value = eval(scope, rhs);
+  this.set(row, col, value);
+  return value;
+}
 mat.copy = fn () modules.mat_fn.mat_copy(this);
 mat.proto.rows = fn () modules.mat_fn.mat_rows(this);
 mat.proto.cols = fn () modules.mat_fn.mat_cols(this);
@@ -492,7 +508,7 @@ tuple.proto(tuple:idx) = {
 tuple.proto.extend = fn (signature, scope, rhs) {
   if (signature.len() != 1)
     error("(tuple) invalid tuple index");
-  index = signature(0).patternsymbol;
+  index = signature(0).patternliteral;
   value = eval(scope, rhs);
   this.set(index, value);
   return value;
@@ -527,18 +543,7 @@ list.proto.iter     = fn () {
   return i;
 }
 rm(list.proto, \fn_data);
-list.proto(int:i) = {
-  if (0 <= i < static.len()) {
-    iterator = static.iter();
-    for (count in 0:i)
-      iterator.next();
-    return iterator.get();
-  }
-  else
-    error("(list) index out of bounds");
-}
-
-
+list.proto(int:i) = tuple(static)(i);
 
 // 'in' element test
 in_fn = fn (a, b) {

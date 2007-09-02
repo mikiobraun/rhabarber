@@ -18,8 +18,8 @@ extern _rha_ bool_t   symbol_equalequal(symbol_t s, symbol_t t);
 extern _rha_ string_t symbol_name(symbol_t s);
 extern _rha_ string_t symbol_to_string(symbol_t s);
 
-extern object_t symbol_wrap(symbol_t s);
-extern object_t symbol_new_wrap(string_t s);
-extern symbol_t symbol_unwrap(object_t s);
+extern any_t symbol_wrap(symbol_t s);
+extern any_t symbol_new_wrap(string_t s);
+extern symbol_t symbol_unwrap(any_t s);
 
 #endif

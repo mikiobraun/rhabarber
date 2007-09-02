@@ -16,7 +16,7 @@ extern _rha_ bool_t real_greater(real_t x, real_t y);
 extern _rha_ bool_t real_greaterequal(real_t x, real_t y);
 
 extern _rha_ real_t  real_cmp(real_t x, real_t y);
-extern _rha_ real_t  real_cast(object_t x);
+extern _rha_ real_t  real_cast(any_t x);
 
 extern _rha_ real_t  real_exp(real_t x);
 extern _rha_ real_t  real_sin(real_t x);

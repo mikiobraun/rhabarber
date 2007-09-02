@@ -29,17 +29,21 @@ int_t tuple_len(tuple_t t)
   return gtuple_length(t);
 }
 
-object_t tuple_get(tuple_t t, int_t i)
+any_t tuple_get(tuple_t t, int_t i)
 {
-  if (i<0 || i>=gtuple_length(t))
-    rha_error("(tuple) index out-of-bounds");
+  int tlen = gtuple_length(t);
+  if (i >= tlen || -i > tlen)
+    rha_error("index out-of-bounds");
+  if (i < 0) i = tlen + i;
   return gtuple_getp(t, i);
 }
 
-tuple_t tuple_set(tuple_t t, int_t i, object_t s)
+tuple_t tuple_set(tuple_t t, int_t i, any_t s)
 {
-  if (i<0 || i>=gtuple_length(t))
-    rha_error("(tuple) index out-of-bounds");
+  int tlen = gtuple_length(t);
+  if (i >= tlen || -i > tlen)
+    rha_error("index out-of-bounds");
+  if (i < 0) i = tlen + i;
   gtuple_set(t, i, s);
   return t;
 }
@@ -50,7 +54,7 @@ tuple_t tuple_make(int_t narg, ...)
   va_start(ap, narg);
   tuple_t args = tuple_new(narg);
   for (int i = 0; i < narg; i++)
-    tuple_set(args, i, va_arg(ap, object_t));
+    tuple_set(args, i, va_arg(ap, any_t));
   va_end(ap);
 
   return vtuple_make(args);

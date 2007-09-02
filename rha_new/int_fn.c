@@ -22,7 +22,7 @@ int_t int_cmp(int_t x, int_t y) {
   return 1;
 }
 
-int_t int_cast(object_t x)
+int_t int_cast(any_t x)
 {
   switch (ptype(x)) {
   case INT_T:
