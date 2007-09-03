@@ -1,3 +1,9 @@
+2007-09-03  Mikio Braun  <mikiobraun@gmail.com>
+
+	* eval.c: restructured source code to make it less a waterfall of
+	function calls. Now, everything is contained in call_fun, with
+	more helper functions.
+
 2007-09-02  Stefan Harmeling  <harmeling@gmail.com>
 
 	* eval.c (pattern_matches), object.c (extend): removed bug that

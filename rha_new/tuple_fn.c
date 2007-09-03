@@ -84,3 +84,13 @@ string_t tuple_to_string(tuple_t t)
   }
   return string_concat(s, ")");
 }
+
+tuple_t tuple_shift(tuple_t in)
+{
+  int l = tuple_len(in);
+  tuple_t out = tuple_new(l - 1);
+  for(int i = 1; i < l; i++)
+    tuple_set(out, i - 1, tuple_get(in , i));
+  return out;
+
+}

@@ -21,14 +21,28 @@ void eval_init(any_t root, any_t module)
   assign(root, callslot_sym, lookup(module, callslot_sym));
 }
 
+//----------------------------------------------------------------------
 // forward declarations
-static any_t eval_sequence(any_t env, tuple_t t);
+
 static any_t eval_args_and_call_fun(any_t env, tuple_t expr);
-static any_t find_and_call_matching_impl(any_t local, list_t fn_data_l, tuple_t values, 
-					    bool_t no_frame);
+static any_t eval_sequence(any_t env, tuple_t t);
+static list_t get_fn_data(any_t fn);
 static bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values);
-static any_t call_matching_impl(any_t local, any_t scope, any_t fnbody,
-			    tuple_t signature, tuple_t values, bool_t no_frame);
+static bool_t pattern_lessthan_pattern(any_t p1, any_t p2);
+static bool_t pattern_matches(any_t pattern, any_t value);
+static any_t call_builtin_fun(any_t fnbody,tuple_t values, bool_t no_frame);
+static any_t call_rhabarber_fun(any_t this, any_t fn, any_t scope, any_t fnbody,
+				tuple_t signature, tuple_t values, bool_t no_frame);
+static any_t construct_fun_scope(any_t this, any_t fn, tuple_t values, any_t scope);
+
+// guarded get functions
+static tuple_t get_slot_tuple(any_t x, symbol_t s, string_t msg);
+static bool_t get_slot_bool(any_t x, symbol_t s, string_t msg);
+static any_t get_slot_any(any_t x, symbol_t s, string_t msg);
+
+// auxillary functions
+static tuple_t eval_tuple_each(any_t env, tuple_t expr);
+static bool_t is_fun_call_of(tuple_t expr, symbol_t sym);
 
 /*************************************************************
  *
@@ -114,41 +128,34 @@ any_t eval(any_t env, any_t expr)
 // Overview: (this attempts to be something like a call graph)
 //
 // (do ...) -> eval_sequence
-// else -> evaluate all arguments
-//         call_fun
-//             construct local scope
-//             find_and_call_matching_impl
-//                  iterate over signatures
-//                      if signature_matches
-//                          call_matching_impl      
+// else -> call_fun
+//       
 
 static 
 any_t eval_args_and_call_fun(any_t env, tuple_t expr)
 {
+  //debug("eval_args_and_call_fun: %o\n", WRAP_PTR(TUPLE_T, expr));
+
   int tlen = tuple_len(expr);
-  //debug("eval_args: %o\n", WRAP_PTR(TUPLE_T, expr));
   assert(tlen>0);  // otherwise repair 'rhaparser.y'
-  any_t f = tuple_get(expr, 0);
+
   // deal with special stuff
-  if (ptype(f)==SYMBOL_T) {
-    if (quote_sym == UNWRAP_SYMBOL(f)) {
-      assert(tlen==2);  // otherwise repair 'rhaparser.y'
-      return tuple_get(expr, 1);
-    }
-    else if (do_sym == UNWRAP_SYMBOL(f)) {
-      return eval_sequence(env, expr);
-    }
-    //debug("calling '%o'\n", f);
+  if (is_fun_call_of(expr, quote_sym)) {
+    assert(tlen==2);  // otherwise repair 'rhaparser.y'
+    return tuple_get(expr, 1);
   }
+  else if (is_fun_call_of(expr, do_sym))
+    return eval_sequence(env, expr);
 
-  // otherwise a usual function
-  tuple_t values = tuple_new(tlen);
-  for (int i=0; i<tlen; i++)
-    tuple_set(values, i, eval(env, tuple_get(expr, i)));
+  // evaluate all arguments
+  tuple_t values = eval_tuple_each(env, expr);
 
-  // finally call the function
+  // call the function
   return call_fun(env, values);
 }
+
+
+// handle (do ... ) ----------------------------------------------------
 
 // evaluate arguments sequentially
 //
@@ -171,91 +178,126 @@ any_t eval_sequence(any_t env, tuple_t t)
   return res;
 }
 
+
+// calling a function --------------------------------------------------
+
 // Call a function 
 //
-// Checks if the number of argument matches, constructs the local
-// environment of the callee and executes the function
+// searches for the matching implementation, collect the information and
+// call the function.
 //
-// callable objects must have the 'fn_data' slot
+// Also called from parse.c!
 any_t call_fun(any_t this, tuple_t values)
 {
-  list_t values_l = tuple_to_list(values);
-
-  // get the function to be called
-  any_t fn = list_popfirst(values_l);
-  values = list_to_tuple(values_l);
+  // get the function to be called and the arguments
+  any_t fn = tuple_get(values, 0);
+  values = tuple_shift(values);
   
   // look for 'fn_data' which contains all information for the
   // overloaded function
+  list_t fn_data_l = get_fn_data(fn);
+
+  // these are the variables which we need below
+  any_t impl = 0; // this will be checked afterwards
+  tuple_t signature = 0;
+  bool_t varargs = false;
+  any_t fnbody = 0;
+  any_t scope = 0;
+  bool_t no_frame = false;
+
+  // vanilla error message for any kind of screw up in fn_data
+  string_t msg = "(eval) can't call %o, since it has a faulty entry in 'fn_data'";
+
+  // go through list and look for matching signatures
+  for (list_it_t it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
+    impl = list_get(it);
+    if (!impl) rha_error(msg);
+
+    signature = get_slot_tuple(impl, signature_sym, msg);
+    varargs = get_slot_bool(impl, varargs_sym, msg);
+
+    if (signature_matches(signature, varargs, values))
+      // match found!!!
+      break;
+  }
+  
+  if (!impl) {
+    // we did not find anything matching
+    rha_error("no matching signature found");
+  }
+
+  // collect remaining information
+  fnbody = get_slot_any(impl, fnbody_sym, 
+			"(eval) can't find function body");
+  no_frame = has(impl, no_frame_sym);
+
+  // call function
+  if (ptype(fnbody) == BUILTIN_T)
+    return call_builtin_fun(fnbody, values, no_frame);
+  else {
+    scope = get_slot_any(impl, scope_sym, 
+			 "(eval) can't find defining scope");
+    
+    // construct the inner scope
+
+    return call_rhabarber_fun(this, fn, scope, fnbody, signature, 
+			      values, no_frame);
+  }
+
+  return 0;
+}
+
+// get fn.fn_data as a list
+static list_t get_fn_data(any_t fn)
+{
   any_t fn_data = lookup(fn, fn_data_sym);
   list_t fn_data_l = 0;
   if (!fn_data)
     rha_error("(eval) %o can't be called, since it "
 	      "has no 'fn_data' slot", fn);
-  if (ptype(fn_data)!=LIST_T
-      || list_len(fn_data_l=UNWRAP_PTR(LIST_T, fn_data)) == 0)
+  if (ptype(fn_data) != LIST_T
+      || list_len(fn_data_l = UNWRAP_PTR(LIST_T, fn_data)) == 0)
     rha_error("(eval) %o can't be called, since it "
 	      "has a faulty 'fn_data' slot", fn);
-
-  bool_t no_frame = has(fn_data, no_frame_sym);
-
-  // construct the inner scope
-  any_t local = new();
-  assign(local, local_sym, local);   // the scope local to the function
-  assign(local, this_sym, this);     // the calling scope
-  assign(local, static_sym, fn);     // for static variables
-  assign(local, args_sym, WRAP_PTR(TUPLE_T, values)); // all passed arguments
-
-  // find and call the matching implementation
-  return find_and_call_matching_impl(local, fn_data_l, values, no_frame);
+  return fn_data_l;
 }
 
 
-// go through available implementations and call the first one which matches
-//
-// calls: signature_matches, call_matching_impl
-static 
-any_t find_and_call_matching_impl(any_t local, list_t fn_data_l, tuple_t values,
-				     bool_t no_frame)
+// matching signatures -------------------------------------------------
+
+// compare a signature against given arguments
+bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
 {
-  //debug("find_and_call_matching_impl(%o, %o, %o)\n", local, WRAP_PTR(LIST_T, fn_data_l), WRAP_PTR(TUPLE_T, values));
-  string_t msg = "(eval) can't call %o, since it has a faulty entry in 'fn_data'";
-  // go through the list to find a match
-  for (list_it_t it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
-    any_t impl = list_get(it);
-    if (!impl) rha_error(msg);
-    any_t signature_o = lookup(impl, signature_sym); 
-    if (!signature_o || ptype(signature_o)!=TUPLE_T)
-      rha_error(msg);
-    tuple_t signature = UNWRAP_PTR(TUPLE_T, signature_o);
-    any_t varargs_o = lookup(impl, varargs_sym);
-    if (!varargs_o || ptype(varargs_o)!=BOOL_T)
-      rha_error(msg);
-    bool_t varargs = UNWRAP_BOOL(varargs_o);
-    if (signature_matches(signature, varargs, values)) {
-      // match found!!!
-      any_t fnbody = lookup(impl, fnbody_sym);
-      if (!fnbody)
-	rha_error("(eval) can't find function body");
-      any_t scope = lookup(impl, scope_sym);
-      // note that for builtin functions the 'scope' is ignored and
-      // can thus also be 'void'
-      if (!scope && ptype(fnbody)!=BUILTIN_T)
-	rha_error("(eval) can't find defining scope");
-      return call_matching_impl(local, scope, fnbody, signature, values, no_frame);
-    }
+  int_t nsig = tuple_len(signature);
+  int_t narg = tuple_len(values);
+  // check whether there are enough arguments
+  if (varargs) {
+    if (nsig > narg)
+      return false;
   }
-  // we did not find anything matching
-  rha_error("no matching signature found");
-  return 0;
+  else {
+    if (nsig != narg)
+      return false;
+  }
+  // lexicographical order
+  for (int i = 0; i < nsig; i++) {
+    any_t pattern = tuple_get(signature, i);
+    if (!pattern_matches(pattern, tuple_get(values, i)))
+      return false;
+  }
+  // all checks passed
+  return true;
 }
 
 
+static
 bool_t pattern_lessthan_pattern(any_t p1, any_t p2)
 {
   return true;
 }
 
+
+static
 bool_t pattern_matches(any_t pattern, any_t value)
 {
   assert(pattern);  // at least it should exist, even if it doesn't
@@ -286,78 +328,72 @@ bool_t pattern_matches(any_t pattern, any_t value)
 }
 
 
-// compare a signature against given arguments
-bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
+// calling a builtin function ------------------------------------------
+
+static any_t call_builtin_fun(any_t fnbody, tuple_t values, bool_t no_frame)
 {
-  int_t nsig = tuple_len(signature);
-  int_t narg = tuple_len(values);
-  // check whether there are enough arguments
-  if (varargs) {
-    if (nsig > narg)
-      return false;
-  }
+  // (1) function with C code
+  any_t res = 0;
+  builtin_t f = UNWRAP_BUILTIN(fnbody);
+  if(no_frame)
+    res = f(values);
   else {
-    if (nsig != narg)
-      return false;
+    begin_frame(FUNCTION_FRAME)
+      res = f(values);
+    end_frame(res);
   }
-  // lexicographical order
-  for (int i = 0; i < nsig; i++) {
-    any_t pattern = tuple_get(signature, i);
-    if (!pattern_matches(pattern, tuple_get(values, i)))
-      return false;
-  }
-  // all checks passed
-  return true;
+  return res;
 }
 
 
+// calling a rhabarber function ----------------------------------------
 
 // call the found matching implementation
 static 
-any_t call_matching_impl(any_t local, any_t scope, any_t fnbody,
-			    tuple_t signature, tuple_t values, bool_t no_frame)
+any_t call_rhabarber_fun(any_t this, any_t fn, any_t scope, any_t fnbody,
+			 tuple_t signature, tuple_t values, bool_t no_frame)
 {
+  any_t local = construct_fun_scope(this, fn, values, scope);
+
   // call the function
   any_t res = 0;
-  if (ptype(fnbody) == BUILTIN_T) {
-    // (1) function with C code
-    builtin_t f = UNWRAP_BUILTIN(fnbody);
-    if(no_frame)
-      res = f(values);
-    else {
-      begin_frame(FUNCTION_FRAME)
-	res = f(values);
-      end_frame(res);
+    
+  // assign the arguments
+  int nsig = tuple_len(signature);
+  for(int i = 0; i < nsig; i++) {
+    any_t pattern = tuple_get(signature, i);
+    if (!pattern)
+      rha_error("(eval) signature is not valid");
+    any_t s_o = get_slot_any(pattern, symbol_new("patternliteral"), 
+			     "(eval) patternliteral expected");
+    if (ptype(s_o) == SYMBOL_T) {
+      symbol_t s = UNWRAP_SYMBOL(s_o);
+      //debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
+      assign(local, s, tuple_get(values, i));
     }
   }
+
+  if(no_frame)
+    res = eval(local, fnbody);
   else {
-    // (2) function with rhabarber code
-    assign(local, parent_sym, scope);  // the defining scope (lexical)
-    
-    // assign the arguments
-    int nsig = tuple_len(signature);
-    for(int i = 0; i < nsig; i++) {
-      any_t pattern = tuple_get(signature, i);
-      if (!pattern)
-	rha_error("(eval) signature is not valid");
-      any_t s_o = lookup(pattern, symbol_new("patternliteral"));
-      if (!s_o)
-	rha_error("(eval) patternliteral expected", s_o);
-      if (ptype(s_o) == SYMBOL_T) {
-	symbol_t s = UNWRAP_SYMBOL(s_o);
-	//debug("assigning argument number %d to '%s'\n", i, symbol_name(s));
-	assign(local, s, tuple_get(values, i));
-      }
-    }
-    if(no_frame)
+    begin_frame(FUNCTION_FRAME)
       res = eval(local, fnbody);
-    else {
-      begin_frame(FUNCTION_FRAME)
-	res = eval(local, fnbody);
-      end_frame(res);
-    }
+    end_frame(res);
   }
   return res;
+}
+
+// construct the local scope for the function call
+static 
+any_t construct_fun_scope(any_t this, any_t fn, tuple_t values, any_t scope)
+{
+  any_t local = new();
+  assign(local, local_sym, local);   // the scope local to the function
+  assign(local, this_sym, this);     // the calling scope
+  assign(local, static_sym, fn);     // for static variables
+  assign(local, args_sym, WRAP_PTR(TUPLE_T, values)); // all passed arguments
+  assign(local, parent_sym, scope);  // the defining scope (lexical)
+  return local;
 }
 
 //----------------------------------------------------------------------
@@ -407,4 +443,66 @@ any_t callslot(any_t obj, symbol_t slotname, int_t narg, ...)
   va_end(ap);
   
   return vcallslot(obj, slotname, args);
+}
+
+//----------------------------------------------------------------------
+//
+// guarded get functions
+//
+// get a slot, check the type, raise error if slot does not exist or
+// does not have the correct type!
+//
+
+static
+tuple_t get_slot_tuple(any_t x, symbol_t s, string_t msg)
+{
+  any_t o = lookup(x, s);
+  if (!o || ptype(o) != TUPLE_T)
+    rha_error(msg);
+  return UNWRAP_PTR(TUPLE_T, o);
+}
+
+static
+bool_t get_slot_bool(any_t x, symbol_t s, string_t msg)
+{
+  any_t o = lookup(x, s);
+  if (!o || ptype(o) != BOOL_T)
+    rha_error(msg);
+  return UNWRAP_BOOL(o);
+}
+
+static 
+any_t get_slot_any(any_t x, symbol_t s, string_t msg)
+{
+  any_t o = lookup(x, s);
+  if (!o)
+    rha_error(msg);
+  return o;
+}
+
+//----------------------------------------------------------------------
+// 
+// Some auxillary functions
+//
+
+// check whether expr is a call with symbol sym
+static
+bool_t is_fun_call_of(tuple_t expr, symbol_t sym)
+{
+  any_t f = tuple_get(expr, 0);
+  return (ptype(f) == SYMBOL_T)
+    && (UNWRAP_SYMBOL(f) == sym);
+}
+
+
+// evaluate each member of a tuple, returning the result
+static
+tuple_t eval_tuple_each(any_t env, tuple_t expr)
+{
+  int tlen = tuple_len(expr);
+
+  tuple_t values = tuple_new(tlen);
+  for (int i=0; i<tlen; i++)
+    tuple_set(values, i, eval(env, tuple_get(expr, i)));
+  return values;
 }

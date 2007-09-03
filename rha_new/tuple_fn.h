@@ -24,4 +24,7 @@ extern _rha_ string_t tuple_to_string(tuple_t t);
 
 extern _rha_ tuple_t  tuple_make(int_t narg, ...);
 extern _rha_ tuple_t  vtuple_make(tuple_t args);
+
+extern _rha_ tuple_t  tuple_shift(tuple_t t);
+
 #endif

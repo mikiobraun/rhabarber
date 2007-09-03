@@ -3,7 +3,7 @@ CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include -Wall -pedantic
 #CFLAGS=-std=c99 -I../ -O3 -I/opt/local/include -Wall -pedantic
 
 LDFLAGS=-L/opt/local/lib
-LOADLIBES=-lgc -lreadline -lcblas
+LOADLIBES=-lgc -lreadline -lcblas -lm
 
 ALLSOURCES=$(wildcard *.c)
 SOURCES=alloc.o eval.o core.o \

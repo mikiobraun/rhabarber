@@ -54,7 +54,8 @@ warning  = modules.messages.warning;
 resolve  = modules.parse.resolve;
 
 // take care of 'syntactic functions', which generate no frame to return from
-no_frame(f) = { f.fn_data.no_frame = true; f };
+fn_data(f) = modules.list_fn.list_first(f.fn_data);
+no_frame(f) = { fd = fn_data(f); fd.no_frame = true; f };
 
 // (1.3) functions that are accessed after applying prules
 if_fn      = no_frame(modules.core.if_fn); 
