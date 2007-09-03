@@ -17,11 +17,15 @@
 #include "bool_fn.h"
 #include "mat_fn.h"
 #include "messages.h"
+#include "python.h"
 
 //TYPES
 #include <stdbool.h>
 #include "gtuple.h"
 #include "glist.h"
+#ifdef HAVE_PYTHON
+#include <Python.h>
+#endif
 struct rha_object;
 typedef int                       _rha_ symbol_t;
 typedef struct rha_object *       _rha_ any_t;
@@ -41,6 +45,7 @@ typedef char *                    _rha_ string_t;
 typedef void *                    _rha_ address_t;
 typedef struct glist *            _rha_ list_t;
 typedef glist_iterator_t *        _rha_ list_it_t;
+typedef PyObject *                _rha_ pyobject_t;
 
 //SYMBOLS
 // the most basic symbols

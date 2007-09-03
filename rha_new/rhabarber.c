@@ -28,17 +28,19 @@ int main(int argc, char **argv)
   // handle command line arguments
   int flag;
   bool_t dflag = false, tflag = false;
-  while ((flag = getopt(argc, argv, "dht")) != -1)
+  bool_t interactive = false;
+  while ((flag = getopt(argc, argv, "dhti")) != -1)
     switch (flag) {
     case 'h':  // show command line help
       printf("\n"
 	     "Rhabarber, compiled at " __TIME__ " on " __DATE__ "\n"
 	     "\n"
-	     "usage: rhabarber [-dht]\n"
+	     "usage: rhabarber [-dht] [file]\n"
 	     "\n"
 	     "  d : do not load 'prelude.rha'\n"
 	     "  h : print this help message and ignore other options\n"
 	     "  t : load 'prelude.rha', run 'test.rha' and quit\n"
+	     "  i : enter interactive loop after [file] has been read\n"
 	     "\n");
       exit(0);
     case 'd':  // debug mode, i.e. without anything else loaded
@@ -46,6 +48,9 @@ int main(int argc, char **argv)
       break;
     case 't':  // test mode, run 'prelude.rha' and 'test.rha' and quit
       tflag = true;
+      break;
+    case 'i': 
+      interactive = true;
       break;
     }
 
@@ -87,6 +92,18 @@ int main(int argc, char **argv)
     }
     exit(0);
   }    
+
+  if (optind < argc) {
+    try {
+      for(int i = optind; i < argc; i++)
+	run_fn(root, argv[optind]);
+    }
+    catch(excp) {
+      excp_show(excp);
+    }
+    if(!interactive)
+      exit(0);
+  }
 
   // for the prompt
   int lineno = 0;

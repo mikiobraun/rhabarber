@@ -1,9 +1,11 @@
 CC=gcc
-CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include -Wall -pedantic
+CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include -Wall -pedantic $(PYTHON_FLAGS)
 #CFLAGS=-std=c99 -I../ -O3 -I/opt/local/include -Wall -pedantic
 
+PYTHON_FLAGS=-DHAVE_PYTHON -I/usr/include/python2.4
+
 LDFLAGS=-L/opt/local/lib
-LOADLIBES=-lgc -lreadline -lcblas -lm
+LOADLIBES=-lgc -lreadline -lcblas -lm -lpython2.4
 
 ALLSOURCES=$(wildcard *.c)
 SOURCES=alloc.o eval.o core.o \
@@ -11,7 +13,7 @@ SOURCES=alloc.o eval.o core.o \
 	parse.o rha_init.o rha_lexer.o rha_parser.tab.o symbol_fn.o \
 	symtable.o tuple_fn.o utils.o utilalloc.o fmt.o cstream.o \
 	int_fn.o real_fn.o prules.o string_fn.o debug.o excp.o \
-	bool_fn.o mat_fn.o
+	bool_fn.o mat_fn.o python.o
 UTILOBJ=gtree.o utilalloc.o gtuple.o
 
 TESTCASES=$(subst .c,,$(wildcard test_*.c))

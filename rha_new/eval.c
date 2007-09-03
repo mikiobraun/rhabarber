@@ -28,7 +28,9 @@ static any_t eval_args_and_call_fun(any_t env, tuple_t expr);
 static any_t eval_sequence(any_t env, tuple_t t);
 static list_t get_fn_data(any_t fn);
 static bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values);
+#ifdef _NOT_NOW_
 static bool_t pattern_lessthan_pattern(any_t p1, any_t p2);
+#endif
 static bool_t pattern_matches(any_t pattern, any_t value);
 static any_t call_builtin_fun(any_t fnbody,tuple_t values, bool_t no_frame);
 static any_t call_rhabarber_fun(any_t this, any_t fn, any_t scope, any_t fnbody,
@@ -290,11 +292,13 @@ bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
 }
 
 
+#ifdef _NOT_NOW_
 static
 bool_t pattern_lessthan_pattern(any_t p1, any_t p2)
 {
   return true;
 }
+#endif
 
 
 static

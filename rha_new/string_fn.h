@@ -1,3 +1,13 @@
+/*
+ * string_fn - functions for dealing with strings
+ *
+ * This file is part of rhabarber.
+ *
+ * (c) 2005-2007 by Mikio Braun          & Stefan Harmeling
+ *                  mikiobraun@gmail.com   harmeling@gmail.com
+ *                             
+ */
+
 #ifndef STRING_FN_H
 #define STRING_FN_H
 

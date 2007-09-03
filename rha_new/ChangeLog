@@ -19,6 +19,14 @@
 
 2007-09-03  Mikio Braun  <mikiobraun@gmail.com>
 
+	* python.c, python.rha: Basic python support is in there:
+	Generating integers, floats, loading modules, calling functions,
+	printing python objects. Whole auto-conversion stuff is not yet in
+	there.
+
+	* rhabarber.c (main): Now also accepts an additional filename
+	which is then run.
+
 	* eval.c: restructured source code to make it less a waterfall of
 	function calls. Now, everything is contained in call_fun, with
 	more helper functions.
