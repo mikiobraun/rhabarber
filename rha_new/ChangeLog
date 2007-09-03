@@ -1,3 +1,22 @@
+2007-09-03  Stefan Harmeling  <harmeling@gmail.com>
+
+	* prules.c (split_by_semicolon): merged two splitting cases into
+	one.  however, I omitted the inclusion of splitting be equal_sym
+	for the following problem;  the idea was that
+
+	    x = y = 1           becomes    x = 1; y = x
+	    f(1) = f(2) = 1     becomes    f(1) = 1; f(2) = f(1)
+
+	However, what about:   f(int:x) = f(real:x) = 2*x
+	That would be nice as well.  However, the correct translation
+	would be:
+
+	                   f(int:x) = 2*x; f(real:x) = 2*x
+
+	since in this case the RHS is not evaluated.  However, at the time
+	of 'split_by_semicolon' we can't know that.  Thus we keep it as it
+	is.
+
 2007-09-03  Mikio Braun  <mikiobraun@gmail.com>
 
 	* eval.c: restructured source code to make it less a waterfall of

@@ -18,7 +18,6 @@
 
 #include "messages.h"
 #include "rha_parser.h" // for 'rhaparsestring'
-#include "prules.h"     // for 'split_by_semicolon'
 #include "utils.h"
 #include "excp.h"
 #include "rha_init.h"

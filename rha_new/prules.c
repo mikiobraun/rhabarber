@@ -631,25 +631,35 @@ tuple_t quote_pr(any_t env, list_t parsetree)
 
 
 
-//----------------------------------------------------------------------
-// resolving a curlied list (code blocks)
-
-// take care of curlied lists, returns a tuple
-//
-// code blocks  -->  returns a tuple_t
-// for example: { x = 1; y = 7; deliver 5; { a=5; } x=5 }
-// split by semicolon, comma is not allowed
-
+// /////////////////
+// split_by_semicolon
+// helper for:
+//     * curlied_pr
+//     * split_resolve_and_eval in core.c
+// splits the parsetree-list after
+//     * a semicolon if the next token is not a 2nd order keyword
+//       like 'else' or 'catch'
+//     * a code block if the next token is not a 2nd order keyword
+//       like 'else' or 'catch'
+// note that commas are not allowed.
+// rewrites chains of assignment like this:
+//     x = y = 1          becomes   x = 1; y = x
+//     f(x) = g(x) = 17   becomes   f(x) = 17; g(x) = f(x);
 list_t split_by_semicolon(list_t parsetree)
 {
   // split but don't resolve!
   list_t sink = list_new();
   list_t part = list_new();
   any_t obj = list_popfirst(parsetree);
+  bool_t seen_equal_sym = false;
+  list_t equal_chain = list_new();
   while (obj) {
-    if (is_symbol(semicolon_sym, obj)) {
-      // split only if the next one is not a second order keyword like
-      // 'else' or 'catch'
+    bool_t is_semicolon = is_symbol(semicolon_sym, obj);
+    if (is_semicolon || is_marked_list(curlied_sym, obj)) {
+      // if its a code block, push it to the list
+      if (!is_semicolon)
+	list_append(part, obj);
+      // split only if the next one is not a second order keyword
       obj = list_popfirst(parsetree);
       if (!obj) break;
       if (!is_second_order_keyword(obj) && list_len(part)>0) {
@@ -665,21 +675,6 @@ list_t split_by_semicolon(list_t parsetree)
       rha_error("(parsing) in a 'curlied' expression no comma allowed");
       assert(1==0);
     }
-    else if (is_marked_list(curlied_sym, obj)){
-      // a code block
-      // in case there is not a keyword like 'else' or 'catch'
-      // following, we split here as well
-      list_append(part, obj);
-      // look at the next one
-      obj = list_popfirst(parsetree);
-      if (!obj) break;
-      if (!is_second_order_keyword(obj)) {
-	// split
-	list_append(sink, WRAP_PTR(LIST_T, part));
-	part = list_new();
-      }
-      continue;
-    }
     else {
       list_append(part, obj);
     }
@@ -690,6 +685,14 @@ list_t split_by_semicolon(list_t parsetree)
   return sink;
 }
 
+//----------------------------------------------------------------------
+// resolving a curlied list (code blocks)
+
+// take care of curlied lists, returns a tuple
+//
+// code blocks  -->  returns a tuple_t
+// for example: { x = 1; y = 7; deliver 5; { a=5; } x=5 }
+// split by semicolon, comma is not allowed
 tuple_t curlied_pr(any_t env, list_t parsetree)
 {
   //debug("curlied_pr(%o, %o)\n", env, WRAP_PTR(LIST_T, parsetree));

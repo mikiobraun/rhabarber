@@ -74,18 +74,33 @@ check(y == 170);
 summarize();
 
 test("return test");
+// return from a function
 x = (fn () { y = new(); y.a = 17; return y; z == zz })();
 check(x.a == 17);
+// return from a function from inside code block
+x = (fn () { y = new(); y.a = 17; { return y; z == zz} })();
+check(x.a == 17);
+// return from a function from inside a code block inside a loop
+x = (fn () { for (x in 0:17) { if (x==3) return 17} })();
+check(x == 17);
 summarize();
 
 test("deliver test");
+// deliver from a code block
 x = { y = new(); y.a = 17; deliver y; z == zz };
 check(x.a == 17);
+// deliver from a loop inside a code block
+x = { for (x in 0:17) if (x==3) deliver 17 }
+check(x == 17);
 summarize();
 
 test("break test");
-for (i in 0:5)
+for (i in 0:5)  // break a loop
   if (i==2) break;
+check(i == 2);
+for (i in 0:5)  // break a loop inside a code block
+  { x=18; if (i==2) break; }
+check(i == 2);
 check(i == 2);
 summarize();
 
