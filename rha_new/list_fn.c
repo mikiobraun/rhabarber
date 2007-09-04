@@ -227,3 +227,28 @@ list_t list_chop_matching(list_t l, symbol_t left, symbol_t right)
   // part == "42"
   return part;
 }
+
+
+list_t list_insert_sorted(list_t source, any_t entry, 
+			  bool_t (*less)(any_t, any_t))
+// insert before the smallest larger item in the list
+// example:
+//  [2, 5, 8]
+//  insert 7 with less
+//  [2, 5, 7, 8]
+{
+  list_t sink = list_new();
+  list_it_t it = list_begin(source);
+  while (!list_done(it)) {
+    any_t obj = list_get(it);
+    if (!less(obj, entry)) break;
+    list_append(sink, obj);
+    list_next(it);
+  }
+  list_append(sink, entry);
+  while (!list_done(it)) {
+    list_append(sink, list_get(it));
+    list_next(it);
+  }
+  return sink;
+}

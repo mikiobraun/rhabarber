@@ -651,8 +651,6 @@ list_t split_by_semicolon(list_t parsetree)
   list_t sink = list_new();
   list_t part = list_new();
   any_t obj = list_popfirst(parsetree);
-  bool_t seen_equal_sym = false;
-  list_t equal_chain = list_new();
   while (obj) {
     bool_t is_semicolon = is_symbol(semicolon_sym, obj);
     if (is_semicolon || is_marked_list(curlied_sym, obj)) {
@@ -740,7 +738,7 @@ tuple_t squared_pr(any_t env, list_t parsetree)
   if (!is_symbol(squared_sym, head))
     rha_error("(squared_pr) don't call prules directly");
 
-  return tuple_make(3, WRAP_SYMBOL(literal_sym), quoted(env), 
+  return tuple_make(3, WRAP_SYMBOL(literal_sym), WRAP_SYMBOL(local_sym),
 		    quoted(WRAP_PTR(LIST_T, parsetree)));
 }
 
@@ -1022,19 +1020,19 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
   // something else than 'equal_sym'
   any_t rhs = resolve(env, parsetree);
 
-  // (3) we need to replace all 'eval_sym' in 'scope' by
-  // 'lookup_local'
-  any_t i = scope;
-  while (ptype(i)==TUPLE_T) {
-    // we only expect stuff like (eval x \s)
-    tuple_t i_t = UNWRAP_PTR(TUPLE_T, i);
-    assert(tuple_len(i_t) == 3);
-    any_t i_t0 = tuple_get(i_t, 0);
-    assert(ptype(i_t0)==SYMBOL_T);
-    assert(UNWRAP_SYMBOL(i_t0) == eval_sym);
-    tuple_set(i_t, 0, WRAP_SYMBOL(lookup_local_sym));
-    i = tuple_get(i_t, 1);
-  }
+/*   // (3) we need to replace all 'eval_sym' in 'scope' by */
+/*   // 'lookup_local' */
+/*   any_t i = scope; */
+/*   while (ptype(i)==TUPLE_T) { */
+/*     // we only expect stuff like (eval x \s) */
+/*     tuple_t i_t = UNWRAP_PTR(TUPLE_T, i); */
+/*     assert(tuple_len(i_t) == 3); */
+/*     any_t i_t0 = tuple_get(i_t, 0); */
+/*     assert(ptype(i_t0)==SYMBOL_T); */
+/*     assert(UNWRAP_SYMBOL(i_t0) == eval_sym); */
+/*     tuple_set(i_t, 0, WRAP_SYMBOL(lookup_local_sym)); */
+/*     i = tuple_get(i_t, 1); */
+/*   } */
 
   // finally generate the call
   tuple_t t = 0;

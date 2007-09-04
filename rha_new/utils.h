@@ -13,6 +13,9 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include "rha_types.h"
+
+extern int_t idx(int_t i, int_t len);
 
 extern void print(const char *fmt, ...);
 extern void vprint(const char *fmt, va_list *ap);

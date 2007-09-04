@@ -1,4 +1,61 @@
+2007-09-04  Stefan Harmeling  <harmeling@gmail.com>
+
+	* mat_fn.c, utils.c: added bound checks for matrix get/set via
+	idx() function defined in utils.c which allows negative indices.
+
+	* prules.c (resolve_assign_prule): commented out the
+	'lookup-local' stuff, problem was something like:
+
+	f = fn (x) 2*x;
+	g = new();
+	g.fn_data = list();
+	g.fn_data.push(clone(f.fn_data(0)));
+	
+
+	* python.c (start_python_if_necessary): added some functions for demo...
+
+	* python.h: added more functions
+
+	* core.c (vcreate_pattern): introduced patternliteral_sym,
+	patterntype_sym
+	
+
+	* eval.c (pattern_matches): removed serious bug.  the problem was
+	that after not finding but trying to find, variable 'impl' had a
+	non-zero value and was thus chosen.  the problem was that:
+
+	if (17) 42
+
+	was allowed but would fail with an assert.
+
+	added support for sorting implementations.  Now the list of
+	implementations f.fn_data is sorted such that for i<j we never
+	have signature(i)>signature(j).
+	
 2007-09-03  Stefan Harmeling  <harmeling@gmail.com>
+
+	* utils.c (idx): added function that checks index bounds and deals
+	with negative indices.  This function is currently used in
+	tuple_fn.c and mat_fn.c.
+
+	* list_fn.c (list_insert_sorted): added function that can insert
+	in a way that keeps the list sorted.  More precisely for non-total
+	orderings we say a list l = [l(0), l(1), ..., l(100)] is sorted if
+	there are no indices i < j such that l(j) < l(i).
+
+	* eval.c (pattern_lessthan, signature_lessthan)
+	(fn_data_entry_lessthan): added these comparison function to
+	compare fn_data entries in object.c::extend().  Now entering:
+
+	f(n) = n*f(n-1);  f(1) = 1;
+
+	Should be fine and lead to the same overloaded function as
+	
+	f(1) = 1; f(n) = n*f(n-1);
+
+	does.
+	
+	* object.c (is_void): added a function to check for void-ness.
 
 	* prules.c (split_by_semicolon): merged two splitting cases into
 	one.  however, I omitted the inclusion of splitting be equal_sym

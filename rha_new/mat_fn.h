@@ -26,7 +26,7 @@ extern _rha_ real_t mat_min(mat_t m);
 extern _rha_ void   mat_scale(mat_t a, real_t b);
 extern _rha_ mat_t  mat_transpose(mat_t a);
 extern _rha_ mat_t  mat_sort(mat_t a);
-extern _rha_ mat_t  mat_solve(mat_t A, mat_t x);
+extern _rha_ mat_t  mat_solve(mat_t A, mat_t b);
 
 extern _rha_ mat_t  mat_repmat(mat_t a, int_t i, int_t j);
 extern _rha_ mat_t  mat_reshape(mat_t a, int_t i, int_t j);

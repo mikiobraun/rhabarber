@@ -29,9 +29,9 @@ static char python_version[PYTHON_VERSION_LENGTH];
 static void start_python_if_necessary()
 {
   if (!python_started) {
-    print("Starting Python ");
+    print("--starting Python\n");
     Py_Initialize();
-    print("%s\n", Py_GetVersion());
+    //print("  %s\n", Py_GetVersion());
 
     // extract the version number
     strncpy(python_version, Py_GetVersion(), PYTHON_VERSION_LENGTH);
@@ -54,7 +54,7 @@ static void start_python_if_necessary()
 
 void python_init(any_t root, any_t module)
 {
-  start_python_if_necessary();
+  //start_python_if_necessary();
 }
 
 
@@ -79,6 +79,14 @@ pyobject_t python_importmodule(string_t name)
     rha_error("could not load module\n");
   }
   return mod;
+}
+
+void python_runstring(string_t command)
+{
+  start_python_if_necessary();
+  int i = PyRun_SimpleString(command);
+  if (i)
+    rha_error("(python) command failed");
 }
 
 /*
@@ -106,11 +114,11 @@ any_t python_newtuple(int len)
   return python_wrap(PyTuple_New(len));
 }
 
-any_t python_newlist()
+any_t python_newlist(int len)
 {
   start_python_if_necessary();
 
-  return python_wrap(PyList_New(0));
+  return python_wrap(PyList_New(len));
 }
 
 any_t python_newstring(string_t s)
@@ -125,6 +133,7 @@ any_t python_newstring(string_t s)
  */
 int_t python_getint(pyobject_t o)
 {
+  start_python_if_necessary();
   if (PyInt_Check(o))
     return PyInt_AsLong(o);
   else
@@ -132,8 +141,54 @@ int_t python_getint(pyobject_t o)
   return 0;
 }
 
+
+pyobject_t python_tuple_getitem(pyobject_t o, int i)
+{
+  start_python_if_necessary();
+  if (PyTuple_Check(o))
+    return PyTuple_GetItem(o, i);
+  else
+    rha_error("tuple_getitem() can't be called like this");
+  return 0;
+}
+
+void python_tuple_setitem(pyobject_t o, int i, pyobject_t v)
+{
+  start_python_if_necessary();
+  if (PyTuple_Check(o)) {
+    Py_INCREF(v); // PyTuple_SetItem steals references
+    PyTuple_SetItem(o, i, v);
+  }
+  else
+    rha_error("tuple_getitem() can't be called like this");
+}
+
+pyobject_t python_list_getitem(pyobject_t o, int i)
+{
+  start_python_if_necessary();
+  if (PyList_Check(o))
+    return PyList_GetItem(o, i);
+  else
+    rha_error("list_getitem() can't be called like this");
+  return 0;
+}
+
+void python_list_setitem(pyobject_t o, int i, pyobject_t v)
+{
+  start_python_if_necessary();
+  if (PyList_Check(o)) {
+    Py_INCREF(v); // PyTuple_SetItem steals references
+    PyList_SetItem(o, i, v);
+  }
+  else
+    rha_error("list_getitem() can't be called like this");
+}
+
+
+
 real_t python_getreal(pyobject_t o)
 {
+  start_python_if_necessary();
   if (PyFloat_Check(o))
     return PyFloat_AsDouble(o);
   else
@@ -144,6 +199,7 @@ real_t python_getreal(pyobject_t o)
 
 string_t python_getstring(pyobject_t o)
 {
+  start_python_if_necessary();
   if (PyString_Check(o))
     return PyString_AsString(o);
   else
@@ -154,6 +210,7 @@ string_t python_getstring(pyobject_t o)
 
 string_t python_to_string(pyobject_t o)
 {
+  start_python_if_necessary();
   PyObject* str = PyObject_Str(o);
 
   string_t s = gc_strdup(PyString_AsString(str));
@@ -163,11 +220,13 @@ string_t python_to_string(pyobject_t o)
 
 bool_t python_callable(pyobject_t o)
 {
+  start_python_if_necessary();
   return PyCallable_Check(o);
 }
 
 any_t python_call(any_t this, tuple_t values)
 {
+  start_python_if_necessary();
   if(ptype(tuple_get(values, 0)) != PYOBJECT_T) 
     rha_error("(python_call) called for non-python object!");
 
@@ -219,6 +278,7 @@ any_t python_call(any_t this, tuple_t values)
 any_t python_lookup(pyobject_t o, symbol_t name)
 {
   assert(o);
+  start_python_if_necessary();
 
   if (PyObject_HasAttrString(o, symbol_name(name))) {
     PyObject *retval = 

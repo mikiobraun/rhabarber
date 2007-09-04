@@ -336,6 +336,11 @@ any_t assign(any_t o, symbol_t s, any_t v)
 }
 
 
+bool_t is_void(any_t o)
+{
+  return o==0;
+}
+
 any_t extend(any_t this, symbol_t s, tuple_t signature, 
 		any_t env, any_t rhs)
 {
@@ -353,7 +358,7 @@ any_t extend(any_t this, symbol_t s, tuple_t signature,
   }
   // else extend 'obj'
 
-  // (2) does 'obj' have its own 'extend' mechanism (like tuples)
+  // (2) does 'obj' have its own 'extend' mechanism (like tuples)?
   if (has(obj, extend_sym)) {
     // ignore the rest of this function and call it!
     return callslot(obj, extend_sym, 3, WRAP_PTR(TUPLE_T, signature), env, rhs);
@@ -364,7 +369,7 @@ any_t extend(any_t this, symbol_t s, tuple_t signature,
   // new function
   list_t fn_data_l = 0;
   any_t ancestor = location(obj, fn_data_sym);  // the ancestor
-                                                   // defining a function
+                                                // defining a function
   if (ancestor != obj) {
     if (ancestor)
       rha_warning("creating in %o a new function which will hide the "
@@ -378,7 +383,8 @@ any_t extend(any_t this, symbol_t s, tuple_t signature,
       rha_error("(eval) %o has a faulty 'fn_data' slot", obj);
     fn_data_l = UNWRAP_PTR(LIST_T, fn_data);
   }
-  list_append(fn_data_l, create_fn_data_entry(env, signature, rhs));
+  any_t entry = create_fn_data_entry(env, signature, rhs);
+  fn_data_l = list_insert_sorted(fn_data_l, entry, &fn_data_entry_lessthan);
   any_t fn_data = WRAP_PTR(LIST_T, fn_data_l);
   assign(fn_data, parent_sym, fn_data_proto);
   assign(obj, fn_data_sym, fn_data);

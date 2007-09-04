@@ -3,12 +3,16 @@
 test("equalequal test");
 check(17==17);
 check("test"=="test");
-check(void==void);
-check(void!=15);
+check(!is_void(15));
 check("test"!=66);
 check("test"!="tests");
 summarize();
 
+test("pattern test");
+fib = fn (n) n*fib(n-1);
+fib(0) = 1;
+check(fib(5)==120);
+summarize();
 
 test("bool test");
 check(!(true) == false);
@@ -217,5 +221,6 @@ a = [1,2,3;
      4,5,6];
 check((a*a')(0,1) == 32);
 a(1,1) = 17;
+check((a.*a)(0,1) == 4);
 check((a.*a)(0,1) == 4);
 summarize();

@@ -16,11 +16,13 @@ extern _rha_ list_t    list_literal(list_t parsetree);
 extern _rha_ tuple_t   list_to_tuple(list_t);
 extern _rha_ string_t  list_to_string(list_t);
 
-extern _rha_ any_t  list_first(list_t);
-extern _rha_ any_t  list_last(list_t);
+extern _rha_ any_t     list_first(list_t);
+extern _rha_ any_t     list_last(list_t);
 
-extern _rha_ any_t  list_popfirst(list_t);
-extern _rha_ any_t  list_poplast(list_t);
+extern _rha_ any_t     list_popfirst(list_t);
+extern _rha_ any_t     list_poplast(list_t);
+
+extern list_t list_insert_sorted(list_t, any_t, bool_t (*)(any_t, any_t));
 
 // iterator stuff for use in C with MACRO
 extern _rha_ list_it_t list_begin(list_t l);

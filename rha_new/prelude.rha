@@ -52,6 +52,7 @@ run      = modules.core.run_fn;
 error    = modules.messages.error;
 warning  = modules.messages.warning;
 resolve  = modules.parse.resolve;
+is_void  = modules.object.is_void;
 
 // take care of 'syntactic functions', which generate no frame to return from
 fn_data(f) = modules.list_fn.list_first(f.fn_data);
@@ -92,10 +93,12 @@ check = macro (x) {
   }
 }
 summarize = macro () {
+  s = "[test] " + string(success) + "/" + string(failure+success);
   if (failure > 0)
-    print ("[test] ", failure, "/", failure+success, "\t SOME FAILED in ", name);
+    s += " \tSOME FAILED in " + name;
   else
-    print ("[test] ", success, "/", failure+success, "\t ALL PASSED  in ", name);
+    s += " \tALL PASSED in " + name;
+  print(s);
 }
 runtest = fn () run(root, "test.rha");
 
@@ -130,7 +133,7 @@ typename = fn (x) x.type.name;     // try 'typename(17)'
 // note that subtypes of a type 't' can appear everywhere where 't'
 // can appear.  the usual way to subtype is by 'clone', however this
 // doesn't work for types, but only non-types.
-subtype = fn (t) {
+subtype = fn (type:t) {
   st = clone(t);
   if (has(t, \proto))
     st.proto = clone(t.proto);
@@ -200,7 +203,7 @@ literal = fn (env, list:pl) {
 }
 split_parselist = fn (list:symlist, env, list:pl) {
   if (symlist.len() == 0)
-    return resolve(env, pl);
+    return eval(env, resolve(env, pl));
   // else we need to split by the next symbol
   split = symlist.shift();
   sink = list();
@@ -350,6 +353,12 @@ string.proto(list:idx) = {
 }
 //equalequal_fn(string:x, string:y) = modules.string_fn.string_equalequal(x, y);
 
+//----------------------------------------------------------------------
+// natural numbers (not yet working as indented...)
+nat = subtype(int);
+nat.name = "nat";
+nat.check = fn (x) int:x && x >= 0;
+
 
 //----------------------------------------------------------------------
 // integers
@@ -372,7 +381,12 @@ cos(int:x) = modules.real_fn.real_cos(real(x));
 
 //----------------------------------------------------------------------
 // reals
-real.proto.string               = fn () modules.real_fn.real_to_string(this);
+real.proto.string               = fn () {
+  s = modules.real_fn.real_to_string(this);
+  if (this >= 0)
+    s = " " + s;
+  return s;
+}
 apostrophe_fn(real:x) = x;
 plus_fn(real:x, real:y)         = modules.real_fn.real_plus(x, y);
 plus_fn(int:x, real:y)          = modules.real_fn.real_plus(real(x), y);
@@ -388,9 +402,17 @@ divide_fn(real:x, real:y)         = modules.real_fn.real_divide(x, y);
 divide_fn(int:x, real:y)          = modules.real_fn.real_divide(real(x), y);
 divide_fn(real:x, int:y)          = modules.real_fn.real_divide(x, real(y));
 less_fn(real:x, real:y)         = modules.real_fn.real_less(x, y);
+less_fn(int:x, real:y)         = modules.real_fn.real_less(real(x), y);
+less_fn(real:x, int:y)         = modules.real_fn.real_less(x, real(y));
 lessequal_fn(real:x, real:y)    = modules.real_fn.real_lessequal(x, y);
+lessequal_fn(int:x, real:y)    = modules.real_fn.real_lessequal(real(x), y);
+lessequal_fn(real:x, int:y)    = modules.real_fn.real_lessequal(x, real(y));
 greater_fn(real:x, real:y)      = modules.real_fn.real_greater(x, y);
+greater_fn(int:x, real:y)      = modules.real_fn.real_greater(real(x), y);
+greater_fn(real:x, int:y)      = modules.real_fn.real_greater(x, real(y));
 greaterequal_fn(real:x, real:y) = modules.real_fn.real_greaterequal(x, y);
+greaterequal_fn(int:x, real:y) = modules.real_fn.real_greaterequal(real(x), y);
+greaterequal_fn(real:x, int:y) = modules.real_fn.real_greaterequal(x, real(y));
 real(int:x)                     = modules.real_fn.real_cast(x);  
 exp(real:x) = modules.real_fn.real_exp(x);
 sin(real:x) = modules.real_fn.real_sin(x);
@@ -425,21 +447,31 @@ mat.literal = fn (env, list:pl) {
     }
   return m';
 }
+linsolve(mat:A, mat:b) = modules.mat_fn.mat_solve(A, b);
 rand(int:rows, int:cols) = modules.mat_fn.mat_rand(rows, cols);
 randn(int:rows, int:cols) = modules.mat_fn.mat_randn(rows, cols);
 apostrophe_fn(mat:x) = modules.mat_fn.mat_transpose(x);
 mat.proto.string = fn () modules.mat_fn.mat_to_string(this);
 eye(int:n) = modules.mat_fn.mat_eye(n);
 mat(int:rows, int:cols) = modules.mat_fn.mat_new(rows, cols);
+mat.proto(int:i) = static.getl(i);
 mat.proto(int:i, int:j) = static.get(i, j);
 mat.proto.extend = fn (signature, scope, rhs) {
-  if (signature.len() != 2)
-    error("(mat) index must be pair");
-  row = signature(0).patternliteral;
-  col = signature(1).patternliteral;
-  value = eval(scope, rhs);
-  this.set(row, col, real(value));
-  return value;
+  if (signature.len() == 1) {
+    l = signature(0).patternliteral;
+    value = eval(scope, rhs);
+    this.setl(l, value);
+    return value;
+  }
+  else if (signature.len() == 2) {
+    row = signature(0).patternliteral;
+    col = signature(1).patternliteral;
+    value = real(eval(scope, rhs));
+    this.set(row, col, value);
+    return value;
+  }
+  else
+    error("(mat) either m(int:l) or m(int:row, int:col)");
 }
 mat.copy = fn () modules.mat_fn.mat_copy(this);
 mat.proto.rows = fn () modules.mat_fn.mat_rows(this);
@@ -483,6 +515,15 @@ dotdivide_fn(real:x, mat:y) = modules.mat_fn.real_divide_mat(x, y);
 exp(mat:x) = modules.mat_fn.mat_exp(x);
 sin(mat:x) = modules.mat_fn.mat_sin(x);
 sinc(mat:x) = modules.mat_fn.mat_sinc(x);
+mat.proto.iter = fn () {
+  i = new();
+  i.counter = 0;
+  i.matrix = this;
+  i.done = fn () i.counter == i.matrix.len();
+  i.next = fn () this.counter++;
+  i.get = fn () this.matrix.getl(this.counter);
+  return i;
+}
 
 //----------------------------------------------------------------------
 // tuples
@@ -501,6 +542,7 @@ tuple.literal      = fn (env, pl) tuple(list.literal(env, pl));
 tuple.proto.len    = fn () modules.tuple_fn.tuple_len(this);
 tuple.proto.set    = fn (i, x) modules.tuple_fn.tuple_set(this, i, x);
 tuple.proto.get    = fn (i) modules.tuple_fn.tuple_get(this, i);
+tuple.proto.shift  = fn () modules.tuple_fn.tuple_shift(this);
 tuple.proto.iter = fn () {
   i = new();
   i.counter = 0;
@@ -599,4 +641,60 @@ comparable.check = fn (x) {
   /// }
   //return true;
   return true;
+}
+
+//////////////////////////////
+pretty(code) = {
+  if (tuple:code) {
+    if (code(0) == \plus_sym)
+      s = pretty(code(1)) + " + " + pretty(code(1));
+    else if (code(0) == \minus_sym)
+      s = pretty(code(1)) + " - " + pretty(code(1));
+    else if (code(0) == \times_sym)
+      s = pretty(code(1)) + " * " + pretty(code(1));
+    else if (code(0) == \divide_sym)
+      s = pretty(code(1)) + " + " + pretty(code(1));
+    else
+      error("(pretty) don't know how to pretty print that");
+    s = "(" + s + ")";
+  }
+  else
+    s = string(code);
+  return s;
+}
+
+gradient(f, var) = {
+  code = diff(f.fn_data(0).fnbody, var);
+  g = new();
+  g.fn_data = list().push(clone(f.fn_data(0)));
+  g.fn_data(0).fnbody = code;
+  return g;
+}
+
+diff(code, var) = {
+  if (code == var)
+    return 1;
+  else if (tuple:code) {
+    f = code(0);
+    if (f == (\plus_fn)) {
+      return tuple:[(\plus_fn), diff(code(1), var), diff(code(2), var)];
+    }
+    if (f == (\minus_fn)) {
+      return tuple:[(\minus_fn), diff(code(1), var), diff(code(2), var)];
+    }
+    if (f == (\times_fn)) {
+      t1 = tuple:[(\times_fn), diff(code(1), var), code(2)];
+      t2 = tuple:[(\times_fn), code(1), diff(code(2), var)];
+      return tuple:[(\plus_fn), t1, t2];
+    }
+    if (f == (\divide_fn)) {
+      tt1 = tuple:[(\times_fn), diff(code(1), var), code(2)];
+      tt2 = tuple:[(\times_fn), code(1), diff(code(2), var)];
+      t1 = tuple:[(\minus_fn), t1, t2];
+      t2 = tuple:[(\times_fn), code(2), code(2)];
+      return tuple:[(\divide_fn), t1, t2];
+    }
+  }
+  else
+    return 0;
 }

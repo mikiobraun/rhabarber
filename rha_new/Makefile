@@ -2,10 +2,12 @@ CC=gcc
 CFLAGS=-std=c99 -I../ -ggdb -I/opt/local/include -Wall -pedantic $(PYTHON_FLAGS)
 #CFLAGS=-std=c99 -I../ -O3 -I/opt/local/include -Wall -pedantic
 
-PYTHON_FLAGS=-DHAVE_PYTHON -I/usr/include/python2.4
+PYTHON_FLAGS=-DHAVE_PYTHON -I/usr/include/python2.4 -I/Library/Frameworks/Python.framework/Versions/2.4/include/python2.4
 
-LDFLAGS=-L/opt/local/lib
-LOADLIBES=-lgc -lreadline -lcblas -lm -lpython2.4
+GRAPHICS_FLAGS=-framework OpenGL -framework GLUT -framework Foundation
+
+LDFLAGS=-L/usr/lib -L/opt/local/lib -L/Library/Frameworks/Python.framework/Versions/2.4/lib/python2.4/config
+LOADLIBES=-lgc -lreadline -lm -lpython2.4 -lclapack -lcblas -lf77blas -latlas -lgsl
 
 ALLSOURCES=$(wildcard *.c)
 SOURCES=alloc.o eval.o core.o \
@@ -63,7 +65,7 @@ prepare: clean TAGS depend
 #
 # rule for stubs from rha_config.d
 #
-rha_types.h rha_init.c rha_init.h : rha_config.d rha_config.pl object.h eval.h parse.h core.h int_fn.h
+rha_types.h rha_init.c rha_init.h : rha_config.d rha_config.pl object.h eval.h parse.h core.h int_fn.h python.h
 	./rha_config.pl
 
 rha_lexer.c : rha_parser_tab.h

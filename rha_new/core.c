@@ -98,9 +98,9 @@ any_t vcreate_pattern(tuple_t args)
   any_t pattern = new();
   assign(pattern, parent_sym, pattern_proto);
   if (thetype)
-    assign(pattern, symbol_new("patterntype"), thetype);
+    assign(pattern, patterntype_sym, thetype);
   if (theliteral)
-    assign(pattern, symbol_new("patternliteral"), theliteral);
+    assign(pattern, patternliteral_sym, theliteral);
   return pattern;
 }
 
@@ -113,7 +113,7 @@ any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
   int i, tlen = tuple_len(signature);
   for (i = 0; i < tuple_len(signature); i++) {
     any_t pattern = tuple_get(signature, i);
-    any_t theliteral = lookup(pattern, symbol_new("patternliteral"));
+    any_t theliteral = lookup(pattern, patternliteral_sym);
     if (theliteral
 	&& ptype(theliteral) == SYMBOL_T
 	&& UNWRAP_SYMBOL(theliteral) == symbol_new("..."))

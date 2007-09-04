@@ -7,4 +7,14 @@
 
 * why does "test"/ not produce an error
 
-* get rid of "failed to catch an exception"
+* get rid of "[fatal error] failed to catch an exception"
+
+* add void_obj which is a certain object and is used internally
+  similarly to 0.  however, it is necessary to allow assignments of
+  void to variables.  This is necessary to test against voidness, or
+  to used void as a default value in functions.
+
+* f.fn_data.parent.parent.string() does fail
+
+* right now after f(x) = 2*x; f(y) = 3*y; both implementations are
+  kept, but the older one is not accessible anymore

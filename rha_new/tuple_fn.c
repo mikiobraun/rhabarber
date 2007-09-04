@@ -31,20 +31,12 @@ int_t tuple_len(tuple_t t)
 
 any_t tuple_get(tuple_t t, int_t i)
 {
-  int tlen = gtuple_length(t);
-  if (i >= tlen || -i > tlen)
-    rha_error("index out-of-bounds");
-  if (i < 0) i = tlen + i;
-  return gtuple_getp(t, i);
+  return gtuple_getp(t, idx(i, gtuple_length(t)));
 }
 
 tuple_t tuple_set(tuple_t t, int_t i, any_t s)
 {
-  int tlen = gtuple_length(t);
-  if (i >= tlen || -i > tlen)
-    rha_error("index out-of-bounds");
-  if (i < 0) i = tlen + i;
-  gtuple_set(t, i, s);
+  gtuple_set(t, idx(i, gtuple_length(t)), s);
   return t;
 }
 
@@ -92,5 +84,4 @@ tuple_t tuple_shift(tuple_t in)
   for(int i = 1; i < l; i++)
     tuple_set(out, i - 1, tuple_get(in , i));
   return out;
-
 }

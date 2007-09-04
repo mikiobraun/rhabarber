@@ -16,7 +16,7 @@
 
 extern _rha_ tuple_t  tuple_new(int_t len);
 extern _rha_ int_t    tuple_len(tuple_t t);
-extern _rha_ any_t tuple_get(tuple_t t, int_t i);
+extern _rha_ any_t    tuple_get(tuple_t t, int_t i);
 extern _rha_ tuple_t  tuple_set(tuple_t t, int_t i, any_t s);
 
 extern _rha_ list_t   tuple_to_list(tuple_t t);

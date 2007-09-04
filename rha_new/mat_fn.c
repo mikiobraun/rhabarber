@@ -5,6 +5,9 @@
 #include <cblas.h>
 #include <clapack.h>
 
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_linalg.h>
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,25 +58,26 @@ tuple_t mat_size(mat_t m)
 
 real_t mat_getl(mat_t m, int_t i)
 {
-  return m->array[i];
+  return m->array[idx(i, m->len)];
 }
 
 void mat_setl(mat_t m, int_t i, real_t v)
 {
-  m->array[i] = v;
+  m->array[idx(i, m->len)] = v;
 }
 
 
 real_t mat_get(mat_t m, int_t i, int_t j)
 {
-  int_t c = i + j*(m->rows);
+  int_t c = idx(i, m->rows) + idx(j, m->cols)*(m->rows);
+
   return m->array[c];
 }
 
 
 void mat_set(mat_t m, int_t i, int_t j, real_t v)
 {
-  int_t c = i + j*(m->rows);
+  int_t c = idx(i, m->rows) + idx(j, m->cols)*(m->rows);
   m->array[c] = v;
 }
 
@@ -190,20 +194,52 @@ real_t mat_min(mat_t m)
 }
 
 
+gsl_matrix *mat2gsl_mat(mat_t m)
+{
+  gsl_matrix *a = gsl_matrix_alloc(m->rows, m->cols);
+  for (int i = 0; i < m->rows; i++)
+    for (int j = 0; j < m->cols; j++)
+      gsl_matrix_set(a, i, j, mat_get(m, i, j));
+  return a;
+}
+
+gsl_vector *mat2gsl_vec(mat_t m)
+{
+  if (m->cols != 1)
+    rha_error("column vector expected");
+  gsl_vector *a = gsl_vector_alloc(m->rows);
+  for (int i = 0; i < m->rows; i++)
+    gsl_vector_set(a, i, mat_get(m, i, 0));
+  return a;
+}
+
+mat_t gsl_mat2mat(gsl_matrix *a)
+{
+  mat_t m = mat_new(a->size1, a->size2);
+  for (int i = 0; i < m->rows; i++)
+    for (int j = 0; j < m->cols; j++)
+      mat_set(m, i, j, gsl_matrix_get(a, i, j));
+  return m;
+}
+
+mat_t gsl_vec2mat(gsl_vector *a)
+{
+  mat_t m = mat_new(a->size, 1);
+  for (int i = 0; i < m->rows; i++)
+    mat_set(m, i, 0, gsl_vector_get(a, i));
+  return m;
+}
+
 mat_t mat_solve(mat_t A, mat_t B)
 {
-  rha_warning("(mat_solve) please check implementation in mat.c:mat_solve()");
-  mat_t AA = mat_copy(A); //mikio not sure about this!
-  mat_t C = mat_copy(B);
-  int_t *P = malloc(sizeof(int_t) * AA->rows);
-  // where is it?
-  //  clapack_dgesv(CblasColMajor, 
-  //		AA->rows, C->cols,
-  //		AA->array, AA->rows, 
-  //		P,
-  //		C->array, C->rows);
-  free(P);		
-  return C;
+  // right now we have to assume squared A
+  if (A->rows != A->cols || A->rows != B->rows)
+    rha_error("right now 'linsolve' works only for square matrix");
+  gsl_matrix *a = mat2gsl_mat(A);
+  gsl_vector *b = mat2gsl_vec(B);
+  gsl_vector *x = gsl_vector_alloc(A->cols);
+  gsl_linalg_HH_solve(a, b, x);
+  return gsl_vec2mat(x);
 }
 
 

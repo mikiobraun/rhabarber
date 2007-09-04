@@ -4,7 +4,21 @@
 #include "fmt.h"
 #include "alloc.h"
 #include "object.h"
+#include "messages.h"
+#include "rha_types.h"
 #include "symbol_fn.h"
+
+
+/* handy function that checks indices and transforms them if negative */
+int_t idx(int_t i, int_t len)
+{
+  if (i >= len || -i > len)
+    rha_error("index out-of-bounds");
+  if (i < 0) i = len + i;
+  return i;
+}
+
+
 
 /* print an object */
 static void fmt_object(STREAM *s, char *fmt, va_list *ap)

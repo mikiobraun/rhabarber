@@ -28,9 +28,6 @@ static any_t eval_args_and_call_fun(any_t env, tuple_t expr);
 static any_t eval_sequence(any_t env, tuple_t t);
 static list_t get_fn_data(any_t fn);
 static bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values);
-#ifdef _NOT_NOW_
-static bool_t pattern_lessthan_pattern(any_t p1, any_t p2);
-#endif
 static bool_t pattern_matches(any_t pattern, any_t value);
 static any_t call_builtin_fun(any_t fnbody,tuple_t values, bool_t no_frame);
 static any_t call_rhabarber_fun(any_t this, any_t fn, any_t scope, any_t fnbody,
@@ -212,15 +209,17 @@ any_t call_fun(any_t this, tuple_t values)
 
   // go through list and look for matching signatures
   for (list_it_t it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
-    impl = list_get(it);
-    if (!impl) rha_error(msg);
+    any_t theimpl = list_get(it);
+    if (!theimpl) rha_error(msg);
 
-    signature = get_slot_tuple(impl, signature_sym, msg);
-    varargs = get_slot_bool(impl, varargs_sym, msg);
+    signature = get_slot_tuple(theimpl, signature_sym, msg);
+    varargs = get_slot_bool(theimpl, varargs_sym, msg);
 
-    if (signature_matches(signature, varargs, values))
+    if (signature_matches(signature, varargs, values)) {
       // match found!!!
+      impl = theimpl;
       break;
+    }
   }
   
   if (!impl) {
@@ -239,9 +238,6 @@ any_t call_fun(any_t this, tuple_t values)
   else {
     scope = get_slot_any(impl, scope_sym, 
 			 "(eval) can't find defining scope");
-    
-    // construct the inner scope
-
     return call_rhabarber_fun(this, fn, scope, fnbody, signature, 
 			      values, no_frame);
   }
@@ -291,23 +287,94 @@ bool_t signature_matches(tuple_t signature, bool_t varargs, tuple_t values)
   return true;
 }
 
-
-#ifdef _NOT_NOW_
 static
-bool_t pattern_lessthan_pattern(any_t p1, any_t p2)
+bool_t pattern_valid(any_t p)
 {
+  assert(p);
+  any_t thelit = lookup(p, patternliteral_sym);
+  any_t thetyp = lookup(p, patterntype_sym);
+  // if there is a type, then 
+  //    either there is no literal 
+  //    or the literal is a symbol
+  if (thetyp) return (thelit == 0 || ptype(thelit) == SYMBOL_T);
+  // otherwise everything is fine
   return true;
 }
-#endif
+
+
+bool_t pattern_lessthan(any_t p1, any_t p2)
+// examples:
+//     17 < x         // literals smaller than non-literals
+//     int:x < any:x
+//     int:x < x
+// is p1 more special than p2?
+//     true  --> yes
+//     false --> don't know
+{
+  if (!pattern_valid(p1) || !pattern_valid(p2))
+    rha_error("(pattern) the patterns are invalid");
+  any_t thelit1 = lookup(p1, patternliteral_sym);
+  any_t thetyp1 = lookup(p1, patterntype_sym);
+  any_t thelit2 = lookup(p2, patternliteral_sym);
+  any_t thetyp2 = lookup(p2, patterntype_sym);
+  // CASE 1
+  // if p1 is a (non-symbol) literal then it is more special than p2
+  // only if p2 is not a (non-symbol) literal, otherwise they are incomparable
+  // and we return false
+  if (thelit1 && ptype(thelit1)!=SYMBOL_T) 
+    return (!thelit2 || ptype(thelit2)==SYMBOL_T);
+  // CASE 2
+  // we know that p1 is not a (non-symbol) literal
+  // if p1 is a type then it is more special than p2 only if p2 is a
+  // type as well, and p2:p1 holds
+  if (thetyp1) return (!thetyp2 || callslot(thetyp2, check_sym, 1, thetyp1));
+  // CASE 3
+  // we know that p1 is neither a literal nor a type, so it is 'any'
+  // which is the most general and wont be more special than p2
+  return false;
+}
+
+bool_t signature_lessthan(any_t s1, any_t s2)
+{
+  if (ptype(s1)!=TUPLE_T || ptype(s2)!=TUPLE_T)
+    rha_error("some signatures are broken");
+  //print("%s against %s", to_string(s1), to_string(s2));
+  tuple_t sig1 = UNWRAP_PTR(TUPLE_T, s1), sig2 = UNWRAP_PTR(TUPLE_T, s2);
+  // compare lexicographically
+  int_t tlen1 = tuple_len(sig1), tlen2 = tuple_len(sig2);
+  for (int i = 0; i < tlen2; i++) {
+    if (i >= tlen1) {
+      // ok, sig1 is similar to sig2 but shorter
+      // note that with default args this returnvalue might be wrong
+      //print(" true\n");
+      return true;
+    }
+    if (pattern_lessthan(tuple_get(sig1, i), tuple_get(sig2, i))) {
+      //print(" true\n");
+      return true;
+    }
+  }
+  //print(" false\n");
+  return false;
+}
+
+bool_t fn_data_entry_lessthan(any_t e1, any_t e2)
+{
+  any_t s1 = get_slot_any(e1, signature_sym, 
+			  "(eval) signature expected");
+  any_t s2 = get_slot_any(e2, signature_sym, 
+			  "(eval) signature expected");
+  return signature_lessthan(s1, s2);
+}
 
 
 static
 bool_t pattern_matches(any_t pattern, any_t value)
 {
-  assert(pattern);  // at least it should exist, even if it doesn't
-		    // have slots.
-  any_t theliteral = lookup(pattern, symbol_new("patternliteral"));
-  any_t thetype = lookup(pattern, symbol_new("patterntype"));
+  if (!pattern_valid(pattern))
+    rha_error("(pattern) invalid pattern");
+  any_t theliteral = lookup(pattern, patternliteral_sym);
+  any_t thetype = lookup(pattern, patterntype_sym);
   if (theliteral && ptype(theliteral)!=SYMBOL_T) {
     if (equalequal_fn(theliteral, value))
       return true;
@@ -368,7 +435,7 @@ any_t call_rhabarber_fun(any_t this, any_t fn, any_t scope, any_t fnbody,
     any_t pattern = tuple_get(signature, i);
     if (!pattern)
       rha_error("(eval) signature is not valid");
-    any_t s_o = get_slot_any(pattern, symbol_new("patternliteral"), 
+    any_t s_o = get_slot_any(pattern, patternliteral_sym, 
 			     "(eval) patternliteral expected");
     if (ptype(s_o) == SYMBOL_T) {
       symbol_t s = UNWRAP_SYMBOL(s_o);
