@@ -353,28 +353,7 @@ tuple_t in_pr(any_t env, list_t parsetree)
 
 tuple_t colon_pr(any_t env, list_t parsetree) 
 {
-  tuple_t pre_t = resolve_infix_prule(env, parsetree, colon_sym, 
-				      symbol_new("colon_fn"), RIGHT_BIND);
-  // check wether the RHS is a complex literal
-  any_t rhs = tuple_get(pre_t, 2);
-  if (rhs && ptype(rhs)==TUPLE_T) {
-    tuple_t rhs_t = UNWRAP_PTR(TUPLE_T, rhs);
-    if (tuple_len(rhs_t) == 3) {
-      any_t rhs_t0 = tuple_get(rhs_t, 0);
-      if (rhs_t0 && ptype(rhs_t0) == SYMBOL_T 
-	  && UNWRAP_SYMBOL(rhs_t0)==literal_sym) {
-	// (callslot lhs \literal env [1 ,, 2 ,, 3])
-	tuple_t t = tuple_new(5);
-	tuple_set(t, 0, WRAP_SYMBOL(callslot_sym));
-	tuple_set(t, 1, tuple_get(pre_t, 1));
-	tuple_set(t, 2, quoted(rhs_t0));
-	tuple_set(t, 3, tuple_get(rhs_t, 1));
-	tuple_set(t, 4, tuple_get(rhs_t, 2));
-	return t;
-      }
-    }
-  }
-  return pre_t;
+  return resolve_infix_prule(env, parsetree, colon_sym, symbol_new("colon_fn"), RIGHT_BIND);
 }
 
 tuple_t less_pr(any_t env, list_t parsetree) 

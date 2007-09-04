@@ -1,5 +1,17 @@
 2007-09-04  Stefan Harmeling  <harmeling@gmail.com>
 
+	* parse.c (resolve_dots_and_fn_calls): added a case for resolving
+	complex literals, note that the syntax of rhabarber has changed:
+
+	before:  list:[1,2,3]    // bad: looks like type check
+	now:     list[1,2,3]     // like a funcall
+
+	added test code in test.rha
+	
+	* prules.c (colon_pr): removed the stuff that transformed
+	tuple:[1,2,3] into tuple.literal([1,2,3]).  instead this is now
+	handled in resolve_dots_and_fn_calls.
+
 	* object.c (to_string): however, we still cannot guarantee that
 	builtin function always receive 0 instead of void_obj.  The latter
 	happens when called via eval(), but when called from other C-code

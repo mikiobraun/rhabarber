@@ -303,6 +303,19 @@ any_t resolve_dots_and_fn_calls(any_t env, list_t source)
 	continue;
       }
     }
+    else if (is_marked_list(squared_sym, obj)) {
+      // (3) named literal
+      tuple_t literal = squared_pr(env, UNWRAP_PTR(LIST_T, obj));
+      // (callslot lhs \literal env [1 ,, 2 ,, 3])
+      tuple_t t = tuple_new(5);
+      tuple_set(t, 0, WRAP_SYMBOL(callslot_sym));
+      tuple_set(t, 1, expr);
+      tuple_set(t, 2, quoted(tuple_get(literal, 0)));
+      tuple_set(t, 3, tuple_get(literal, 1));
+      tuple_set(t, 4, tuple_get(literal, 2));
+      expr = WRAP_PTR(TUPLE_T, t);
+      continue;
+    }
     else {
       rha_error("(parsing) argument list or dot expected, "
 		"found \"%o\"", obj);

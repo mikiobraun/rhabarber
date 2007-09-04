@@ -226,3 +226,9 @@ a(1,1) = 17;
 check((a.*a)(0,1) == 4);
 check((a.*a)(0,1) == 4);
 summarize();
+
+test("complex literals");
+check(mat:[1,2,3,4]);
+check(list:list[1,2,3,4]);
+check(tuple:tuple[1,2,3,4]);
+summarize();
