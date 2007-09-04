@@ -1,0 +1,42 @@
+////////////////////////////////////////////
+// python
+py = modules.python;
+pyrun = fn (string:command) py.python_runstring(command);
+pyimport = fn (string:name) py.python_importmodule(name);
+pylookup = fn (pyobject:p, symbol:name) py.python_lookup(p, name);
+pybuiltin = pyimport("__builtin__");
+pymain = pyimport("__main__");
+int(pyobject:p) = py.python_getint(p);
+pyint(int:i) = py.python_newinteger(i);
+real(pyobject:p) = py.python_getreal(p);
+pyreal(real:r) = py.python_newreal(r);
+string(pyobject:p) = py.python_getstring(p);
+pystring(string:s) = py.python_newstring(s);
+pytuple(int:len) = py.python_newtuple(len);
+pylist(int:len) = py.python_newlist(len);
+mat2pylist = fn (mat:m) {
+  mlen = m.len();
+  pylist = pylist(mlen);
+  for (i in 0:mlen)
+    py.python_list_setitem(pylist, i, pyreal(m(i)));
+  return pylist;
+}
+pylab = pyimport("pylab");
+plot = fn (x, y) {
+  pyrun("import pylab");
+  s = "pylab.plot([";
+  for (i in 0:(x.len()))
+    s += string(real(x(i))) + ", ";
+  s += "], [";
+  for (i in 0:(y.len()))
+    s += string(real(y(i))) + ", ";
+  s += "])";
+  pyrun(s);
+}
+pyhello = fn () {
+  call = tuple(2);
+  call.set(0, pylookup(pymain, \print));
+  call.set(1, pystring("hello python"));
+  return py.python_call(this, call);
+}
+
