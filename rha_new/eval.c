@@ -89,7 +89,7 @@ any_t eval(any_t env, any_t expr)
     // symbol
     symbol_t s = UNWRAP_SYMBOL(expr);
     value = lookup(env, s);
-    if (!value && s!=void_sym) 
+    if (!value)
       rha_error("lookup of symbol '%o' failed", expr);
     if (has(value, hasproxy_sym)) {
       value = callslot(value, hasproxy_sym, 0);
@@ -110,7 +110,7 @@ any_t eval(any_t env, any_t expr)
     // (must be copied as well, since they might be modified)
     return copy_pt(expr);
   default:
-    if (expr == 0) // void
+    if (expr == 0 || expr == void_obj) // void
       // do nothing
       return expr;
     // else don't know!
@@ -406,6 +406,13 @@ static any_t call_builtin_fun(any_t fnbody, tuple_t values, bool_t no_frame)
   // (1) function with C code
   any_t res = 0;
   builtin_t f = UNWRAP_BUILTIN(fnbody);
+  // replace all 'void_obj' by zeroes
+  for (int i = 0; i < tuple_len(values); i++) {
+    any_t value = tuple_get(values, i);
+    //assert(value); // void in values should right now not be zero but void_obj
+    if (value == void_obj)
+      tuple_set(values, i, 0);
+  }
   if(no_frame)
     res = f(values);
   else {

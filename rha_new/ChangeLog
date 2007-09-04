@@ -1,5 +1,21 @@
 2007-09-04  Stefan Harmeling  <harmeling@gmail.com>
 
+	* object.c (to_string): however, we still cannot guarantee that
+	builtin function always receive 0 instead of void_obj.  The latter
+	happens when called via eval(), but when called from other C-code
+	the void_obj might reach a builtin function.  There might be other
+	places where we need to extend the zero case with void_obj similar
+	to to_string().
+
+	* eval.c (call_builtin_fun): void_obj as arguments to builtin
+	functions are replaced by zeros.
+
+	* object.c (assign): if trying to assign 0, we assign void_obj.
+
+	* rha_config.pl: now an object void_obj is generated in
+	rha_init().  Builtin function with return value void return now
+	void_obj. 
+
 	* mat_fn.c, utils.c: added bound checks for matrix get/set via
 	idx() function defined in utils.c which allows negative indices.
 

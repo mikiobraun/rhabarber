@@ -196,7 +196,7 @@ foreach $module (@mods) {
 	    $ifntype = 	substr($fntype, 0, -2);
 	    $fncall_str = "WRAP_PTR($ucfntype, $fncall_str)";
 	}
-	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n  return 0;\n" }
+	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n  return void_obj;\n" }
 	else { $init_c_functions .= "  return $fncall_str;\n" }
 	$init_c_functions .= "}\n";
 
@@ -356,6 +356,7 @@ $type_h_ids
 $type_h_prototypes
 
 // (4) type objects
+extern any_t void_obj;
 $type_h_typeobjects
 
 // (5) ptype names
@@ -410,6 +411,7 @@ $init_c_symbols
 $init_c_prototypes
 
 // (3) type objects
+any_t void_obj = 0;
 $init_c_typeobjects
 
 // (4) ptype names
@@ -488,18 +490,20 @@ any_t create_special_fn_data(any_t module, bool_t method,
 
 any_t rha_init()
 {
-  // (6.1) prototypes (TYPES)
+  // (6.0) prototypes (TYPES)
   fn_data_proto = new();
   implementation_proto = new();
   pattern_proto = new();
 $init_c_init_prototypes
 
-  // (6.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
+  // (6.1) create symbols (SYMBOLS, TYPES, MODULES, functions)
 $init_c_init_symbols
 
   any_t root = new();
   assign(root, root_sym, root);
   assign(root, local_sym, root); // the outer-most local scope
+  void_obj = new();
+  assign(root, void_sym, void_obj);
 
   // (6.2) add modules
   any_t modules = new();

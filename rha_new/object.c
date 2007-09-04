@@ -311,7 +311,7 @@ any_t location(any_t l, symbol_t s)
   any_t parent = symtable_lookup(l->table, parent_sym);
   if (parent) return location(parent, s);
   // else there is no parent
-  return 0; // ZERO meaning "not found" (aka 'void')
+  return 0; // ZERO meaning "not found"
 }
 
 bool_t has(any_t obj, symbol_t s)
@@ -328,9 +328,7 @@ any_t assign(any_t o, symbol_t s, any_t v)
 {
   // debug(" %p.%s -> %p\n", (void *) o, symbol_name(s), (void *) v);
   // assign 's' to the sym table
-  if(!v)
-    rha_error("cannot assign void");
-  
+  if(!v) v = void_obj;
   symtable_assign(o->table, s, v);
   return v;
 }
@@ -426,7 +424,7 @@ void subscribe(any_t dest, any_t interface)
 string_t to_string(any_t o)
 {
   // VOID
-  if (!o) {
+  if (!o || o==void_obj) {
     // in C it is zero, in rhabarber called void
     return sprint("%s", "<void>");
   }

@@ -3,6 +3,8 @@
 test("equalequal test");
 check(17==17);
 check("test"=="test");
+check(void==void);
+check(17!=void);
 check(!is_void(15));
 check("test"!=66);
 check("test"!="tests");
