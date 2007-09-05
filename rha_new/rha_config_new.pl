@@ -43,14 +43,14 @@ $modules = $1;
 $types   = $2;
 $symbols = $3;
 $macros  = $4;
-$prules  = $5;
+$experim = $5;
 
 # (0) remove comments
 $modules =~ s/\/\/[^\n]*//g;
-$types =~ s/\/\/[^\n]*//g;
+$types   =~ s/\/\/[^\n]*//g;
 $symbols =~ s/\/\/[^\n]*//g;
-$macros =~ s/\/\/[^\n]*//g;
-$prules =~ s/\/\/[^\n]*//g;
+$macros  =~ s/\/\/[^\n]*//g;
+$experim =~ s/\/\/[^\n]*//g;
 
 # (1) disect the includes
 @mods = $modules =~ /include\s+\"($id)\.h\"/gox;
@@ -63,6 +63,27 @@ $prules =~ s/\/\/[^\n]*//g;
 
 # (4) create a hash of types
 %typeset = map { $_ => 1 } @tdefs;
+
+
+%typenames = ();
+
+# (5) the experimental stuff
+# some of the types are not stored in the void pointer but are stored
+# directly in the union that is attached to each object.  if a type
+# should be stored directly it must appear in the following list,
+# which should go ultimatively to rha_config.d
+# all other types are assumed to be pointer and are stored as void
+# pointers. 
+%typemapping = ( bool      => "int",
+		 int       => "int",
+		 bool_t    => "int",
+		 int_t     => "int",
+		 symbol_t  => "int",
+		 size_t    => "int",
+		 float     => "float",
+		 double    => "real",
+                 real_t    => "real",
+                 builtin_t => "builtin_t" );
 
 
 ############################
@@ -96,6 +117,9 @@ $init_c_add_functions = "";
 # step 3: create all strings #
 ##############################
 
+if (1) {
+    process_experimental();
+}
 
 # first the more complicated stuff: the functions
 foreach $module (@mods) {
@@ -193,7 +217,6 @@ foreach $module (@mods) {
 	elsif ($fntype eq "builtin_t") { $fncall_str = "WRAP_BUILTIN($fncall_str)" }
 	elsif ($fntype ne "any_t" && $fntype ne "void") {
 	    $ucfntype = uc($fntype);
-	    $ifntype = 	substr($fntype, 0, -2);
 	    $fncall_str = "WRAP_PTR($ucfntype, $fncall_str)";
 	}
 	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n  return void_obj;\n" }
@@ -241,7 +264,6 @@ create_prototypes();
 create_symbols();
 
 
-
 ##################################
 # step 4: create all three files #
 ##################################
@@ -260,6 +282,224 @@ exit();
 
 
 #########################################
+
+sub process_experimental() {
+    print "$experim\n" if debug;
+
+    # get rid of all newlines
+    $experim =~ s/\n//gso;
+
+    # replace white space by a single space (for readability)
+    $experim =~ s/\s+/ /gso;
+
+    # get rid of all stuff in curlied brackets
+    while ($experim =~ s/{[^{}]*}/HUHU/gso) {};
+
+    # regexp for 'const'
+    $reco = "const\\s+";
+
+    # regexp for stars
+    $rest = "\\**\\s*";
+
+    # regexp for brackets
+    $rebr = "\\[\\s*\\]\\s*";
+
+    # regexp for typed function name
+    $refn = "$id\\s*"     # type identifier
+	."(?:$rest)?"     # optional stars
+	."$id\\s*";       # function name
+
+    # regexp for typed argument
+    $rear = "(?:"
+	."(?:$reco)?"     # optional 'const'
+ 	."$id\\s*"        # type identifier
+	."(?:$rest)?"     # optional stars
+	."(?:$id\\s*)?"   # optional identifier
+	."(?:$rebr)?"     # optional array brackets '[ ]'
+	."|\.\.\."        # alternatively '...'
+	.")";
+
+    # regexp for argument list
+    $reargs = "$rear\\s*" # first arg
+	."(?:"            # more args begin here
+	.",\\s*"          # arg separating comma
+	."$rear"          # next arg
+	.")*\\s*";        # more args are optional
+	
+    # regexp for function declaration
+    $refd = "($refn)\\s*" # return type and function name
+	."\\(\\s*"        # left bracket of args
+	."($reargs)"      # optional args
+	."\\)\\s*"        # right bracket of args
+	.";";             # final semicolon
+                    
+    print "$experim\n";
+
+    $module = "experimental";
+    $init_c_add_modules .= "  ADD_MODULE($module);\n";
+    $init_c_add_functions .= "  module = lookup(modules, $module"."_sym);\n";
+    # also add a symbol
+    push(@symbs, $module);
+
+    while ($experim =~ /$refd/go) {
+	$fntid  = $1;
+	$fnargs = $2;
+	print "matched: $fntid with args $fnargs\n" if debug;
+	process_fun($fntid, $fnargs);
+    }
+    $init_c_add_functions .= "\n";
+}
+
+
+sub process_typedid {
+    # take a typed identifier and returns a typename
+    # note that this both should work for functionnames and args
+    # stars and [] are resolved and add "_ptr"
+
+    # note on types:
+    # 
+
+    my $tid = shift;
+    $tid =~ s/\s+\*/\*/go;  # remove whitespace preceeding stars
+    $tid =~ /(?:$reco)?($id\**|\.\.\.)\s*($id)?/o;
+    my $typename = $1;
+    my $varname  = $2;
+    $typename =~ s/(\*|$rebr)/_ptr/go;
+    print "found: $typename   $varname\n" if debug;
+
+    # take a note about the typename
+    #$typenames{$typename} = $typename;
+
+    return ($typename, $varname);
+}
+
+sub process_fun() {
+    # accesses $fntid and $fnargs
+    my $fntid = shift;
+    my $fnargs = shift;
+
+    @fnargs = split /\s*,\s*/, $fnargs;
+
+    print "$fntid\n" if debug;
+    ($fntype, $fnname) = process_typedid($fntid);
+    
+    print "fntype == $fntype; fnname == $fnname\n" if debug;
+
+    @args = ();
+    foreach $fnarg (@fnargs) {
+	print "$fnarg\n" if debug;
+	($typename, $varname) = process_typedid($fnarg);
+	print "typename == $typename; varname == $varname\n" if debug;
+	push @args, $typename;
+    }
+    $narg = $#args + 1;
+
+    # are we having an ellipses?
+    $ellipses = 0; # == false
+    foreach $arg (@args) {
+	if ($arg eq "...") {
+	    # note that we don't care here in 'rha_config.pl'
+	    # whether the ellipses is at the last argument
+	    # position, because the C-compiler will complain
+	    # about it...
+	    $ellipses = 1; # == true
+	}
+    }
+
+    # are we having 'void' as an argument?
+    $voidargs = 0;
+    foreach $arg (@args) {
+	if ($arg eq "void") {
+	    if (@args != 1)  {
+		die "'void' must be only element of argument list";
+	    }
+	    $voidargs = 1;
+	}
+    }
+    if ($voidargs) {
+	# remove it
+	@args = ();
+    }
+
+    # add a symbol for the function
+    push(@symbs, $fnname);
+    
+    # add wrapper code
+    $init_c_functions .= "any_t b_$fnname(tuple_t t) {\n";
+    $fncall_str = "$fnname(";
+    
+    if ($ellipses) {
+	# we ignore the second last argument which is
+	# e.g. something like "int_t narg"
+	$dots = pop @args;
+	$dummy = pop @args;
+	push @args, $dots;
+	# adjust $narg, take off for 'int_t narg' and one for '...'
+	$narg = $narg - 2;
+	# the b_* function needs additional code
+	$init_c_functions .= "  int_t tlen = tuple_len(t);\n";
+	$init_c_functions .= "  tuple_t args = tuple_new(tlen-$narg);\n";
+	$init_c_functions .= "  for (int i=$narg; i<tlen; i++)\n";
+	$init_c_functions .= "    tuple_set(args, i-$narg, tuple_get(t, i));\n";
+	# instead of calling the function itself, we call the
+	# function with the same name with a prepended 'v'
+	$fncall_str = "v" . $fncall_str;
+    }
+    $start = 0;
+    $i = $start;
+    foreach $item (@args) {
+	if ($i>$start) { $fncall_str .= ", " }
+	$fnarg_str = "tuple_get(t, $i)";
+	if ($typemapping{$item}) {
+	    $ucitem = uc($typemapping{$item});
+	    $fnarg_str = "UNWRAP_$ucitem($fnarg_str)";
+	}
+	elsif ($item eq "...") {
+	    $fnarg_str = "args";
+	}
+	else {
+	    $ucitem = uc($item)."_T";
+	    $fnarg_str = "UNWRAP_PTR($ucitem, $fnarg_str)";
+	}
+	$fncall_str .= $fnarg_str;
+	$i++;
+    }
+    $fncall_str .= ")";
+    if ($typemapping{$item}) {
+	$ucitem = uc($typemapping{$item});
+	$fncall_str = "WRAP_$ucitem($fncall_str)";
+    }
+    elsif ($fntype ne "any_t" && $fntype ne "void") {
+	$ucfntype = uc($fntype)."_T";
+	$fncall_str = "WRAP_PTR($ucfntype, $fncall_str)";
+    }
+    if ($fntype eq "void") { 
+	$init_c_functions .= "  $fncall_str;\n  return void_obj;\n" 
+    }
+    else { 
+	$init_c_functions .= "  return $fncall_str;\n" 
+    }
+    $init_c_functions .= "}\n";
+    
+    # add code to add functions
+    $init_c_add_functions .= "  add_function(module, $fnname"."_sym";
+    $init_c_add_functions .= ", b_$fnname";
+    if ($ellipses) {
+	$init_c_add_functions .= ", true";
+    }
+    else {
+	$init_c_add_functions .= ", false";
+    }
+    $init_c_add_functions .= ", $narg";
+    foreach $item (@args) {
+	if ($item ne "...") {
+	    $ucitem = uc($item)."_T";
+	    $init_c_add_functions .= ", $ucitem";
+	}
+    }
+    $init_c_add_functions .= ");\n";
+}
+
 
 sub create_ids {
     $type_h_ids .= "  VOID_T = 0";
@@ -328,6 +568,7 @@ sub create_symbols {
 	}
     }
 }
+
 
 #########################################
 

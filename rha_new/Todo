@@ -18,3 +18,7 @@
 
 * right now after f(x) = 2*x; f(y) = 3*y; both implementations are
   kept, but the older one is not accessible anymore
+
+* replace in all function "()" with "(void)"
+
+* remove assert(pt==*) in wrap_*

@@ -74,6 +74,7 @@ extern _rha_ any_t   inc_copy(any_t);
 extern _rha_ any_t   dec_copy(any_t);
 
 extern       any_t   wrap_int(int ptype, int i);
+extern       any_t   wrap_float(int ptype, float f);
 extern       any_t   wrap_double(int ptype, double d);
 extern       any_t   wrap_builtin(int ptype, builtin_t b);
 extern       any_t   wrap_ptr(int ptype, void *p);

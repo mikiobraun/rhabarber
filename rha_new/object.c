@@ -128,6 +128,14 @@ any_t wrap_int(int pt, int i)
   return o;
 }
 
+any_t wrap_float(int pt, float d)
+{
+  assert(pt==REAL_T);
+  any_t o = new_pt(pt);
+  o->raw.d = d;
+  return o;
+}
+
 any_t wrap_double(int pt, double d)
 {
   assert(pt==REAL_T);

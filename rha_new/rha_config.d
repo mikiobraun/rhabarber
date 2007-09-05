@@ -18,6 +18,7 @@
 #include "mat_fn.h"
 #include "messages.h"
 #include "python.h"
+#include <gsl/gsl_matrix_double.h>
 
 //TYPES
 #include <stdbool.h>
@@ -134,4 +135,9 @@ extern symbol_t apostrophe_fn_sym;
 #define WRAP_BUILTIN(p)   (wrap_builtin(BUILTIN_T, p))
 #define WRAP_PTR(pt, p)   (wrap_ptr(pt, p))
 
-//PRULES
+//EXPERIMENTAL
+int f(void);
+gsl_matrix * 
+gsl_matrix_alloc (const size_t n1, const size_t n2);
+double   gsl_matrix_get(const gsl_matrix * m, const size_t i, const size_t j);
+void    gsl_matrix_set(gsl_matrix * m, const size_t i, const size_t j, const double x);
