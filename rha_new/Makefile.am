@@ -19,7 +19,7 @@ rhabarber_SOURCES = alloc.c alloc.h \
 	prules.c prules.h \
 	python.c python.h \
 	real_fn.c real_fn.h \
-	rhabarber.c rha_config.d \
+	rhabarber.c \
 	rha_lexer.h rha_lexer.l \
 	rha_parser.y string_fn.c \
 	string_fn.h symbol_fn.c \
@@ -31,8 +31,8 @@ rhabarber_SOURCES = alloc.c alloc.h \
 
 
 rhabarber_LDADD = @LEXLIB@
-AM_CFLAGS = -I/opt/local/include -I/usr/include/python2.4 -Wall -pedantic
-EXTRA_DIST = rha_config.pl prelude.rha test.rha
+AM_CFLAGS = -Wall -pedantic
+EXTRA_DIST = rha_config.pl prelude.rha test.rha rha_config.d
 
 AM_YFLAGS = -d
 
@@ -41,4 +41,4 @@ CLEANFILES = rha_types.h rha_init.h rha_init.c
 rhabarber_LDADD += rha_init.o
 
 rha_types.h rha_init.h rha_init.c : rha_config.d
-	@srcdir@/rha_config.pl $<
+	@srcdir@/rha_config.pl

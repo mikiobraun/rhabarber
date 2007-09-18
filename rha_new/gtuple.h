@@ -40,10 +40,4 @@ extern intptr_t *gtuple_array   (gtuple_t *t);
 #define gtuple_geti(t, i) ((int)gtuple_get(t, i))
 #define gtuple_getp(t, i) ((void*)gtuple_get(t, i))
 
-#ifdef USE_INLINES
-#define INLINE extern inline
-#include "gtuple_inline.c"
-#undef INLINE
-#endif
-
 #endif

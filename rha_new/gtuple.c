@@ -54,11 +54,23 @@ void gtuple_foreach(gtuple_t *t, gtuple_proc *fct)
     (*fct)(t->array[i]);
 }
 
+int gtuple_length(gtuple_t *t)
+{
+  return t->len;
+}
 
-#ifdef USE_INLINES
-#define INLINE inline
-#else
-#define INLINE
-#endif
-#include "gtuple_inline.c"
+void gtuple_set_(gtuple_t *t, int i, intptr_t x)
+{
+  t->array[i] = x;
+}	
+
+intptr_t gtuple_get(gtuple_t *t, int i)
+{
+  return t->array[i];
+}	
+
+intptr_t *gtuple_array(gtuple_t *t)
+{
+  return t->array;
+}
 

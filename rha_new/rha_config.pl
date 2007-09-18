@@ -19,6 +19,9 @@
 ### step 1: preliminary stuff ###
 #################################
 
+use Cwd;
+print "Current working directory \"", getcwd, "\"\n";
+
 $conf_d_fname = "rha_config.d";
 $init_h_fname = "rha_init.h";
 $init_c_fname = "rha_init.c";

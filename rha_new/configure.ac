@@ -7,7 +7,7 @@
 # Code hosted at http://code.google.com/p/rhabarber
 #
 AC_PREREQ([2.61])
-AC_INIT([rhabarber], [0.1], [mikiobraun@gmail.com,harmeling@gmail.com])
+AC_INIT([rhabarber], [0.9], [mikiobraun@gmail.com,harmeling@gmail.com])
 AC_CONFIG_AUX_DIR([config])
 
 AM_INIT_AUTOMAKE([1.10 foreign])
@@ -36,7 +36,8 @@ AC_PROG_MAKE_SET
 #
 # Checking for python!
 #
-AM_PATH_PYTHON([2.4],[AC_DEFINE(HAVE_PYTHON, 1, [Found a python installation > 2.4])],)
+AM_PATH_PYTHON([2.4],[AC_DEFINE(HAVE_PYTHON, 1, 
+   [Found a python installation > 2.4]) CFLAGS="$CFLAGS -I/usr/include/python$PYTHON_VERSION"],)
 #AM_CONDITIONAL([HAVE_PYTHON],[test x"$PYTHON" != x":"])
 AC_CHECK_LIB([python2.4], [Py_Main])
 
@@ -71,7 +72,7 @@ AC_CHECK_LIB([atlas], [ATL_dgemm])
 # these are taken from autoscan
 AC_FUNC_ALLOCA
 AC_HEADER_STDC
-AC_CHECK_HEADERS([inttypes.h libintl.h limits.h malloc.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h cblas.h clapack.h Python.h gc.h])
+AC_CHECK_HEADERS([inttypes.h libintl.h limits.h malloc.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h cblas.h clapack.h gc.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
