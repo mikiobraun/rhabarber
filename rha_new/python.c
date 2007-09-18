@@ -8,6 +8,7 @@
  *                             
  */
 
+#include "config.h"
 #ifdef HAVE_PYTHON
 
 #include <assert.h>
@@ -25,6 +26,7 @@ static bool python_started = false;
 #define PYTHON_VERSION_LENGTH  256
 static char python_version[PYTHON_VERSION_LENGTH];
 
+static any_t python_domain;
 
 static void start_python_if_necessary()
 {
@@ -55,6 +57,8 @@ static void start_python_if_necessary()
 void python_init(any_t root, any_t module)
 {
   //start_python_if_necessary();
+  python_domain = new();
+  assign(module, symbol_new("python_domain"), python_domain);
 }
 
 
@@ -298,6 +302,8 @@ any_t python_wrap(PyObject *p)
 
   // register finalizer to decrease pythons counts
   GC_REGISTER_FINALIZER(o, python_finalizer, NULL, NULL, NULL);
+
+  assign(o, domain_sym, python_domain);
 
   return o;
 }

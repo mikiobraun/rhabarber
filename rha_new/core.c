@@ -120,16 +120,13 @@ any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
       break;
     list_append(signature_l, pattern);
   }
-  bool_t varargs;
+  bool_t varargs = false;
   if (i < tlen-1) {
     rha_error("ellipsis (...) is only allowed at the end of a signature");
   }
   else if (i == tlen-1) {
     signature = list_to_tuple(signature_l); // removes the ellipsis
     varargs = true;
-  }
-  else {
-    varargs = false;
   }
 
   // built fn_data entry

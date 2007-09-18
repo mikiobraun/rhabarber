@@ -21,10 +21,12 @@
 #include <gsl/gsl_matrix_double.h>
 
 //TYPES
+#include "config.h"
 #include <stdbool.h>
 #include "gtuple.h"
 #include "glist.h"
 #ifdef HAVE_PYTHON
+#undef _POSIX_C_SOURCE
 #include <Python.h>
 #endif
 struct rha_object;
@@ -119,6 +121,9 @@ extern symbol_t greaterequal_fn_sym;
 extern symbol_t pattern_sym;
 extern symbol_t signature_sym;
 extern symbol_t apostrophe_fn_sym;
+
+// symbols for seamless interoperability of differnet languages
+extern symbol_t domain_sym;
 
 //MACROS
 #define UNWRAP_INT(o)     (unwrap_int(INT_T, o))

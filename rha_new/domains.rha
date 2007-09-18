@@ -1,0 +1,17 @@
+// okay, this is the recap of the original domain concept
+//
+// each has an optional domain slot which indicates which domain
+// it belongs to.
+//
+// When a function is called which has a domain slot, the
+// arguments are converted to that domain if not possible.
+//
+// This is done in a generic fashion by calling
+// object.convertto(domain) which in turn will use the constructors
+// domain.new<type> to do all the conversion.
+//
+// NOTE: domains and types should be orthogonal concepts. That is,
+// a list can be a list implemented in rhabarber, python, ruby, 
+// or whatever.
+//    This is important such that you can find the right function
+// without having to convert arguments all the time!

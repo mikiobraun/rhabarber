@@ -228,8 +228,7 @@ any_t call_fun(any_t this, tuple_t values)
   }
 
   // collect remaining information
-  fnbody = get_slot_any(impl, fnbody_sym, 
-			"(eval) can't find function body");
+  fnbody = get_slot_any(impl, fnbody_sym, "(eval) can't find function body");
   no_frame = has(impl, no_frame_sym);
 
   // call function
@@ -386,7 +385,8 @@ bool_t pattern_matches(any_t pattern, any_t value)
       // check the type
       any_t res = callslot(thetype, check_sym, 1, value);
       if (!res || ptype(res)!=BOOL_T)
-	rha_error("(signature) type %o doesn't implement a valid 'check'", thetype);
+	rha_error("(signature) type %o doesn't implement a valid 'check'",
+		  thetype);
       if (UNWRAP_BOOL(res))
 	return true;
       else

@@ -1,6 +1,10 @@
 ////////////////////////////////////////////
 // python
 py = modules.python;
+
+pyobject.proto.string = fn() "[py " + py.python_to_string(this) + "]";
+py.python_domain.string = fn() "<python domain>";
+
 pyrun = fn (string:command) py.python_runstring(command);
 pyimport = fn (string:name) py.python_importmodule(name);
 pylookup = fn (pyobject:p, symbol:name) py.python_lookup(p, name);
