@@ -2,7 +2,7 @@
 #include <math.h>
 
 #include "parse.h"
-#include "rha_parser.h" // the link to BISON
+#include "rha_parser_fcts.h" // the link to BISON
 #include "rha_types.h"
 #include "object.h"
 #include "symbol_fn.h"

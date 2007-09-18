@@ -1,3 +1,9 @@
+2007-09-18  Mikio Braun  <mikiobraun@gmail.com>
+
+	* rha_parser_fcts.h: had to move rha_parser.h out of the way
+	because the automake rules made bison directly output a file
+	called rha_parser.h
+
 2007-09-04  Stefan Harmeling  <harmeling@gmail.com>
 
 	* parse.c (resolve_dots_and_fn_calls): added a case for resolving

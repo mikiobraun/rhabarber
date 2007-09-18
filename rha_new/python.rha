@@ -1,15 +1,25 @@
+// autoconversion
+// 
+// in order to 
+
+int.convert(domain) = domain.new(int:x);
+
 ////////////////////////////////////////////
 // python
 py = modules.python;
 
 pyobject.proto.string = fn() "[py " + py.python_to_string(this) + "]";
-py.python_domain.string = fn() "<python domain>";
+py.domain.string = fn() "<python domain>";
 
 pyrun = fn (string:command) py.python_runstring(command);
 pyimport = fn (string:name) py.python_importmodule(name);
 pylookup = fn (pyobject:p, symbol:name) py.python_lookup(p, name);
 pybuiltin = pyimport("__builtin__");
 pymain = pyimport("__main__");
+
+py.domain.newint(i) = py.python_newinteger(i.getint());
+py.domain.newreal(r) = py.python_new
+
 int(pyobject:p) = py.python_getint(p);
 pyint(int:i) = py.python_newinteger(i);
 real(pyobject:p) = py.python_getreal(p);

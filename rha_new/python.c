@@ -58,7 +58,7 @@ void python_init(any_t root, any_t module)
 {
   //start_python_if_necessary();
   python_domain = new();
-  assign(module, symbol_new("python_domain"), python_domain);
+  assign(module, symbol_new("domain"), python_domain);
 }
 
 

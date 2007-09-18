@@ -654,10 +654,10 @@ bool_t check(any_t t, any_t o)
   any_t proto = lookup(t, proto_sym);
   if (!proto)
     rha_error("(check) object %o doesn't have a slot 'proto'", t);
-  do
+  do {
     if (addr(o) == addr(proto))
       return true;
-  while ((o = lookup(o, parent_sym)));
+  } while ((o = lookup(o, parent_sym)));
   return false;
 }
 

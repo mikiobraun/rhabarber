@@ -17,7 +17,7 @@
 #include <gc/gc.h>
 
 #include "messages.h"
-#include "rha_parser.h" // for 'rhaparsestring'
+#include "rha_parser_fcts.h" // for 'rhaparsestring'
 #include "utils.h"
 #include "excp.h"
 #include "rha_init.h"
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
       any_t value = split_resolve_and_eval(root, rhaparsestring(line), 0);
 
       // and print the result
-      if (value)
+      if (value != void_obj)
 	fprintf(stdout, "%s\n", to_string(value));
     }
     catch(excp) {

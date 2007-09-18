@@ -21,14 +21,13 @@ rhabarber_SOURCES = alloc.c alloc.h \
 	real_fn.c real_fn.h \
 	rhabarber.c \
 	rha_lexer.h rha_lexer.l \
-	rha_parser.y string_fn.c \
+	rha_parser.y rha_parser_fcts.h string_fn.c \
 	string_fn.h symbol_fn.c \
 	symbol_fn.h symtable.c \
 	symtable.h tuple_fn.c \
 	tuple_fn.h utilalloc.c \
 	utilalloc.h utils.c \
 	utils.h
-
 
 rhabarber_LDADD = @LEXLIB@
 AM_CFLAGS = -Wall -pedantic

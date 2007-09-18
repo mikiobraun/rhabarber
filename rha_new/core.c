@@ -16,7 +16,7 @@
 #include <stdarg.h>
 #include <assert.h>
 #include "rha_types.h"
-#include "rha_parser.h"
+#include "rha_parser_fcts.h"
 #include "messages.h"
 
 #include "eval.h"
