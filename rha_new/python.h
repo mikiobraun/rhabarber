@@ -45,7 +45,7 @@ extern _rha_ string_t python_getversion();
 extern       any_t  python_wrap(PyObject *po);
 extern _rha_ any_t  python_lookup(pyobject_t o, symbol_t name);
 extern _rha_ bool_t python_callable(pyobject_t o);
-extern _rha_ any_t  python_call(any_t this, tuple_t values);
+extern _rha_ any_t  python_call(tuple_t values);
 
 #endif /* HAVE_PYTHON */
 

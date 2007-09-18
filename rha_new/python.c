@@ -228,7 +228,7 @@ bool_t python_callable(pyobject_t o)
   return PyCallable_Check(o);
 }
 
-any_t python_call(any_t this, tuple_t values)
+any_t python_call(tuple_t values)
 {
   start_python_if_necessary();
   if(ptype(tuple_get(values, 0)) != PYOBJECT_T) 
@@ -240,7 +240,7 @@ any_t python_call(any_t this, tuple_t values)
   if (python_callable(fct)) {
     PyObject *args = PyTuple_New(numargs);
     for(int i = 0; i < numargs; i++) {
-      any_t a = tuple_get(values, 0);
+      any_t a = tuple_get(values, i + 1);
       if (ptype(a) != PYOBJECT_T) {
 	Py_DECREF(args);
 	rha_error("(python_call) argument %d is not a python object!", i + 1);
@@ -254,7 +254,7 @@ any_t python_call(any_t this, tuple_t values)
     PyObject *result = PyObject_Call(fct, args, NULL);
 
     if (result == NULL) {
-      PyErr_Print();
+      printf("python error: ");PyErr_Print();
       Py_DECREF(args);
       rha_error("Error in python call.\n");
     }

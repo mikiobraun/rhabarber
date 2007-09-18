@@ -75,7 +75,7 @@ print      = modules.object.print_fn;
 proxy = fn (s) root.modules.core.proxy_fn(this, s);
 run(filename) = run(root, filename);
 defined = macro (symbolname) has(local, \symbolname);
-undefined = macro( symbolname) has(local, symbolname);
+undefined = macro (symbolname) !has(local, \symbolname);
 //assert = macro (cond) if (!cond) throw to_string(cond) + " FAILED";
 
 // (1.5) macros for writing tests (see test.rha for an example)

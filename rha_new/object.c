@@ -565,7 +565,7 @@ void print_fn(int_t narg, ...)
 
 void ls(any_t o)
 {
-  symtable_print(o->table);
+  symtable_print(o->table); return;
   while( (o = lookup(o, parent_sym)) ) {
     printf("^\n");
     symtable_print(o->table);

@@ -1,5 +1,12 @@
 2007-09-18  Mikio Braun  <mikiobraun@gmail.com>
 
+	* domains.rha: set up the domains framework. With
+	obj.convert(domain), the object is converted into the
+	corresponding object in domain. convert_call converts a call such
+	that the arguments are aligned with the domain. 
+
+	* python.rha: brought things into alignment with domains.rha. 
+
 	* rha_parser_fcts.h: had to move rha_parser.h out of the way
 	because the automake rules made bison directly output a file
 	called rha_parser.h

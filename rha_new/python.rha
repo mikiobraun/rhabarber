@@ -2,55 +2,37 @@
 // 
 // in order to 
 
-int.convert(domain) = domain.new(int:x);
+if(true || !defined(PYTHON_RHA)) 
+{
+  PYTHON_RHA = true;
+  
+  run("domains.rha");
 
-////////////////////////////////////////////
-// python
-py = modules.python;
+  int.convert(domain) = domain.new(int:x);
+  
+  ////////////////////////////////////////////
+  // python
+  py = modules.python;
+  
+  pyobject.proto.string() = "[py " + py.python_to_string(this) + "]";
+  py.domain.string() = "<python domain>";
+  
+  py.run = fn (string:command) py.python_runstring(command);
+  py.import = fn (string:name) py.python_importmodule(name);
+  py.lookup = fn (pyobject:p, symbol:name) py.python_lookup(p, name);
+  py.builtin = py.import("__builtin__");
+  py.main = py.import("__main__");
+  py.math = py.import("math");
+  py.call(...) = py.python_call(convert_call(args));
+  
+  py.domain.newint(i) = py.python_newinteger(i);
+  py.domain.newreal(r) = py.python_newreal(r);
+  py.domain.newstring(s) = py.python_newstring(r);
+  py.domain.newtuple(l) = py.python_newtuple(l);
+  pyobject.proto.getint() = py.python_getinteger(this);
+  pyobject.proto.getreal() = py.python_getreal(this);
+  pyobject.proto.getstring() = py.python_getstring(this);
 
-pyobject.proto.string = fn() "[py " + py.python_to_string(this) + "]";
-py.domain.string = fn() "<python domain>";
-
-pyrun = fn (string:command) py.python_runstring(command);
-pyimport = fn (string:name) py.python_importmodule(name);
-pylookup = fn (pyobject:p, symbol:name) py.python_lookup(p, name);
-pybuiltin = pyimport("__builtin__");
-pymain = pyimport("__main__");
-
-py.domain.newint(i) = py.python_newinteger(i.getint());
-py.domain.newreal(r) = py.python_new
-
-int(pyobject:p) = py.python_getint(p);
-pyint(int:i) = py.python_newinteger(i);
-real(pyobject:p) = py.python_getreal(p);
-pyreal(real:r) = py.python_newreal(r);
-string(pyobject:p) = py.python_getstring(p);
-pystring(string:s) = py.python_newstring(s);
-pytuple(int:len) = py.python_newtuple(len);
-pylist(int:len) = py.python_newlist(len);
-mat2pylist = fn (mat:m) {
-  mlen = m.len();
-  pylist = pylist(mlen);
-  for (i in 0:mlen)
-    py.python_list_setitem(pylist, i, pyreal(m(i)));
-  return pylist;
-}
-pylab = pyimport("pylab");
-plot = fn (x, y) {
-  pyrun("import pylab");
-  s = "pylab.plot([";
-  for (i in 0:(x.len()))
-    s += string(real(x(i))) + ", ";
-  s += "], [";
-  for (i in 0:(y.len()))
-    s += string(real(y(i))) + ", ";
-  s += "])";
-  pyrun(s);
-}
-pyhello = fn () {
-  call = tuple(2);
-  call.set(0, pylookup(pymain, \print));
-  call.set(1, pystring("hello python"));
-  return py.python_call(this, call);
+  print(py.call(py.lookup(py.math, \sin), 3.4))
 }
 

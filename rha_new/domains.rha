@@ -16,17 +16,31 @@
 //    This is important such that you can find the right function
 // without having to convert arguments all the time!
 
-rhabarber = new();
-rhabarber.domain = new();
-rhabarber.domain.newint(i) = i;
-rhabarber.domain.newreal(r) = r;
-rhabarber.domain.string = fn() "<rhabarber domain>";
+if (true || !defined(DOMAINS_RHA)) {
+  DOMAINS_RHA = true;
 
-int.proto.convert(domain) = domain.newint(this.getint());
-int.proto.getint = fn () this;
-int.proto.domain = rhabarber.domain;
-real.proto.convert(domain) = domain.newreal(this.getreal());
-real.proto.getreal = fn() this;
-real.proto.domain = rhabarber.domain;
+  rhabarber = new();
+  rhabarber.domain = new();
+  rhabarber.domain.newint(int:i) = i;
+  rhabarber.domain.newreal(real:r) = r;
+  rhabarber.domain.string() = "<rhabarber domain>";
+  
+  int.proto.convert(domain) = domain.newint(this.getint());
+  int.proto.getint = fn () this;
+  int.proto.domain = rhabarber.domain;
+  real.proto.convert(domain) = domain.newreal(this.getreal());
+  real.proto.getreal = fn() this;
+  real.proto.domain = rhabarber.domain;
 
+  // align arguments with the domain of the function
+  convert_call = fn(t) {
+    fctdomain = t.get(0).domain;
+    for(i in 0:t.len()) {
+      v = t.get(i);
+      if (v.domain != fctdomain)
+        t.set(i, v.convert(py.domain));
+    }
+    t;
+  }
+};
 
