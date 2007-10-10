@@ -3,10 +3,6 @@
 * get rid of the 'throw' in 'minus_pr' and 'try' in
   'resolve_list_by_prules'
 
-* break is broken
-
-* why does "test"/ not produce an error
-
 * get rid of "[fatal error] failed to catch an exception"
 
 * add void_obj which is a certain object and is used internally
@@ -22,3 +18,8 @@
 * replace in all function "()" with "(void)"
 
 * remove assert(pt==*) in wrap_*
+
+* remove wrap_symbol from symbol_fn.h
+
+* remove the vtuple_make stuff for ellipses, probably we need a big
+  switch to call the ...
