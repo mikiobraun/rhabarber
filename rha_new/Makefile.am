@@ -17,7 +17,7 @@ rhabarber_SOURCES = alloc.c alloc.h \
 	object.c object.h \
 	parse.c parse.h \
 	prules.c prules.h \
-	python.c python.h \
+	python_fn.c python_fn.h \
 	real_fn.c real_fn.h \
 	rhabarber.c \
 	rha_lexer.h rha_lexer.l \
