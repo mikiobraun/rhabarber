@@ -16,7 +16,7 @@ void yyerror (char const *);
 
 static list_t parsetree;   /* global var -> funny name */
 
-//static any_t wl(any_t t); /* with location: adds location to parsetree */
+//static any_t wl(any_t t); // with location: adds location to parsetree
 
 static any_t solidify(symbol_t s, list_t t);
 %}

@@ -1,5 +1,5 @@
 /*
- * python - embed the python interpreter in rhabarber
+ * python_fn - embed the python interpreter in rhabarber
  *
  * This file is part of rhabarber.
  *
@@ -12,7 +12,7 @@
 #ifdef HAVE_PYTHON
 
 #include <assert.h>
-#include "python.h"
+#include "python_fn.h"
 
 #include "alloc.h"
 #include "utils.h"

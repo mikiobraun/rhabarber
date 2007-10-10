@@ -56,7 +56,9 @@ string_t string_set(string_t s, int_t i, string_t v)
   if (i >= slen || -i > slen)
     rha_error("index out-of-bounds");
   if (i < 0) i = slen + i;
-  string_t dst;
+  char dst[1024];
+  if (i>1024)
+    rha_error("buffer overflow");
   strncpy(dst, s, i);
   return string_concat(string_concat(dst, v), dst+(i+1));
 }

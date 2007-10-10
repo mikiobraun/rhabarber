@@ -1,5 +1,5 @@
 /*
- * python - embed the python interpreter in rhabarber
+ * python_fn - embed the python interpreter in rhabarber
  *
  * This file is part of rhabarber.
  *
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef PYTHON_H
-#define PYTHON_H
+#ifndef PYTHON_FN_H
+#define PYTHON_FN_H
 
 #include "config.h"
 #ifdef HAVE_PYTHON

@@ -17,14 +17,12 @@
 #include "bool_fn.h"
 #include "mat_fn.h"
 #include "messages.h"
-#include "python.h"
+#include "python_fn.h"
 #include <gsl/gsl_matrix_double.h>
 
 //TYPES
 #include "config.h"
 #include <stdbool.h>
-#include "gtuple.h"
-#include "glist.h"
 #ifdef HAVE_PYTHON
 #undef _POSIX_C_SOURCE
 #include <Python.h>
@@ -32,6 +30,8 @@
 struct rha_object;
 typedef int                       _rha_ symbol_t;
 typedef struct rha_object *       _rha_ any_t;
+#include "gtuple.h" // depends on 'any_t'
+#include "glist.h"  // depends on 'any_t'
 typedef int                       _rha_ int_t; 
 typedef bool                      _rha_ bool_t;
 typedef struct gtuple*            _rha_ tuple_t;

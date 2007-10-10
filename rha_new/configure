@@ -4264,7 +4264,7 @@ echo "${ECHO_T}$am_cv_python_pyexecdir" >&6; }
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_PYTHON 1
 _ACEOF
- CFLAGS="$CFLAGS -I/usr/include/python$PYTHON_VERSION"
+ CFLAGS="$CFLAGS -I/Library/Frameworks/Python.framework/Versions/Current/include/"
   fi
 
 
@@ -4675,9 +4675,9 @@ _ACEOF
 fi
 
 
-{ echo "$as_me:$LINENO: checking for sinx in -lm" >&5
-echo $ECHO_N "checking for sinx in -lm... $ECHO_C" >&6; }
-if test "${ac_cv_lib_m_sinx+set}" = set; then
+{ echo "$as_me:$LINENO: checking for pow in -lm" >&5
+echo $ECHO_N "checking for pow in -lm... $ECHO_C" >&6; }
+if test "${ac_cv_lib_m_pow+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -4695,11 +4695,11 @@ cat >>conftest.$ac_ext <<_ACEOF
 #ifdef __cplusplus
 extern "C"
 #endif
-char sinx ();
+char pow ();
 int
 main ()
 {
-return sinx ();
+return pow ();
   ;
   return 0;
 }
@@ -4722,21 +4722,21 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
-  ac_cv_lib_m_sinx=yes
+  ac_cv_lib_m_pow=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ac_cv_lib_m_sinx=no
+	ac_cv_lib_m_pow=no
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_lib_m_sinx" >&5
-echo "${ECHO_T}$ac_cv_lib_m_sinx" >&6; }
-if test $ac_cv_lib_m_sinx = yes; then
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_m_pow" >&5
+echo "${ECHO_T}$ac_cv_lib_m_pow" >&6; }
+if test $ac_cv_lib_m_pow = yes; then
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBM 1
 _ACEOF

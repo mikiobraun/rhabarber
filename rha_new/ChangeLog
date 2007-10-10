@@ -1,3 +1,8 @@
+2007-10-10  Stefan Harmeling  <harmeling@gmail.com>
+
+	* configure.ac: changed -lm check from "sinx" to "pow"
+	
+
 2007-09-18  Mikio Braun  <mikiobraun@gmail.com>
 
 	* domains.rha: set up the domains framework. With
