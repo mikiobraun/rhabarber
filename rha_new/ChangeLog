@@ -1,3 +1,11 @@
+2007-10-29  Stefan Harmeling  <harmeling@gmail.com>
+
+	* Makefile.am: added 
+
+	      rhabarber_LDFLAGS = -framework Python
+
+	which is for MacOS.  Does it still work for UNIX?
+
 2007-10-10  Stefan Harmeling  <harmeling@gmail.com>
 
 	* configure.ac: changed -lm check from "sinx" to "pow"

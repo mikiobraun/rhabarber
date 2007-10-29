@@ -38,6 +38,7 @@ AM_YFLAGS = -d
 BUILT_SOURCES = rha_types.h rha_init.h rha_init.c 
 CLEANFILES = rha_types.h rha_init.h rha_init.c
 rhabarber_LDADD += rha_init.o
+rhabarber_LDFLAGS = -framework Python
 
 rha_types.h rha_init.h rha_init.c : rha_config.d $(rhabarber_SOURCES)
 	@srcdir@/rha_config.pl
