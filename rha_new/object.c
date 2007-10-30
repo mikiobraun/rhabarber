@@ -201,7 +201,10 @@ builtin_t unwrap_builtin(int pt, any_t o)
 {
   assert(pt==BUILTIN_T);
   assert(pt==ptype(o));
-  return o->raw.b;
+  builtin_t b = o->raw.b;
+  if (!b)
+    rha_error("can not access builtin, are you trying to use the builtin prototype?");
+  return b;
 }
 
 void *unwrap_ptr(int pt, any_t o)
@@ -209,6 +212,8 @@ void *unwrap_ptr(int pt, any_t o)
   assert(pt != ANY_T || ptype(o) == pt);
   void *p = o->raw.p;
   // might be zero
+  if (!p)
+    rha_error("can not access object, are you directly accessing a prototype?");
   return p;
 }
 

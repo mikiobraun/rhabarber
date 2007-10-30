@@ -145,13 +145,13 @@ void prules_init(any_t root, any_t module)
   MAKE_PRULES(apostrophe, 1.0); // matrix transpose
   MAKE_PRULES(plusplus, 1.0);   // increment, decrement
   MAKE_PRULES(minusminus, 1.0);
-  MAKE_PRULES(colon, 2.0);     // for slicing and typing
   MAKE_PRULES(divide, 3.0);     // arithemics
   MAKE_PRULES(dotdivide, 3.0);     // arithemics
   MAKE_PRULES(times, 4.0);
   MAKE_PRULES(dottimes, 4.0);
   MAKE_PRULES(minus, 5.0);
   MAKE_PRULES(plus, 6.0);
+  MAKE_PRULES(colon, 6.2);     // for slicing and typing
   MAKE_PRULES(in, 6.5);         // element test for iterables
   MAKE_PRULES(less, 7.0);       // comparison
   MAKE_PRULES(lessequal, 7.0);
@@ -159,7 +159,7 @@ void prules_init(any_t root, any_t module)
   MAKE_PRULES(greaterequal, 7.0);
   MAKE_PRULES(equalequal, 7.0);
   MAKE_PRULES(notequal, 7.0);
-  MAKE_PRULES(not, 2.5);        // logic
+  MAKE_PRULES(not, 7.5);        // logic
   MAKE_PRULES(and, 8.0);        // logic
   MAKE_PRULES(or, 9.0);         // logic
   MAKE_PRULES(return, 10.0);
@@ -353,7 +353,52 @@ tuple_t in_pr(any_t env, list_t parsetree)
 
 tuple_t colon_pr(any_t env, list_t parsetree) 
 {
-  return resolve_infix_prule(env, parsetree, colon_sym, symbol_new("colon_fn"), RIGHT_BIND);
+  // (i) without step size
+  //       :               == 0:1:     (slice without bounds)
+  //       :42             == 0:1:42   (slice with upper bound)
+  //       17:             == 17:1:    (slice with lower bound)
+  //       17:42           == 17:1:42  (slice with bounds)
+  // (ii) with step size
+  //       :2:             == 0:2:     (slice without bounds but with step)
+  //       :2:10           == 0:2:10   (slice with upper bound and step)
+  //       17:2:           == 17:2:    (slice with lower bound and step)
+  //       17:2:42         == 17:2:42  (slice with bounds and step) 
+  list_t parts = list_chop(parsetree, colon_sym);
+  list_t slice_begin, slice_step, slice_end;
+  int partsl = list_len(parts);
+  if (partsl != 2 && partsl != 3)
+    rha_error("parse error with colon_pr");
+  
+  // (1) extract 'begin'
+  slice_begin = UNWRAP_PTR(LIST_T, list_popfirst(parts));
+  if (list_len(slice_begin) == 0)
+    list_append(slice_begin, WRAP_INT(0));  // default begin == 0
+  // (2) extract 'step'
+  if (partsl == 2) {
+    slice_step = list_new();
+    list_append(slice_step, WRAP_INT(1));  // default step == 1
+  }
+  else {
+    assert(partsl == 3);
+    slice_step = UNWRAP_PTR(LIST_T, list_popfirst(parts));
+    if (list_len(slice_step) == 0)
+      rha_error("missing step size");
+  }
+  // (3) extract 'end'
+  slice_end = UNWRAP_PTR(LIST_T, list_popfirst(parts));
+  
+  // now slice_begin and slice_step have reasonable values
+  if (list_len(slice_end) == 0)
+    return tuple_make(3, 
+		      WRAP_SYMBOL(symbol_new("colon_fn")), 
+		      resolve(env, slice_begin), 
+		      resolve(env, slice_step));
+  else
+    return tuple_make(4, 
+		      WRAP_SYMBOL(symbol_new("colon_fn")), 
+		      resolve(env, slice_begin), 
+		      resolve(env, slice_step),
+		      resolve(env, slice_end));
 }
 
 tuple_t less_pr(any_t env, list_t parsetree) 

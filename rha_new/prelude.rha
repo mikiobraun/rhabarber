@@ -24,7 +24,6 @@
 //   assign = modules.object.assign;
 //   extend = modules.object.extend;
 
-
 // (1.2) more essential stuff
 new      = modules.object.new;
 // let's overloaded that builtin function!!!
@@ -102,8 +101,6 @@ summarize = macro () {
 }
 runtest = fn () run(root, "test.rha");
 
-
-
 // typing stuff
 
 // type    = new();        // in rha_init.c (used by 'ptype')
@@ -162,23 +159,16 @@ or_fn = macro(x, y) if (eval(local, x)) true
                     else false;
 //or_fn  = fn (bool:x, bool:y) modules.bool_fn.bool_or(x, y);
 
-// colon can be used for typechecks and to generate tuple
-colon_fn = fn (a, b) {
+// colon can be used for typechecks and for slices
+colon_fn (a, b, c) = {
   // is 'a' a type?
   if (type.check(a)) // note that we can't use here 'type:a'
-    // yes, perform type check
-    return a.check(b);
-  // otherwise generate a tuple
-  // later on, this should be a true generator using 'yield'
-  if (int:a && int:b) {
-    l = list();
-    while (a < b)
-      l.push(a++);
-    return l;
-  }
-  throw "either 0:5 or int:x";
+    // yes, perform type check and ignore 'b'
+    return a.check(c);
+  // otherwise generate a slice
+  return slice(a, b, c);
 }
-
+colon_fn(a, b) = slice(a, b);
 
 // == and != are special
 // the problem with overloading here is that type checking might use
@@ -226,7 +216,6 @@ split_parselist = fn (list:symlist, env, list:pl) {
   return sink;
 }
 
-
 // temporarily for testing purposes
 inc             = modules.object.inc;
 dec             = modules.object.dec;
@@ -253,7 +242,6 @@ fn_data_proto.string = fn () {
   return s;
 }
 
-
 // implemention_proto
 implementation_proto.string = fn () {
   s = "";
@@ -261,8 +249,8 @@ implementation_proto.string = fn () {
     s += "builtin(";
   else
     s += "function(";
+  j = 0;
   if (has(this, \signature)) {
-    j = 0;
     for (y in this.signature) {
       arg = string(y);
       if (arg.len()>=3 && arg((-3):(0))=="arg")
@@ -272,7 +260,10 @@ implementation_proto.string = fn () {
     }
   }
   if (has(this, \varargs) && lookup(this, \varargs))
-    s += ", ...";
+    if (j == 0)
+      s += "...";
+    else
+      s += ", ...";
   return s + ")";
 }
 
@@ -280,7 +271,6 @@ implementation_proto.string = fn () {
 // any
 any = new(type);
 any.check = fn (x) true;
-
 
 // symbol
 symbol.proto.string = fn () modules.symbol_fn.symbol_to_string(this);
@@ -525,6 +515,52 @@ mat.proto.iter = fn () {
   return i;
 }
 
+
+//----------------------------------------------------------------------
+// slices
+slice = new(type);
+slice.proto = new();
+slice.proto.string = fn () {
+  s = this.begin.string() + ":" + this.step.string() + ":";
+  if (has(this, \end))
+    s += this.end.string();
+  return s;
+}
+slice.proto.iter = fn () {
+  // 'this' slice must have an upper bound
+  if (!has(this, \end))
+    error("a slice is only iterable if it has an upper bound");
+  if (this.step == 0)
+    error("a slice must have non-zero step size");
+  i = new();
+  i.counter = this.begin;
+  i.step    = this.step;
+  i.bound   = this.end;
+  i.done = fn () if (i.step>0) this.counter >= this.bound 
+                 else this.counter <= this.bound;
+  i.next = fn () this.counter += this.step;
+  i.get = fn () this.counter;
+  return i;
+}
+slice(int:begin, int:step) = {
+  s = new(slice);
+  s.begin = begin;
+  s.step = step;
+  return s;
+}
+slice(int:begin, int:step, int:end) = {
+  s = slice(begin, step);
+  s.end = end;
+  return s;
+}
+idx = fn (i, len) {
+  if (i >= len || -i > len)
+    error("index out of bounds");
+  if (i < 0) i = len + i;
+  return i;
+}
+
+
 //----------------------------------------------------------------------
 // tuples
 tuple(int:len) = modules.tuple_fn.tuple_new(len);
@@ -557,6 +593,8 @@ rm(tuple.proto, \extend);  // otherwise we can't overload
 // member access, e.g. t(0)
 tuple.proto(int:i) = static.get(i); // member access, e.g. t(0)
 // slices, e.g. t(1:3)
+tuple.proto(slice:s) = static(list(s, static.len()));
+// list of indices, e.g. t([1,3,6])
 tuple.proto(list:idx) = {
   t = tuple(idx.len());
   j = 0;
@@ -578,6 +616,29 @@ tuple.proto.extend = fn (signature, scope, rhs) {
 // lists
 list() = modules.list_fn.list_new();
 list(tuple:t) = modules.tuple_fn.tuple_to_list(t);
+list(slice:s, int:len) = {
+  // convert 's' to a list of indices smaller than 'len'
+  l = list();
+  i = idx(s.begin, len);  // negative indices are allowed
+  if (has(s, \end)) {
+    // note that s.end==len is allowed, i.e. we need to check for it,
+    // since 'idx' doesn't allow it
+    if (s.end != len) {
+      s.end = idx(s.end, len); // negative indices are allowed
+      len = s.end;
+    }
+  }
+  if (s.step == 0)
+    error("step size must be positive or negative but not zero");
+  sign = 1;
+  if (s.step < 0)
+    sign = -1;
+  while (sign*i < sign*len) {
+    l.push(i);
+    i += s.step;
+  }
+  return l;
+}
 list.literal(env, list:pl) = split_parselist(list().push(symbol(",")), env, pl);
 list.proto.string    = fn () modules.list_fn.list_to_string(this);
 list.proto.len       = fn () modules.list_fn.list_len(this);

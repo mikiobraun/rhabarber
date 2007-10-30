@@ -129,6 +129,29 @@ any_t list_get(list_it_t i)
 }
 
 
+list_t list_chop(list_t l, symbol_t s)
+// splits a list into several parts which form the returned list
+// if the symbol does not exist, the returned list is empty
+// if the provided list contains only the symbol two empty parts are returned
+{
+  list_t parts = list_new();
+  list_t part = list_new();
+  any_t head;
+  while ((head = list_popfirst(l))) {
+    if (ptype(head) == SYMBOL_T)
+      if (s == UNWRAP_SYMBOL(head)) {
+	// split here
+	list_append(parts, WRAP_PTR(LIST_T, part));
+	part = list_new();
+	continue;
+      }
+    list_append(part, head);
+  }
+  list_append(parts, WRAP_PTR(LIST_T, part));
+  return parts;
+}
+
+
 list_t list_chop_first(list_t l, symbol_t s)
 // splits a list into the part before the first appearance of symbol s
 // and after it, the symbol itself in the initial list will be lost

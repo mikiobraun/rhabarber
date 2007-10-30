@@ -1,3 +1,52 @@
+2007-10-30  Stefan Harmeling  <harmeling@gmail.com>
+
+	* prelude.rha: added a new datatype for 'slice', which is used to
+	access several elements of tuples and list and other stuff...
+
+	* object.c (unwrap_ptr, unwrap_builtin): added checks whether the
+	raw pointer contains something non-zero.  This is necessary since
+	the raw pointer of prototype object is zero and thus stuff like
+	the following breaks:
+
+	  string.proto + "test"    // bus error
+	  tuple.proto.get(0)       // bus error
+
+	* list_fn.h: added list_chop(), which chops a list into pieces at
+	the location of a certain symbol.
+
+	* prules.c (colon_pr): added better colon support.  All of the
+	following do now work, alongside with stuff like "int:17"...
+
+	  // (i) without step size
+          //       :               == 0:1:     (slice without bounds)
+	  //       :42             == 0:1:42   (slice with upper bound)
+	  //       17:             == 17:1:    (slice with lower bound)
+	  //       17:42           == 17:1:42  (slice with bounds)
+	  // (ii) with step size
+	  //       :2:             == 0:2:     (slice without bounds but with step)
+	  //       :2:10           == 0:2:10   (slice with upper bound and step)
+	  //       17:2:           == 17:2:    (slice with lower bound and step)
+	  //       17:2:42         == 17:2:42  (slice with bounds and step) 
+
+	Also negative numbers are accepted for slices:
+
+	   t = tuple(5);
+	   t(2:-2);
+
+	And negative step sizes
+
+	   t(-1:-1:0);
+
+	Looks like this doesn't work yet :(
+	
+	Also the colon can be used in loops like this:
+
+	  for (i in 17:42) print(i);
+	  for (i in 17:2:42) print(i);
+	  for (i in 17:-1:0) print(i);
+
+	
+
 2007-10-29  Stefan Harmeling  <harmeling@gmail.com>
 
 	* Makefile.am: added 

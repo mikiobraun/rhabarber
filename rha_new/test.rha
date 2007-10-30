@@ -117,7 +117,7 @@ x.set(1, 6);
 x.set(2, 7);
 x.set(3, 8);
 x.set(4, 9);
-y = 5:10;
+y = list(5:10, 10);
 check(y.len() == 5);
 for (i in 0:5)
   check(x.get(i) == y.shift());

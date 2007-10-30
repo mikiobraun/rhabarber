@@ -31,6 +31,7 @@ extern _rha_ void      list_next(list_it_t i);
 extern _rha_ any_t  list_get(list_it_t i);
 
 // only for parse.c and prules.c
+extern list_t list_chop(list_t l, symbol_t s);
 extern list_t list_chop_first(list_t l, symbol_t s);
 extern list_t list_chop_first_list(list_t l, glist_t *sym_list);
 extern list_t list_chop_last(list_t l, symbol_t s);
