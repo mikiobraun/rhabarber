@@ -246,3 +246,17 @@ check(mat:[1,2,3,4]);
 check(list:list[1,2,3,4]);
 check(tuple:tuple[1,2,3,4]);
 summarize();
+
+
+test("multi assign");
+[x, y] = [17, 42];
+check(x==17);
+check(y==42);
+[x, y] = [y, x];
+check(x==42);
+check(y==17);
+[a, b, c] = [3, 7, 5];
+check(a==3);
+check(b==7);
+check(c==5);
+summarize();

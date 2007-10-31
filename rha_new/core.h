@@ -26,10 +26,10 @@ extern _rha_ void      deliver_fn(any_t);
 extern _rha_ void      break_fn(any_t);
 extern _rha_ void      throw_fn(any_t);
 extern _rha_ any_t  while_fn(any_t this, any_t cond, any_t code);
-extern _rha_ any_t  for_fn(any_t this, symbol_t var, 
-			      any_t container, any_t code);
+extern _rha_ any_t  for_fn(any_t this, any_t var, 
+			   any_t container, any_t code);
 extern _rha_ any_t  try_fn(any_t this, any_t tryblock, 
-			      symbol_t catchvar, any_t catchblock);
+			   symbol_t catchvar, any_t catchblock);
 
 extern _rha_ any_t  colon_fn(any_t a, any_t b);
 

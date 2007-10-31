@@ -21,7 +21,7 @@
 //     return p;
 //   }
 //
-//   assign = modules.object.assign;
+//   assign_fn = modules.object.assign_fn;
 //   extend = modules.object.extend;
 
 // (1.2) more essential stuff
@@ -37,6 +37,7 @@ new(type:t) = {
 // to get an empty object with a certain parent pointer 
 // use 'clone'
 eval(x)  = eval(this, x);
+assign_many = modules.object.assign_many;
 clone    = modules.object.clone;
 rm       = modules.object.rm;
 ls       = modules.object.ls;
@@ -602,6 +603,7 @@ mat.proto.iter = fn () {
 // tuples
 tuple(int:len) = modules.tuple_fn.tuple_new(len);
 tuple(list:l) = modules.list_fn.list_to_tuple(l);
+tuple(iterable:l) = tuple(list(l));
 plus_fn(tuple:a, tuple:b) = {
   l = list();
   for (x in a)
@@ -649,8 +651,7 @@ tuple.proto.extend = fn (signature, scope, rhs) {
     // then the value is either iterable or considered constant for
     // all entries
     if (iterable:value)
-      //for ([i,v] in zip(index, value))
-      for (notyet in zip(index, value))
+      for ([i,v] in zip(index, value))
 	this.set(i, v);
     else
       // all entries get the same value
@@ -716,8 +717,25 @@ list.proto.iter     = fn () {
 rm(list.proto, \fn_data);
 list.proto(int:i) = tuple(static)(i);
 
+// zip two iterables to one list
+zip = fn (iterable:x, iterable:y) {
+  l = list();
+  x = list(x);
+  for (b in y) {
+    if (x.len() == 0)
+      error("both iterables must have same number of elements");
+    t = tuple(2);
+    t(0) = x.shift();
+    t(1) = b;
+    l.append(t);
+  }
+  if (x.len() != 0)
+    error("both iterables must have same number of elements");
+  return l;
+}
+
 // 'in' element test
-in_fn = fn (a, b) {
+in_fn = fn (a, iterable:b) {
   // checks whether a is in b
   for (x in b)
     if (a==x) return true;

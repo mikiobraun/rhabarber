@@ -555,7 +555,7 @@ $init_c_add_functions
 
   // (6.6) add essential stuff
   module = lookup(modules, symbol_new("object"));
-  assign(root, symbol_new("assign"), lookup(module, symbol_new("assign")));
+  assign(root, symbol_new("assign_fn"), lookup(module, symbol_new("assign_fn")));
   assign(root, symbol_new("extend"), lookup(module, symbol_new("extend")));
   module = lookup(modules, symbol_new("core"));
   assign(root, symbol_new("map_fn"), lookup(module, symbol_new("map_fn")));

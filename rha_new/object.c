@@ -346,6 +346,45 @@ any_t assign(any_t o, symbol_t s, any_t v)
   return v;
 }
 
+any_t assign_many(any_t o, tuple_t t, any_t v)
+{
+  // assign several symbols at once
+  
+  // check that all entries in the tuple are symbols
+  int tlen = tuple_len(t);
+  for (int i = 0; i < tlen; i++)
+    if (ptype(tuple_get(t, i)) != SYMBOL_T)
+      rha_error("assign_many must be called with tuple of symbols");
+  
+  // the RHS must be iterable
+  any_t iter = callslot(v, iter_sym, 0);
+  int i = 0;
+  while (!UNWRAP_BOOL(callslot(iter, done_sym, 0))) {
+    if (i >= tlen) {
+      rha_warning("some return values were not assigned");
+      break;
+    }
+    assign(o, UNWRAP_SYMBOL(tuple_get(t, i++)), 
+	   callslot(iter, get_sym, 0));
+    callslot(iter, next_sym, 0);
+  }
+  if (i < tlen) {
+    rha_error("too many return values requested");
+  }
+  return v;
+}
+
+
+any_t assign_fn(any_t obj, any_t a, any_t newobj)
+{
+  if (ptype(a) == SYMBOL_T)
+    return assign(obj, UNWRAP_SYMBOL(a), newobj);
+  else if (ptype(a) == TUPLE_T)
+    return assign_many(obj, UNWRAP_PTR(TUPLE_T, a), newobj);
+  else
+    rha_error("can't assign to %o", a);
+  assert(false);
+}
 
 bool_t is_void(any_t o)
 {

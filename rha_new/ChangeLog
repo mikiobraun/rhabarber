@@ -1,5 +1,41 @@
 2007-10-31  Stefan Harmeling  <harmeling@gmail.com>
 
+	* core.c (for_fn): minor adjustments to allow
+
+	for ([x,y] in zip(0:5, 5:10))
+	   print(x+y);
+
+	* prules.c (resolve_assign_prule): now also multiple values can be
+	assigned:
+
+	// MOST BASIC ASSIGNMENTS:
+	// x = 0            (assign_fn local \x 0)
+	// a.x = 0          (assign_fn a     \x 0)
+	// a(z).x = 0       (assign_fn (a z) \x 0)
+
+	// ASSIGNMENTS THAT OVERLOAD FUNCTIONS:
+	// f(x) = 0         (extend local \f \(x) local 0)
+	// a.f(x) = 0       (extend a     \f \(x) local 0)
+	// a(z).f(x) = 0    (extend (a z) \f \(x) local 0)
+
+	// ASSIGNMENTS WITH LIST LITERALS ON THE LHS:
+	// [x, y] = alist       (assign_fn local (\x \y) alist)
+	// a.[x, y] = alist     (assign_fn a     (\x \y) alist)
+	// a(z).[x, y] = alist  (assign_fn (a z) (\x \y) alist)
+	// only flat lists of symbols are allowed on LHS and the RHS must be iterable
+
+
+	* object.[ch]: added 'assign_fn' which calls:
+
+	    assign         for symbols, e.g. x = 17
+	    assign_many    for tuples of symbols, e.g. [x, y] = [17, 42]
+
+	* prelude.rha: added 'zip'
+
+	rha[0](-1)$ zip(0:5, 5:10)
+        [(0 5), (1 6), (2 7), (3 8), (4 9)]
+
+
 	* test.rha: added more test code for slices.
 
 	* prelude.rha: improved implementation of slices.  Since slices

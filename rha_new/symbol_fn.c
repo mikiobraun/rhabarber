@@ -50,6 +50,14 @@ string_t symbol_name(symbol_t s)
   return n;
 }
 
+bool_t symbol_valid(symbol_t s)
+{
+  // checks whether the symbol is valid as a rhabarber identifier
+  // everything but brackets () [] {} are stored as symbols
+  // only COMMA and SEMICOLON is not a valid identifier
+  return (s != symbol_new(",") && s != symbol_new(";"));
+}
+
 string_t symbol_to_string(symbol_t s)
 {
   return symbol_name(s);

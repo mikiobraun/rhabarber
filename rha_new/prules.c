@@ -203,6 +203,7 @@ any_t prule_new_freefix(){ return 0; }
 
 // forward declaration of helper functions
 
+tuple_t resolve_lhs_symbol_list(any_t env, list_t parsetree);
 tuple_t resolve_incdec_prule(any_t env, list_t parsetree);
 tuple_t resolve_infix_prule(any_t env, list_t parsetree,
 			    symbol_t prule_sym, symbol_t fun_sym, 
@@ -558,8 +559,11 @@ tuple_t for_pr(any_t env, list_t parsetree)
   if (list_len(part) < 3)
     rha_error("(parsing) second arg to 'for' must look like (x in l), found %o", obj);
   any_t s = list_popfirst(part);
-  if (ptype(s) != SYMBOL_T)
-    rha_error("(parsing) symbol expected, found %o", s);
+  if (ptype(s) != SYMBOL_T) {
+    if (ptype(s) != LIST_T)
+      rha_error("(for_pr) can't assign to %o", s);
+    s = WRAP_PTR(TUPLE_T, resolve_lhs_symbol_list(env, UNWRAP_PTR(LIST_T, s)));
+  }
   any_t in_o = list_popfirst(part);
   if (!in_o || !is_symbol(in_sym, in_o))
     rha_error("(parsing) 'in' expected, found %o", in_o);
@@ -815,6 +819,21 @@ any_t quoted(any_t obj)
 		  tuple_make(2, WRAP_SYMBOL(quote_sym), obj));
 }
 
+/* static bool_t isquotedsymbol(any_t obj) */
+/* { */
+/*   if (ptype(obj) != TUPLE_T) return false; */
+/*   tuple_t t = UNWRAP_PTR(TUPLE_T, obj); */
+/*   if (tuple_len(t) != 2) return false; */
+/*   any_t t0 = tuple_get(t, 0); */
+/*   if (ptype(t0) != SYMBOL_T) return false; */
+/*   symbol_t t0_s = UNWRAP_SYMBOL(t0); */
+/*   if (t0_s != quote_sym) return false; */
+/*   any_t t1 = tuple_get(t, 1); */
+/*   if (ptype(t1) != SYMBOL_T) return false; */
+/*   // all tests passed! */
+/*   return true; */
+/* } */
+
 any_t copy_expr(any_t expr)
 {
   // copy the structure (i.e. tuple and list structure)
@@ -973,14 +992,50 @@ tuple_t resolve_infix_prule_list(any_t env, list_t parsetree, glist_t *prule_sym
   return t;
 }
 
+tuple_t resolve_lhs_symbol_list(any_t env, list_t parsetree)
+{
+  list_popfirst(parsetree);  // remove 'squared_sym' for symbol list
+  // split the list by comma and check that every element is a symbol
+  list_t result = list_new();
+  any_t head = 0;
+  bool next_is_comma = false;
+  while ((head = list_popfirst(parsetree))) {
+    if (ptype(head) != SYMBOL_T)
+      rha_error("LHS must be flat list of symbols");
+    symbol_t head_s = UNWRAP_SYMBOL(head);
+    if (next_is_comma) {
+      if (head_s != comma_sym)
+	rha_error("symbols on LHS must be separated by commas");
+    }
+    else {
+      if (!symbol_valid(UNWRAP_SYMBOL(head)))
+	rha_error("the symbols in the list must be valid identifiers");
+      list_append(result, head);
+    }
+    next_is_comma = !next_is_comma;
+  }
+  if (!next_is_comma)
+    rha_error("list of symbols on LHS must not end with comma"); 
+  return list_to_tuple(result);
+}
+
 tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, glist_t *assign_sym_list)
 {
-  // x = 0            (assign local \x 0)
-  // a.x = 0          (assign a     \x 0)
-  // a(z).x = 0       (assign (a z) \x 0)
+  // MOST BASIC ASSIGNMENTS:
+  // x = 0            (assign_fn local \x 0)
+  // a.x = 0          (assign_fn a     \x 0)
+  // a(z).x = 0       (assign_fn (a z) \x 0)
+
+  // ASSIGNMENTS THAT OVERLOAD FUNCTIONS:
   // f(x) = 0         (extend local \f \(x) local 0)
   // a.f(x) = 0       (extend a     \f \(x) local 0)
   // a(z).f(x) = 0    (extend (a z) \f \(x) local 0)
+
+  // ASSIGNMENTS WITH LIST LITERALS ON THE LHS:
+  // [x, y] = alist       (assign_fn local (\x \y) alist)
+  // a.[x, y] = alist     (assign_fn a     (\x \y) alist)
+  // a(z).[x, y] = alist  (assign_fn (a z) (\x \y) alist)
+  // only flat lists of symbols are allowed on LHS and the RHS must be iterable
 
   // resolves the right-most assignment (could be = += -= *= /=)
 
@@ -995,6 +1050,7 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
   any_t scope = WRAP_SYMBOL(local_sym);
   any_t symb = 0;
   any_t signature = 0;
+  bool_t assign_many = false;
 
   // (1) analyse it
   any_t lhs = 0;
@@ -1002,11 +1058,9 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
     rha_error("(parsing) no rhs for assignment");
   if (list_len(lhs_l) == 0)
     rha_error("(parsing) no lhs for assignment");
-  else if (list_len(lhs_l) == 1) {
-    lhs = list_popfirst(lhs_l);
-  }
   else {
     // (1.1) do we have a rounded expression right-most?
+    //       (for overloading functions)
     any_t right_most = list_last(lhs_l);
     if (is_marked_list(rounded_sym, right_most)) {
       // something like f(x)=17
@@ -1014,31 +1068,50 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
       list_t signature_l = split_rounded_list_obj(right_most);
       signature = resolve_patterns(env, signature_l);
     }
+    // (1.2) do we have a squared expression right-most?
+    //       (for multiple assignments at once)
+    else if (is_marked_list(squared_sym, right_most)) {
+      // something like [x, y] = [17, 42]
+      
+      list_poplast(lhs_l); // remove the symbol list
+      list_append(lhs_l, 
+		  WRAP_PTR(TUPLE_T, 
+			   resolve_lhs_symbol_list(env, UNWRAP_PTR(LIST_T, right_most))));
+      assign_many = true;
+    }
     // now the right-most entry in 'lhs' should be a symbol
     // if not we get an error later on
     lhs = resolve(env, lhs_l);
   }
 
   // (2) there are two cases for the lhs:
-  // (2.1) x       ->  lhs == x
-  // (2.2) a.x     ->  lhs == (eval a \x)
-  
+  // (2.1) <x>       ->  lhs == <x>
+  // (2.2) a.<x>     ->  lhs == (eval a <x>)
+  // where <x> could be
+  //       * a symbol like 'x' (for x=0 and for f(x)=0)
+  //       * a flat list of symbols like '[x, y]' (for [x,y]=[17,42])
   if (ptype(lhs) == SYMBOL_T) {
     symb = quoted(lhs);
   }
   else if (ptype(lhs) == TUPLE_T) {
     tuple_t t = UNWRAP_PTR(TUPLE_T, lhs);
     int_t tlen = tuple_len(t);
-    if (tlen != 3)
-	rha_error("(parsing) can't assign to ", lhs);
+    if (tlen == 0)
+	rha_error("(parsing) can't assign to %o", lhs);
     any_t t0 = tuple_get(t, 0);
-    if (!t0 || ptype(t0) != SYMBOL_T || UNWRAP_SYMBOL(t0)!=eval_sym)
-      rha_error("(parsing) can't assign to ", lhs);
-    scope = tuple_get(t, 1);
-    symb  = tuple_get(t, 2);
+    if (t0 && ptype(t0) == SYMBOL_T && UNWRAP_SYMBOL(t0) == eval_sym) {
+      // must be something like: a.<x>
+      if (tlen != 3)
+	rha_error("(parsing) can't assign to %o", lhs);
+      scope = tuple_get(t, 1);
+      symb  = tuple_get(t, 2);
+    }
+    else {
+      symb = quoted(lhs);
+    }
   }
   else
-    rha_error("(parsing) can't assign to ", lhs);
+    rha_error("(parsing) can't assign to %o", lhs);
 
   // (2) to build the RHS we check whether the 'prule_sym' was
   // something else than 'equal_sym'
@@ -1073,8 +1146,10 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
     tuple_set(t, 5, quoted(rhs));
   }
   else {
-    // assign
+    // assign or assign_many
     if (prule_sym != equal_sym) {
+      if (assign_many)
+	rha_error("short-hand assignments like [x, y] += ... are not allowed");
       assert((prule_sym==plusequal_sym) 
 	     || (prule_sym==minusequal_sym)
 	     || (prule_sym==timesequal_sym)
@@ -1095,7 +1170,7 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
       rhs = WRAP_PTR(TUPLE_T, rhs_t);
     }
     t = tuple_new(4);
-    tuple_set(t, 0, WRAP_SYMBOL(assign_sym));
+    tuple_set(t, 0, WRAP_SYMBOL(assign_fn_sym));
     tuple_set(t, 1, scope);
     tuple_set(t, 2, symb);
     tuple_set(t, 3, rhs);

@@ -111,7 +111,7 @@ any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
   // it is only allowed at the end of a signature
   list_t signature_l = list_new();
   int i, tlen = tuple_len(signature);
-  for (i = 0; i < tuple_len(signature); i++) {
+  for (i = 0; i < tlen; i++) {
     any_t pattern = tuple_get(signature, i);
     any_t theliteral = lookup(pattern, patternliteral_sym);
     if (theliteral
@@ -292,13 +292,13 @@ any_t try_fn(any_t this, any_t tryblock, symbol_t catchvar, any_t catchblock)
 }
 
 
-any_t for_fn(any_t this, symbol_t var, any_t container, any_t body)
+any_t for_fn(any_t this, any_t var, any_t container, any_t body)
 {
   any_t res = 0;
   any_t iter = callslot(container, iter_sym, 0);
   begin_frame(LOOP_FRAME)
     while (!UNWRAP_BOOL(callslot(iter, done_sym, 0))) {
-      assign(this, var, callslot(iter, get_sym, 0));
+      assign_fn(this, var, callslot(iter, get_sym, 0));
       res = eval(this, body);
       callslot(iter, next_sym, 0);
     }

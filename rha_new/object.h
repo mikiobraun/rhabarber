@@ -99,6 +99,11 @@ extern _rha_ any_t   location(any_t l, symbol_t s);
 //       a.x = 42;  ->  assign(a, \x, 42);
 extern _rha_ any_t   assign(any_t obj, symbol_t s, any_t newobj);
 
+//       [x, y] = [17, 42];  ->  assign_many(local_sym, lhs, rhs);
+extern _rha_ any_t   assign_many(any_t obj, tuple_t t, any_t newobj);
+
+extern _rha_ any_t   assign_fn(any_t obj, any_t a, any_t newobj);
+
 extern _rha_ any_t   extend(any_t this, symbol_t s, tuple_t args, 
 			       any_t env, any_t value);
 
