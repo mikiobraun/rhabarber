@@ -10,6 +10,7 @@ extern _rha_ any_t  proxy_fn(any_t this, symbol_t s);
 
 extern _rha_ any_t  create_function(any_t fn_data);
 
+extern       any_t create_prepattern(any_t theliteral, any_t thetype);
 extern _rha_ any_t  create_pattern(int_t narg, ...);
 extern _rha_ any_t  vcreate_pattern(tuple_t args);
 extern _rha_ any_t  create_fn_data(any_t env, tuple_t argnames, 

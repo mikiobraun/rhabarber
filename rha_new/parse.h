@@ -5,7 +5,7 @@
 
 extern _rha_ any_t resolve(any_t root, list_t source);
 extern       any_t resolve_patterns(any_t env, list_t source);
-
+extern       any_t resolve_each(any_t env, list_t source);
 
 extern       void     parse_init(any_t root, any_t module);
 

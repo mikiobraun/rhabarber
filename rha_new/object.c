@@ -252,7 +252,7 @@ any_t vcreate_builtin(builtin_t code, bool_t varargs, int narg, va_list args)
   if (varargs) {
     // reserve a spot for the ellipsis
     signature = tuple_new(narg+1);
-    tuple_set(signature, narg, create_pattern(1, WRAP_SYMBOL(symbol_new("..."))));
+    tuple_set(signature, narg, WRAP_SYMBOL(symbol_new("...")));
   }
   else
     signature = tuple_new(narg);
@@ -263,7 +263,8 @@ any_t vcreate_builtin(builtin_t code, bool_t varargs, int narg, va_list args)
     assert(pt!=ANY_T || typeobjects[pt]==0);
     // note that 'theliteral' of the pattern is void
     // note that for pt==ANY_T also 'thetype' is void
-    tuple_set(signature, i, create_pattern(2, 0, typeobjects[pt]));
+    
+    tuple_set(signature, i, create_prepattern(0, quoted(typeobjects[pt])));
   }
 
   // create a new object and return it
@@ -411,6 +412,10 @@ any_t extend(any_t this, symbol_t s, tuple_t signature,
   // (2) does 'obj' have its own 'extend' mechanism (like tuples)?
   if (has(obj, extend_sym)) {
     // ignore the rest of this function and call it!
+    // but first evaluate the entries of the signature
+    int siglen = tuple_len(signature);
+    for (int i = 0; i < siglen; i++)
+      tuple_set(signature, i, eval(this, tuple_get(signature, i)));
     return callslot(obj, extend_sym, 3, WRAP_PTR(TUPLE_T, signature), env, rhs);
   }
 

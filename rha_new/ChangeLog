@@ -1,5 +1,13 @@
 2007-10-31  Stefan Harmeling  <harmeling@gmail.com>
 
+	* prelude.rha: now we can do stuff like:
+
+	t = tuple(10);
+	t(0:5) = 17;
+	t(6:10) = 6:10;
+
+	Almost, some little bugs remain.
+
 	* core.c (for_fn): minor adjustments to allow
 
 	for ([x,y] in zip(0:5, 5:10))

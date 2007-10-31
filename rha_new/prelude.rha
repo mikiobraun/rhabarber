@@ -25,6 +25,7 @@
 //   extend = modules.object.extend;
 
 // (1.2) more essential stuff
+print      = modules.object.print_fn;
 new      = modules.object.new;
 // let's overloaded that builtin function!!!
 new(type:t) = {
@@ -32,6 +33,7 @@ new(type:t) = {
   x.parent = t.proto;
   return x;
 }
+
 // note that if 't' doesn't have a slot 'proto' this code raises an 
 // look-up-failed exception, which is the intended behavior. 
 // to get an empty object with a certain parent pointer 
@@ -69,7 +71,6 @@ return_fn  = no_frame(modules.core.return_fn);
 deliver_fn = no_frame(modules.core.deliver_fn);
 break_fn   = no_frame(modules.core.break_fn); 
 throw_fn   = no_frame(modules.core.throw_fn);
-print      = modules.object.print_fn;
 
 // (1.4) proxy and other useful stuff
 proxy = fn (s) root.modules.core.proxy_fn(this, s);
@@ -101,6 +102,7 @@ summarize = macro () {
   print(s);
 }
 runtest = fn () run(root, "test.rha");
+
 
 // typing stuff
 
@@ -149,7 +151,6 @@ isa = fn (x, t) {
     x = x.parent;
   }
 }
-
 
 // what is iterable?
 iterable = new(type);
@@ -229,6 +230,7 @@ split_parselist = fn (list:symlist, env, list:pl) {
   symlist.unshift(split);
   return sink;
 }
+
 
 // temporarily for testing purposes
 inc             = modules.object.inc;
@@ -529,14 +531,14 @@ mat.proto(int:i) = static.getl(i);
 mat.proto(int:i, int:j) = static.get(i, j);
 mat.proto.extend = fn (signature, scope, rhs) {
   if (signature.len() == 1) {
-    l = signature(0).patternliteral;
+    l = signature(0);
     value = eval(scope, rhs);
     this.setl(l, value);
     return value;
   }
   else if (signature.len() == 2) {
-    row = signature(0).patternliteral;
-    col = signature(1).patternliteral;
+    row = signature(0);
+    col = signature(1);
     value = real(eval(scope, rhs));
     this.set(row, col, value);
     return value;
@@ -645,11 +647,12 @@ tuple.proto(list:idx) = {
 tuple.proto.extend = fn (signature, scope, rhs) {
   if (signature.len() != 1)
     error("(tuple) invalid tuple index");
-  index = signature(0).patternliteral;
+  index = signature(0);
   value = eval(scope, rhs);
-  if (iterable:index)
+  if (iterable:index) {
     // then the value is either iterable or considered constant for
     // all entries
+    index = list(index, static.len()); // transform neg entries
     if (iterable:value)
       for ([i,v] in zip(index, value))
 	this.set(i, v);
@@ -657,6 +660,7 @@ tuple.proto.extend = fn (signature, scope, rhs) {
       // all entries get the same value
       for (i in index)
 	this.set(i, value);
+  }
   else
     // we only assign one value
     this.set(index, value);

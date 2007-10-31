@@ -459,7 +459,7 @@ any_t create_special_fn_data(any_t module, bool_t method,
   if (narg < 0) {
     // rhabarber function with variable argument list
     signature= tuple_new(1);
-    tuple_set(signature, 0, create_pattern(1, WRAP_SYMBOL(symbol_new("..."))));
+    tuple_set(signature, 0, WRAP_SYMBOL(symbol_new("...")));
     fnbody_l = list_new();
     list_append(fnbody_l, WRAP_SYMBOL(symbol_new("args")));
   }
@@ -473,10 +473,11 @@ any_t create_special_fn_data(any_t module, bool_t method,
       any_t theliteral = WRAP_SYMBOL(va_arg(ap, symbol_t));
       assert(theliteral);
       if (thetype) {
-	tuple_set(signature, i, create_pattern(2, theliteral, thetype));
+	any_t entry = create_prepattern(theliteral, thetype);
+	tuple_set(signature, i, entry);
       }
       else {
-	tuple_set(signature, i, create_pattern(1, theliteral));
+	tuple_set(signature, i, theliteral);
       }
       list_append(fnbody_l, theliteral);
     }

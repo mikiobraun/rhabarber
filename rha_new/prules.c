@@ -585,7 +585,7 @@ tuple_t fn_pr(any_t env, list_t parsetree)
   any_t obj = tuple_get(pre_t, 1);
   assert(obj && ptype(obj)==LIST_T);  // otherwise bug in resolve_freefix*
   list_t obj_l = UNWRAP_PTR(LIST_T, obj);
-  tuple_set(t, 2, resolve_patterns(env, obj_l));
+  tuple_set(t, 2, quoted(resolve_each(env, obj_l)));
   tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   //debug("(fn_pr) %o\n", WRAP_PTR(TUPLE_T, t));
   return t;
@@ -1066,7 +1066,7 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
       // something like f(x)=17
       list_poplast(lhs_l); // remove it
       list_t signature_l = split_rounded_list_obj(right_most);
-      signature = resolve_patterns(env, signature_l);
+      signature = resolve_each(env, signature_l);
     }
     // (1.2) do we have a squared expression right-most?
     //       (for multiple assignments at once)
@@ -1141,7 +1141,7 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
     tuple_set(t, 0, WRAP_SYMBOL(extend_sym));
     tuple_set(t, 1, scope);      // later on calling scope
     tuple_set(t, 2, symb);
-    tuple_set(t, 3, signature);
+    tuple_set(t, 3, quoted(signature));
     tuple_set(t, 4, WRAP_SYMBOL(local_sym));
     tuple_set(t, 5, quoted(rhs));
   }

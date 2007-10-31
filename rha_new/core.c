@@ -48,6 +48,16 @@ any_t proxy_fn(any_t this, symbol_t s)
   return obj;
 }
 
+any_t create_prepattern(any_t theliteral, any_t thetype)
+{
+  return WRAP_PTR(TUPLE_T, 
+		  tuple_make(4, WRAP_SYMBOL(colon_fn_sym), 
+			     thetype, 
+			     WRAP_INT(1), 
+			     theliteral));
+}
+
+
 any_t create_pattern(int_t narg, ...)
 {
   va_list ap;
@@ -107,17 +117,37 @@ any_t vcreate_pattern(tuple_t args)
 
 any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
 {
-  // check for ellipsis symbol
-  // it is only allowed at the end of a signature
+  // create patterns and check for ellipsis symbol along the way
+  // note that the ellipsis is only allowed at the end of a signature
   list_t signature_l = list_new();
   int i, tlen = tuple_len(signature);
   for (i = 0; i < tlen; i++) {
-    any_t pattern = tuple_get(signature, i);
-    any_t theliteral = lookup(pattern, patternliteral_sym);
+    any_t entry = tuple_get(signature, i);
+    any_t theliteral = entry;
+    any_t thetype = 0;
+    // entry is already resolved, we are looking for a call to the
+    // colon function
+    if (ptype(entry) == TUPLE_T) {
+      tuple_t entry_t = UNWRAP_PTR(TUPLE_T, entry);
+      if (tuple_len(entry_t) == 4) {
+	// (colon_fn int 1 x)
+	any_t entry_t0 = tuple_get(entry_t, 0);
+	if (ptype(entry_t0) == SYMBOL_T || UNWRAP_SYMBOL(entry_t0) == colon_fn_sym) {
+	  // we found something like 'int:x'
+	  thetype = tuple_get(entry_t, 1);
+	  theliteral = tuple_get(entry_t, 3);
+	}
+      }
+    }
     if (theliteral
 	&& ptype(theliteral) == SYMBOL_T
 	&& UNWRAP_SYMBOL(theliteral) == symbol_new("..."))
       break;
+    any_t pattern = 0;
+    if (thetype)
+      pattern = create_pattern(2, theliteral, eval(env, thetype));
+    else
+      pattern = create_pattern(1, theliteral);
     list_append(signature_l, pattern);
   }
   bool_t varargs = false;
@@ -125,9 +155,9 @@ any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
     rha_error("ellipsis (...) is only allowed at the end of a signature");
   }
   else if (i == tlen-1) {
-    signature = list_to_tuple(signature_l); // removes the ellipsis
     varargs = true;
   }
+  signature = list_to_tuple(signature_l); // removes the optional ellipsis
 
   // built fn_data entry
   any_t entry = new();

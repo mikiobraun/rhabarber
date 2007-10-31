@@ -106,6 +106,21 @@ any_t resolve(any_t env, list_t source)
     return resolve_dots_and_fn_calls(env, source);
 }
 
+
+any_t resolve_each(any_t env, list_t source)
+{
+  list_t sink = list_new();
+  any_t head = 0;
+  while ((head = list_popfirst(source))) {
+    if (ptype(head) == LIST_T)
+      list_append(sink, resolve(env, UNWRAP_PTR(LIST_T, head)));
+    else
+      list_append(sink, head);
+  }
+  return WRAP_PTR(TUPLE_T, list_to_tuple(sink));
+}
+
+
 // call a specific prule
 //
 // applies the associated function, resolves the arguments, and
@@ -329,6 +344,8 @@ any_t resolve_dots_and_fn_calls(any_t env, list_t source)
 
 any_t resolve_pattern(any_t env, list_t source)
 {
+  assert(false); // don't use this!
+
   // right now we only look for an optional type and a symbol
   list_t lhs = list_chop_first(source, symbol_new(":"));
   if (list_len(lhs) == 0)
@@ -351,6 +368,8 @@ any_t resolve_pattern(any_t env, list_t source)
 
 any_t resolve_patterns(any_t env, list_t source)
 {
+  assert(false); // don't use this!
+
   tuple_t t = tuple_new(list_len(source));
   any_t entry = 0;
   int i = 0;
