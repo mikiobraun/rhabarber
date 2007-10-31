@@ -149,6 +149,19 @@ isa = fn (x, t) {
   }
 }
 
+
+// what is iterable?
+iterable = new(type);
+iterable.check = fn (x) {
+  if (!has(x, \iter)) return false;
+  i = x.iter();
+  if (!has(i, \done)) return false;
+  if (!has(i, \next)) return false;
+  if (!has(i, \get)) return false;
+  return true;
+}
+
+
 // lazy 'and' and 'or'
 and_fn = macro (x, y) if (!eval(local, x)) false
                       else if (!eval(local, y)) false
@@ -320,11 +333,67 @@ builtin.proto.string = fn () modules.object.builtin_to_string(this);
 address.proto.string = fn () modules.object.address_to_string(this);
 
 
+//----------------------------------------------------------------------
+// slices
+slice = new(type);
+slice(int:begin, int:step) = {
+  s = new(slice);
+  s.begin = begin;
+  if (step == 0)
+    error("step size must be positive or negative but not zero");
+  s.step = step;
+  return s;
+}
+slice(int:begin, int:step, int:end) = {
+  s = slice(begin, step);
+  s.end = end;
+  return s;
+}
+slice.proto = new();
+slice.proto.string = fn () {
+  s = this.begin.string() + ":" + this.step.string() + ":";
+  if (has(this, \end))
+    s += this.end.string();
+  return s;
+}
+slice.proto.iter = fn () {
+  // 'this' slice must have an upper bound
+  if (this.step > 0) {
+    // for positive steps an upper bound is required
+    if (!has(this, \end))
+      error("positive steps require upper bound to convert to list");
+    end = this.end;
+    sign = 1;
+  }
+  else {
+    if (has(this, \end))
+      end = this.end;
+    else
+      end = -1; // default for negative step size
+    sign = -1;
+  }
+  i = new();
+  i.counter = this.begin;
+  i.step    = this.step;
+  i.bound   = end;
+  i.done = fn () sign*this.counter >= sign*this.bound;
+  i.next = fn () this.counter += this.step;
+  i.get = fn () this.counter;
+  return i;
+}
+idx = fn (i, len) {
+  // convert negative indices to count from the end
+  if (i >= len || -i > len)
+    error("index out of bounds");
+  if (i < 0) i = len + i;
+  return i;
+}
+
+
 // bools
 bool.proto.string      = fn () modules.bool_fn.bool_to_string(this);
 not_fn(bool:x)         = modules.bool_fn.bool_not(x);
 //equalequal_fn(bool:x, bool:y) = modules.bool_fn.bool_equalequal(x, y);
-
 
 // strings
 string.proto.string         = fn () modules.string_fn.string_to_string(this);
@@ -335,6 +404,9 @@ string.proto.len = fn () modules.string_fn.string_len(this);
 string.proto.get = fn (int:i) modules.string_fn.string_get(this, i);
 string.proto.set = fn (int:i, string:v) modules.string_fn.string_set(this, i, v);
 string.proto(int:i) = static.get(i);
+// slices, e.g. s(1:3)
+string.proto(slice:s) = static(list(s, static.len()));
+// list of indices, e.g. s([1,3,6])
 string.proto(list:idx) = {
   s = "";
   for (i in idx)
@@ -411,8 +483,8 @@ cos(real:x) = modules.real_fn.real_cos(x);
 //equalequal_fn(int:x, real:y) = modules.real_fn.real_equalequal(real(x), y);
 //equalequal_fn(real:x, int:y) = modules.real_fn.real_equalequal(x, real(y));
 
-
-
+max(x, y) = if (x < y) y else x;
+min(x, y) = if (y < x) y else x;
 
 //----------------------------------------------------------------------
 // matrices
@@ -444,6 +516,14 @@ apostrophe_fn(mat:x) = modules.mat_fn.mat_transpose(x);
 mat.proto.string = fn () modules.mat_fn.mat_to_string(this);
 eye(int:n) = modules.mat_fn.mat_eye(n);
 mat(int:rows, int:cols) = modules.mat_fn.mat_new(rows, cols);
+mat(list:l) = {
+  // converts the list into a row vector
+  m = mat(1, l.len());
+  i = 0;
+  for (x in l)
+    m(i++) = x;
+  return m;
+}
 mat.proto(int:i) = static.getl(i);
 mat.proto(int:i, int:j) = static.get(i, j);
 mat.proto.extend = fn (signature, scope, rhs) {
@@ -516,49 +596,6 @@ mat.proto.iter = fn () {
 }
 
 
-//----------------------------------------------------------------------
-// slices
-slice = new(type);
-slice.proto = new();
-slice.proto.string = fn () {
-  s = this.begin.string() + ":" + this.step.string() + ":";
-  if (has(this, \end))
-    s += this.end.string();
-  return s;
-}
-slice.proto.iter = fn () {
-  // 'this' slice must have an upper bound
-  if (!has(this, \end))
-    error("a slice is only iterable if it has an upper bound");
-  if (this.step == 0)
-    error("a slice must have non-zero step size");
-  i = new();
-  i.counter = this.begin;
-  i.step    = this.step;
-  i.bound   = this.end;
-  i.done = fn () if (i.step>0) this.counter >= this.bound 
-                 else this.counter <= this.bound;
-  i.next = fn () this.counter += this.step;
-  i.get = fn () this.counter;
-  return i;
-}
-slice(int:begin, int:step) = {
-  s = new(slice);
-  s.begin = begin;
-  s.step = step;
-  return s;
-}
-slice(int:begin, int:step, int:end) = {
-  s = slice(begin, step);
-  s.end = end;
-  return s;
-}
-idx = fn (i, len) {
-  if (i >= len || -i > len)
-    error("index out of bounds");
-  if (i < 0) i = len + i;
-  return i;
-}
 
 
 //----------------------------------------------------------------------
@@ -608,7 +645,21 @@ tuple.proto.extend = fn (signature, scope, rhs) {
     error("(tuple) invalid tuple index");
   index = signature(0).patternliteral;
   value = eval(scope, rhs);
-  this.set(index, value);
+  if (iterable:index)
+    // then the value is either iterable or considered constant for
+    // all entries
+    if (iterable:value)
+      //for ([i,v] in zip(index, value))
+      for (notyet in zip(index, value))
+	this.set(i, v);
+    else
+      // all entries get the same value
+      for (i in index)
+	this.set(i, value);
+  else
+    // we only assign one value
+    this.set(index, value);
+  // that's it
   return value;
 }
 
@@ -616,28 +667,27 @@ tuple.proto.extend = fn (signature, scope, rhs) {
 // lists
 list() = modules.list_fn.list_new();
 list(tuple:t) = modules.tuple_fn.tuple_to_list(t);
-list(slice:s, int:len) = {
-  // convert 's' to a list of indices smaller than 'len'
+list(iterable:s) = {
+  // convert an interable to a list
   l = list();
-  i = idx(s.begin, len);  // negative indices are allowed
-  if (has(s, \end)) {
-    // note that s.end==len is allowed, i.e. we need to check for it,
-    // since 'idx' doesn't allow it
-    if (s.end != len) {
-      s.end = idx(s.end, len); // negative indices are allowed
-      len = s.end;
-    }
-  }
-  if (s.step == 0)
-    error("step size must be positive or negative but not zero");
-  sign = 1;
-  if (s.step < 0)
-    sign = -1;
-  while (sign*i < sign*len) {
-    l.push(i);
-    i += s.step;
-  }
+  for (i in s)
+    l.append(i);
   return l;
+}
+list(slice:s, int:len) = {
+  // convert 's' to a list
+  // and resolve negative to count from the back of an array of length
+  // 'len'
+  begin = idx(s.begin, len);
+  if (has(s, \end) && s.end != len) {
+    // note the 's.end != len' check
+    // it is necessary since 'len' is itself not a valid index into an
+    // array of size 'len'
+    end = idx(s.end, len);
+  }
+  else
+    end = len;
+  return list(slice(begin, s.step, end));
 }
 list.literal(env, list:pl) = split_parselist(list().push(symbol(",")), env, pl);
 list.proto.string    = fn () modules.list_fn.list_to_string(this);
@@ -679,17 +729,6 @@ in_fn = fn (a, b) {
 //   pattern.proto = new();   // in rha_init.c
 // a pattern constructor
 
-// what is iterable?
-iterable = new(type);
-iterable.check = fn (x) {
-  if (!has(x, \iter)) return false;
-  i = x.iter();
-  if (!has(i, \done)) return false;
-  if (!has(i, \next)) return false;
-  if (!has(i, \get)) return false;
-  return true;
-}
-
 // what is comparable?
 comparable = new(type);
 comparable.check = fn (x) {
@@ -704,7 +743,10 @@ comparable.check = fn (x) {
   return true;
 }
 
-//////////////////////////////
+
+//////////////////
+// EXPERIMENTAL //
+//////////////////
 pretty(code) = {
   if (tuple:code) {
     if (code(0) == \plus_sym)

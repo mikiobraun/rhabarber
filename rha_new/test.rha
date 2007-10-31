@@ -46,6 +46,14 @@ check(17+42 == 59);
 check(17-42 == -25);
 check(17*42 == 714);
 check(42/17 == 2);
+check(max(17, 42) == 42);
+check(min(17, 42) == 17);
+check(max(17, -42) == 17);
+check(min(17, -42) == -42);
+check(max(-17, 42) == 42);
+check(min(17, -42) == -42);
+check(max(-17, -42) == -17);
+check(min(-17, -42) == -42);
 summarize();
 
 test("tuple test");
@@ -121,6 +129,12 @@ y = list(5:10, 10);
 check(y.len() == 5);
 for (i in 0:5)
   check(x.get(i) == y.shift());
+check(list(0:10).len() == 10);
+check(list(0:3:10).len() == 4);
+check(list(0:-10).len() == 0);
+check(list(10:15).len() == 5);
+check(list(10:-1:5).len() == 5);
+check(list(10:-1:).len() == 11);
 summarize();
 
 test("multiple arguments");

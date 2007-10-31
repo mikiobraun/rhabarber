@@ -1,3 +1,12 @@
+2007-10-31  Stefan Harmeling  <harmeling@gmail.com>
+
+	* test.rha: added more test code for slices.
+
+	* prelude.rha: improved implementation of slices.  Since slices
+	are iterable, everything should be done via iterators.  Examples
+	include list(slice:s) and list(slice:s, int:len).  Now all
+	variations of positive and negative indices should work.
+
 2007-10-30  Stefan Harmeling  <harmeling@gmail.com>
 
 	* prelude.rha: added a new datatype for 'slice', which is used to
