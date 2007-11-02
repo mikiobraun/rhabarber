@@ -39,6 +39,7 @@ new(type:t) = {
 // to get an empty object with a certain parent pointer 
 // use 'clone'
 eval(x)  = eval(this, x);
+assign   = modules.object.assign;
 assign_many = modules.object.assign_many;
 clone    = modules.object.clone;
 rm       = modules.object.rm;
@@ -46,8 +47,8 @@ ls       = modules.object.ls;
 new      = modules.object.new;
 has      = modules.object.has;
 lookup   = modules.object.lookup;
-	 lookup_local = modules.object.lookup_local;
-	 location = modules.object.location;
+lookup_local = modules.object.lookup_local;
+location = modules.object.location;
 clone    = modules.object.clone;
 addr     = modules.object.addr;
 run      = modules.core.run_fn;
@@ -154,14 +155,7 @@ isa = fn (x, t) {
 
 // what is iterable?
 iterable = new(type);
-iterable.check = fn (x) {
-  if (!has(x, \iter)) return false;
-  i = x.iter();
-  if (!has(i, \done)) return false;
-  if (!has(i, \next)) return false;
-  if (!has(i, \get)) return false;
-  return true;
-}
+iterable.check = fn (x) has(x, \iter);
 
 
 // lazy 'and' and 'or'
@@ -649,17 +643,18 @@ tuple.proto.extend = fn (signature, scope, rhs) {
     error("(tuple) invalid tuple index");
   index = signature(0);
   value = eval(scope, rhs);
+  if (slice:index)
+    index = list(index, this.len()); // transform neg entries and bounds
   if (iterable:index) {
-    // then the value is either iterable or considered constant for
-    // all entries
-    index = list(index, static.len()); // transform neg entries
+    // the value is either iterable or considered constant for all entries
     if (iterable:value)
       for ([i,v] in zip(index, value))
 	this.set(i, v);
-    else
+    else {
       // all entries get the same value
       for (i in index)
 	this.set(i, value);
+    }
   }
   else
     // we only assign one value
@@ -681,17 +676,26 @@ list(iterable:s) = {
 }
 list(slice:s, int:len) = {
   // convert 's' to a list
-  // and resolve negative to count from the back of an array of length
-  // 'len'
+  // several cases:
+  //    list(5:1:10, 15)   == [5,6,7,8,9]
+  //    list(5:1:, 10)     == [5,6,7,8,9]
+  //    list(5:1:-1, 10)   == [5,6,7,8]   // because idx(-1, 10) == 9
+  //    list(5:-1:2, 10)   == [5,4,3]
+  //    list(5:-1:, 10)    == [5,4,3,2,1,0]
+  // resolve negative to count from the back of an array of length 'len'
   begin = idx(s.begin, len);
-  if (has(s, \end) && s.end != len) {
-    // note the 's.end != len' check
-    // it is necessary since 'len' is itself not a valid index into an
-    // array of size 'len'
-    end = idx(s.end, len);
-  }
-  else
-    end = len;
+  if (has(s, \end))
+    if (s.end == len)
+      // this check is necessary, since 'idx' would raise
+      // 'out-of-bounds' for s.end==len
+      end = len;
+    else
+      end = idx(s.end, len);
+  else 
+    if (s.step > 0)
+      end = len;
+    else
+      end = -1;
   return list(slice(begin, s.step, end));
 }
 list.literal(env, list:pl) = split_parselist(list().push(symbol(",")), env, pl);

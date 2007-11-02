@@ -1,3 +1,19 @@
+2007-11-02  Stefan Harmeling  <harmeling@gmail.com>
+
+	* prelude.rha (iterable.check): simplified the check to only look
+	for 'iter' slot, since for slices we can only call 'iter' if we
+	provide a bound.
+
+	(tuple.proto.extend): now lists and slices are allowed to
+	manipulate tuples:
+
+	t = tuple(10);
+	t(list[1,2,3,4]) = 17;
+	t(0:2:) = 42;
+	t(6:-2:) = 77;        // puts automatically -1 as lower bound
+	t
+	(77 17 77 17 77 <void> 77 <void> 42 <void>)
+
 2007-10-31  Stefan Harmeling  <harmeling@gmail.com>
 
 	* prelude.rha: now we can do stuff like:
