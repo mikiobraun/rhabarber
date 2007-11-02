@@ -8,7 +8,12 @@
 real_t real_plus(real_t x, real_t y) { return x+y; }
 real_t real_minus(real_t x, real_t y) { return x-y; }
 real_t real_times(real_t x, real_t y) { return x*y; }
-real_t real_divide(real_t x, real_t y) { return x/y; }
+real_t real_divide(real_t x, real_t y) { 
+  if (y==0.0)
+    rha_error("real-number division by zero");
+  else
+    return x/y; 
+}
 real_t real_neg(real_t x) { return -x; }
 bool_t real_equalequal(real_t x, real_t y) { return x==y; }
 bool_t real_notequal(real_t x, real_t y) { return x!=y; }
