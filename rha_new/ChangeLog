@@ -1,5 +1,9 @@
 2007-11-02  Stefan Harmeling  <harmeling@gmail.com>
 
+	* core.c (create_pattern): simplified the calling signature, which
+	used to have arbitrary many arguments, which was unnecessary.  Now
+	it takes two: 'theliteral' and 'thetype'.
+
 	* prules.c (resolve_freefix_prule2): changed assertion to check,
 	since with 'f(x) if 17' it can happen that the next prule to apply
 	is 'if' but it is not the first in the parsetree.

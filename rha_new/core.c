@@ -50,6 +50,8 @@ any_t proxy_fn(any_t this, symbol_t s)
 
 any_t create_prepattern(any_t theliteral, any_t thetype)
 {
+  // the prepattern is created on the parse level.
+  // later the type is EVALuated to the actual type, e.g. (int+real):x
   return WRAP_PTR(TUPLE_T, 
 		  tuple_make(3, WRAP_SYMBOL(colon_fn_sym), 
 			     thetype, 
@@ -57,18 +59,7 @@ any_t create_prepattern(any_t theliteral, any_t thetype)
 }
 
 
-any_t create_pattern(int_t narg, ...)
-{
-  va_list ap;
-  va_start(ap, narg);
-  tuple_t args = tuple_new(narg);
-  for (int i = 0; i < narg; i++)
-    tuple_set(args, i,va_arg(ap, any_t));
-  va_end(ap);
-  return vcreate_pattern(args);
-}
-
-any_t vcreate_pattern(tuple_t args)
+any_t create_pattern(any_t theliteral, any_t thetype)
 {
   // what is a pattern?
   // x
@@ -77,30 +68,24 @@ any_t vcreate_pattern(tuple_t args)
   // 1
   // 1.0
   // anything that can be compared with other stuff
-  any_t theliteral = 0;
-  any_t thetype = 0;
-  int narg = tuple_len(args);
-  if (narg > 0) {
-    // check the type of the first argument by hand
-    theliteral = tuple_get(args, 0);
-    if (theliteral 
-	&& ptype(theliteral) != SYMBOL_T
-	&& ptype(theliteral) != BOOL_T
-	&& ptype(theliteral) != INT_T
-	&& ptype(theliteral) != REAL_T)
-      rha_error("(pattern) the arg must be symbol, bool, int or real");
-  }
-  if (narg > 1) {
+
+  // check the type of the literal
+  if (theliteral 
+      && ptype(theliteral) != SYMBOL_T
+      && ptype(theliteral) != BOOL_T
+      && ptype(theliteral) != INT_T
+      && ptype(theliteral) != REAL_T)
+    rha_error("(pattern) the arg must be symbol, bool, int or real");
+
+  if (thetype) {
     if (theliteral && ptype(theliteral) != SYMBOL_T)
       rha_error("(pattern) only symbols can be typed");
-    thetype = tuple_get(args, 1);
+
     // do type checking here by hand!
-    if (thetype && !has(thetype, check_sym))
+    if (!has(thetype, check_sym))
       rha_error("(pattern) the type does not have slot 'check'");
   }
-  if (narg > 2) {
-    rha_error("(pattern) can't create pattern");
-  }
+
   // note that both 'thetype' and 'theliteral' could be void.  this
   // happens for builtin function that only have ANY_T arguments
   // then the resulting 'pattern' is the empty object
@@ -144,9 +129,9 @@ any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
       break;
     any_t pattern = 0;
     if (thetype)
-      pattern = create_pattern(2, theliteral, eval(env, thetype));
+      pattern = create_pattern(theliteral, eval(env, thetype));
     else
-      pattern = create_pattern(1, theliteral);
+      pattern = create_pattern(theliteral, 0);
     list_append(signature_l, pattern);
   }
   bool_t varargs = false;
