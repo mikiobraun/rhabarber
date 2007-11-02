@@ -19,7 +19,7 @@ extern void rha_warning(const char *fmt, ...);
 extern void rha_error(const char *fmt, ...);
 extern void rha_errorloc(any_t expr, const char *fmt, ...);
 
-extern void sayhello();
-extern void saybye();
+extern void sayhello(void);
+extern void saybye(void);
 
 #endif

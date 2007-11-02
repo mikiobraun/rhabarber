@@ -4,7 +4,7 @@
 #include "rha_types.h"
 #include "glist.h"
 
-extern _rha_ list_t    list_new();
+extern _rha_ list_t    list_new(void);
 extern _rha_ list_t    list_copy(list_t l);
 extern _rha_ int_t     list_len(list_t l);
 extern _rha_ list_t    list_append(list_t, any_t o);

@@ -43,7 +43,7 @@ void object_init(any_t root, any_t module)
  *
  */
 
-any_t new()
+any_t new(void)
      // creates a new primitive object
 {
   any_t o = ALLOC_SIZE(sizeof(struct rha_object));

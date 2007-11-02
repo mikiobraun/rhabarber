@@ -12,6 +12,7 @@ int_t int_divide(int_t x, int_t y) {
     rha_error("integer division by zero");
   else
     return x/y; 
+  assert(false);
 }
 int_t int_neg(int_t x) { return -x; }
 bool_t int_equalequal(int_t x, int_t y) { return x==y; }

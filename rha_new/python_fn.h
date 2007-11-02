@@ -40,7 +40,7 @@ extern _rha_ string_t   python_to_string(pyobject_t o);
 extern _rha_ pyobject_t python_importmodule(string_t name);
 extern _rha_ void python_runstring(string_t command);
 
-extern _rha_ string_t python_getversion();
+extern _rha_ string_t python_getversion(void);
 
 extern       any_t  python_wrap(PyObject *po);
 extern _rha_ any_t  python_lookup(pyobject_t o, symbol_t name);

@@ -335,7 +335,7 @@ any_t for_fn(any_t this, any_t var, any_t container, any_t body)
 int tic_saved_sec;
 double tic_saved_time;
 
-void tic_fn()
+void tic_fn(void)
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -344,7 +344,7 @@ void tic_fn()
   tic_saved_time = tv.tv_usec * 1e-6;
 }
 
-real_t toc_fn()
+real_t toc_fn(void)
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);

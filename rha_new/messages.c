@@ -50,7 +50,7 @@ void rha_error(const char *fmt, ...)
 }
 
  
-void sayhello()
+void sayhello(void)
 {
   printf("\n"
 	 "Delicious rhabarber!\n"
@@ -60,7 +60,7 @@ void sayhello()
 }
 
 
-void saybye()
+void saybye(void)
 {
   printf("\nBye.\n");
 }

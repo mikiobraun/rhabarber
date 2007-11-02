@@ -195,10 +195,10 @@ void prules_init(any_t root, any_t module)
 
 // function to define simple prules
 // NOT YET
-any_t prule_new_infix(){ return 0; }
-any_t prule_new_prefix(){ return 0; }
-any_t prule_new_postfix(){ return 0; }
-any_t prule_new_freefix(){ return 0; }
+any_t prule_new_infix(void){ return 0; }
+any_t prule_new_prefix(void){ return 0; }
+any_t prule_new_postfix(void){ return 0; }
+any_t prule_new_freefix(void){ return 0; }
 
 
 // forward declaration of helper functions

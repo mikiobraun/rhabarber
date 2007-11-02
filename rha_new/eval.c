@@ -62,7 +62,7 @@ int frame_type[FRAME_MAX_NESTING];
 int frame_tos = -1;
 char *frame_names[] = { "function", "loop", "block", "try" };
 
-void _print_frames()
+void _print_frames(void)
 {
   fprintf(stderr, "FRAME[");
   for(int i = 0; i <= frame_tos; i++) {

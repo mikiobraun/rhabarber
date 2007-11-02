@@ -32,7 +32,7 @@ enum FRAME_TYPES {
 };
 
 extern char *frame_names[];
-extern void _print_frames();
+extern void _print_frames(void);
 
 extern int frame_tos;                           // frame counter
 // Note, that the frames would be better stored in a dynamic data

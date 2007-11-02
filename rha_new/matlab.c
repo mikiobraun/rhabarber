@@ -46,7 +46,7 @@ struct rhavt matlab_vt;
  * Forward declarations of static functions
  */ 
 static char *varid_asstring(char *, varid_t v);
-static void start_matlab_if_necessary();
+static void start_matlab_if_necessary(void);
 
 static object_t matlab_vt_lookup(object_t o, symbol_tr s);
 
@@ -69,7 +69,7 @@ void matlab_init(void)
   }
 }
 
-matlab_tr matlab_new()
+matlab_tr matlab_new(void)
 {
   matlab_tr newmatlab = object_new(matlab_type);
   newmatlab->eng = 0;
@@ -77,7 +77,7 @@ matlab_tr matlab_new()
 }
 
 
-static void start_matlab_if_necessary()
+static void start_matlab_if_necessary(void)
 {
   if(!matlab_domain->eng) {
     print("Starting Matlab engine...\n");
@@ -130,7 +130,7 @@ void matlab_evalstring(string_t msg)
   }
 }
 
-varid_t matlab_newvarid()
+varid_t matlab_newvarid(void)
 {
   return ++matlab_domain->varid_counter;
 }

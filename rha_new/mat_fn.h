@@ -53,7 +53,7 @@ extern _rha_ mat_t  mat_sinc(mat_t m);
 
 extern       void   mat_map(mat_t m, real_t (*f)(real_t ));
 extern       void   mat_fillfromarray(mat_t, real_t *array);
-extern       void   mat_fillwithfunction(mat_t, real_t (*f)());
+extern       void   mat_fillwithfunction(mat_t, real_t (*f)(void));
 
 extern _rha_ string_t mat_to_string(mat_t m);
 

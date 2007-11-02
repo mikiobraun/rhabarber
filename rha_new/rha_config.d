@@ -139,10 +139,3 @@ extern symbol_t domain_sym;
 #define WRAP_REAL(d)      (wrap_double(REAL_T, d))
 #define WRAP_BUILTIN(p)   (wrap_builtin(BUILTIN_T, p))
 #define WRAP_PTR(pt, p)   (wrap_ptr(pt, p))
-
-//EXPERIMENTAL
-int f(void);
-gsl_matrix * 
-gsl_matrix_alloc (const size_t n1, const size_t n2);
-double   gsl_matrix_get(const gsl_matrix * m, const size_t i, const size_t j);
-void    gsl_matrix_set(gsl_matrix * m, const size_t i, const size_t j, const double x);

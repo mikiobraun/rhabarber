@@ -6,7 +6,7 @@
 extern char *yytext;
 extern int yyleng;
 extern void beginstringparse(const char *s);
-extern void endparse();
+extern void endparse(void);
 extern void beginfileparse(FILE *);
 
 extern int fileno(FILE *);

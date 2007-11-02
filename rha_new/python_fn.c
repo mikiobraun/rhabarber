@@ -28,7 +28,7 @@ static char python_version[PYTHON_VERSION_LENGTH];
 
 static any_t python_domain;
 
-static void start_python_if_necessary()
+static void start_python_if_necessary(void)
 {
   if (!python_started) {
     print("--starting Python\n");

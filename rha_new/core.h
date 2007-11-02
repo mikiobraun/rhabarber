@@ -35,8 +35,8 @@ extern _rha_ any_t  colon_fn(any_t a, any_t b);
 
 extern _rha_ any_t  literal(any_t env, list_t parsetree);
 
-extern _rha_ void   tic_fn();
-extern _rha_ real_t toc_fn();
+extern _rha_ void   tic_fn(void);
+extern _rha_ real_t toc_fn(void);
 extern _rha_ void   exit_fn(int_t);
 extern _rha_ any_t  run_fn(any_t root, string_t fname);
 

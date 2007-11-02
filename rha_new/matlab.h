@@ -25,7 +25,7 @@ extern matlab_tr matlab_domain;
 
 extern void matlab_init(void);
 
-extern varid_t matlab_newvarid();
+extern varid_t matlab_newvarid(void);
 extern void matlab_clear(varid_t vi);
 extern void matlab_put(varid_t vi, mxArray *a);
 extern mxArray *matlab_get(varid_t vi);
@@ -37,7 +37,7 @@ extern string_t matlab_varidname(varid_t vi);
  * "constructors" because they do not take an object argument
  */ 
 
-extern constructor matlab_tr matlab_new();
+extern constructor matlab_tr matlab_new(void);
 extern constructor void matlab_evalstring(string_t);
 
 extern constructor object_t matlab_newinteger(int i);

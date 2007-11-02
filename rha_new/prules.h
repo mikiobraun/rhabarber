@@ -18,10 +18,10 @@ extern       glist_t  cmp_sym_list;    // a list with < <= > >= == !=
 extern       glist_t  sec_sym_list;    // a list with 'else', 'catch'
 
 // function to define common prules
-extern _rha_ any_t prule_new_infix();
-extern _rha_ any_t prule_new_prefix();
-extern _rha_ any_t prule_new_postfix();
-extern _rha_ any_t prule_new_freefix();
+extern _rha_ any_t prule_new_infix(void);
+extern _rha_ any_t prule_new_prefix(void);
+extern _rha_ any_t prule_new_postfix(void);
+extern _rha_ any_t prule_new_freefix(void);
 
 // predefined prules
 extern _rha_ tuple_t curlied_pr(any_t env, list_t parsetree);

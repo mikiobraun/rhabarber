@@ -41,19 +41,17 @@ close(FILE);
 $input = join '', @input;
 
 # parse the def file
-$input =~ /\/\/MODULES\s*\n(.*)\/\/TYPES\s*\n(.*)\/\/SYMBOLS\s*\n(.*)\/\/MACROS\s*\n(.*)\/\/EXPERIMENTAL\s*\n(.*)/s;
+$input =~ /\/\/MODULES\s*\n(.*)\/\/TYPES\s*\n(.*)\/\/SYMBOLS\s*\n(.*)\/\/MACROS\s*\n(.*)/s;
 $modules = $1;
 $types   = $2;
 $symbols = $3;
 $macros  = $4;
-$prules  = $5;
 
 # (0) remove comments
 $modules =~ s/\/\/[^\n]*//g;
 $types =~ s/\/\/[^\n]*//g;
 $symbols =~ s/\/\/[^\n]*//g;
 $macros =~ s/\/\/[^\n]*//g;
-$prules =~ s/\/\/[^\n]*//g;
 
 # (1) disect the includes
 @mods = $modules =~ /include\s+\"($id)\.h\"/gox;
@@ -133,6 +131,7 @@ foreach $module (@mods) {
 	}
 
 	$ellipses = 0; # == false
+	$voidargs = 0; # == false
 	foreach $arg (@args) {
 	    if (!$typeset{$arg}) {
 		if ($arg eq "...") {
@@ -142,10 +141,18 @@ foreach $module (@mods) {
 		    # about it...
 		    $ellipses = 1; # == true
 		}
-		else {
+		elsif ($arg eq "void") {
+		    $voidargs = 1; # == true
+		}
+		else{
 		    die "type error: arg type '$arg' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
 		}
 	    }
+	}
+	if ($voidargs) {
+	    # remove it
+	    @args = ();
+	    $narg = 0;
 	}
 	# add a symbol for the function
 	push(@symbs, $fnname);
@@ -321,13 +328,14 @@ sub create_symbols {
     }
 
     # set up flags for duplicate removal
+    my %printed;
     for (@symbs) { $printed{$_} = 0 }
     foreach $item (@symbs) {
 	if ($printed{$item} == 0) {
 	    $type_h_symbols .= "extern symbol_t $item"."_sym;\n";
 	    $init_c_symbols .= "symbol_t $item"."_sym;\n";
 	    $init_c_init_symbols .= "  $item"."_sym = symbol_new(\"$item\");\n";
-	    $printed{$item} == 1;
+	    $printed{$item} = 1;
 	}
     }
 }
@@ -385,7 +393,7 @@ sub create_init_h {
 // (1) includes
 $init_h_modules
 // (2) 'rha_init' creates the whole object hierarchy
-extern any_t rha_init();
+extern any_t rha_init(void);
 ENDE
 }
 
@@ -492,7 +500,7 @@ any_t create_special_fn_data(any_t module, bool_t method,
 			WRAP_PTR(TUPLE_T, list_to_tuple(fnbody_l)));
 }
 
-any_t rha_init()
+any_t rha_init(void)
 {
   // (6.0) prototypes (TYPES)
   fn_data_proto = new();

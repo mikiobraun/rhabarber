@@ -8,7 +8,7 @@
 #include "string_fn.h"
 #include "messages.h"
 
-list_t list_new()
+list_t list_new(void)
 {
   list_t l = ALLOC_SIZE(sizeof(struct glist));
   glist_init(l);

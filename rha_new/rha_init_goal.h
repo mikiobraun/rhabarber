@@ -5,11 +5,21 @@
 // (1) includes
 #include "object.h"
 #include "eval.h"
-#include "core.h"
-#include "bool_fn.h"
+#include "core.h"   
+#include "prules.h" 
+#include "parse.h"
+#include "symbol_fn.h"
+#include "tuple_fn.h"
+#include "list_fn.h"
 #include "int_fn.h"
 #include "real_fn.h"
+#include "string_fn.h"
+#include "bool_fn.h"
 #include "mat_fn.h"
+#include "messages.h"
+#include "python_fn.h"
+#include <gsl/gsl_matrix_double.h>
 
-// (2) 
-extern object_t rha_init();
+
+// (2) 'rha_init' creates the whole object hierarchy
+extern any_t rha_init(void);

@@ -3,113 +3,1888 @@
 // Instead edit 'rha_config.d'.
 
 #include <stdarg.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
 #include "alloc.h"
+#include "eval.h"
+#include "tuple_fn.h"
+#include "list_fn.h"
 #include "rha_init.h"
 
 // (1) symbols
+symbol_t parent_sym;
+symbol_t proto_sym;
+symbol_t do_sym;
 symbol_t quote_sym;
+symbol_t type_sym;
+symbol_t ptype_sym;
 symbol_t this_sym;
+symbol_t static_sym;
 symbol_t root_sym;
 symbol_t local_sym;
+symbol_t void_sym;
+symbol_t fn_data_sym;
+symbol_t scope_sym;
+symbol_t signature_sym;
+symbol_t argnames_sym;
+symbol_t fnbody_sym;
+symbol_t priority_sym;
+symbol_t hasproxy_sym;
+symbol_t iter_sym;
+symbol_t done_sym;
+symbol_t get_sym;
+symbol_t next_sym;
+symbol_t msg_sym;
+symbol_t ismacro_sym;
+symbol_t check_sym;
+symbol_t name_sym;
+symbol_t args_sym;
+symbol_t varargs_sym;
+symbol_t no_frame_sym;
+symbol_t patternliteral_sym;
+symbol_t patterntype_sym;
 symbol_t modules_sym;
-symbol_t symbol_sym;
-symbol_t int_sym;
+symbol_t keywords_sym;
+symbol_t prules_sym;
+symbol_t curlied_sym;
+symbol_t squared_sym;
+symbol_t rounded_sym;
+symbol_t tuple_forced_sym;
+symbol_t method_call_sym;
+symbol_t not_fn_sym;
+symbol_t and_fn_sym;
+symbol_t or_fn_sym;
+symbol_t plus_fn_sym;
+symbol_t minus_fn_sym;
+symbol_t neg_fn_sym;
+symbol_t times_fn_sym;
+symbol_t divide_fn_sym;
+symbol_t dottimes_fn_sym;
+symbol_t dotdivide_fn_sym;
+symbol_t equalequal_fn_sym;
+symbol_t notequal_fn_sym;
+symbol_t less_fn_sym;
+symbol_t lessequal_fn_sym;
+symbol_t greater_fn_sym;
+symbol_t greaterequal_fn_sym;
+symbol_t pattern_sym;
+symbol_t apostrophe_fn_sym;
+symbol_t domain_sym;
+symbol_t object_sym;
+symbol_t new_sym;
+symbol_t addr_sym;
+symbol_t clone_sym;
+symbol_t ptypename_sym;
+symbol_t print_fn_sym;
+symbol_t vprint_fn_sym;
+symbol_t to_string_sym;
+symbol_t builtin_to_string_sym;
+symbol_t address_to_string_sym;
+symbol_t ls_sym;
+symbol_t inc_sym;
+symbol_t dec_sym;
+symbol_t inc_copy_sym;
+symbol_t dec_copy_sym;
+symbol_t lookup_sym;
+symbol_t lookup_local_sym;
+symbol_t pcheck_sym;
+symbol_t is_void_sym;
+symbol_t location_sym;
+symbol_t assign_sym;
+symbol_t assign_many_sym;
+symbol_t assign_fn_sym;
+symbol_t extend_sym;
+symbol_t has_sym;
+symbol_t rm_sym;
+symbol_t include_sym;
+symbol_t subscribe_sym;
 symbol_t eval_sym;
+symbol_t callslot_sym;
+symbol_t vcallslot_sym;
+symbol_t pattern_lessthan_sym;
+symbol_t signature_lessthan_sym;
+symbol_t fn_data_entry_lessthan_sym;
+symbol_t core_sym;
+symbol_t proxy_fn_sym;
+symbol_t create_function_sym;
+symbol_t create_pattern_sym;
+symbol_t create_fn_data_sym;
+symbol_t create_fn_data_entry_sym;
+symbol_t fn_fn_sym;
+symbol_t macro_fn_sym;
+symbol_t if_fn_sym;
+symbol_t return_fn_sym;
+symbol_t deliver_fn_sym;
+symbol_t break_fn_sym;
+symbol_t throw_fn_sym;
+symbol_t while_fn_sym;
+symbol_t for_fn_sym;
+symbol_t try_fn_sym;
+symbol_t colon_fn_sym;
+symbol_t literal_sym;
+symbol_t tic_fn_sym;
+symbol_t toc_fn_sym;
+symbol_t exit_fn_sym;
+symbol_t run_fn_sym;
+symbol_t map_fn_sym;
+symbol_t prule_new_infix_sym;
+symbol_t prule_new_prefix_sym;
+symbol_t prule_new_postfix_sym;
+symbol_t prule_new_freefix_sym;
+symbol_t curlied_pr_sym;
+symbol_t squared_pr_sym;
+symbol_t apostrophe_pr_sym;
+symbol_t plusplus_pr_sym;
+symbol_t minusminus_pr_sym;
+symbol_t not_pr_sym;
+symbol_t divide_pr_sym;
+symbol_t times_pr_sym;
+symbol_t dotdivide_pr_sym;
+symbol_t dottimes_pr_sym;
+symbol_t prefix_minus_pr_sym;
+symbol_t minus_pr_sym;
+symbol_t plus_pr_sym;
+symbol_t colon_pr_sym;
+symbol_t in_pr_sym;
+symbol_t less_pr_sym;
+symbol_t lessequal_pr_sym;
+symbol_t greater_pr_sym;
+symbol_t greaterequal_pr_sym;
+symbol_t equalequal_pr_sym;
+symbol_t notequal_pr_sym;
+symbol_t and_pr_sym;
+symbol_t or_pr_sym;
+symbol_t return_pr_sym;
+symbol_t deliver_pr_sym;
+symbol_t break_pr_sym;
+symbol_t throw_pr_sym;
+symbol_t if_pr_sym;
+symbol_t try_pr_sym;
+symbol_t while_pr_sym;
+symbol_t for_pr_sym;
+symbol_t fn_pr_sym;
+symbol_t macro_pr_sym;
+symbol_t equal_pr_sym;
+symbol_t plusequal_pr_sym;
+symbol_t minusequal_pr_sym;
+symbol_t timesequal_pr_sym;
+symbol_t divideequal_pr_sym;
+symbol_t quote_pr_sym;
+symbol_t parse_sym;
+symbol_t resolve_sym;
+symbol_t symbol_fn_sym;
+symbol_t symbol_new_sym;
+symbol_t symbol_equalequal_sym;
+symbol_t symbol_name_sym;
+symbol_t symbol_to_string_sym;
+symbol_t symbol_valid_sym;
+symbol_t tuple_fn_sym;
+symbol_t tuple_new_sym;
+symbol_t tuple_len_sym;
+symbol_t tuple_get_sym;
+symbol_t tuple_set_sym;
+symbol_t tuple_to_list_sym;
+symbol_t tuple_to_string_sym;
+symbol_t tuple_make_sym;
+symbol_t vtuple_make_sym;
+symbol_t tuple_shift_sym;
+symbol_t list_fn_sym;
+symbol_t list_new_sym;
+symbol_t list_copy_sym;
+symbol_t list_len_sym;
+symbol_t list_append_sym;
+symbol_t list_prepend_sym;
+symbol_t list_extend_sym;
+symbol_t list_literal_sym;
+symbol_t list_to_tuple_sym;
+symbol_t list_to_string_sym;
+symbol_t list_first_sym;
+symbol_t list_last_sym;
+symbol_t list_popfirst_sym;
+symbol_t list_poplast_sym;
+symbol_t list_begin_sym;
+symbol_t list_done_sym;
+symbol_t list_next_sym;
+symbol_t list_get_sym;
+symbol_t int_fn_sym;
+symbol_t int_plus_sym;
+symbol_t int_minus_sym;
+symbol_t int_times_sym;
+symbol_t int_divide_sym;
+symbol_t int_neg_sym;
+symbol_t int_equalequal_sym;
+symbol_t int_notequal_sym;
+symbol_t int_less_sym;
+symbol_t int_lessequal_sym;
+symbol_t int_greater_sym;
+symbol_t int_greaterequal_sym;
+symbol_t int_cmp_sym;
+symbol_t int_cast_sym;
+symbol_t int_to_string_sym;
+symbol_t real_fn_sym;
+symbol_t real_plus_sym;
+symbol_t real_minus_sym;
+symbol_t real_times_sym;
+symbol_t real_divide_sym;
+symbol_t real_neg_sym;
+symbol_t real_equalequal_sym;
+symbol_t real_notequal_sym;
+symbol_t real_less_sym;
+symbol_t real_lessequal_sym;
+symbol_t real_greater_sym;
+symbol_t real_greaterequal_sym;
+symbol_t real_cmp_sym;
+symbol_t real_cast_sym;
+symbol_t real_exp_sym;
+symbol_t real_sin_sym;
+symbol_t real_cos_sym;
+symbol_t real_to_string_sym;
+symbol_t string_fn_sym;
+symbol_t string_copy_sym;
+symbol_t string_concat_sym;
+symbol_t string_len_sym;
+symbol_t string_equalequal_sym;
+symbol_t string_get_sym;
+symbol_t string_set_sym;
+symbol_t string_to_string_sym;
+symbol_t bool_fn_sym;
+symbol_t bool_equalequal_sym;
+symbol_t bool_to_string_sym;
+symbol_t bool_not_sym;
+symbol_t bool_or_sym;
+symbol_t bool_and_sym;
+symbol_t mat_fn_sym;
+symbol_t mat_new_sym;
+symbol_t mat_eye_sym;
+symbol_t mat_rand_sym;
+symbol_t mat_randn_sym;
+symbol_t mat_cols_sym;
+symbol_t mat_rows_sym;
+symbol_t mat_len_sym;
+symbol_t mat_copy_sym;
+symbol_t mat_get_sym;
+symbol_t mat_set_sym;
+symbol_t mat_getl_sym;
+symbol_t mat_setl_sym;
+symbol_t mat_norm_sym;
+symbol_t mat_max_sym;
+symbol_t mat_min_sym;
+symbol_t mat_scale_sym;
+symbol_t mat_transpose_sym;
+symbol_t mat_sort_sym;
+symbol_t mat_solve_sym;
+symbol_t mat_repmat_sym;
+symbol_t mat_reshape_sym;
+symbol_t mat_minus_sym;
+symbol_t mat_plus_mat_sym;
+symbol_t mat_minus_mat_sym;
+symbol_t mat_times_mat_sym;
+symbol_t mat_dottimes_mat_sym;
+symbol_t mat_dotdivide_mat_sym;
+symbol_t mat_plus_real_sym;
+symbol_t mat_minus_real_sym;
+symbol_t mat_times_real_sym;
+symbol_t mat_divide_real_sym;
+symbol_t real_plus_mat_sym;
+symbol_t real_minus_mat_sym;
+symbol_t real_times_mat_sym;
+symbol_t mat_exp_sym;
+symbol_t mat_sin_sym;
+symbol_t mat_sinc_sym;
+symbol_t mat_to_string_sym;
+symbol_t messages_sym;
+symbol_t warning_sym;
+symbol_t error_sym;
+symbol_t python_fn_sym;
+symbol_t python_init_sym;
+symbol_t python_newinteger_sym;
+symbol_t python_newreal_sym;
+symbol_t python_newstring_sym;
+symbol_t python_newtuple_sym;
+symbol_t python_newlist_sym;
+symbol_t python_tuple_setitem_sym;
+symbol_t python_tuple_getitem_sym;
+symbol_t python_list_setitem_sym;
+symbol_t python_list_getitem_sym;
+symbol_t python_getint_sym;
+symbol_t python_getreal_sym;
+symbol_t python_getstring_sym;
+symbol_t python_to_string_sym;
+symbol_t python_importmodule_sym;
+symbol_t python_runstring_sym;
+symbol_t python_getversion_sym;
+symbol_t python_lookup_sym;
+symbol_t python_callable_sym;
+symbol_t python_call_sym;
+symbol_t symbol_sym;
+symbol_t any_sym;
+symbol_t int_sym;
+symbol_t bool_sym;
+symbol_t tuple_sym;
+symbol_t builtin_sym;
+symbol_t real_sym;
+symbol_t mat_sym;
+symbol_t string_sym;
+symbol_t address_sym;
+symbol_t list_sym;
+symbol_t list_it_sym;
+symbol_t pyobject_sym;
+
 
 // (2) prototypes
-object_t int_obj;
-object_t int_proto;
-object_t real_obj;
-object_t real_proto;
+any_t prototypes[14];
+any_t fn_data_proto = 0;
+any_t implementation_proto = 0;
+any_t pattern_proto = 0;
+
 
 // (3) type objects
-object_t void_obj;
-object_t symbol_obj;
-object_t object_obj;
+any_t void_obj = 0;
+any_t typeobjects[14];
 
-// (4) functions
-//int_t int_plus(int_t, int_t);
-object_t b_int_plus(tuple_t t) {
-  return wrap(INT_T, int_proto, (void *) &int_plus(*RAW(int_t, tuple_get(t, 1)), *RAW(int_t, tuple_get(t, 2))));
+
+// (4) ptype names
+string_t ptype_names[] = {
+    "void",
+    "symbol",
+    "any",
+    "int",
+    "bool",
+    "tuple",
+    "builtin",
+    "real",
+    "mat",
+    "string",
+    "address",
+    "list",
+    "list_it",
+    "pyobject"
+};
+
+// (5) functions
+any_t b_new(tuple_t t) {
+  return new();
+}
+any_t b_addr(tuple_t t) {
+  return WRAP_PTR(ADDRESS_T, addr(tuple_get(t, 0)));
+}
+any_t b_clone(tuple_t t) {
+  return clone(tuple_get(t, 0));
+}
+any_t b_ptypename(tuple_t t) {
+  return WRAP_PTR(STRING_T, ptypename(tuple_get(t, 0)));
+}
+any_t b_print_fn(tuple_t t) {
+  int_t tlen = tuple_len(t);
+  tuple_t args = tuple_new(tlen-0);
+  for (int i=0; i<tlen; i++)
+    tuple_set(args, i-0, tuple_get(t, i));
+  vprint_fn(args);
+  return void_obj;
+}
+any_t b_vprint_fn(tuple_t t) {
+  vprint_fn(UNWRAP_PTR(TUPLE_T, tuple_get(t, 0)));
+  return void_obj;
+}
+any_t b_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, to_string(tuple_get(t, 0)));
+}
+any_t b_builtin_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, builtin_to_string(UNWRAP_BUILTIN(tuple_get(t, 0))));
+}
+any_t b_address_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, address_to_string(UNWRAP_PTR(ADDRESS_T, tuple_get(t, 0))));
+}
+any_t b_ls(tuple_t t) {
+  ls(tuple_get(t, 0));
+  return void_obj;
+}
+any_t b_equalequal_fn(tuple_t t) {
+  return WRAP_BOOL(equalequal_fn(tuple_get(t, 0), tuple_get(t, 1)));
+}
+any_t b_notequal_fn(tuple_t t) {
+  return WRAP_BOOL(notequal_fn(tuple_get(t, 0), tuple_get(t, 1)));
+}
+any_t b_inc(tuple_t t) {
+  return inc(tuple_get(t, 0));
+}
+any_t b_dec(tuple_t t) {
+  return dec(tuple_get(t, 0));
+}
+any_t b_inc_copy(tuple_t t) {
+  return inc_copy(tuple_get(t, 0));
+}
+any_t b_dec_copy(tuple_t t) {
+  return dec_copy(tuple_get(t, 0));
+}
+any_t b_lookup(tuple_t t) {
+  return lookup(tuple_get(t, 0), UNWRAP_SYMBOL(tuple_get(t, 1)));
+}
+any_t b_lookup_local(tuple_t t) {
+  return lookup_local(tuple_get(t, 0), UNWRAP_SYMBOL(tuple_get(t, 1)));
+}
+any_t b_check(tuple_t t) {
+  return WRAP_BOOL(check(tuple_get(t, 0), tuple_get(t, 1)));
+}
+any_t b_pcheck(tuple_t t) {
+  return WRAP_BOOL(pcheck(tuple_get(t, 0), tuple_get(t, 1)));
+}
+any_t b_is_void(tuple_t t) {
+  return WRAP_BOOL(is_void(tuple_get(t, 0)));
+}
+any_t b_location(tuple_t t) {
+  return location(tuple_get(t, 0), UNWRAP_SYMBOL(tuple_get(t, 1)));
+}
+any_t b_assign(tuple_t t) {
+  return assign(tuple_get(t, 0), UNWRAP_SYMBOL(tuple_get(t, 1)), tuple_get(t, 2));
+}
+any_t b_assign_many(tuple_t t) {
+  return assign_many(tuple_get(t, 0), UNWRAP_PTR(TUPLE_T, tuple_get(t, 1)), tuple_get(t, 2));
+}
+any_t b_assign_fn(tuple_t t) {
+  return assign_fn(tuple_get(t, 0), tuple_get(t, 1), tuple_get(t, 2));
+}
+any_t b_extend(tuple_t t) {
+  return extend(tuple_get(t, 0), UNWRAP_SYMBOL(tuple_get(t, 1)), UNWRAP_PTR(TUPLE_T, tuple_get(t, 2)), tuple_get(t, 3), tuple_get(t, 4));
+}
+any_t b_has(tuple_t t) {
+  return WRAP_BOOL(has(tuple_get(t, 0), UNWRAP_SYMBOL(tuple_get(t, 1))));
+}
+any_t b_rm(tuple_t t) {
+  rm(tuple_get(t, 0), UNWRAP_SYMBOL(tuple_get(t, 1)));
+  return void_obj;
+}
+any_t b_include(tuple_t t) {
+  include(tuple_get(t, 0), tuple_get(t, 1));
+  return void_obj;
+}
+any_t b_subscribe(tuple_t t) {
+  subscribe(tuple_get(t, 0), tuple_get(t, 1));
+  return void_obj;
+}
+any_t b_eval(tuple_t t) {
+  return eval(tuple_get(t, 0), tuple_get(t, 1));
+}
+any_t b_callslot(tuple_t t) {
+  int_t tlen = tuple_len(t);
+  tuple_t args = tuple_new(tlen-2);
+  for (int i=2; i<tlen; i++)
+    tuple_set(args, i-2, tuple_get(t, i));
+  return vcallslot(tuple_get(t, 0), UNWRAP_SYMBOL(tuple_get(t, 1)), args);
+}
+any_t b_vcallslot(tuple_t t) {
+  return vcallslot(tuple_get(t, 0), UNWRAP_SYMBOL(tuple_get(t, 1)), UNWRAP_PTR(TUPLE_T, tuple_get(t, 2)));
+}
+any_t b_pattern_lessthan(tuple_t t) {
+  return WRAP_BOOL(pattern_lessthan(tuple_get(t, 0), tuple_get(t, 1)));
+}
+any_t b_signature_lessthan(tuple_t t) {
+  return WRAP_BOOL(signature_lessthan(tuple_get(t, 0), tuple_get(t, 1)));
+}
+any_t b_fn_data_entry_lessthan(tuple_t t) {
+  return WRAP_BOOL(fn_data_entry_lessthan(tuple_get(t, 0), tuple_get(t, 1)));
+}
+any_t b_proxy_fn(tuple_t t) {
+  return proxy_fn(tuple_get(t, 0), UNWRAP_SYMBOL(tuple_get(t, 1)));
+}
+any_t b_create_function(tuple_t t) {
+  return create_function(tuple_get(t, 0));
+}
+any_t b_create_pattern(tuple_t t) {
+  return create_pattern(tuple_get(t, 0), tuple_get(t, 1));
+}
+any_t b_create_fn_data(tuple_t t) {
+  return create_fn_data(tuple_get(t, 0), UNWRAP_PTR(TUPLE_T, tuple_get(t, 1)), tuple_get(t, 2));
+}
+any_t b_create_fn_data_entry(tuple_t t) {
+  return create_fn_data_entry(tuple_get(t, 0), UNWRAP_PTR(TUPLE_T, tuple_get(t, 1)), tuple_get(t, 2));
+}
+any_t b_fn_fn(tuple_t t) {
+  return fn_fn(tuple_get(t, 0), UNWRAP_PTR(TUPLE_T, tuple_get(t, 1)), tuple_get(t, 2));
+}
+any_t b_macro_fn(tuple_t t) {
+  return macro_fn(UNWRAP_PTR(TUPLE_T, tuple_get(t, 0)), tuple_get(t, 1));
+}
+any_t b_if_fn(tuple_t t) {
+  return if_fn(tuple_get(t, 0), UNWRAP_BOOL(tuple_get(t, 1)), tuple_get(t, 2), tuple_get(t, 3));
+}
+any_t b_return_fn(tuple_t t) {
+  return_fn(tuple_get(t, 0));
+  return void_obj;
+}
+any_t b_deliver_fn(tuple_t t) {
+  deliver_fn(tuple_get(t, 0));
+  return void_obj;
+}
+any_t b_break_fn(tuple_t t) {
+  break_fn(tuple_get(t, 0));
+  return void_obj;
+}
+any_t b_throw_fn(tuple_t t) {
+  throw_fn(tuple_get(t, 0));
+  return void_obj;
+}
+any_t b_while_fn(tuple_t t) {
+  return while_fn(tuple_get(t, 0), tuple_get(t, 1), tuple_get(t, 2));
+}
+any_t b_for_fn(tuple_t t) {
+  return for_fn(tuple_get(t, 0), tuple_get(t, 1), tuple_get(t, 2), tuple_get(t, 3));
+}
+any_t b_try_fn(tuple_t t) {
+  return try_fn(tuple_get(t, 0), tuple_get(t, 1), UNWRAP_SYMBOL(tuple_get(t, 2)), tuple_get(t, 3));
+}
+any_t b_colon_fn(tuple_t t) {
+  return colon_fn(tuple_get(t, 0), tuple_get(t, 1));
+}
+any_t b_literal(tuple_t t) {
+  return literal(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1)));
+}
+any_t b_tic_fn(tuple_t t) {
+  tic_fn();
+  return void_obj;
+}
+any_t b_toc_fn(tuple_t t) {
+  return WRAP_REAL(toc_fn());
+}
+any_t b_exit_fn(tuple_t t) {
+  exit_fn(UNWRAP_INT(tuple_get(t, 0)));
+  return void_obj;
+}
+any_t b_run_fn(tuple_t t) {
+  return run_fn(tuple_get(t, 0), UNWRAP_PTR(STRING_T, tuple_get(t, 1)));
+}
+any_t b_map_fn(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, map_fn(tuple_get(t, 0), tuple_get(t, 1), UNWRAP_PTR(TUPLE_T, tuple_get(t, 2))));
+}
+any_t b_prule_new_infix(tuple_t t) {
+  return prule_new_infix();
+}
+any_t b_prule_new_prefix(tuple_t t) {
+  return prule_new_prefix();
+}
+any_t b_prule_new_postfix(tuple_t t) {
+  return prule_new_postfix();
+}
+any_t b_prule_new_freefix(tuple_t t) {
+  return prule_new_freefix();
+}
+any_t b_curlied_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, curlied_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_squared_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, squared_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_apostrophe_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, apostrophe_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_plusplus_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, plusplus_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_minusminus_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, minusminus_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_not_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, not_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_divide_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, divide_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_times_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, times_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_dotdivide_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, dotdivide_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_dottimes_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, dottimes_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_prefix_minus_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, prefix_minus_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_minus_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, minus_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_plus_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, plus_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_colon_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, colon_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_in_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, in_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_less_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, less_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_lessequal_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, lessequal_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_greater_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, greater_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_greaterequal_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, greaterequal_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_equalequal_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, equalequal_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_notequal_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, notequal_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_and_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, and_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_or_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, or_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_return_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, return_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_deliver_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, deliver_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_break_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, break_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_throw_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, throw_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_if_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, if_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_try_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, try_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_while_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, while_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_for_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, for_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_fn_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, fn_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_macro_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, macro_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_equal_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, equal_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_plusequal_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, plusequal_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_minusequal_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, minusequal_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_timesequal_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, timesequal_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_divideequal_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, divideequal_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_quote_pr(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, quote_pr(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_resolve(tuple_t t) {
+  return resolve(tuple_get(t, 0), UNWRAP_PTR(LIST_T, tuple_get(t, 1)));
+}
+any_t b_symbol_new(tuple_t t) {
+  return WRAP_SYMBOL(symbol_new(UNWRAP_PTR(STRING_T, tuple_get(t, 0))));
+}
+any_t b_symbol_equalequal(tuple_t t) {
+  return WRAP_BOOL(symbol_equalequal(UNWRAP_SYMBOL(tuple_get(t, 0)), UNWRAP_SYMBOL(tuple_get(t, 1))));
+}
+any_t b_symbol_name(tuple_t t) {
+  return WRAP_PTR(STRING_T, symbol_name(UNWRAP_SYMBOL(tuple_get(t, 0))));
+}
+any_t b_symbol_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, symbol_to_string(UNWRAP_SYMBOL(tuple_get(t, 0))));
+}
+any_t b_symbol_valid(tuple_t t) {
+  return WRAP_BOOL(symbol_valid(UNWRAP_SYMBOL(tuple_get(t, 0))));
+}
+any_t b_tuple_new(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, tuple_new(UNWRAP_INT(tuple_get(t, 0))));
+}
+any_t b_tuple_len(tuple_t t) {
+  return WRAP_INT(tuple_len(UNWRAP_PTR(TUPLE_T, tuple_get(t, 0))));
+}
+any_t b_tuple_get(tuple_t t) {
+  return tuple_get(UNWRAP_PTR(TUPLE_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1)));
+}
+any_t b_tuple_set(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, tuple_set(UNWRAP_PTR(TUPLE_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1)), tuple_get(t, 2)));
+}
+any_t b_tuple_to_list(tuple_t t) {
+  return WRAP_PTR(LIST_T, tuple_to_list(UNWRAP_PTR(TUPLE_T, tuple_get(t, 0))));
+}
+any_t b_tuple_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, tuple_to_string(UNWRAP_PTR(TUPLE_T, tuple_get(t, 0))));
+}
+any_t b_tuple_make(tuple_t t) {
+  int_t tlen = tuple_len(t);
+  tuple_t args = tuple_new(tlen-0);
+  for (int i=0; i<tlen; i++)
+    tuple_set(args, i-0, tuple_get(t, i));
+  return WRAP_PTR(TUPLE_T, vtuple_make(args));
+}
+any_t b_vtuple_make(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, vtuple_make(UNWRAP_PTR(TUPLE_T, tuple_get(t, 0))));
+}
+any_t b_tuple_shift(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, tuple_shift(UNWRAP_PTR(TUPLE_T, tuple_get(t, 0))));
+}
+any_t b_list_new(tuple_t t) {
+  return WRAP_PTR(LIST_T, list_new());
+}
+any_t b_list_copy(tuple_t t) {
+  return WRAP_PTR(LIST_T, list_copy(UNWRAP_PTR(LIST_T, tuple_get(t, 0))));
+}
+any_t b_list_len(tuple_t t) {
+  return WRAP_INT(list_len(UNWRAP_PTR(LIST_T, tuple_get(t, 0))));
+}
+any_t b_list_append(tuple_t t) {
+  return WRAP_PTR(LIST_T, list_append(UNWRAP_PTR(LIST_T, tuple_get(t, 0)), tuple_get(t, 1)));
+}
+any_t b_list_prepend(tuple_t t) {
+  return WRAP_PTR(LIST_T, list_prepend(UNWRAP_PTR(LIST_T, tuple_get(t, 0)), tuple_get(t, 1)));
+}
+any_t b_list_extend(tuple_t t) {
+  return WRAP_PTR(LIST_T, list_extend(UNWRAP_PTR(LIST_T, tuple_get(t, 0)), UNWRAP_PTR(LIST_T, tuple_get(t, 1))));
+}
+any_t b_list_literal(tuple_t t) {
+  return WRAP_PTR(LIST_T, list_literal(UNWRAP_PTR(LIST_T, tuple_get(t, 0))));
+}
+any_t b_list_to_tuple(tuple_t t) {
+  return WRAP_PTR(TUPLE_T, list_to_tuple(UNWRAP_PTR(LIST_T, tuple_get(t, 0))));
+}
+any_t b_list_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, list_to_string(UNWRAP_PTR(LIST_T, tuple_get(t, 0))));
+}
+any_t b_list_first(tuple_t t) {
+  return list_first(UNWRAP_PTR(LIST_T, tuple_get(t, 0)));
+}
+any_t b_list_last(tuple_t t) {
+  return list_last(UNWRAP_PTR(LIST_T, tuple_get(t, 0)));
+}
+any_t b_list_popfirst(tuple_t t) {
+  return list_popfirst(UNWRAP_PTR(LIST_T, tuple_get(t, 0)));
+}
+any_t b_list_poplast(tuple_t t) {
+  return list_poplast(UNWRAP_PTR(LIST_T, tuple_get(t, 0)));
+}
+any_t b_list_begin(tuple_t t) {
+  return WRAP_PTR(LIST_IT_T, list_begin(UNWRAP_PTR(LIST_T, tuple_get(t, 0))));
+}
+any_t b_list_done(tuple_t t) {
+  return WRAP_BOOL(list_done(UNWRAP_PTR(LIST_IT_T, tuple_get(t, 0))));
+}
+any_t b_list_next(tuple_t t) {
+  list_next(UNWRAP_PTR(LIST_IT_T, tuple_get(t, 0)));
+  return void_obj;
+}
+any_t b_list_get(tuple_t t) {
+  return list_get(UNWRAP_PTR(LIST_IT_T, tuple_get(t, 0)));
+}
+any_t b_int_plus(tuple_t t) {
+  return WRAP_INT(int_plus(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_minus(tuple_t t) {
+  return WRAP_INT(int_minus(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_times(tuple_t t) {
+  return WRAP_INT(int_times(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_divide(tuple_t t) {
+  return WRAP_INT(int_divide(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_neg(tuple_t t) {
+  return WRAP_INT(int_neg(UNWRAP_INT(tuple_get(t, 0))));
+}
+any_t b_int_equalequal(tuple_t t) {
+  return WRAP_BOOL(int_equalequal(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_notequal(tuple_t t) {
+  return WRAP_BOOL(int_notequal(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_less(tuple_t t) {
+  return WRAP_BOOL(int_less(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_lessequal(tuple_t t) {
+  return WRAP_BOOL(int_lessequal(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_greater(tuple_t t) {
+  return WRAP_BOOL(int_greater(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_greaterequal(tuple_t t) {
+  return WRAP_BOOL(int_greaterequal(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_cmp(tuple_t t) {
+  return WRAP_INT(int_cmp(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_int_cast(tuple_t t) {
+  return WRAP_INT(int_cast(tuple_get(t, 0)));
+}
+any_t b_int_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, int_to_string(UNWRAP_INT(tuple_get(t, 0))));
+}
+any_t b_real_plus(tuple_t t) {
+  return WRAP_REAL(real_plus(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_minus(tuple_t t) {
+  return WRAP_REAL(real_minus(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_times(tuple_t t) {
+  return WRAP_REAL(real_times(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_divide(tuple_t t) {
+  return WRAP_REAL(real_divide(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_neg(tuple_t t) {
+  return WRAP_REAL(real_neg(UNWRAP_REAL(tuple_get(t, 0))));
+}
+any_t b_real_equalequal(tuple_t t) {
+  return WRAP_BOOL(real_equalequal(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_notequal(tuple_t t) {
+  return WRAP_BOOL(real_notequal(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_less(tuple_t t) {
+  return WRAP_BOOL(real_less(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_lessequal(tuple_t t) {
+  return WRAP_BOOL(real_lessequal(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_greater(tuple_t t) {
+  return WRAP_BOOL(real_greater(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_greaterequal(tuple_t t) {
+  return WRAP_BOOL(real_greaterequal(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_cmp(tuple_t t) {
+  return WRAP_REAL(real_cmp(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_cast(tuple_t t) {
+  return WRAP_REAL(real_cast(tuple_get(t, 0)));
+}
+any_t b_real_exp(tuple_t t) {
+  return WRAP_REAL(real_exp(UNWRAP_REAL(tuple_get(t, 0))));
+}
+any_t b_real_sin(tuple_t t) {
+  return WRAP_REAL(real_sin(UNWRAP_REAL(tuple_get(t, 0))));
+}
+any_t b_real_cos(tuple_t t) {
+  return WRAP_REAL(real_cos(UNWRAP_REAL(tuple_get(t, 0))));
+}
+any_t b_real_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, real_to_string(UNWRAP_REAL(tuple_get(t, 0))));
+}
+any_t b_string_copy(tuple_t t) {
+  return WRAP_PTR(STRING_T, string_copy(UNWRAP_PTR(STRING_T, tuple_get(t, 0))));
+}
+any_t b_string_concat(tuple_t t) {
+  return WRAP_PTR(STRING_T, string_concat(UNWRAP_PTR(STRING_T, tuple_get(t, 0)), UNWRAP_PTR(STRING_T, tuple_get(t, 1))));
+}
+any_t b_string_len(tuple_t t) {
+  return WRAP_INT(string_len(UNWRAP_PTR(STRING_T, tuple_get(t, 0))));
+}
+any_t b_string_equalequal(tuple_t t) {
+  return WRAP_BOOL(string_equalequal(UNWRAP_PTR(STRING_T, tuple_get(t, 0)), UNWRAP_PTR(STRING_T, tuple_get(t, 1))));
+}
+any_t b_string_get(tuple_t t) {
+  return WRAP_PTR(STRING_T, string_get(UNWRAP_PTR(STRING_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_string_set(tuple_t t) {
+  return WRAP_PTR(STRING_T, string_set(UNWRAP_PTR(STRING_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1)), UNWRAP_PTR(STRING_T, tuple_get(t, 2))));
+}
+any_t b_string_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, string_to_string(UNWRAP_PTR(STRING_T, tuple_get(t, 0))));
+}
+any_t b_bool_equalequal(tuple_t t) {
+  return WRAP_BOOL(bool_equalequal(UNWRAP_BOOL(tuple_get(t, 0)), UNWRAP_BOOL(tuple_get(t, 1))));
+}
+any_t b_bool_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, bool_to_string(UNWRAP_BOOL(tuple_get(t, 0))));
+}
+any_t b_bool_not(tuple_t t) {
+  return WRAP_BOOL(bool_not(UNWRAP_BOOL(tuple_get(t, 0))));
+}
+any_t b_bool_or(tuple_t t) {
+  return WRAP_BOOL(bool_or(UNWRAP_BOOL(tuple_get(t, 0)), UNWRAP_BOOL(tuple_get(t, 1))));
+}
+any_t b_bool_and(tuple_t t) {
+  return WRAP_BOOL(bool_and(UNWRAP_BOOL(tuple_get(t, 0)), UNWRAP_BOOL(tuple_get(t, 1))));
+}
+any_t b_mat_new(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_new(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_mat_eye(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_eye(UNWRAP_INT(tuple_get(t, 0))));
+}
+any_t b_mat_rand(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_rand(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_mat_randn(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_randn(UNWRAP_INT(tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_mat_cols(tuple_t t) {
+  return WRAP_INT(mat_cols(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_rows(tuple_t t) {
+  return WRAP_INT(mat_rows(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_len(tuple_t t) {
+  return WRAP_INT(mat_len(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_copy(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_copy(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_get(tuple_t t) {
+  return WRAP_REAL(mat_get(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1)), UNWRAP_INT(tuple_get(t, 2))));
+}
+any_t b_mat_set(tuple_t t) {
+  mat_set(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1)), UNWRAP_INT(tuple_get(t, 2)), UNWRAP_REAL(tuple_get(t, 3)));
+  return void_obj;
+}
+any_t b_mat_getl(tuple_t t) {
+  return WRAP_REAL(mat_getl(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_mat_setl(tuple_t t) {
+  mat_setl(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1)), UNWRAP_REAL(tuple_get(t, 2)));
+  return void_obj;
+}
+any_t b_mat_norm(tuple_t t) {
+  return WRAP_REAL(mat_norm(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_max(tuple_t t) {
+  return WRAP_REAL(mat_max(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_min(tuple_t t) {
+  return WRAP_REAL(mat_min(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_scale(tuple_t t) {
+  mat_scale(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1)));
+  return void_obj;
+}
+any_t b_mat_transpose(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_transpose(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_sort(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_sort(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_solve(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_solve(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_PTR(MAT_T, tuple_get(t, 1))));
+}
+any_t b_mat_repmat(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_repmat(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1)), UNWRAP_INT(tuple_get(t, 2))));
+}
+any_t b_mat_reshape(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_reshape(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1)), UNWRAP_INT(tuple_get(t, 2))));
+}
+any_t b_mat_minus(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_minus(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_plus_mat(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_plus_mat(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_PTR(MAT_T, tuple_get(t, 1))));
+}
+any_t b_mat_minus_mat(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_minus_mat(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_PTR(MAT_T, tuple_get(t, 1))));
+}
+any_t b_mat_times_mat(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_times_mat(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_PTR(MAT_T, tuple_get(t, 1))));
+}
+any_t b_mat_dottimes_mat(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_dottimes_mat(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_PTR(MAT_T, tuple_get(t, 1))));
+}
+any_t b_mat_dotdivide_mat(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_dotdivide_mat(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_PTR(MAT_T, tuple_get(t, 1))));
+}
+any_t b_mat_plus_real(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_plus_real(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_mat_minus_real(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_minus_real(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_mat_times_real(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_times_real(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_mat_divide_real(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_divide_real(UNWRAP_PTR(MAT_T, tuple_get(t, 0)), UNWRAP_REAL(tuple_get(t, 1))));
+}
+any_t b_real_plus_mat(tuple_t t) {
+  return WRAP_PTR(MAT_T, real_plus_mat(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_PTR(MAT_T, tuple_get(t, 1))));
+}
+any_t b_real_minus_mat(tuple_t t) {
+  return WRAP_PTR(MAT_T, real_minus_mat(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_PTR(MAT_T, tuple_get(t, 1))));
+}
+any_t b_real_times_mat(tuple_t t) {
+  return WRAP_PTR(MAT_T, real_times_mat(UNWRAP_REAL(tuple_get(t, 0)), UNWRAP_PTR(MAT_T, tuple_get(t, 1))));
+}
+any_t b_mat_exp(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_exp(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_sin(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_sin(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_sinc(tuple_t t) {
+  return WRAP_PTR(MAT_T, mat_sinc(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_mat_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, mat_to_string(UNWRAP_PTR(MAT_T, tuple_get(t, 0))));
+}
+any_t b_warning(tuple_t t) {
+  warning(UNWRAP_PTR(STRING_T, tuple_get(t, 0)));
+  return void_obj;
+}
+any_t b_error(tuple_t t) {
+  error(UNWRAP_PTR(STRING_T, tuple_get(t, 0)));
+  return void_obj;
+}
+any_t b_python_init(tuple_t t) {
+  python_init(tuple_get(t, 0), tuple_get(t, 1));
+  return void_obj;
+}
+any_t b_python_newinteger(tuple_t t) {
+  return python_newinteger(UNWRAP_INT(tuple_get(t, 0)));
+}
+any_t b_python_newreal(tuple_t t) {
+  return python_newreal(UNWRAP_REAL(tuple_get(t, 0)));
+}
+any_t b_python_newstring(tuple_t t) {
+  return python_newstring(UNWRAP_PTR(STRING_T, tuple_get(t, 0)));
+}
+any_t b_python_newtuple(tuple_t t) {
+  return python_newtuple(UNWRAP_INT(tuple_get(t, 0)));
+}
+any_t b_python_newlist(tuple_t t) {
+  return python_newlist(UNWRAP_INT(tuple_get(t, 0)));
+}
+any_t b_python_tuple_setitem(tuple_t t) {
+  python_tuple_setitem(UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1)), UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 2)));
+  return void_obj;
+}
+any_t b_python_tuple_getitem(tuple_t t) {
+  return WRAP_PTR(PYOBJECT_T, python_tuple_getitem(UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_python_list_setitem(tuple_t t) {
+  python_list_setitem(UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1)), UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 2)));
+  return void_obj;
+}
+any_t b_python_list_getitem(tuple_t t) {
+  return WRAP_PTR(PYOBJECT_T, python_list_getitem(UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 0)), UNWRAP_INT(tuple_get(t, 1))));
+}
+any_t b_python_getint(tuple_t t) {
+  return WRAP_INT(python_getint(UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 0))));
+}
+any_t b_python_getreal(tuple_t t) {
+  return WRAP_REAL(python_getreal(UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 0))));
+}
+any_t b_python_getstring(tuple_t t) {
+  return WRAP_PTR(STRING_T, python_getstring(UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 0))));
+}
+any_t b_python_to_string(tuple_t t) {
+  return WRAP_PTR(STRING_T, python_to_string(UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 0))));
+}
+any_t b_python_importmodule(tuple_t t) {
+  return WRAP_PTR(PYOBJECT_T, python_importmodule(UNWRAP_PTR(STRING_T, tuple_get(t, 0))));
+}
+any_t b_python_runstring(tuple_t t) {
+  python_runstring(UNWRAP_PTR(STRING_T, tuple_get(t, 0)));
+  return void_obj;
+}
+any_t b_python_getversion(tuple_t t) {
+  return WRAP_PTR(STRING_T, python_getversion());
+}
+any_t b_python_lookup(tuple_t t) {
+  return python_lookup(UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 0)), UNWRAP_SYMBOL(tuple_get(t, 1)));
+}
+any_t b_python_callable(tuple_t t) {
+  return WRAP_BOOL(python_callable(UNWRAP_PTR(PYOBJECT_T, tuple_get(t, 0))));
+}
+any_t b_python_call(tuple_t t) {
+  return python_call(UNWRAP_PTR(TUPLE_T, tuple_get(t, 0)));
 }
 
 
-//object_t eval(object_t env, object_t expr);
-object_t b_eval(tuple_t t) {
-  return eval(tuple_get(t, 1), tuple_get(t, 2));
-}
+// (6) init
+#define ADD_TYPE(ttt, TTT)                                            \
+  assign(root, ttt ## _sym, typeobjects[TTT ## _T]);                  \
+  assign(typeobjects[TTT ## _T], proto_sym, prototypes[TTT ## _T]);   \
+  assign(typeobjects[TTT ## _T], parent_sym, type_obj);               \
+  assign(typeobjects[TTT ## _T], name_sym, WRAP_PTR(STRING_T, #ttt));
 
-//void_t tuple_set(tuple_t t, int_t i, object_t);
-object_t b_tuple_set(tuple_t t) {
-  tuple_set(*RAW(tuple_t, tuple_get(t, 1)), *RAW(tuple_t, tuple_get(t, 2)), tuple_get(t, 3));
-}
-
-// (5) init
-
-#define ADD_TYPE(ttt, TTT)   // ttt ## _t\
-  setptype(ttt ## _proto, TTT ## _T);\
-  ttt ## _obj = new();\
-  assign(root, ttt ## _sym, ttt ## _obj);\
-  assign(ttt ## _obj, proto_sym, ttt ## _proto);
-
-void add_function(object_t module, symbol_t s, int rettype, void *code, int narg, ...)
-{
-  // create a new object
-  object_t o = new_t(FN_T, fn_proto);
-
-  // create a struct containing all info about the builtin function
-  fn_t f = ALLOC_SIZE(size_of(fn_t));
-  setraw(o, (void *) f);
-  f->code = code;
-  f->narg = narg;
-  f->argtypes = ALLOC_SIZE(narg*size_of(int_t));
-
-  // read out the argument types
-  va_list ap;
-  va_start(ap, narg);
-  for (int i=0; i<narg; i++)
-    f->argtypes[i] = va_arg(ap, int_t);
-  va_end(ap);
-
-  // finally add it to module
-  assign(module, s, o);
-}
-
-#define ADD_MODULE(mmm)   // mmm ## .h\
-  module = new();\
+#define ADD_MODULE(mmm)                                               \
+  module = new();                                                     \
   assign(modules, mmm ## _sym, module);
 
-object_t rha_init()
+static
+void add_function(any_t module, symbol_t s, 
+                  any_t (*code)(tuple_t),
+                  bool_t varargs, int narg, ...)
 {
-  object_t root = new();
+  va_list args;
+  va_start(args, narg);
+  any_t f = vcreate_builtin(code, varargs, narg, args);
+  va_end(args);
 
-  // (5.1) create prototypes (TYPES)
-  symbol_proto = new();
-  int_proto = new();
+  assign(module, s, f);
+}
 
-  // (5.2) create symbols (SYMBOLS, TYPES, MODULES, functions)
+static
+any_t create_special_fn_data(any_t module, bool_t method, 
+                                symbol_t fn_sym, int_t narg, ...)
+{
+  // "..." must be pairs of 'any_t' and 'symbol_t'
+  tuple_t signature = 0;
+  list_t fnbody_l = 0;
+  if (narg < 0) {
+    // rhabarber function with variable argument list
+    signature= tuple_new(1);
+    tuple_set(signature, 0, WRAP_SYMBOL(symbol_new("...")));
+    fnbody_l = list_new();
+    list_append(fnbody_l, WRAP_SYMBOL(symbol_new("args")));
+  }
+  else {
+    va_list ap;
+    va_start(ap, narg);
+    signature = tuple_new(narg);
+    fnbody_l = list_new();
+    for (int i = 0; i < narg; i++) {
+      any_t thetype = va_arg(ap, any_t);
+      any_t theliteral = WRAP_SYMBOL(va_arg(ap, symbol_t));
+      assert(theliteral);
+      if (thetype) {
+	any_t entry = create_prepattern(theliteral, thetype);
+	tuple_set(signature, i, entry);
+      }
+      else {
+	tuple_set(signature, i, theliteral);
+      }
+      list_append(fnbody_l, theliteral);
+    }
+    va_end(ap);
+    // are we creating a method?
+    if (method) {
+      list_prepend(fnbody_l, WRAP_SYMBOL(this_sym));
+    }
+  }
+  list_prepend(fnbody_l, WRAP_SYMBOL(fn_sym));
+  return create_fn_data(module, signature, 
+			WRAP_PTR(TUPLE_T, list_to_tuple(fnbody_l)));
+}
+
+any_t rha_init(void)
+{
+  // (6.0) prototypes (TYPES)
+  fn_data_proto = new();
+  implementation_proto = new();
+  pattern_proto = new();
+  prototypes[0] = 0; // void prototype
+  for (int i = 1; i < 14; i++) {
+    prototypes[i] = create_pt(i);
+    typeobjects[i] = new();
+  }
+  typeobjects[ANY_T] = 0;
+
+
+  // (6.1) create symbols (SYMBOLS, TYPES, MODULES, functions)
+  parent_sym = symbol_new("parent");
   proto_sym = symbol_new("proto");
+  do_sym = symbol_new("do");
   quote_sym = symbol_new("quote");
+  type_sym = symbol_new("type");
+  ptype_sym = symbol_new("ptype");
+  this_sym = symbol_new("this");
+  static_sym = symbol_new("static");
+  root_sym = symbol_new("root");
+  local_sym = symbol_new("local");
+  void_sym = symbol_new("void");
+  fn_data_sym = symbol_new("fn_data");
+  scope_sym = symbol_new("scope");
+  signature_sym = symbol_new("signature");
+  argnames_sym = symbol_new("argnames");
+  fnbody_sym = symbol_new("fnbody");
+  priority_sym = symbol_new("priority");
+  hasproxy_sym = symbol_new("hasproxy");
+  iter_sym = symbol_new("iter");
+  done_sym = symbol_new("done");
+  get_sym = symbol_new("get");
+  next_sym = symbol_new("next");
+  msg_sym = symbol_new("msg");
+  ismacro_sym = symbol_new("ismacro");
+  check_sym = symbol_new("check");
+  name_sym = symbol_new("name");
+  args_sym = symbol_new("args");
+  varargs_sym = symbol_new("varargs");
+  no_frame_sym = symbol_new("no_frame");
+  patternliteral_sym = symbol_new("patternliteral");
+  patterntype_sym = symbol_new("patterntype");
+  modules_sym = symbol_new("modules");
+  keywords_sym = symbol_new("keywords");
+  prules_sym = symbol_new("prules");
+  curlied_sym = symbol_new("curlied");
+  squared_sym = symbol_new("squared");
+  rounded_sym = symbol_new("rounded");
+  tuple_forced_sym = symbol_new("tuple_forced");
+  method_call_sym = symbol_new("method_call");
+  not_fn_sym = symbol_new("not_fn");
+  and_fn_sym = symbol_new("and_fn");
+  or_fn_sym = symbol_new("or_fn");
+  plus_fn_sym = symbol_new("plus_fn");
+  minus_fn_sym = symbol_new("minus_fn");
+  neg_fn_sym = symbol_new("neg_fn");
+  times_fn_sym = symbol_new("times_fn");
+  divide_fn_sym = symbol_new("divide_fn");
+  dottimes_fn_sym = symbol_new("dottimes_fn");
+  dotdivide_fn_sym = symbol_new("dotdivide_fn");
+  equalequal_fn_sym = symbol_new("equalequal_fn");
+  notequal_fn_sym = symbol_new("notequal_fn");
+  less_fn_sym = symbol_new("less_fn");
+  lessequal_fn_sym = symbol_new("lessequal_fn");
+  greater_fn_sym = symbol_new("greater_fn");
+  greaterequal_fn_sym = symbol_new("greaterequal_fn");
+  pattern_sym = symbol_new("pattern");
+  apostrophe_fn_sym = symbol_new("apostrophe_fn");
+  domain_sym = symbol_new("domain");
+  object_sym = symbol_new("object");
+  new_sym = symbol_new("new");
+  addr_sym = symbol_new("addr");
+  clone_sym = symbol_new("clone");
+  ptypename_sym = symbol_new("ptypename");
+  print_fn_sym = symbol_new("print_fn");
+  vprint_fn_sym = symbol_new("vprint_fn");
+  to_string_sym = symbol_new("to_string");
+  builtin_to_string_sym = symbol_new("builtin_to_string");
+  address_to_string_sym = symbol_new("address_to_string");
+  ls_sym = symbol_new("ls");
+  inc_sym = symbol_new("inc");
+  dec_sym = symbol_new("dec");
+  inc_copy_sym = symbol_new("inc_copy");
+  dec_copy_sym = symbol_new("dec_copy");
+  lookup_sym = symbol_new("lookup");
+  lookup_local_sym = symbol_new("lookup_local");
+  pcheck_sym = symbol_new("pcheck");
+  is_void_sym = symbol_new("is_void");
+  location_sym = symbol_new("location");
+  assign_sym = symbol_new("assign");
+  assign_many_sym = symbol_new("assign_many");
+  assign_fn_sym = symbol_new("assign_fn");
+  extend_sym = symbol_new("extend");
+  has_sym = symbol_new("has");
+  rm_sym = symbol_new("rm");
+  include_sym = symbol_new("include");
+  subscribe_sym = symbol_new("subscribe");
+  eval_sym = symbol_new("eval");
+  callslot_sym = symbol_new("callslot");
+  vcallslot_sym = symbol_new("vcallslot");
+  pattern_lessthan_sym = symbol_new("pattern_lessthan");
+  signature_lessthan_sym = symbol_new("signature_lessthan");
+  fn_data_entry_lessthan_sym = symbol_new("fn_data_entry_lessthan");
+  core_sym = symbol_new("core");
+  proxy_fn_sym = symbol_new("proxy_fn");
+  create_function_sym = symbol_new("create_function");
+  create_pattern_sym = symbol_new("create_pattern");
+  create_fn_data_sym = symbol_new("create_fn_data");
+  create_fn_data_entry_sym = symbol_new("create_fn_data_entry");
+  fn_fn_sym = symbol_new("fn_fn");
+  macro_fn_sym = symbol_new("macro_fn");
+  if_fn_sym = symbol_new("if_fn");
+  return_fn_sym = symbol_new("return_fn");
+  deliver_fn_sym = symbol_new("deliver_fn");
+  break_fn_sym = symbol_new("break_fn");
+  throw_fn_sym = symbol_new("throw_fn");
+  while_fn_sym = symbol_new("while_fn");
+  for_fn_sym = symbol_new("for_fn");
+  try_fn_sym = symbol_new("try_fn");
+  colon_fn_sym = symbol_new("colon_fn");
+  literal_sym = symbol_new("literal");
+  tic_fn_sym = symbol_new("tic_fn");
+  toc_fn_sym = symbol_new("toc_fn");
+  exit_fn_sym = symbol_new("exit_fn");
+  run_fn_sym = symbol_new("run_fn");
+  map_fn_sym = symbol_new("map_fn");
+  prule_new_infix_sym = symbol_new("prule_new_infix");
+  prule_new_prefix_sym = symbol_new("prule_new_prefix");
+  prule_new_postfix_sym = symbol_new("prule_new_postfix");
+  prule_new_freefix_sym = symbol_new("prule_new_freefix");
+  curlied_pr_sym = symbol_new("curlied_pr");
+  squared_pr_sym = symbol_new("squared_pr");
+  apostrophe_pr_sym = symbol_new("apostrophe_pr");
+  plusplus_pr_sym = symbol_new("plusplus_pr");
+  minusminus_pr_sym = symbol_new("minusminus_pr");
+  not_pr_sym = symbol_new("not_pr");
+  divide_pr_sym = symbol_new("divide_pr");
+  times_pr_sym = symbol_new("times_pr");
+  dotdivide_pr_sym = symbol_new("dotdivide_pr");
+  dottimes_pr_sym = symbol_new("dottimes_pr");
+  prefix_minus_pr_sym = symbol_new("prefix_minus_pr");
+  minus_pr_sym = symbol_new("minus_pr");
+  plus_pr_sym = symbol_new("plus_pr");
+  colon_pr_sym = symbol_new("colon_pr");
+  in_pr_sym = symbol_new("in_pr");
+  less_pr_sym = symbol_new("less_pr");
+  lessequal_pr_sym = symbol_new("lessequal_pr");
+  greater_pr_sym = symbol_new("greater_pr");
+  greaterequal_pr_sym = symbol_new("greaterequal_pr");
+  equalequal_pr_sym = symbol_new("equalequal_pr");
+  notequal_pr_sym = symbol_new("notequal_pr");
+  and_pr_sym = symbol_new("and_pr");
+  or_pr_sym = symbol_new("or_pr");
+  return_pr_sym = symbol_new("return_pr");
+  deliver_pr_sym = symbol_new("deliver_pr");
+  break_pr_sym = symbol_new("break_pr");
+  throw_pr_sym = symbol_new("throw_pr");
+  if_pr_sym = symbol_new("if_pr");
+  try_pr_sym = symbol_new("try_pr");
+  while_pr_sym = symbol_new("while_pr");
+  for_pr_sym = symbol_new("for_pr");
+  fn_pr_sym = symbol_new("fn_pr");
+  macro_pr_sym = symbol_new("macro_pr");
+  equal_pr_sym = symbol_new("equal_pr");
+  plusequal_pr_sym = symbol_new("plusequal_pr");
+  minusequal_pr_sym = symbol_new("minusequal_pr");
+  timesequal_pr_sym = symbol_new("timesequal_pr");
+  divideequal_pr_sym = symbol_new("divideequal_pr");
+  quote_pr_sym = symbol_new("quote_pr");
+  parse_sym = symbol_new("parse");
+  resolve_sym = symbol_new("resolve");
+  symbol_fn_sym = symbol_new("symbol_fn");
+  symbol_new_sym = symbol_new("symbol_new");
+  symbol_equalequal_sym = symbol_new("symbol_equalequal");
+  symbol_name_sym = symbol_new("symbol_name");
+  symbol_to_string_sym = symbol_new("symbol_to_string");
+  symbol_valid_sym = symbol_new("symbol_valid");
+  tuple_fn_sym = symbol_new("tuple_fn");
+  tuple_new_sym = symbol_new("tuple_new");
+  tuple_len_sym = symbol_new("tuple_len");
+  tuple_get_sym = symbol_new("tuple_get");
+  tuple_set_sym = symbol_new("tuple_set");
+  tuple_to_list_sym = symbol_new("tuple_to_list");
+  tuple_to_string_sym = symbol_new("tuple_to_string");
+  tuple_make_sym = symbol_new("tuple_make");
+  vtuple_make_sym = symbol_new("vtuple_make");
+  tuple_shift_sym = symbol_new("tuple_shift");
+  list_fn_sym = symbol_new("list_fn");
+  list_new_sym = symbol_new("list_new");
+  list_copy_sym = symbol_new("list_copy");
+  list_len_sym = symbol_new("list_len");
+  list_append_sym = symbol_new("list_append");
+  list_prepend_sym = symbol_new("list_prepend");
+  list_extend_sym = symbol_new("list_extend");
+  list_literal_sym = symbol_new("list_literal");
+  list_to_tuple_sym = symbol_new("list_to_tuple");
+  list_to_string_sym = symbol_new("list_to_string");
+  list_first_sym = symbol_new("list_first");
+  list_last_sym = symbol_new("list_last");
+  list_popfirst_sym = symbol_new("list_popfirst");
+  list_poplast_sym = symbol_new("list_poplast");
+  list_begin_sym = symbol_new("list_begin");
+  list_done_sym = symbol_new("list_done");
+  list_next_sym = symbol_new("list_next");
+  list_get_sym = symbol_new("list_get");
+  int_fn_sym = symbol_new("int_fn");
+  int_plus_sym = symbol_new("int_plus");
+  int_minus_sym = symbol_new("int_minus");
+  int_times_sym = symbol_new("int_times");
+  int_divide_sym = symbol_new("int_divide");
+  int_neg_sym = symbol_new("int_neg");
+  int_equalequal_sym = symbol_new("int_equalequal");
+  int_notequal_sym = symbol_new("int_notequal");
+  int_less_sym = symbol_new("int_less");
+  int_lessequal_sym = symbol_new("int_lessequal");
+  int_greater_sym = symbol_new("int_greater");
+  int_greaterequal_sym = symbol_new("int_greaterequal");
+  int_cmp_sym = symbol_new("int_cmp");
+  int_cast_sym = symbol_new("int_cast");
+  int_to_string_sym = symbol_new("int_to_string");
+  real_fn_sym = symbol_new("real_fn");
+  real_plus_sym = symbol_new("real_plus");
+  real_minus_sym = symbol_new("real_minus");
+  real_times_sym = symbol_new("real_times");
+  real_divide_sym = symbol_new("real_divide");
+  real_neg_sym = symbol_new("real_neg");
+  real_equalequal_sym = symbol_new("real_equalequal");
+  real_notequal_sym = symbol_new("real_notequal");
+  real_less_sym = symbol_new("real_less");
+  real_lessequal_sym = symbol_new("real_lessequal");
+  real_greater_sym = symbol_new("real_greater");
+  real_greaterequal_sym = symbol_new("real_greaterequal");
+  real_cmp_sym = symbol_new("real_cmp");
+  real_cast_sym = symbol_new("real_cast");
+  real_exp_sym = symbol_new("real_exp");
+  real_sin_sym = symbol_new("real_sin");
+  real_cos_sym = symbol_new("real_cos");
+  real_to_string_sym = symbol_new("real_to_string");
+  string_fn_sym = symbol_new("string_fn");
+  string_copy_sym = symbol_new("string_copy");
+  string_concat_sym = symbol_new("string_concat");
+  string_len_sym = symbol_new("string_len");
+  string_equalequal_sym = symbol_new("string_equalequal");
+  string_get_sym = symbol_new("string_get");
+  string_set_sym = symbol_new("string_set");
+  string_to_string_sym = symbol_new("string_to_string");
+  bool_fn_sym = symbol_new("bool_fn");
+  bool_equalequal_sym = symbol_new("bool_equalequal");
+  bool_to_string_sym = symbol_new("bool_to_string");
+  bool_not_sym = symbol_new("bool_not");
+  bool_or_sym = symbol_new("bool_or");
+  bool_and_sym = symbol_new("bool_and");
+  mat_fn_sym = symbol_new("mat_fn");
+  mat_new_sym = symbol_new("mat_new");
+  mat_eye_sym = symbol_new("mat_eye");
+  mat_rand_sym = symbol_new("mat_rand");
+  mat_randn_sym = symbol_new("mat_randn");
+  mat_cols_sym = symbol_new("mat_cols");
+  mat_rows_sym = symbol_new("mat_rows");
+  mat_len_sym = symbol_new("mat_len");
+  mat_copy_sym = symbol_new("mat_copy");
+  mat_get_sym = symbol_new("mat_get");
+  mat_set_sym = symbol_new("mat_set");
+  mat_getl_sym = symbol_new("mat_getl");
+  mat_setl_sym = symbol_new("mat_setl");
+  mat_norm_sym = symbol_new("mat_norm");
+  mat_max_sym = symbol_new("mat_max");
+  mat_min_sym = symbol_new("mat_min");
+  mat_scale_sym = symbol_new("mat_scale");
+  mat_transpose_sym = symbol_new("mat_transpose");
+  mat_sort_sym = symbol_new("mat_sort");
+  mat_solve_sym = symbol_new("mat_solve");
+  mat_repmat_sym = symbol_new("mat_repmat");
+  mat_reshape_sym = symbol_new("mat_reshape");
+  mat_minus_sym = symbol_new("mat_minus");
+  mat_plus_mat_sym = symbol_new("mat_plus_mat");
+  mat_minus_mat_sym = symbol_new("mat_minus_mat");
+  mat_times_mat_sym = symbol_new("mat_times_mat");
+  mat_dottimes_mat_sym = symbol_new("mat_dottimes_mat");
+  mat_dotdivide_mat_sym = symbol_new("mat_dotdivide_mat");
+  mat_plus_real_sym = symbol_new("mat_plus_real");
+  mat_minus_real_sym = symbol_new("mat_minus_real");
+  mat_times_real_sym = symbol_new("mat_times_real");
+  mat_divide_real_sym = symbol_new("mat_divide_real");
+  real_plus_mat_sym = symbol_new("real_plus_mat");
+  real_minus_mat_sym = symbol_new("real_minus_mat");
+  real_times_mat_sym = symbol_new("real_times_mat");
+  mat_exp_sym = symbol_new("mat_exp");
+  mat_sin_sym = symbol_new("mat_sin");
+  mat_sinc_sym = symbol_new("mat_sinc");
+  mat_to_string_sym = symbol_new("mat_to_string");
+  messages_sym = symbol_new("messages");
+  warning_sym = symbol_new("warning");
+  error_sym = symbol_new("error");
+  python_fn_sym = symbol_new("python_fn");
+  python_init_sym = symbol_new("python_init");
+  python_newinteger_sym = symbol_new("python_newinteger");
+  python_newreal_sym = symbol_new("python_newreal");
+  python_newstring_sym = symbol_new("python_newstring");
+  python_newtuple_sym = symbol_new("python_newtuple");
+  python_newlist_sym = symbol_new("python_newlist");
+  python_tuple_setitem_sym = symbol_new("python_tuple_setitem");
+  python_tuple_getitem_sym = symbol_new("python_tuple_getitem");
+  python_list_setitem_sym = symbol_new("python_list_setitem");
+  python_list_getitem_sym = symbol_new("python_list_getitem");
+  python_getint_sym = symbol_new("python_getint");
+  python_getreal_sym = symbol_new("python_getreal");
+  python_getstring_sym = symbol_new("python_getstring");
+  python_to_string_sym = symbol_new("python_to_string");
+  python_importmodule_sym = symbol_new("python_importmodule");
+  python_runstring_sym = symbol_new("python_runstring");
+  python_getversion_sym = symbol_new("python_getversion");
+  python_lookup_sym = symbol_new("python_lookup");
+  python_callable_sym = symbol_new("python_callable");
+  python_call_sym = symbol_new("python_call");
+  symbol_sym = symbol_new("symbol");
+  any_sym = symbol_new("any");
   int_sym = symbol_new("int");
+  bool_sym = symbol_new("bool");
+  tuple_sym = symbol_new("tuple");
+  builtin_sym = symbol_new("builtin");
+  real_sym = symbol_new("real");
+  mat_sym = symbol_new("mat");
+  string_sym = symbol_new("string");
+  address_sym = symbol_new("address");
+  list_sym = symbol_new("list");
+  list_it_sym = symbol_new("list_it");
+  pyobject_sym = symbol_new("pyobject");
 
-  // (5.3) create type objects (TYPES)
-  ADD_TYPE(int, INT);
-  ADD_TYPE(symbol, SYMBOL);
 
-  // (5.4) create the void object
+  any_t root = new();
+  assign(root, root_sym, root);
+  assign(root, local_sym, root); // the outer-most local scope
   void_obj = new();
   assign(root, void_sym, void_obj);
 
-  // (5.5) add modules (MODULES, functions)
-  object_t modules = new();
+  // (6.2) add modules
+  any_t modules = new();
   assign(root, modules_sym, modules);
-  object_t module = 0;
-
+  any_t module = 0;
   ADD_MODULE(object);
-  add_function(module, new_sym, (void *) new, 0);
-  add_function(module, clone_sym, (void *) clone, 1, OBJECT_T);
+  ADD_MODULE(eval);
+  ADD_MODULE(core);
+  ADD_MODULE(prules);
+  ADD_MODULE(parse);
+  ADD_MODULE(symbol_fn);
+  ADD_MODULE(tuple_fn);
+  ADD_MODULE(list_fn);
+  ADD_MODULE(int_fn);
+  ADD_MODULE(real_fn);
+  ADD_MODULE(string_fn);
+  ADD_MODULE(bool_fn);
+  ADD_MODULE(mat_fn);
+  ADD_MODULE(messages);
+  ADD_MODULE(python_fn);
 
-  ADD_MODULE(object);
-  add_function(module, new_sym, (void *) new, 0);
-  add_function(module, clone_sym, (void *) clone, 1, OBJECT_T);
+
+  // (6.3) create type objects (TYPES)
+  any_t fn_data = 0;
+  any_t type_obj = new();
+  assign(root, type_sym, type_obj);
+  assign(type_obj, proto_sym, type_obj);
+  any_t pattern_obj = clone(type_obj);
+  // note that for 'fn_data_proto' there is only the prototype but no
+  // object in root called 'fn_data'.  otherwise 'root' would be callable!
+  assign(root, symbol_new("fn_data_proto"), fn_data_proto);
+  assign(root, symbol_new("implementation_proto"), implementation_proto);
+  assign(root, symbol_new("pattern"), pattern_obj);
+  assign(pattern_obj, proto_sym, pattern_proto);
+  ADD_TYPE(symbol, SYMBOL);
+  ADD_TYPE(int, INT);
+  ADD_TYPE(bool, BOOL);
+  ADD_TYPE(tuple, TUPLE);
+  ADD_TYPE(builtin, BUILTIN);
+  ADD_TYPE(real, REAL);
+  ADD_TYPE(mat, MAT);
+  ADD_TYPE(string, STRING);
+  ADD_TYPE(address, ADDRESS);
+  ADD_TYPE(list, LIST);
+  ADD_TYPE(list_it, LIST_IT);
+  ADD_TYPE(pyobject, PYOBJECT);
+
+  // in rhabarber the following looks like this:
+  //     type.check = fn (x) modules.check(this, x);  // note 'check'
+  //     bool.check = fn (x) modules.pcheck(this, x); // note 'pcheck'
+  //     int.check = fn (x) modules.pcheck(this, x);
+  module = lookup(modules, symbol_new("object"));
+  fn_data = create_special_fn_data(module, true, symbol_new("check"), 1,
+                                   0, symbol_new("x"));
+  assign(type_obj, check_sym, create_function(fn_data));
+  fn_data = create_special_fn_data(module, true, symbol_new("pcheck"), 1,
+		                   0, symbol_new("x"));
+  any_t pcheck_f = create_function(fn_data);
+  assign(typeobjects[SYMBOL_T], check_sym, pcheck_f);
+  assign(typeobjects[INT_T], check_sym, pcheck_f);
+  assign(typeobjects[BOOL_T], check_sym, pcheck_f);
+  assign(typeobjects[TUPLE_T], check_sym, pcheck_f);
+  assign(typeobjects[BUILTIN_T], check_sym, pcheck_f);
+  assign(typeobjects[REAL_T], check_sym, pcheck_f);
+  assign(typeobjects[MAT_T], check_sym, pcheck_f);
+  assign(typeobjects[STRING_T], check_sym, pcheck_f);
+  assign(typeobjects[ADDRESS_T], check_sym, pcheck_f);
+  assign(typeobjects[LIST_T], check_sym, pcheck_f);
+  assign(typeobjects[LIST_IT_T], check_sym, pcheck_f);
+  assign(typeobjects[PYOBJECT_T], check_sym, pcheck_f);
+
+
+  // (6.4) add type slots to the prototypes
+  assign(prototypes[1], type_sym, typeobjects[1]);
+  //assign(prototypes[2], type_sym, typeobjects[2]); // omitted on purpose
+  assign(prototypes[3], type_sym, typeobjects[3]);
+  assign(prototypes[4], type_sym, typeobjects[4]);
+  assign(prototypes[5], type_sym, typeobjects[5]);
+  assign(prototypes[6], type_sym, typeobjects[6]);
+  assign(prototypes[7], type_sym, typeobjects[7]);
+  assign(prototypes[8], type_sym, typeobjects[8]);
+  assign(prototypes[9], type_sym, typeobjects[9]);
+  assign(prototypes[10], type_sym, typeobjects[10]);
+  assign(prototypes[11], type_sym, typeobjects[11]);
+  assign(prototypes[12], type_sym, typeobjects[12]);
+  assign(prototypes[13], type_sym, typeobjects[13]);
+
+
+  // (6.5) add functions (functions)
+  module = lookup(modules, object_sym);
+  add_function(module, new_sym, b_new, false, 0);
+  add_function(module, addr_sym, b_addr, false, 1, ANY_T);
+  add_function(module, clone_sym, b_clone, false, 1, ANY_T);
+  add_function(module, ptypename_sym, b_ptypename, false, 1, ANY_T);
+  add_function(module, print_fn_sym, b_print_fn, true, 0);
+  add_function(module, vprint_fn_sym, b_vprint_fn, false, 1, TUPLE_T);
+  add_function(module, to_string_sym, b_to_string, false, 1, ANY_T);
+  add_function(module, builtin_to_string_sym, b_builtin_to_string, false, 1, BUILTIN_T);
+  add_function(module, address_to_string_sym, b_address_to_string, false, 1, ADDRESS_T);
+  add_function(module, ls_sym, b_ls, false, 1, ANY_T);
+  add_function(module, equalequal_fn_sym, b_equalequal_fn, false, 2, ANY_T, ANY_T);
+  add_function(module, notequal_fn_sym, b_notequal_fn, false, 2, ANY_T, ANY_T);
+  add_function(module, inc_sym, b_inc, false, 1, ANY_T);
+  add_function(module, dec_sym, b_dec, false, 1, ANY_T);
+  add_function(module, inc_copy_sym, b_inc_copy, false, 1, ANY_T);
+  add_function(module, dec_copy_sym, b_dec_copy, false, 1, ANY_T);
+  add_function(module, lookup_sym, b_lookup, false, 2, ANY_T, SYMBOL_T);
+  add_function(module, lookup_local_sym, b_lookup_local, false, 2, ANY_T, SYMBOL_T);
+  add_function(module, check_sym, b_check, false, 2, ANY_T, ANY_T);
+  add_function(module, pcheck_sym, b_pcheck, false, 2, ANY_T, ANY_T);
+  add_function(module, is_void_sym, b_is_void, false, 1, ANY_T);
+  add_function(module, location_sym, b_location, false, 2, ANY_T, SYMBOL_T);
+  add_function(module, assign_sym, b_assign, false, 3, ANY_T, SYMBOL_T, ANY_T);
+  add_function(module, assign_many_sym, b_assign_many, false, 3, ANY_T, TUPLE_T, ANY_T);
+  add_function(module, assign_fn_sym, b_assign_fn, false, 3, ANY_T, ANY_T, ANY_T);
+  add_function(module, extend_sym, b_extend, false, 5, ANY_T, SYMBOL_T, TUPLE_T, ANY_T, ANY_T);
+  add_function(module, has_sym, b_has, false, 2, ANY_T, SYMBOL_T);
+  add_function(module, rm_sym, b_rm, false, 2, ANY_T, SYMBOL_T);
+  add_function(module, include_sym, b_include, false, 2, ANY_T, ANY_T);
+  add_function(module, subscribe_sym, b_subscribe, false, 2, ANY_T, ANY_T);
+  object_init(root, module);
+
+  module = lookup(modules, eval_sym);
+  add_function(module, eval_sym, b_eval, false, 2, ANY_T, ANY_T);
+  add_function(module, callslot_sym, b_callslot, true, 2, ANY_T, SYMBOL_T);
+  add_function(module, vcallslot_sym, b_vcallslot, false, 3, ANY_T, SYMBOL_T, TUPLE_T);
+  add_function(module, pattern_lessthan_sym, b_pattern_lessthan, false, 2, ANY_T, ANY_T);
+  add_function(module, signature_lessthan_sym, b_signature_lessthan, false, 2, ANY_T, ANY_T);
+  add_function(module, fn_data_entry_lessthan_sym, b_fn_data_entry_lessthan, false, 2, ANY_T, ANY_T);
+  eval_init(root, module);
+
+  module = lookup(modules, core_sym);
+  add_function(module, proxy_fn_sym, b_proxy_fn, false, 2, ANY_T, SYMBOL_T);
+  add_function(module, create_function_sym, b_create_function, false, 1, ANY_T);
+  add_function(module, create_pattern_sym, b_create_pattern, false, 2, ANY_T, ANY_T);
+  add_function(module, create_fn_data_sym, b_create_fn_data, false, 3, ANY_T, TUPLE_T, ANY_T);
+  add_function(module, create_fn_data_entry_sym, b_create_fn_data_entry, false, 3, ANY_T, TUPLE_T, ANY_T);
+  add_function(module, fn_fn_sym, b_fn_fn, false, 3, ANY_T, TUPLE_T, ANY_T);
+  add_function(module, macro_fn_sym, b_macro_fn, false, 2, TUPLE_T, ANY_T);
+  add_function(module, if_fn_sym, b_if_fn, false, 4, ANY_T, BOOL_T, ANY_T, ANY_T);
+  add_function(module, return_fn_sym, b_return_fn, false, 1, ANY_T);
+  add_function(module, deliver_fn_sym, b_deliver_fn, false, 1, ANY_T);
+  add_function(module, break_fn_sym, b_break_fn, false, 1, ANY_T);
+  add_function(module, throw_fn_sym, b_throw_fn, false, 1, ANY_T);
+  add_function(module, while_fn_sym, b_while_fn, false, 3, ANY_T, ANY_T, ANY_T);
+  add_function(module, for_fn_sym, b_for_fn, false, 4, ANY_T, ANY_T, ANY_T, ANY_T);
+  add_function(module, try_fn_sym, b_try_fn, false, 4, ANY_T, ANY_T, SYMBOL_T, ANY_T);
+  add_function(module, colon_fn_sym, b_colon_fn, false, 2, ANY_T, ANY_T);
+  add_function(module, literal_sym, b_literal, false, 2, ANY_T, LIST_T);
+  add_function(module, tic_fn_sym, b_tic_fn, false, 0);
+  add_function(module, toc_fn_sym, b_toc_fn, false, 0);
+  add_function(module, exit_fn_sym, b_exit_fn, false, 1, INT_T);
+  add_function(module, run_fn_sym, b_run_fn, false, 2, ANY_T, STRING_T);
+  add_function(module, map_fn_sym, b_map_fn, false, 3, ANY_T, ANY_T, TUPLE_T);
+
+  module = lookup(modules, prules_sym);
+  add_function(module, prule_new_infix_sym, b_prule_new_infix, false, 0);
+  add_function(module, prule_new_prefix_sym, b_prule_new_prefix, false, 0);
+  add_function(module, prule_new_postfix_sym, b_prule_new_postfix, false, 0);
+  add_function(module, prule_new_freefix_sym, b_prule_new_freefix, false, 0);
+  add_function(module, curlied_pr_sym, b_curlied_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, squared_pr_sym, b_squared_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, apostrophe_pr_sym, b_apostrophe_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, plusplus_pr_sym, b_plusplus_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, minusminus_pr_sym, b_minusminus_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, not_pr_sym, b_not_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, divide_pr_sym, b_divide_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, times_pr_sym, b_times_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, dotdivide_pr_sym, b_dotdivide_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, dottimes_pr_sym, b_dottimes_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, prefix_minus_pr_sym, b_prefix_minus_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, minus_pr_sym, b_minus_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, plus_pr_sym, b_plus_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, colon_pr_sym, b_colon_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, in_pr_sym, b_in_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, less_pr_sym, b_less_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, lessequal_pr_sym, b_lessequal_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, greater_pr_sym, b_greater_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, greaterequal_pr_sym, b_greaterequal_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, equalequal_pr_sym, b_equalequal_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, notequal_pr_sym, b_notequal_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, and_pr_sym, b_and_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, or_pr_sym, b_or_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, return_pr_sym, b_return_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, deliver_pr_sym, b_deliver_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, break_pr_sym, b_break_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, throw_pr_sym, b_throw_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, if_pr_sym, b_if_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, try_pr_sym, b_try_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, while_pr_sym, b_while_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, for_pr_sym, b_for_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, fn_pr_sym, b_fn_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, macro_pr_sym, b_macro_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, equal_pr_sym, b_equal_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, plusequal_pr_sym, b_plusequal_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, minusequal_pr_sym, b_minusequal_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, timesequal_pr_sym, b_timesequal_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, divideequal_pr_sym, b_divideequal_pr, false, 2, ANY_T, LIST_T);
+  add_function(module, quote_pr_sym, b_quote_pr, false, 2, ANY_T, LIST_T);
+  prules_init(root, module);
+
+  module = lookup(modules, parse_sym);
+  add_function(module, resolve_sym, b_resolve, false, 2, ANY_T, LIST_T);
+  parse_init(root, module);
+
+  module = lookup(modules, symbol_fn_sym);
+  add_function(module, symbol_new_sym, b_symbol_new, false, 1, STRING_T);
+  add_function(module, symbol_equalequal_sym, b_symbol_equalequal, false, 2, SYMBOL_T, SYMBOL_T);
+  add_function(module, symbol_name_sym, b_symbol_name, false, 1, SYMBOL_T);
+  add_function(module, symbol_to_string_sym, b_symbol_to_string, false, 1, SYMBOL_T);
+  add_function(module, symbol_valid_sym, b_symbol_valid, false, 1, SYMBOL_T);
+
+  module = lookup(modules, tuple_fn_sym);
+  add_function(module, tuple_new_sym, b_tuple_new, false, 1, INT_T);
+  add_function(module, tuple_len_sym, b_tuple_len, false, 1, TUPLE_T);
+  add_function(module, tuple_get_sym, b_tuple_get, false, 2, TUPLE_T, INT_T);
+  add_function(module, tuple_set_sym, b_tuple_set, false, 3, TUPLE_T, INT_T, ANY_T);
+  add_function(module, tuple_to_list_sym, b_tuple_to_list, false, 1, TUPLE_T);
+  add_function(module, tuple_to_string_sym, b_tuple_to_string, false, 1, TUPLE_T);
+  add_function(module, tuple_make_sym, b_tuple_make, true, 0);
+  add_function(module, vtuple_make_sym, b_vtuple_make, false, 1, TUPLE_T);
+  add_function(module, tuple_shift_sym, b_tuple_shift, false, 1, TUPLE_T);
+
+  module = lookup(modules, list_fn_sym);
+  add_function(module, list_new_sym, b_list_new, false, 0);
+  add_function(module, list_copy_sym, b_list_copy, false, 1, LIST_T);
+  add_function(module, list_len_sym, b_list_len, false, 1, LIST_T);
+  add_function(module, list_append_sym, b_list_append, false, 2, LIST_T, ANY_T);
+  add_function(module, list_prepend_sym, b_list_prepend, false, 2, LIST_T, ANY_T);
+  add_function(module, list_extend_sym, b_list_extend, false, 2, LIST_T, LIST_T);
+  add_function(module, list_literal_sym, b_list_literal, false, 1, LIST_T);
+  add_function(module, list_to_tuple_sym, b_list_to_tuple, false, 1, LIST_T);
+  add_function(module, list_to_string_sym, b_list_to_string, false, 1, LIST_T);
+  add_function(module, list_first_sym, b_list_first, false, 1, LIST_T);
+  add_function(module, list_last_sym, b_list_last, false, 1, LIST_T);
+  add_function(module, list_popfirst_sym, b_list_popfirst, false, 1, LIST_T);
+  add_function(module, list_poplast_sym, b_list_poplast, false, 1, LIST_T);
+  add_function(module, list_begin_sym, b_list_begin, false, 1, LIST_T);
+  add_function(module, list_done_sym, b_list_done, false, 1, LIST_IT_T);
+  add_function(module, list_next_sym, b_list_next, false, 1, LIST_IT_T);
+  add_function(module, list_get_sym, b_list_get, false, 1, LIST_IT_T);
+
+  module = lookup(modules, int_fn_sym);
+  add_function(module, int_plus_sym, b_int_plus, false, 2, INT_T, INT_T);
+  add_function(module, int_minus_sym, b_int_minus, false, 2, INT_T, INT_T);
+  add_function(module, int_times_sym, b_int_times, false, 2, INT_T, INT_T);
+  add_function(module, int_divide_sym, b_int_divide, false, 2, INT_T, INT_T);
+  add_function(module, int_neg_sym, b_int_neg, false, 1, INT_T);
+  add_function(module, int_equalequal_sym, b_int_equalequal, false, 2, INT_T, INT_T);
+  add_function(module, int_notequal_sym, b_int_notequal, false, 2, INT_T, INT_T);
+  add_function(module, int_less_sym, b_int_less, false, 2, INT_T, INT_T);
+  add_function(module, int_lessequal_sym, b_int_lessequal, false, 2, INT_T, INT_T);
+  add_function(module, int_greater_sym, b_int_greater, false, 2, INT_T, INT_T);
+  add_function(module, int_greaterequal_sym, b_int_greaterequal, false, 2, INT_T, INT_T);
+  add_function(module, int_cmp_sym, b_int_cmp, false, 2, INT_T, INT_T);
+  add_function(module, int_cast_sym, b_int_cast, false, 1, ANY_T);
+  add_function(module, int_to_string_sym, b_int_to_string, false, 1, INT_T);
+
+  module = lookup(modules, real_fn_sym);
+  add_function(module, real_plus_sym, b_real_plus, false, 2, REAL_T, REAL_T);
+  add_function(module, real_minus_sym, b_real_minus, false, 2, REAL_T, REAL_T);
+  add_function(module, real_times_sym, b_real_times, false, 2, REAL_T, REAL_T);
+  add_function(module, real_divide_sym, b_real_divide, false, 2, REAL_T, REAL_T);
+  add_function(module, real_neg_sym, b_real_neg, false, 1, REAL_T);
+  add_function(module, real_equalequal_sym, b_real_equalequal, false, 2, REAL_T, REAL_T);
+  add_function(module, real_notequal_sym, b_real_notequal, false, 2, REAL_T, REAL_T);
+  add_function(module, real_less_sym, b_real_less, false, 2, REAL_T, REAL_T);
+  add_function(module, real_lessequal_sym, b_real_lessequal, false, 2, REAL_T, REAL_T);
+  add_function(module, real_greater_sym, b_real_greater, false, 2, REAL_T, REAL_T);
+  add_function(module, real_greaterequal_sym, b_real_greaterequal, false, 2, REAL_T, REAL_T);
+  add_function(module, real_cmp_sym, b_real_cmp, false, 2, REAL_T, REAL_T);
+  add_function(module, real_cast_sym, b_real_cast, false, 1, ANY_T);
+  add_function(module, real_exp_sym, b_real_exp, false, 1, REAL_T);
+  add_function(module, real_sin_sym, b_real_sin, false, 1, REAL_T);
+  add_function(module, real_cos_sym, b_real_cos, false, 1, REAL_T);
+  add_function(module, real_to_string_sym, b_real_to_string, false, 1, REAL_T);
+
+  module = lookup(modules, string_fn_sym);
+  add_function(module, string_copy_sym, b_string_copy, false, 1, STRING_T);
+  add_function(module, string_concat_sym, b_string_concat, false, 2, STRING_T, STRING_T);
+  add_function(module, string_len_sym, b_string_len, false, 1, STRING_T);
+  add_function(module, string_equalequal_sym, b_string_equalequal, false, 2, STRING_T, STRING_T);
+  add_function(module, string_get_sym, b_string_get, false, 2, STRING_T, INT_T);
+  add_function(module, string_set_sym, b_string_set, false, 3, STRING_T, INT_T, STRING_T);
+  add_function(module, string_to_string_sym, b_string_to_string, false, 1, STRING_T);
+
+  module = lookup(modules, bool_fn_sym);
+  add_function(module, bool_equalequal_sym, b_bool_equalequal, false, 2, BOOL_T, BOOL_T);
+  add_function(module, bool_to_string_sym, b_bool_to_string, false, 1, BOOL_T);
+  add_function(module, bool_not_sym, b_bool_not, false, 1, BOOL_T);
+  add_function(module, bool_or_sym, b_bool_or, false, 2, BOOL_T, BOOL_T);
+  add_function(module, bool_and_sym, b_bool_and, false, 2, BOOL_T, BOOL_T);
+
+  module = lookup(modules, mat_fn_sym);
+  add_function(module, mat_new_sym, b_mat_new, false, 2, INT_T, INT_T);
+  add_function(module, mat_eye_sym, b_mat_eye, false, 1, INT_T);
+  add_function(module, mat_rand_sym, b_mat_rand, false, 2, INT_T, INT_T);
+  add_function(module, mat_randn_sym, b_mat_randn, false, 2, INT_T, INT_T);
+  add_function(module, mat_cols_sym, b_mat_cols, false, 1, MAT_T);
+  add_function(module, mat_rows_sym, b_mat_rows, false, 1, MAT_T);
+  add_function(module, mat_len_sym, b_mat_len, false, 1, MAT_T);
+  add_function(module, mat_copy_sym, b_mat_copy, false, 1, MAT_T);
+  add_function(module, mat_get_sym, b_mat_get, false, 3, MAT_T, INT_T, INT_T);
+  add_function(module, mat_set_sym, b_mat_set, false, 4, MAT_T, INT_T, INT_T, REAL_T);
+  add_function(module, mat_getl_sym, b_mat_getl, false, 2, MAT_T, INT_T);
+  add_function(module, mat_setl_sym, b_mat_setl, false, 3, MAT_T, INT_T, REAL_T);
+  add_function(module, mat_norm_sym, b_mat_norm, false, 1, MAT_T);
+  add_function(module, mat_max_sym, b_mat_max, false, 1, MAT_T);
+  add_function(module, mat_min_sym, b_mat_min, false, 1, MAT_T);
+  add_function(module, mat_scale_sym, b_mat_scale, false, 2, MAT_T, REAL_T);
+  add_function(module, mat_transpose_sym, b_mat_transpose, false, 1, MAT_T);
+  add_function(module, mat_sort_sym, b_mat_sort, false, 1, MAT_T);
+  add_function(module, mat_solve_sym, b_mat_solve, false, 2, MAT_T, MAT_T);
+  add_function(module, mat_repmat_sym, b_mat_repmat, false, 3, MAT_T, INT_T, INT_T);
+  add_function(module, mat_reshape_sym, b_mat_reshape, false, 3, MAT_T, INT_T, INT_T);
+  add_function(module, mat_minus_sym, b_mat_minus, false, 1, MAT_T);
+  add_function(module, mat_plus_mat_sym, b_mat_plus_mat, false, 2, MAT_T, MAT_T);
+  add_function(module, mat_minus_mat_sym, b_mat_minus_mat, false, 2, MAT_T, MAT_T);
+  add_function(module, mat_times_mat_sym, b_mat_times_mat, false, 2, MAT_T, MAT_T);
+  add_function(module, mat_dottimes_mat_sym, b_mat_dottimes_mat, false, 2, MAT_T, MAT_T);
+  add_function(module, mat_dotdivide_mat_sym, b_mat_dotdivide_mat, false, 2, MAT_T, MAT_T);
+  add_function(module, mat_plus_real_sym, b_mat_plus_real, false, 2, MAT_T, REAL_T);
+  add_function(module, mat_minus_real_sym, b_mat_minus_real, false, 2, MAT_T, REAL_T);
+  add_function(module, mat_times_real_sym, b_mat_times_real, false, 2, MAT_T, REAL_T);
+  add_function(module, mat_divide_real_sym, b_mat_divide_real, false, 2, MAT_T, REAL_T);
+  add_function(module, real_plus_mat_sym, b_real_plus_mat, false, 2, REAL_T, MAT_T);
+  add_function(module, real_minus_mat_sym, b_real_minus_mat, false, 2, REAL_T, MAT_T);
+  add_function(module, real_times_mat_sym, b_real_times_mat, false, 2, REAL_T, MAT_T);
+  add_function(module, mat_exp_sym, b_mat_exp, false, 1, MAT_T);
+  add_function(module, mat_sin_sym, b_mat_sin, false, 1, MAT_T);
+  add_function(module, mat_sinc_sym, b_mat_sinc, false, 1, MAT_T);
+  add_function(module, mat_to_string_sym, b_mat_to_string, false, 1, MAT_T);
+
+  module = lookup(modules, messages_sym);
+  add_function(module, warning_sym, b_warning, false, 1, STRING_T);
+  add_function(module, error_sym, b_error, false, 1, STRING_T);
+
+  module = lookup(modules, python_fn_sym);
+  add_function(module, python_init_sym, b_python_init, false, 2, ANY_T, ANY_T);
+  add_function(module, python_newinteger_sym, b_python_newinteger, false, 1, INT_T);
+  add_function(module, python_newreal_sym, b_python_newreal, false, 1, REAL_T);
+  add_function(module, python_newstring_sym, b_python_newstring, false, 1, STRING_T);
+  add_function(module, python_newtuple_sym, b_python_newtuple, false, 1, INT_T);
+  add_function(module, python_newlist_sym, b_python_newlist, false, 1, INT_T);
+  add_function(module, python_tuple_setitem_sym, b_python_tuple_setitem, false, 3, PYOBJECT_T, INT_T, PYOBJECT_T);
+  add_function(module, python_tuple_getitem_sym, b_python_tuple_getitem, false, 2, PYOBJECT_T, INT_T);
+  add_function(module, python_list_setitem_sym, b_python_list_setitem, false, 3, PYOBJECT_T, INT_T, PYOBJECT_T);
+  add_function(module, python_list_getitem_sym, b_python_list_getitem, false, 2, PYOBJECT_T, INT_T);
+  add_function(module, python_getint_sym, b_python_getint, false, 1, PYOBJECT_T);
+  add_function(module, python_getreal_sym, b_python_getreal, false, 1, PYOBJECT_T);
+  add_function(module, python_getstring_sym, b_python_getstring, false, 1, PYOBJECT_T);
+  add_function(module, python_to_string_sym, b_python_to_string, false, 1, PYOBJECT_T);
+  add_function(module, python_importmodule_sym, b_python_importmodule, false, 1, STRING_T);
+  add_function(module, python_runstring_sym, b_python_runstring, false, 1, STRING_T);
+  add_function(module, python_getversion_sym, b_python_getversion, false, 0);
+  add_function(module, python_lookup_sym, b_python_lookup, false, 2, PYOBJECT_T, SYMBOL_T);
+  add_function(module, python_callable_sym, b_python_callable, false, 1, PYOBJECT_T);
+  add_function(module, python_call_sym, b_python_call, false, 1, TUPLE_T);
+
+  // (6.6) add more special functions to certain objects
+  //     pattern(...) = vcreate_pattern(args);
+  module = lookup(modules, symbol_new("core"));
+  fn_data = create_special_fn_data(module, false, symbol_new("vcreate_pattern"), -1);
+  assign(pattern_obj, fn_data_sym, fn_data);
+
+
+  // (6.6) add essential stuff
+  module = lookup(modules, symbol_new("object"));
+  assign(root, symbol_new("assign_fn"), lookup(module, symbol_new("assign_fn")));
+  assign(root, symbol_new("extend"), lookup(module, symbol_new("extend")));
+  module = lookup(modules, symbol_new("core"));
+  assign(root, symbol_new("map_fn"), lookup(module, symbol_new("map_fn")));
+
+  return root;
 }

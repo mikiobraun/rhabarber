@@ -22,7 +22,7 @@ static bool symtable_less(intptr_t a, intptr_t b)
   return a < b;
 }
 
-symtable_t symtable_new()
+symtable_t symtable_new(void)
 {
   symtable_t s = ALLOC(symtable);
   

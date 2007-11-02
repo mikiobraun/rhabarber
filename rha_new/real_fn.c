@@ -13,6 +13,7 @@ real_t real_divide(real_t x, real_t y) {
     rha_error("real-number division by zero");
   else
     return x/y; 
+  assert(false);
 }
 real_t real_neg(real_t x) { return -x; }
 bool_t real_equalequal(real_t x, real_t y) { return x==y; }

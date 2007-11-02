@@ -80,7 +80,7 @@ void beginstringparse(const char *s)
 }
 
 
-void endparse()
+void endparse(void)
 {
   yy_delete_buffer(currentbuffer);
 }

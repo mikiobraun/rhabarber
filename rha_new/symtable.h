@@ -15,7 +15,7 @@
 
 typedef struct symtable *symtable_t;
 
-extern symtable_t symtable_new();
+extern symtable_t symtable_new(void);
 extern symtable_t symtable_copy(symtable_t other);
 extern any_t   symtable_lookup(symtable_t st, symbol_t s);
 extern void       symtable_assign(symtable_t st, symbol_t s, any_t o);

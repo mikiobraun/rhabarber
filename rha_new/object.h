@@ -42,7 +42,7 @@ struct rha_object {
  */
 extern       void       object_init(any_t root, any_t module);
 
-extern _rha_ any_t   new();
+extern _rha_ any_t   new(void);
 extern       any_t   create_pt(int_t pt);
 extern       any_t   new_pt(int_t pt);
 extern       any_t   create_builtin(any_t (*code)(tuple_t),
