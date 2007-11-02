@@ -358,7 +358,6 @@ sub process_fun() {
 	my $dummy = pop @args;
 	push @args, $dots;
 	# adjust $narg, take off for 'int_t narg' and one for '...'
-	print "minus two\n";
 	$narg = $narg - 2;
 	# the b_* function needs additional code
 	$init_c_functions .= "  int_t tlen = tuple_len(t);\n";

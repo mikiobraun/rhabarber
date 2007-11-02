@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+#use strict 'vars';
+use warnings;
+
 # input file:
 #     rha_config.d
 #
@@ -7,6 +10,11 @@
 #     rha_init.h
 #     rha_init.c
 #     rha_types.h
+
+# NEXT STEPS
+# * use new 'subs' for the usual include
+# * move all type stuff to other places
+
 
 # TODO:
 # *   allow header files to define besides functions also variables
@@ -22,225 +30,169 @@
 use Cwd;
 print "Current working directory \"", getcwd, "\"\n";
 
-$conf_d_fname = "rha_config.d";
-$init_h_fname = "rha_init.h";
-$init_c_fname = "rha_init.c";
-$type_h_fname = "rha_types.h";
+my $conf_d_fname = "rha_config.d";
+my $init_h_fname = "rha_init.h";
+my $init_c_fname = "rha_init.c";
+my $type_h_fname = "rha_types.h";
 
-$debug = shift @ARGV;
+my $debug = shift @ARGV;
 
 # C identifier
-$id = '[a-zA-Z_]\w*';
+my $id = '[a-zA-Z_]\w*';
 
-$keyword = "_rha_";
+my $keyword = "_rha_";
 
 # load def file into one string
 open(FILE, "<$conf_d_fname") or die "Can't open $conf_d_fname: $!";
-@input = <FILE>;
+my @input = <FILE>;
 close(FILE);
-$input = join '', @input;
+my $input = join '', @input;
 
 # parse the def file
 $input =~ /\/\/MODULES\s*\n(.*)\/\/TYPES\s*\n(.*)\/\/SYMBOLS\s*\n(.*)\/\/MACROS\s*\n(.*)/s;
-$modules = $1;
-$types   = $2;
-$symbols = $3;
-$macros  = $4;
+my $modules = $1;
+my $types   = $2;
+my $symbols = $3;
+my $macros  = $4;
 
 # (0) remove comments
 $modules =~ s/\/\/[^\n]*//g;
-$types =~ s/\/\/[^\n]*//g;
+$types   =~ s/\/\/[^\n]*//g;
 $symbols =~ s/\/\/[^\n]*//g;
-$macros =~ s/\/\/[^\n]*//g;
+$macros  =~ s/\/\/[^\n]*//g;
 
 # (1) disect the includes
-@mods = $modules =~ /include\s+\"($id)\.h\"/gox;
+my @mods = $modules =~ /include\s+\"($id)\.h\"/gox;
 
 # (2) disect the typedefs
-@tdefs = $types =~ /$keyword\s+($id)/gox;
+my @tdefs = $types =~ /$keyword\s+($id)/gox;
 
 # (3) disect the symbols
-@symbs = $symbols =~ /($id)\_sym/gox;
+my @symbs = $symbols =~ /($id)\_sym/gox;
 
 # (4) create a hash of types
-%typeset = map { $_ => 1 } @tdefs;
+my %typeset = map { $_ => 1 } @tdefs;
+
+my %typenames = (); # to collect all typenames found in the header files
+
+# some of the types are not stored in the void pointer but are stored
+# directly in the union that is attached to each object.  if a type
+# should be stored directly it must appear in the following list,
+# which should go ultimatively to rha_config.d
+# all other types are assumed to be pointer and are stored as void
+# pointers. 
+
+#SHOULD BE:
+#my %typemapping = ( bool      => "int",
+#		    int       => "int",
+#		    bool_t    => "int",
+#		    int_t     => "int",
+#		    symbol_t  => "int",
+#		    size_t    => "int",
+#		    float     => "float",
+#		    double    => "real",
+#		    real_t    => "real",
+#		    builtin_t => "builtin_t" );
+my %typemapping = ( bool      => "bool",
+		    int       => "int",
+		    bool_t    => "bool",
+		    int_t     => "int",
+		    symbol_t  => "symbol",
+		    size_t    => "int",
+		    float     => "float",
+		    double    => "real",
+		    real_t    => "real",
+		    builtin_t => "builtin" );
+
+# (6) define regular expressions for C-header parsing
+
+# regexp for 'const'
+my $reco = "const\\s+";
+
+# regexp for stars
+my $rest = "\\**\\s*";
+
+# regexp for brackets
+my $rebr = "\\[\\s*\\]\\s*";
+
+# regexp for typed function name
+my $refn = "$id\\s*"     # type identifier
+    ."(?:$rest)?"     # optional stars
+    ."$id\\s*";       # function name
+
+# regexp for typed argument
+my $rear = "(?:"
+    ."(?:$reco)?"     # optional 'const'
+    ."$id\\s*"        # type identifier
+    ."(?:$rest)?"     # optional stars
+    ."(?:$id\\s*)?"   # optional identifier
+    ."(?:$rebr)?"     # optional array brackets '[ ]'
+    ."|\.\.\."        # alternatively '...'
+    .")";
+
+# regexp for argument list
+my $reargs = "$rear\\s*" # first arg
+    ."(?:"            # more args begin here
+    .",\\s*"          # arg separating comma
+    ."$rear"          # next arg
+    .")*\\s*";        # more args are optional
+
+# regexp for function declaration
+#my $refd = "($refn)\\s*" # return type and function name
+my $refd = "_rha_\\s+($refn)\\s*" # return type and function name
+    ."\\(\\s*"        # left bracket of args
+    ."($reargs|\\s*)" # optional args 
+    ."\\)\\s*"        # right bracket of args
+    .";";             # final semicolon
+
 
 
 ############################
 # step 2: init all strings #
 ############################
 
-$type_h_types = $types;
-$type_h_ids = "";
-$type_h_prototypes = "";
-$type_h_typeobjects = "";
-$type_h_symbols = "";
-$type_h_macros = $macros;
+my $type_h_types = $types;
+my $type_h_ids = "";
+my $type_h_prototypes = "";
+my $type_h_typeobjects = "";
+my $type_h_symbols = "";
+my $type_h_macros = $macros;
 
-$init_h_modules = $modules;
+my $init_h_modules = $modules;
 
-$init_c_symbols = "";
-$init_c_prototypes = "";
-$init_c_typeobject = "";
-$init_c_ptypenames = "";
-$init_c_functions = "";
-$init_c_init_prototypes = "";
-$init_c_extend_prototypes = "";
-$init_c_init_symbols = "";
-$init_c_init_typeobjects = "";
-$init_c_add_pchecks = "";
-$init_c_add_modules = "";
-$init_c_add_functions = "";
+my $init_c_symbols = "";
+my $init_c_prototypes = "";
+my $init_c_typeobjects = "";
+my $init_c_ptypenames = "";
+my $init_c_functions = "";
+my $init_c_init_prototypes = "";
+my $init_c_extend_prototypes = "";
+my $init_c_init_symbols = "";
+my $init_c_init_typeobjects = "";
+my $init_c_add_pchecks = "";
+my $init_c_add_modules = "";
+my $init_c_add_functions = "";
 
 
 ##############################
 # step 3: create all strings #
 ##############################
 
+sub process_module;  # forward declaration
 
 # first the more complicated stuff: the functions
-foreach $module (@mods) {
-    # add some stuff
-    $init_c_add_modules .= "  ADD_MODULE($module);\n";
-    $init_c_add_functions .= "  module = lookup(modules, $module"."_sym);\n";
-    # also add a symbol
-    push(@symbs, $module);
+foreach my $module (@mods) {
 
     # load the header file
-    $module_fname = $module.".h";
+    my $module_fname = $module.".h";
     open(FILE, "<$module_fname") or die "Can't open $module_fname: $!";
-    @input = <FILE>;
+    my @input = <FILE>;
     close(FILE);
     $input = join '', @input;
     $input =~ s/\/\/[^\n]*//g;  # remove comments
 
-    # parse it
-    while ($input =~ /$keyword\s+($id)\s+($id)\s*\(([^\)]*)\)\s*;/gox) {
-	$fntype = $1;
-	$fnname = $2;
-	$fnargs = $3;
-	print "matched: $fntype $fnname $fnargs\n" if $debug;
-	
-       	# disect the args (also get ellipses (...))
-	@args = $fnargs =~ /($id|\.\.\.)[^,]*/gox;
-	$narg = $#args + 1;
-	
-	# check whether all types appear in '%typeset'
-	if (!$typeset{$fntype} && ($fntype ne "void")) {
-	    die "type error: return type '$fntype' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
-	}
-
-	$ellipses = 0; # == false
-	$voidargs = 0; # == false
-	foreach $arg (@args) {
-	    if (!$typeset{$arg}) {
-		if ($arg eq "...") {
-		    # note that we don't care here in 'rha_config.pl'
-		    # whether the ellipses is at the last argument
-		    # position, because the C-compiler will complain
-		    # about it...
-		    $ellipses = 1; # == true
-		}
-		elsif ($arg eq "void") {
-		    $voidargs = 1; # == true
-		}
-		else{
-		    die "type error: arg type '$arg' of '$fnname' in '$module_fname' not in 'rha_config.d'\n";
-		}
-	    }
-	}
-	if ($voidargs) {
-	    # remove it
-	    @args = ();
-	    $narg = 0;
-	}
-	# add a symbol for the function
-	push(@symbs, $fnname);
-	
-	# add wrapper code
-	$init_c_functions .= "any_t b_$fnname(tuple_t t) {\n";
-	$fncall_str = "$fnname(";
-	
-	if ($ellipses) {
-	    # we ignore the second last argument which is
-	    # e.g. something like "int_t narg"
-	    $dots = pop(@args);
-	    $dummy = pop(@args);
-	    push(@args, $dots);
-	    # adjust $narg, take off for 'int_t narg' and one for '...'
-	    $narg = $narg - 2;
-            # the b_* function needs additional code
-            $init_c_functions .= "  int_t tlen = tuple_len(t);\n";
-            $init_c_functions .= "  tuple_t args = tuple_new(tlen-$narg);\n";
-            $init_c_functions .= "  for (int i=$narg; i<tlen; i++)\n";
-            $init_c_functions .= "    tuple_set(args, i-$narg, tuple_get(t, i));\n";
-	    # instead of calling the function itself, we call the
-	    # function with the same name with a prepended 'v'
-	    $fncall_str = "v" . $fncall_str;
-	}
-	$start = 0;
-	$i = $start;
-	foreach $item (@args) {
-	    if ($item eq "void") { die "'void' is not allowed as argument" }
-	    if ($i>$start) { $fncall_str .= ", " }
-	    $fnarg_str = "tuple_get(t, $i)";
-	    $ucitem = uc($item);
-	    if ($item eq "int_t") { $fnarg_str = "UNWRAP_INT($fnarg_str)" }
-	    elsif ($item eq "bool_t") { $fnarg_str = "UNWRAP_BOOL($fnarg_str)" }
-	    elsif ($item eq "symbol_t") { $fnarg_str = "UNWRAP_SYMBOL($fnarg_str)" }
-	    elsif ($item eq "real_t") { $fnarg_str = "UNWRAP_REAL($fnarg_str)" }
-	    elsif ($item eq "builtin_t") { $fnarg_str = "UNWRAP_BUILTIN($fnarg_str)" }
-	    elsif ($item eq "...") {$fnarg_str = "args" }
-	    elsif ($item ne "any_t") { $fnarg_str = "UNWRAP_PTR($ucitem, $fnarg_str)" }
-	    $fncall_str .= $fnarg_str;
-	    $i++;
-	}
-	$fncall_str .= ")";
-	if ($fntype eq "int_t") { $fncall_str = "WRAP_INT($fncall_str)" }
-	elsif ($fntype eq "bool_t") { $fncall_str = "WRAP_BOOL($fncall_str)" }
-	elsif ($fntype eq "symbol_t") { $fncall_str = "WRAP_SYMBOL($fncall_str)" }
-	elsif ($fntype eq "real_t") { $fncall_str = "WRAP_REAL($fncall_str)" }
-	elsif ($fntype eq "builtin_t") { $fncall_str = "WRAP_BUILTIN($fncall_str)" }
-	elsif ($fntype ne "any_t" && $fntype ne "void") {
-	    $ucfntype = uc($fntype);
-	    $ifntype = 	substr($fntype, 0, -2);
-	    $fncall_str = "WRAP_PTR($ucfntype, $fncall_str)";
-	}
-	if ($fntype eq "void") { $init_c_functions .= "  $fncall_str;\n  return void_obj;\n" }
-	else { $init_c_functions .= "  return $fncall_str;\n" }
-	$init_c_functions .= "}\n";
-
-	# add code to add functions
-	$init_c_add_functions .= "  add_function(module, $fnname"."_sym";
-	$init_c_add_functions .= ", b_$fnname";
-	if ($ellipses) {
-	    # note that negative 'narg' will mean, at least 'narg' arguments
-	    $init_c_add_functions .= ", true";
-	}
-	else {
-	    $init_c_add_functions .= ", false";
-	}
-	$init_c_add_functions .= ", $narg";
-	foreach $item (@args) {
-	    if ($item ne "...") {
-		$ucitem = uc($item);
-		$init_c_add_functions .= ", $ucitem";
-	    }
-	}
-	$init_c_add_functions .= ");\n";
-    }
-
-    # check for $module_init function
-    if ($input =~ /$module\_init/) {
-	if ($input =~ /void\s+$module\_init\(any_t\s*(\s$id\s*)?,\s*any_t\s*(\s$id\s*)?\)/) {
-	    print $module, "_init(any_t, any_t) found\n" if $debug;
-	    $init_c_add_functions .= "  $module"."_init(root, module);\n";
-	}
-	else {
-	    die "type error, correct signature: 'void $module"."_init(any_t, any_t)'";
-	}
-    }
-    $init_c_add_functions .= "\n";
+    # process it
+    process_module($module, $input);
 }
 chop($init_c_add_functions);
 chop($init_c_add_functions);
@@ -249,7 +201,6 @@ chop($init_c_add_functions);
 create_ids();
 create_prototypes();
 create_symbols();
-
 
 
 ##################################
@@ -271,13 +222,221 @@ exit();
 
 #########################################
 
+sub process_module() {
+    my $module = shift;
+    my $module_content = shift;
+    print "CALLING process_module_header($module, <module_content>)\n" if $debug;
+
+    # get rid of all newlines
+    $module_content =~ s/\n//gso;
+
+    # replace white space by a single space (for readability)
+    $module_content =~ s/\s+/ /gso;
+
+    # get rid of all stuff in curlied brackets
+    while ($module_content =~ s/{[^{}]*}/HUHU/gso) {};
+
+    # add some stuff
+    $init_c_add_modules .= "  ADD_MODULE($module);\n";
+    $init_c_add_functions .= "  module = lookup(modules, $module"."_sym);\n";
+    # also add a symbol
+    push(@symbs, $module);
+
+    while ($module_content =~ /$refd/go) {
+	my $fntid  = $1;
+	my $fnargs = $2;
+	print "MATCHED $fntid WITH ARGS $fnargs\n" if $debug;
+	process_fun($fntid, $fnargs);
+    }
+
+    # check for $module_init function
+    if ($input =~ /$module\_init/) {
+	if ($input =~ /void\s+$module\_init\(any_t\s*(\s$id\s*)?,\s*any_t\s*(\s$id\s*)?\)/) {
+	    print $module, "_init(any_t, any_t) found\n" if $debug;
+	    $init_c_add_functions .= "  $module"."_init(root, module);\n";
+	}
+	else {
+	    die "type error, correct signature: 'void $module"."_init(any_t, any_t)'";
+	}
+    }
+    $init_c_add_functions .= "\n";
+}
+
+
+sub process_typedid {
+    # take a typed identifier and returns a typename
+    # note that this both should work for functionnames and args
+    # stars and [] are resolved and add "_ptr"
+
+    # also the identifier should be optional
+
+    # note on types:
+    # 
+
+    my $tid = shift;
+
+    print "CALLING process_typedid($tid)\n" if $debug;
+    $tid =~ s/\s+\*/\*/go;  # remove whitespace preceeding stars
+    my $typename = "";
+    my $varname = "";
+    if ($tid ne "void") {
+	$tid =~ /(?:$reco)?($id\**|\.\.\.)\s*($id)?/o;
+	$typename = $1;
+	$varname  = $2;
+	$typename =~ s/(\*|$rebr)/_ptr/go;
+    }
+    else {
+	$typename = "void";
+	$varname = "";
+    }
+
+    # take a note about the typename
+    $typenames{$typename} = $typename;
+
+    print "RETURNING ($typename, $varname) FROM process_typedid($tid)\n" if $debug;
+    return ($typename, $varname);
+}
+
+sub process_fun() {
+    # accesses $fntid and $fnargs
+    my $fntid = shift;
+    my $fnargs = shift;
+
+    print "CALLING process_fun($fntid, $fnargs)\n" if $debug;
+
+    my @fnargs = split /\s*,\s*/, $fnargs;
+
+    my ($fntype, $fnname) = process_typedid($fntid);
+
+    my @args = ();  # collects the types of this function
+    foreach my $fnarg (@fnargs) {
+	print "PROCESSING $fnarg\n" if $debug;
+	my ($typename, $varname) = process_typedid($fnarg);
+	push @args, $typename;
+    }
+    my $narg = $#args + 1;
+
+    # are we having 'void' as an argument?
+    my $voidargs = 0;
+    foreach my $arg (@args) {
+	if ($arg eq "void") {
+	    if (@args != 1)  {
+		die "'void' must be only element of argument list";
+	    }
+	    $voidargs = 1;
+	}
+    }
+    if ($voidargs) {
+	# remove it
+	@args = ();
+	$narg = 0;
+    }
+    
+    # are we having an ellipses?
+    my $ellipses = 0; # == false
+    foreach my $arg (@args) {
+	if ($arg eq "...") {
+	    # note that we don't care here in 'rha_config.pl'
+	    # whether the ellipses is at the last argument
+	    # position, because the C-compiler will complain
+	    # about it...
+	    $ellipses = 1; # == true
+	}
+    }
+
+    # add a symbol for the function
+    push(@symbs, $fnname);
+    
+    # add wrapper code
+    $init_c_functions .= "any_t b_$fnname(tuple_t t) {\n";
+    my $fncall_str = "$fnname(";
+    
+    if ($ellipses) {
+	# we ignore the second last argument which is
+	# e.g. something like "int_t narg"
+	my $dots = pop @args;
+	my $dummy = pop @args;
+	push @args, $dots;
+	# adjust $narg, take off for 'int_t narg' and one for '...'
+	$narg = $narg - 2;
+	# the b_* function needs additional code
+	$init_c_functions .= "  int_t tlen = tuple_len(t);\n";
+	$init_c_functions .= "  tuple_t args = tuple_new(tlen-$narg);\n";
+	$init_c_functions .= "  for (int i=$narg; i<tlen; i++)\n";
+	$init_c_functions .= "    tuple_set(args, i-$narg, tuple_get(t, i));\n";
+	# instead of calling the function itself, we call the
+	# function with the same name with a prepended 'v'
+	$fncall_str = "v" . $fncall_str;
+    }
+    my $start = 0;
+    my $i = $start;
+    my $item;
+    foreach $item (@args) {
+	if ($i>$start) { $fncall_str .= ", " }
+	my $fnarg_str = "tuple_get(t, $i)";
+	if ($typemapping{$item}) {
+	    my $ucitem = uc($typemapping{$item});
+	    $fnarg_str = "UNWRAP_$ucitem($fnarg_str)";
+	}
+	elsif ($item eq "...") {
+	    $fnarg_str = "args";
+	}
+	elsif ($item ne "any_t") {
+	    #OLD: my $ucitem = uc($item)."_T";
+	    my $ucitem = uc($item);
+	    $fnarg_str = "UNWRAP_PTR($ucitem, $fnarg_str)";
+	}
+	$fncall_str .= $fnarg_str;
+	$i++;
+    }
+    $fncall_str .= ")";
+
+    # how do we deal with the return value?
+    if ($typemapping{$fntype}) {
+	my $ucitem = uc($typemapping{$fntype});
+	$fncall_str = "WRAP_$ucitem($fncall_str)";
+    }
+    elsif ($fntype ne "any_t" && $fntype ne "void") {
+	#OLD: my $ucfntype = uc($fntype)."_T";
+	my $ucfntype = uc($fntype);
+	$fncall_str = "WRAP_PTR($ucfntype, $fncall_str)";
+    }
+    if ($fntype eq "void") { 
+	$init_c_functions .= "  $fncall_str;\n  return void_obj;\n" 
+    }
+    else { 
+	$init_c_functions .= "  return $fncall_str;\n" 
+    }
+    $init_c_functions .= "}\n";
+    
+    # add code to add functions
+    $init_c_add_functions .= "  add_function(module, $fnname"."_sym";
+    $init_c_add_functions .= ", b_$fnname";
+    if ($ellipses) {
+	$init_c_add_functions .= ", true";
+    }
+    else {
+	$init_c_add_functions .= ", false";
+    }
+    $init_c_add_functions .= ", $narg";
+    foreach my $item (@args) {
+	if ($item ne "...") {
+	    #OLD my $ucitem = uc($item)."_T";
+	    my $ucitem = uc($item);
+	    $init_c_add_functions .= ", $ucitem";
+	}
+    }
+    $init_c_add_functions .= ");\n";
+}
+
+
 sub create_ids {
     $type_h_ids .= "  VOID_T = 0";
     $init_c_ptypenames .= "    \"void\"";
-    $id = 1;
-    foreach $item (@tdefs) {
-	$ucitem = uc($item);
-	$iitem = substr($item, 0, -2);
+    my $id = 1;
+    foreach my $item (@tdefs) {
+	my $ucitem = uc($item);
+	my $iitem = substr($item, 0, -2);
 	$type_h_ids .= ",\n  $ucitem = $id";
 	$init_c_ptypenames .= ",\n    \"$iitem\"";
 	$id++;
@@ -285,7 +444,7 @@ sub create_ids {
 }
 
 sub create_prototypes {
-    $ntdefs = scalar(@tdefs) + 1;
+    my $ntdefs = scalar(@tdefs) + 1;
     $type_h_prototypes .= "extern any_t prototypes[$ntdefs];\n";
     $type_h_prototypes .= "extern any_t fn_data_proto;\n";
     $type_h_prototypes .= "extern any_t implementation_proto;\n";
@@ -302,11 +461,11 @@ sub create_prototypes {
     $init_c_init_prototypes .= "    typeobjects[i] = new();\n";
     $init_c_init_prototypes .= "  }\n";
     $init_c_init_prototypes .= "  typeobjects[ANY_T] = 0;\n";
-    $i = 1;
-    foreach $item (@tdefs) {
-	$ucitem = uc($item);
-	$iitem = substr($item, 0, -2);
-	$uciitem = uc($iitem);
+    my $i = 1;
+    foreach my $item (@tdefs) {
+	my $ucitem = uc($item);
+	my $iitem = substr($item, 0, -2);
+	my $uciitem = uc($iitem);
 	if ($item ne "any_t") {
 	    $init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
 	    $init_c_add_pchecks .= "  assign(typeobjects[$ucitem], check_sym, pcheck_f);\n";
@@ -323,14 +482,14 @@ sub create_prototypes {
 
 sub create_symbols {
     # add all @tdefs to @symbs
-    foreach $item (@tdefs) {
+    foreach my $item (@tdefs) {
 	push(@symbs, substr($item, 0, -2));
     }
 
     # set up flags for duplicate removal
     my %printed;
     for (@symbs) { $printed{$_} = 0 }
-    foreach $item (@symbs) {
+    foreach my $item (@symbs) {
 	if ($printed{$item} == 0) {
 	    $type_h_symbols .= "extern symbol_t $item"."_sym;\n";
 	    $init_c_symbols .= "symbol_t $item"."_sym;\n";
@@ -339,6 +498,7 @@ sub create_symbols {
 	}
     }
 }
+
 
 #########################################
 
