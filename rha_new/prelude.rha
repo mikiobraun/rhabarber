@@ -155,8 +155,12 @@ isa = fn (x, t) {
 
 // what is iterable?
 iterable = new(type);
+iterable.name = "iterable";
 iterable.check = fn (x) has(x, \iter);
 
+
+// for 'length' convenience
+len = fn (x) x.len();
 
 // lazy 'and' and 'or'
 and_fn = macro (x, y) if (!eval(local, x)) false
@@ -177,7 +181,7 @@ colon_fn (a, b) = {
     // yes, perform type check and ignore 'b'
     return a.check(b);
   // otherwise generate a slice with default step size (==1)
-  return slice(a, 1, b);
+  return colon_fn(a, b, 1);
 }
 colon_fn(a, b, c) = {
   if (b==void)
@@ -530,7 +534,47 @@ mat(list:l) = {
   return m;
 }
 mat.proto(int:i) = static.getl(i);
+mat.proto(iterable:idx) = {
+  if (slice:idx) 
+    idx = list(idx, static.len());
+  m = mat(idx.len(), 1);
+  i = 0;
+  for (k in idx) {
+    m.setl(i++, static.getl(k));
+  }
+  return m;
+}
 mat.proto(int:i, int:j) = static.get(i, j);
+mat.proto(iterable:idxi, int:j) = {
+  if (slice:idxi) 
+    idxi = list(idxi, static.rows());
+  m = mat(idxi.len(), 1);
+  i = 0;
+  for (k in idxi)
+    m.setl(i++, static.get(k, j));
+  return m;
+}
+mat.proto(int:i, iterable:idxj) = {
+  if (slice:idxj)
+    idxj = list(idxj, static.cols());
+  m = mat(1, idxj.len());
+  j = 0;
+  for (k in idxj)
+    m.setl(j++, static.get(i, k));
+  return m;
+}
+mat.proto(iterable:idxi, iterable:idxj) = {
+  if (slice:idxi) 
+    idxi = list(idxi, static.rows());
+  if (slice:idxj) 
+    idxj = list(idxj, static.cols());
+  m = mat(idxi.len(), idxj.len());
+  i = 0;
+  for (thej in idxj)
+    for (thei in idxi)
+      m.setl(i++, static.get(thei, thej));
+  return m;
+}
 mat.proto.extend = fn (signature, scope, rhs) {
   if (signature.len() == 1) {
     l = signature(0);
@@ -635,14 +679,14 @@ rm(tuple.proto, \fn_data); // to make sure we get a new implementation
 rm(tuple.proto, \extend);  // otherwise we can't overload
 // member access, e.g. t(0)
 tuple.proto(int:i) = static.get(i); // member access, e.g. t(0)
-// slices, e.g. t(1:3)
-tuple.proto(slice:s) = static(list(s, static.len()));
-// list of indices, e.g. t([1,3,6])
-tuple.proto(list:idx) = {
+// lists and slices of indices, e.g. t([1,3,6])
+tuple.proto(iterable:idx) = {
+  if (slice:idx)
+    idx = list(idx, static.len());
   t = tuple(idx.len());
-  j = 0;
-  for (i in idx)
-    t.set(j++, static.get(i));
+  i = 0;
+  for (k in idx)
+    t.set(i++, static.get(k));
   return t;
 }
 // member replace, e.g. t(0)=17

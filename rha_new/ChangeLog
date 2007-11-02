@@ -1,5 +1,15 @@
 2007-11-02  Stefan Harmeling  <harmeling@gmail.com>
 
+	* prelude.rha (mat.proto(..., ...)): added slice support for
+	matrices:
+
+	m = randn(10,12);
+	m(:);
+	m(:,:);
+	m(:-1, 10);
+	m(10:-1:, :2:);
+	m(:3:)
+
 	* core.c (create_pattern): simplified the calling signature, which
 	used to have arbitrary many arguments, which was unnecessary.  Now
 	it takes two: 'theliteral' and 'thetype'.
