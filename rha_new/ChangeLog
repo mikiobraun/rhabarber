@@ -1,5 +1,18 @@
 2007-11-02  Stefan Harmeling  <harmeling@gmail.com>
 
+	* prules.c (resolve_freefix_prule2): changed assertion to check,
+	since with 'f(x) if 17' it can happen that the next prule to apply
+	is 'if' but it is not the first in the parsetree.
+	(colon_pr): changed the output of 'colon_pr', the easiest to learn
+	about it is to type:
+
+	\:
+	\:42
+	\10:
+	\10:42
+
+	at the prompt.
+
 	* prelude.rha (iterable.check): simplified the check to only look
 	for 'iter' slot, since for slices we can only call 'iter' if we
 	provide a bound.

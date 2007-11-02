@@ -51,9 +51,8 @@ any_t proxy_fn(any_t this, symbol_t s)
 any_t create_prepattern(any_t theliteral, any_t thetype)
 {
   return WRAP_PTR(TUPLE_T, 
-		  tuple_make(4, WRAP_SYMBOL(colon_fn_sym), 
+		  tuple_make(3, WRAP_SYMBOL(colon_fn_sym), 
 			     thetype, 
-			     WRAP_INT(1), 
 			     theliteral));
 }
 
@@ -129,13 +128,13 @@ any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
     // colon function
     if (ptype(entry) == TUPLE_T) {
       tuple_t entry_t = UNWRAP_PTR(TUPLE_T, entry);
-      if (tuple_len(entry_t) == 4) {
-	// (colon_fn int 1 x)
+      if (tuple_len(entry_t) == 3) {
+	// (colon_fn int x)
 	any_t entry_t0 = tuple_get(entry_t, 0);
 	if (ptype(entry_t0) == SYMBOL_T || UNWRAP_SYMBOL(entry_t0) == colon_fn_sym) {
-	  // we found something like 'int:x'
+	  // we found something that could look like 'int:x'
 	  thetype = tuple_get(entry_t, 1);
-	  theliteral = tuple_get(entry_t, 3);
+	  theliteral = tuple_get(entry_t, 2);
 	}
       }
     }
@@ -415,6 +414,7 @@ any_t run_fn(any_t root, string_t fname)
 
 any_t colon_fn(any_t a, any_t b)
 {
+  assert(false);  // are we using this function?
   if (ptype(a) == INT_T && ptype(b) == INT_T) {
     int_t i = UNWRAP_INT(a);
     int_t j = UNWRAP_INT(b);

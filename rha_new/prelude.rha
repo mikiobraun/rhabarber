@@ -168,17 +168,25 @@ or_fn = macro(x, y) if (eval(local, x)) true
                     else false;
 //or_fn  = fn (bool:x, bool:y) modules.bool_fn.bool_or(x, y);
 
-// colon can be used for typechecks and for slices
-colon_fn (a, b, c) = {
+// 'colon_fn' can be used for typechecks and for slices
+// note that the basic cases of 'colon_fn' can't have typed arguments,
+// since 'colon_fn' would be used to resolve those
+colon_fn (a, b) = {
   // is 'a' a type?
   if (type.check(a)) // note that we can't use here 'type:a'
     // yes, perform type check and ignore 'b'
-    return a.check(c);
-  // otherwise generate a slice
-  return slice(a, b, c);
+    return a.check(b);
+  // otherwise generate a slice with default step size (==1)
+  return slice(a, 1, b);
 }
-colon_fn(a, b) = slice(a, b);
-
+colon_fn(a, b, c) = {
+  if (b==void)
+    // no 'end' bound given
+    return slice(a, c);
+  else
+    return slice(a, c, b);
+}
+  
 // == and != are special
 // the problem with overloading here is that type checking might use
 // certain function which are overloaded themselves, which needs to be
@@ -334,10 +342,10 @@ address.proto.string = fn () modules.object.address_to_string(this);
 // slices
 slice = new(type);
 slice(int:begin, int:step) = {
-  s = new(slice);
-  s.begin = begin;
   if (step == 0)
     error("step size must be positive or negative but not zero");
+  s = new(slice);
+  s.begin = begin;
   s.step = step;
   return s;
 }
@@ -749,11 +757,6 @@ in_fn = fn (a, iterable:b) {
     if (a==x) return true;
   return false;
 };
-
-// what is a pattern?
-//   pattern = new(type);     // in rha_init.c
-//   pattern.proto = new();   // in rha_init.c
-// a pattern constructor
 
 // what is comparable?
 comparable = new(type);

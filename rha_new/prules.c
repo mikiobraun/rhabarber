@@ -370,36 +370,38 @@ tuple_t colon_pr(any_t env, list_t parsetree)
   if (partsl != 2 && partsl != 3)
     rha_error("parse error with colon_pr");
   
+  // (0) start the calling tuple
+  list_t thecall = list_new();
+  list_append(thecall, WRAP_SYMBOL(symbol_new("colon_fn")));
+
   // (1) extract 'begin'
   slice_begin = UNWRAP_PTR(LIST_T, list_popfirst(parts));
   if (list_len(slice_begin) == 0)
     list_append(slice_begin, WRAP_INT(0));  // default begin == 0
-  // (2) extract 'step'
-  if (partsl == 2) {
-    slice_step = list_new();
-    list_append(slice_step, WRAP_INT(1));  // default step == 1
-  }
-  else {
+  list_append(thecall, resolve(env, slice_begin));
+
+  // (2) extract 'end'
+  assert(list_len(parts) == 1 || list_len(parts) == 2);
+  slice_end = UNWRAP_PTR(LIST_T, list_poplast(parts));
+  if (list_len(slice_end) == 0)
+    list_append(thecall, void_obj);
+  else
+    list_append(thecall, resolve(env, slice_end));
+
+  // (3) extract optionally step size
+  // only if there is something left
+  if (list_len(parts) > 0) {
     assert(partsl == 3);
+    assert(list_len(parts) == 1);
     slice_step = UNWRAP_PTR(LIST_T, list_popfirst(parts));
     if (list_len(slice_step) == 0)
       rha_error("missing step size");
+    list_append(thecall, resolve(env, slice_step));
   }
-  // (3) extract 'end'
-  slice_end = UNWRAP_PTR(LIST_T, list_popfirst(parts));
+  // later on in 'prelude.rha' the function 'colon_fn' will take
+  // care on default step size
   
-  // now slice_begin and slice_step have reasonable values
-  if (list_len(slice_end) == 0)
-    return tuple_make(3, 
-		      WRAP_SYMBOL(symbol_new("colon_fn")), 
-		      resolve(env, slice_begin), 
-		      resolve(env, slice_step));
-  else
-    return tuple_make(4, 
-		      WRAP_SYMBOL(symbol_new("colon_fn")), 
-		      resolve(env, slice_begin), 
-		      resolve(env, slice_step),
-		      resolve(env, slice_end));
+  return list_to_tuple(thecall);
 }
 
 tuple_t less_pr(any_t env, list_t parsetree) 
@@ -1303,7 +1305,9 @@ tuple_t resolve_freefix_prule2(any_t env, list_t parsetree,
   // in rounded brackets
   //debug("resolve_freefix_prule2(%o)\n", WRAP_PTR(LIST_T, parsetree));
   any_t head = list_popfirst(parsetree);
-  assert(head && is_symbol(key1, head));
+  if (!head || !is_symbol(key1, head))
+    rha_error("expression '%o' should start with keyword found %o",
+	      WRAP_PTR(LIST_T, parsetree), head);
   // split the parsetree
   int parsetree_len = list_len(parsetree);
   list_t front_l = list_chop_matching(parsetree, key1, key2);
