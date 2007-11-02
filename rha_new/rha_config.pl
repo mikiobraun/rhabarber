@@ -65,13 +65,13 @@ $macros  =~ s/\/\/[^\n]*//g;
 my @mods = $modules =~ /include\s+\"($id)\.h\"/gox;
 
 # (2) disect the typedefs
-my @tdefs = $types =~ /$keyword\s+($id)/gox;
+#my @tdefs = $types =~ /$keyword\s+($id)/gox;
 
 # (3) disect the symbols
 my @symbs = $symbols =~ /($id)\_sym/gox;
 
 # (4) create a hash of types
-my %typeset = map { $_ => 1 } @tdefs;
+#my %typeset = map { $_ => 1 } @tdefs;
 
 my %typenames = (); # to collect all typenames found in the header files
 
@@ -197,6 +197,9 @@ foreach my $module (@mods) {
 chop($init_c_add_functions);
 chop($init_c_add_functions);
 
+# now we also produces a list of typenames
+@tdefs = keys %typenames;
+
 # after creating a list of symbols, now the easy stuff
 create_ids();
 create_prototypes();
@@ -291,7 +294,10 @@ sub process_typedid {
     }
 
     # take a note about the typename
-    $typenames{$typename} = $typename;
+    if ($typename ne "..."
+	&& $typename ne "void") {
+	$typenames{$typename} = $typename;
+    }
 
     print "RETURNING ($typename, $varname) FROM process_typedid($tid)\n" if $debug;
     return ($typename, $varname);
