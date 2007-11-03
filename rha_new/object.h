@@ -43,21 +43,21 @@ struct rha_object {
 extern       void       object_init(any_t root, any_t module);
 
 extern _rha_ any_t   new(void);
-extern       any_t   create_pt(int_t pt);
-extern       any_t   new_pt(int_t pt);
+extern       any_t   create_pt(int pt);
+extern       any_t   new_pt(int pt);
 extern       any_t   create_builtin(any_t (*code)(tuple_t),
-				       bool_t varargs, int narg, ...);
+				       bool varargs, int narg, ...);
 extern       any_t   vcreate_builtin(any_t (*code)(tuple_t),
-					bool_t varargs, int narg, va_list);
+					bool varargs, int narg, va_list);
 
 extern       any_t   copy_pt(any_t o);
 extern _rha_ address_t  addr(any_t o);
 extern _rha_ any_t   clone(any_t parent);
-extern       int_t      ptype(any_t);      // primtype
+extern       int      ptype(any_t);      // primtype
 extern _rha_ string_t   ptypename(any_t o);
-extern       void       setptype(any_t, int_t);
+extern       void       setptype(any_t, int);
 
-extern _rha_ void       print_fn(int_t narg, ...);
+extern _rha_ void       print_fn(int narg, ...);
 extern _rha_ void       vprint_fn(tuple_t args);
 extern _rha_ string_t   to_string(any_t);
 extern       string_t   to_string_only_in_c(any_t o);
@@ -66,8 +66,8 @@ extern _rha_ string_t   address_to_string(address_t);
 
 extern _rha_ void       ls(any_t);
 
-extern _rha_ bool_t     equalequal_fn(any_t a, any_t b);
-extern _rha_ bool_t     notequal_fn(any_t a, any_t b);
+extern _rha_ bool     equalequal_fn(any_t a, any_t b);
+extern _rha_ bool     notequal_fn(any_t a, any_t b);
 extern _rha_ any_t   inc(any_t);
 extern _rha_ any_t   dec(any_t);
 extern _rha_ any_t   inc_copy(any_t);
@@ -90,9 +90,9 @@ extern       any_t   wrap(int ptype, ...);
 //        a.x        -> lookup(a, \x);
 extern _rha_ any_t   lookup(any_t env, symbol_t s);
 extern _rha_ any_t   lookup_local(any_t l, symbol_t s);
-extern _rha_ bool_t     check(any_t t, any_t o);
-extern _rha_ bool_t     pcheck(any_t t, any_t o);
-extern _rha_ bool_t   is_void(any_t o);
+extern _rha_ bool     check(any_t t, any_t o);
+extern _rha_ bool     pcheck(any_t t, any_t o);
+extern _rha_ bool   is_void(any_t o);
 extern _rha_ any_t   location(any_t l, symbol_t s);
 
 //       x = 17;    ->  assign(local_sym, \x, 17);
@@ -109,7 +109,7 @@ extern _rha_ any_t   extend(any_t this, symbol_t s, tuple_t args,
 
 
 // 'has'
-extern _rha_ bool_t     has(any_t obj, symbol_t s);
+extern _rha_ bool     has(any_t obj, symbol_t s);
 
 extern _rha_ void       rm(any_t, symbol_t s);
 

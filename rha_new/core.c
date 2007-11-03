@@ -52,7 +52,7 @@ any_t create_prepattern(any_t theliteral, any_t thetype)
 {
   // the prepattern is created on the parse level.
   // later the type is EVALuated to the actual type, e.g. (int+real):x
-  return WRAP_PTR(TUPLE_T, 
+  return WRAP_PTR(_TUPLE_T, 
 		  tuple_make(3, WRAP_SYMBOL(colon_fn_sym), 
 			     thetype, 
 			     theliteral));
@@ -71,14 +71,14 @@ any_t create_pattern(any_t theliteral, any_t thetype)
 
   // check the type of the literal
   if (theliteral 
-      && ptype(theliteral) != SYMBOL_T
-      && ptype(theliteral) != BOOL_T
-      && ptype(theliteral) != INT_T
-      && ptype(theliteral) != REAL_T)
+      && ptype(theliteral) != _SYMBOL_T
+      && ptype(theliteral) != _BOOL
+      && ptype(theliteral) != _INT
+      && ptype(theliteral) != _REAL_T)
     rha_error("(pattern) the arg must be symbol, bool, int or real");
 
   if (thetype) {
-    if (theliteral && ptype(theliteral) != SYMBOL_T)
+    if (theliteral && ptype(theliteral) != _SYMBOL_T)
       rha_error("(pattern) only symbols can be typed");
 
     // do type checking here by hand!
@@ -111,12 +111,12 @@ any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
     any_t thetype = 0;
     // entry is already resolved, we are looking for a call to the
     // colon function
-    if (ptype(entry) == TUPLE_T) {
-      tuple_t entry_t = UNWRAP_PTR(TUPLE_T, entry);
+    if (ptype(entry) == _TUPLE_T) {
+      tuple_t entry_t = UNWRAP_PTR(_TUPLE_T, entry);
       if (tuple_len(entry_t) == 3) {
 	// (colon_fn int x)
 	any_t entry_t0 = tuple_get(entry_t, 0);
-	if (ptype(entry_t0) == SYMBOL_T || UNWRAP_SYMBOL(entry_t0) == colon_fn_sym) {
+	if (ptype(entry_t0) == _SYMBOL_T || UNWRAP_SYMBOL(entry_t0) == colon_fn_sym) {
 	  // we found something that could look like 'int:x'
 	  thetype = tuple_get(entry_t, 1);
 	  theliteral = tuple_get(entry_t, 2);
@@ -124,7 +124,7 @@ any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
       }
     }
     if (theliteral
-	&& ptype(theliteral) == SYMBOL_T
+	&& ptype(theliteral) == _SYMBOL_T
 	&& UNWRAP_SYMBOL(theliteral) == symbol_new("..."))
       break;
     any_t pattern = 0;
@@ -134,7 +134,7 @@ any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
       pattern = create_pattern(theliteral, 0);
     list_append(signature_l, pattern);
   }
-  bool_t varargs = false;
+  bool varargs = false;
   if (i < tlen-1) {
     rha_error("ellipsis (...) is only allowed at the end of a signature");
   }
@@ -145,7 +145,7 @@ any_t create_fn_data_entry(any_t env, tuple_t signature, any_t fnbody)
 
   // built fn_data entry
   any_t entry = new();
-  assign(entry, signature_sym, WRAP_PTR(TUPLE_T, signature));
+  assign(entry, signature_sym, WRAP_PTR(_TUPLE_T, signature));
   if (env)
     assign(entry, scope_sym, env);
   assign(entry, fnbody_sym, fnbody);
@@ -159,7 +159,7 @@ any_t create_fn_data(any_t env, tuple_t signature, any_t fnbody)
   // note the order
   list_t fn_data_l = list_new();
   list_append(fn_data_l, create_fn_data_entry(env, signature, fnbody));
-  any_t fn_data = WRAP_PTR(LIST_T, fn_data_l);
+  any_t fn_data = WRAP_PTR(_LIST_T, fn_data_l);
   assign(fn_data, parent_sym, fn_data_proto); // this makes sure that
 					      // it can be converted
 					      // to string
@@ -183,7 +183,7 @@ any_t macro_fn(tuple_t argnames, any_t fnbody)
 {
   any_t m = new();
   assign(m, ismacro_sym, WRAP_BOOL(true));
-  assign(m, argnames_sym, WRAP_PTR(TUPLE_T, argnames));
+  assign(m, argnames_sym, WRAP_PTR(_TUPLE_T, argnames));
   assign(m, fnbody_sym, fnbody);
   return m;
 }
@@ -211,8 +211,8 @@ tuple_t map_fn(any_t this, any_t f, tuple_t t)
   tuple_t call_t = 0;
   for (int i = 0; i < tlen; i++) {
     any_t entry = tuple_get(t, i);
-    if (ptype(entry) == TUPLE_T) {
-      list_t l = tuple_to_list(UNWRAP_PTR(TUPLE_T, entry));
+    if (ptype(entry) == _TUPLE_T) {
+      list_t l = tuple_to_list(UNWRAP_PTR(_TUPLE_T, entry));
       list_prepend(l, quoted(f));
       call_t = list_to_tuple(l);
     }
@@ -221,12 +221,12 @@ tuple_t map_fn(any_t this, any_t f, tuple_t t)
       tuple_set(call_t, 0, quoted(f));
       tuple_set(call_t, 1, entry);
     }
-    tuple_set(sink_t, i, eval(this, WRAP_PTR(TUPLE_T, call_t)));
+    tuple_set(sink_t, i, eval(this, WRAP_PTR(_TUPLE_T, call_t)));
   }
   return sink_t;
 }
 
-any_t if_fn(any_t this, bool_t cond, any_t then_code, any_t else_code)
+any_t if_fn(any_t this, bool cond, any_t then_code, any_t else_code)
 {
   // we assume that the condition is already evaluated
   if (cond)
@@ -266,7 +266,7 @@ void throw_fn(any_t excp)
 
 
 
-void exit_fn(int_t exit_code)
+void exit_fn(int exit_code)
 {
   saybye();
   exit(exit_code); 
@@ -279,7 +279,7 @@ any_t while_fn(any_t this, any_t cond, any_t body)
   begin_frame(LOOP_FRAME)
     while (1) {
       any_t cond_o = eval(this, cond);
-      if (!cond_o || ptype(cond_o)!=BOOL_T)
+      if (!cond_o || ptype(cond_o)!=_BOOL)
 	rha_error("(while) condition must generate bool");
       if (UNWRAP_BOOL(cond_o))
 	res = eval(this, body);
@@ -333,7 +333,7 @@ any_t for_fn(any_t this, any_t var, any_t container, any_t body)
 #include <sys/time.h>
 
 int tic_saved_sec;
-double tic_saved_time;
+real_t tic_saved_time;
 
 void tic_fn(void)
 {
@@ -350,7 +350,7 @@ real_t toc_fn(void)
   gettimeofday(&tv, NULL);
 
   tv.tv_sec -= tic_saved_sec;
-  double now = tv.tv_sec + tv.tv_usec*1e-6;
+  real_t now = tv.tv_sec + tv.tv_usec*1e-6;
 
   return now - tic_saved_time;
 }
@@ -370,9 +370,9 @@ any_t split_resolve_and_eval(any_t root, list_t source, string_t context)
   // resolve and eval each expression
   any_t obj=0, expr=0, value=0, excp=0;
   while ((obj = list_popfirst(l))) {
-    assert(ptype(obj) == LIST_T);
+    assert(ptype(obj) == _LIST_T);
     try {
-      expr = resolve(root, UNWRAP_PTR(LIST_T, obj));
+      expr = resolve(root, UNWRAP_PTR(_LIST_T, obj));
       value = eval(root, expr);
     }
     catch (excp) {
@@ -400,9 +400,9 @@ any_t run_fn(any_t root, string_t fname)
 any_t colon_fn(any_t a, any_t b)
 {
   assert(false);  // are we using this function?
-  if (ptype(a) == INT_T && ptype(b) == INT_T) {
-    int_t i = UNWRAP_INT(a);
-    int_t j = UNWRAP_INT(b);
+  if (ptype(a) == _INT && ptype(b) == _INT) {
+    int i = UNWRAP_INT(a);
+    int j = UNWRAP_INT(b);
     // create a tuple with those numbers
     // e.g.   0:4   ->   tuple:[0, 1, 2, 3]
     tuple_t t = 0;
@@ -413,7 +413,7 @@ any_t colon_fn(any_t a, any_t b)
       for (int k=i; k<j; k++)
 	tuple_set(t, k-i, WRAP_INT(k));
     }
-    return WRAP_PTR(TUPLE_T, t);
+    return WRAP_PTR(_TUPLE_T, t);
   }
   rha_warning("(colon_fn) for non-integers, 'a:b' returns 'b'");
   return b;
@@ -456,5 +456,5 @@ any_t literal(any_t env, list_t parsetree)
   
   // and wrap it up!
 
-  return WRAP_PTR(LIST_T, sink);  // a list!
+  return WRAP_PTR(_LIST_T, sink);  // a list!
 }

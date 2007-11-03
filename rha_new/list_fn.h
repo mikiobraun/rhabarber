@@ -6,7 +6,7 @@
 
 extern _rha_ list_t    list_new(void);
 extern _rha_ list_t    list_copy(list_t l);
-extern _rha_ int_t     list_len(list_t l);
+extern _rha_ int     list_len(list_t l);
 extern _rha_ list_t    list_append(list_t, any_t o);
 extern _rha_ list_t    list_prepend(list_t, any_t o);
 extern _rha_ list_t    list_extend(list_t, list_t);
@@ -22,11 +22,11 @@ extern _rha_ any_t     list_last(list_t);
 extern _rha_ any_t     list_popfirst(list_t);
 extern _rha_ any_t     list_poplast(list_t);
 
-extern list_t list_insert_sorted(list_t, any_t, bool_t (*)(any_t, any_t));
+extern list_t list_insert_sorted(list_t, any_t, bool (*)(any_t, any_t));
 
 // iterator stuff for use in C with MACRO
 extern _rha_ list_it_t list_begin(list_t l);
-extern _rha_ bool_t    list_done(list_it_t i);
+extern _rha_ bool    list_done(list_it_t i);
 extern _rha_ void      list_next(list_it_t i);
 extern _rha_ any_t  list_get(list_it_t i);
 

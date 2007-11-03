@@ -29,18 +29,18 @@ mat_t mat_new(int r, int c)
   return m;
 }
 
-int_t mat_rows(mat_t m)
+int mat_rows(mat_t m)
 {
   return m->rows;
 }
 
-int_t mat_cols(mat_t m)
+int mat_cols(mat_t m)
 {
   return m->cols;
 }
 
 
-int_t mat_len(mat_t m)
+int mat_len(mat_t m)
 {
   return m->len;
 }
@@ -56,28 +56,28 @@ tuple_t mat_size(mat_t m)
  *
  */
 
-real_t mat_getl(mat_t m, int_t i)
+real_t mat_getl(mat_t m, int i)
 {
   return m->array[idx(i, m->len)];
 }
 
-void mat_setl(mat_t m, int_t i, real_t v)
+void mat_setl(mat_t m, int i, real_t v)
 {
   m->array[idx(i, m->len)] = v;
 }
 
 
-real_t mat_get(mat_t m, int_t i, int_t j)
+real_t mat_get(mat_t m, int i, int j)
 {
-  int_t c = idx(i, m->rows) + idx(j, m->cols)*(m->rows);
+  int c = idx(i, m->rows) + idx(j, m->cols)*(m->rows);
 
   return m->array[c];
 }
 
 
-void mat_set(mat_t m, int_t i, int_t j, real_t v)
+void mat_set(mat_t m, int i, int j, real_t v)
 {
-  int_t c = idx(i, m->rows) + idx(j, m->cols)*(m->rows);
+  int c = idx(i, m->rows) + idx(j, m->cols)*(m->rows);
   m->array[c] = v;
 }
 
@@ -90,7 +90,7 @@ void mat_fillfromarray(mat_t m, real_t *array)
 
 void mat_fillwithfunction(mat_t m, real_t (*f)())
 {
-  for(int_t i = 0; i < m->len; i++) {
+  for(int i = 0; i < m->len; i++) {
     m->array[i] = (*f)();
   }
 }
@@ -104,13 +104,13 @@ mat_t mat_copy(mat_t m)
 }
 
 
-mat_t mat_eye(int_t n)
+mat_t mat_eye(int n)
 {
   mat_t I = mat_new(n, n);
-  for(int_t i = 0; i < n; i++)
-    for(int_t j = 0; j < n; j++)
+  for(int i = 0; i < n; i++)
+    for(int j = 0; j < n; j++)
       mat_set(I, i, j, 0);
-  for(int_t i = 0; i < n; i++)
+  for(int i = 0; i < n; i++)
     mat_set(I, i, i, 1);
   return I;
 }
@@ -119,8 +119,8 @@ mat_t mat_eye(int_t n)
 mat_t mat_transpose(mat_t a)
 {
   mat_t b = mat_new(a->cols, a->rows);
-  for(int_t i = 0; i < a->rows; i++)
-    for(int_t j = 0; j < a->cols; j++) 
+  for(int i = 0; i < a->rows; i++)
+    for(int j = 0; j < a->cols; j++) 
       mat_set(b, j, i, mat_get(a, i, j));
   return b;
 }
@@ -149,7 +149,7 @@ static real_t drandn()
 }
 
 
-mat_t mat_rand(int_t m, int_t n)
+mat_t mat_rand(int m, int n)
 {
   mat_t X = mat_new(m, n);
   mat_fillwithfunction(X, drand);
@@ -157,7 +157,7 @@ mat_t mat_rand(int_t m, int_t n)
 }
 
 
-mat_t mat_randn(int_t m, int_t n)
+mat_t mat_randn(int m, int n)
 {
   mat_t X = mat_new(m, n);
   mat_fillwithfunction(X, drandn);
@@ -175,7 +175,7 @@ real_t mat_max(mat_t m)
 {
   
   real_t cand = m->array[0];
-  for (int_t i = 1; i < m->len; i++) {
+  for (int i = 1; i < m->len; i++) {
     real_t dum = m->array[i];
     cand = (cand<dum) ? dum : cand;
   }
@@ -186,7 +186,7 @@ real_t mat_max(mat_t m)
 real_t mat_min(mat_t m)
 {
   real_t cand = m->array[0];
-  for (int_t i = 1; i < m->len; i++) {
+  for (int i = 1; i < m->len; i++) {
     real_t dum = m->array[i];
     cand = (cand>dum) ? dum : cand;
   }
@@ -243,7 +243,7 @@ mat_t mat_solve(mat_t A, mat_t B)
 }
 
 
-int lessthan_real_t(const void *a, const void *b) { 
+int lessthan_real(const void *a, const void *b) { 
   real_t *ap = (real_t *) a;
   real_t *bp = (real_t *) b;
   return *ap < *bp; 
@@ -252,11 +252,11 @@ int lessthan_real_t(const void *a, const void *b) {
 
 mat_t mat_sort(mat_t A)
 {
-  extern int_t lessthan_real_t();
+  extern int lessthan_real();
   mat_t B = mat_copy(A);
-  //qsort(B->array, B->len, sizeof(real_t), lessthan_real_t);
-  for(int_t i = 0; i < B->len; i++)
-    for(int_t j = 0; j < B->len; j++) {
+  //qsort(B->array, B->len, sizeof(real_t), lessthan_real);
+  for(int i = 0; i < B->len; i++)
+    for(int j = 0; j < B->len; j++) {
       if(B->array[i] > B->array[j]) {
 	real_t swap = B->array[i];
 	B->array[i] = B->array[j];
@@ -269,30 +269,30 @@ mat_t mat_sort(mat_t A)
 
 void mat_map(mat_t m, real_t (*f)(real_t ))
 {
-  for(int_t i = 0; i < m->len; i++) {
+  for(int i = 0; i < m->len; i++) {
     m->array[i] = (*f)(m->array[i]);
   }
 }
 
 
-void copy_col(mat_t a, mat_t u, int_t j)
+void copy_col(mat_t a, mat_t u, int j)
 {
-  for (int_t i = 0; i < a->rows; i++) {
+  for (int i = 0; i < a->rows; i++) {
     real_t aij = mat_get(a, i, j);
     u->array[i] = aij;
   }
 }
 
 
-mat_t mat_repmat(mat_t a, int_t r, int_t c)
+mat_t mat_repmat(mat_t a, int r, int c)
 {
   // allocate memory for the result
   mat_t res = mat_new(r*(a->rows), c*(a->cols));
-  int_t len = sizeof(*a->array) * a->rows;  // copy column by column
-  for (int_t k=0; k<a->cols; k++) {
+  int len = sizeof(*a->array) * a->rows;  // copy column by column
+  for (int k=0; k<a->cols; k++) {
     real_t *inspot = &(a->array[k*(a->rows)]);
-    for (int_t i=0; i<r; i++)
-      for (int_t j=0; j<c; j++) {
+    for (int i=0; i<r; i++)
+      for (int j=0; j<c; j++) {
 	real_t *outspot = &(res->array[i*(a->rows) + j*(a->cols)*(a->rows)*r + k*(a->rows)*r]);
 	memcpy(outspot, inspot, len);
       }
@@ -301,7 +301,7 @@ mat_t mat_repmat(mat_t a, int_t r, int_t c)
 }
 
 
-mat_t mat_reshape(mat_t a, int_t r, int_t c)
+mat_t mat_reshape(mat_t a, int r, int c)
 {
   // does the new size match the mat
   if (a->len != r*c)
@@ -316,7 +316,7 @@ mat_t mat_reshape(mat_t a, int_t r, int_t c)
 mat_t mat_minus(mat_t a)
 {
   mat_t m = mat_copy(a);
-  for (int_t i=0; i<m->len; i++) m->array[i] = -m->array[i];
+  for (int i=0; i<m->len; i++) m->array[i] = -m->array[i];
   return m;
 }
 
@@ -327,7 +327,7 @@ mat_t mat_dotdivide_mat(mat_t a, mat_t b)
   if (a->cols!=b->cols || a->rows!=b->rows)
     rha_error("(mat) dimension must agree for hadamard divide");
   mat_t c = mat_copy(a);
-  for (int_t i=0; i<a->len; i++) c->array[i] = c->array[i] / b->array[i];
+  for (int i=0; i<a->len; i++) c->array[i] = c->array[i] / b->array[i];
   return c;
 }
 
@@ -338,7 +338,7 @@ mat_t mat_dottimes_mat(mat_t a, mat_t b)
   if (a->cols!=b->cols || a->rows!=b->rows)
     rha_error("(mat) dimension must agree for hadamard produce");
   mat_t c = mat_copy(a);
-  for (int_t i=0; i<a->len; i++) c->array[i] = c->array[i] * b->array[i];
+  for (int i=0; i<a->len; i++) c->array[i] = c->array[i] * b->array[i];
   return c;
 }
 
@@ -357,7 +357,7 @@ mat_t mat_plus_mat(mat_t a, mat_t b)
 mat_t mat_plus_real(mat_t a, real_t r)
 {
   mat_t m = mat_copy(a);
-  for (int_t i=0; i<m->len; i++) m->array[i] = m->array[i] + r;
+  for (int i=0; i<m->len; i++) m->array[i] = m->array[i] + r;
   return m;
 }
 
@@ -382,7 +382,7 @@ mat_t mat_minus_mat(mat_t a, mat_t b)
 mat_t mat_minus_real(mat_t a, real_t r)
 {
   mat_t m = mat_copy(a);
-  for (int_t i=0; i<m->len; i++) m->array[i] = m->array[i] - r;
+  for (int i=0; i<m->len; i++) m->array[i] = m->array[i] - r;
   return m;
 }
 
@@ -390,7 +390,7 @@ mat_t mat_minus_real(mat_t a, real_t r)
 mat_t real_minus_mat(real_t r, mat_t a)
 {
   mat_t m = mat_copy(a);
-  for (int_t i=0; i<m->len; i++) m->array[i] = r - m->array[i];
+  for (int i=0; i<m->len; i++) m->array[i] = r - m->array[i];
   return m;
 }
 
@@ -447,7 +447,7 @@ mat_t mat_exp(mat_t a)
 // component-wise exponential
 {
   mat_t r = mat_new(a->rows, a->cols);
-  for (int_t i = 0; i < mat_len(a); i++) 
+  for (int i = 0; i < mat_len(a); i++) 
     mat_setl(r, i, exp(mat_getl(a, i)));
   return r;
 }
@@ -457,7 +457,7 @@ mat_t mat_sin(mat_t a)
 // component-wise sin
 {
   mat_t r = mat_new(a->rows, a->cols);
-  for (int_t i = 0; i < mat_len(a); i++) 
+  for (int i = 0; i < mat_len(a); i++) 
     mat_setl(r, i, sin(mat_getl(a, i)));
   return r;
 }
@@ -467,7 +467,7 @@ mat_t mat_sinc(mat_t a)
 // component-wise sinc
 {
   mat_t r = mat_new(a->rows, a->cols);
-  for (int_t i = 0; i < mat_len(a); i++) {
+  for (int i = 0; i < mat_len(a); i++) {
     real_t ddd = mat_getl(a, i);
     if (ddd==0) mat_setl(r, i, 1);
     else mat_setl(r, i, sin(ddd)/ddd);

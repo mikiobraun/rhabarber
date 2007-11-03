@@ -85,8 +85,6 @@ my %typenames = (); # to collect all typenames found in the header files
 #SHOULD BE:
 #my %typemapping = ( bool      => "int",
 #		    int       => "int",
-#		    bool_t    => "int",
-#		    int_t     => "int",
 #		    symbol_t  => "int",
 #		    size_t    => "int",
 #		    float     => "float",
@@ -95,8 +93,6 @@ my %typenames = (); # to collect all typenames found in the header files
 #		    builtin_t => "builtin_t" );
 my %typemapping = ( bool      => "bool",
 		    int       => "int",
-		    bool_t    => "bool",
-		    int_t     => "int",
 		    symbol_t  => "symbol",
 		    size_t    => "int",
 		    float     => "float",
@@ -359,14 +355,14 @@ sub process_fun() {
     
     if ($ellipses) {
 	# we ignore the second last argument which is
-	# e.g. something like "int_t narg"
+	# e.g. something like "int narg"
 	my $dots = pop @args;
 	my $dummy = pop @args;
 	push @args, $dots;
-	# adjust $narg, take off for 'int_t narg' and one for '...'
+	# adjust $narg, take off for 'int narg' and one for '...'
 	$narg = $narg - 2;
 	# the b_* function needs additional code
-	$init_c_functions .= "  int_t tlen = tuple_len(t);\n";
+	$init_c_functions .= "  int tlen = tuple_len(t);\n";
 	$init_c_functions .= "  tuple_t args = tuple_new(tlen-$narg);\n";
 	$init_c_functions .= "  for (int i=$narg; i<tlen; i++)\n";
 	$init_c_functions .= "    tuple_set(args, i-$narg, tuple_get(t, i));\n";
@@ -388,9 +384,8 @@ sub process_fun() {
 	    $fnarg_str = "args";
 	}
 	elsif ($item ne "any_t") {
-	    #OLD: my $ucitem = uc($item)."_T";
 	    my $ucitem = uc($item);
-	    $fnarg_str = "UNWRAP_PTR($ucitem, $fnarg_str)";
+	    $fnarg_str = "UNWRAP_PTR(_$ucitem, $fnarg_str)";
 	}
 	$fncall_str .= $fnarg_str;
 	$i++;
@@ -403,9 +398,8 @@ sub process_fun() {
 	$fncall_str = "WRAP_$ucitem($fncall_str)";
     }
     elsif ($fntype ne "any_t" && $fntype ne "void") {
-	#OLD: my $ucfntype = uc($fntype)."_T";
 	my $ucfntype = uc($fntype);
-	$fncall_str = "WRAP_PTR($ucfntype, $fncall_str)";
+	$fncall_str = "WRAP_PTR(_$ucfntype, $fncall_str)";
     }
     if ($fntype eq "void") { 
 	$init_c_functions .= "  $fncall_str;\n  return void_obj;\n" 
@@ -427,9 +421,8 @@ sub process_fun() {
     $init_c_add_functions .= ", $narg";
     foreach my $item (@args) {
 	if ($item ne "...") {
-	    #OLD my $ucitem = uc($item)."_T";
 	    my $ucitem = uc($item);
-	    $init_c_add_functions .= ", $ucitem";
+	    $init_c_add_functions .= ", _$ucitem";
 	}
     }
     $init_c_add_functions .= ");\n";
@@ -437,14 +430,13 @@ sub process_fun() {
 
 
 sub create_ids {
-    $type_h_ids .= "  VOID_T = 0";
+    $type_h_ids .= "  _VOID = 0";
     $init_c_ptypenames .= "    \"void\"";
     my $id = 1;
     foreach my $item (@tdefs) {
 	my $ucitem = uc($item);
-	my $iitem = substr($item, 0, -2);
-	$type_h_ids .= ",\n  $ucitem = $id";
-	$init_c_ptypenames .= ",\n    \"$iitem\"";
+	$type_h_ids .= ",\n  _$ucitem = $id";
+	$init_c_ptypenames .= ",\n    \"$item\"";
 	$id++;
     }
 }
@@ -466,16 +458,14 @@ sub create_prototypes {
     $init_c_init_prototypes .= "    prototypes[i] = create_pt(i);\n";
     $init_c_init_prototypes .= "    typeobjects[i] = new();\n";
     $init_c_init_prototypes .= "  }\n";
-    $init_c_init_prototypes .= "  typeobjects[ANY_T] = 0;\n";
+    $init_c_init_prototypes .= "  typeobjects[_ANY_T] = 0;\n";
     my $i = 1;
     foreach my $item (@tdefs) {
 	my $ucitem = uc($item);
-	my $iitem = substr($item, 0, -2);
-	my $uciitem = uc($iitem);
 	if ($item ne "any_t") {
-	    $init_c_init_typeobjects .= "  ADD_TYPE($iitem, $uciitem);\n";
-	    $init_c_add_pchecks .= "  assign(typeobjects[$ucitem], check_sym, pcheck_f);\n";
-	    # note that we omit ANY_T for the type slot
+	    $init_c_init_typeobjects .= "  ADD_TYPE($item, _$ucitem);\n";
+	    $init_c_add_pchecks .= "  assign(typeobjects[_$ucitem], check_sym, pcheck_f);\n";
+	    # note that we omit _ANY_T for the type slot
 	    $init_c_extend_prototypes .= "  assign(prototypes[$i], type_sym, typeobjects[$i]);\n";
 	}
 	else{
@@ -489,7 +479,7 @@ sub create_prototypes {
 sub create_symbols {
     # add all @tdefs to @symbs
     foreach my $item (@tdefs) {
-	push(@symbs, substr($item, 0, -2));
+	push(@symbs, $item);
     }
 
     # set up flags for duplicate removal
@@ -600,11 +590,11 @@ $init_c_ptypenames
 $init_c_functions
 
 // (6) init
-#define ADD_TYPE(ttt, TTT)                                            \\
-  assign(root, ttt ## _sym, typeobjects[TTT ## _T]);                  \\
-  assign(typeobjects[TTT ## _T], proto_sym, prototypes[TTT ## _T]);   \\
-  assign(typeobjects[TTT ## _T], parent_sym, type_obj);               \\
-  assign(typeobjects[TTT ## _T], name_sym, WRAP_PTR(STRING_T, #ttt));
+#define ADD_TYPE(ttt, TTT)                                      \\
+  assign(types, ttt ## _sym, typeobjects[TTT]);                 \\
+  assign(typeobjects[TTT], proto_sym, prototypes[TTT]);         \\
+  assign(typeobjects[TTT], parent_sym, type_obj);               \\
+  assign(typeobjects[TTT], name_sym, WRAP_PTR(_STRING_T, #ttt));
 
 #define ADD_MODULE(mmm)                                               \\
   module = new();                                                     \\
@@ -613,7 +603,7 @@ $init_c_functions
 static
 void add_function(any_t module, symbol_t s, 
                   any_t (*code)(tuple_t),
-                  bool_t varargs, int narg, ...)
+                  bool varargs, int narg, ...)
 {
   va_list args;
   va_start(args, narg);
@@ -624,8 +614,8 @@ void add_function(any_t module, symbol_t s,
 }
 
 static
-any_t create_special_fn_data(any_t module, bool_t method, 
-                                symbol_t fn_sym, int_t narg, ...)
+any_t create_special_fn_data(any_t module, bool method, 
+                                symbol_t fn_sym, int narg, ...)
 {
   // "..." must be pairs of 'any_t' and 'symbol_t'
   tuple_t signature = 0;
@@ -663,7 +653,7 @@ any_t create_special_fn_data(any_t module, bool_t method,
   }
   list_prepend(fnbody_l, WRAP_SYMBOL(fn_sym));
   return create_fn_data(module, signature, 
-			WRAP_PTR(TUPLE_T, list_to_tuple(fnbody_l)));
+			WRAP_PTR(_TUPLE_T, list_to_tuple(fnbody_l)));
 }
 
 any_t rha_init(void)
@@ -690,6 +680,8 @@ $init_c_init_symbols
 $init_c_add_modules
 
   // (6.3) create type objects (TYPES)
+  any_t types = new();   // all types are slots of this object
+  assign(root, types_sym, types);
   any_t fn_data = 0;
   any_t type_obj = new();
   assign(root, type_sym, type_obj);

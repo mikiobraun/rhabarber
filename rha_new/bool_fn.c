@@ -16,7 +16,7 @@ string_t bool_to_string(bool b)
   else return sprint("false");
 }
 
-bool_t bool_not(bool_t a) { return !a; }
-bool_t bool_and(bool_t a, bool_t b) { return a && b; }
-bool_t bool_or(bool_t a, bool_t b)  { return a || b; }
+bool bool_not(bool a) { return !a; }
+bool bool_and(bool a, bool b) { return a && b; }
+bool bool_or(bool a, bool b)  { return a || b; }
 

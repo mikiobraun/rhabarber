@@ -35,7 +35,7 @@ symbol_t symbol_new(string_t s)
   return i;
 }
 
-bool_t symbol_equalequal(symbol_t s, symbol_t t)
+bool symbol_equalequal(symbol_t s, symbol_t t)
 {
   return s == t;
 }
@@ -50,7 +50,7 @@ string_t symbol_name(symbol_t s)
   return n;
 }
 
-bool_t symbol_valid(symbol_t s)
+bool symbol_valid(symbol_t s)
 {
   // checks whether the symbol is valid as a rhabarber identifier
   // everything but brackets () [] {} are stored as symbols

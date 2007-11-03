@@ -27,8 +27,8 @@ int main(int argc, char **argv)
 {
   // handle command line arguments
   int flag;
-  bool_t dflag = false, tflag = false;
-  bool_t interactive = false;
+  bool dflag = false, tflag = false;
+  bool interactive = false;
   while ((flag = getopt(argc, argv, "dhti")) != -1)
     switch (flag) {
     case 'h':  // show command line help

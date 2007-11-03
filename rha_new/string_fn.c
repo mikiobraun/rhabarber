@@ -17,13 +17,13 @@ string_t string_concat(string_t s1, string_t s2)
 }
 
 
-int_t string_len(string_t s)
+int string_len(string_t s)
 {
   // note that the return type of 'strlen' is 'size_t'
-  return (int_t) strlen(s);
+  return (int) strlen(s);
 }
 
-bool_t string_equalequal(string_t s1, string_t s2)
+bool string_equalequal(string_t s1, string_t s2)
 {
   return 0==strcmp(s1, s2);
 }
@@ -35,7 +35,7 @@ string_t string_to_string(string_t s)
   return s;
 }
 
-string_t string_get(string_t s, int_t i)
+string_t string_get(string_t s, int i)
 {
   int slen = strlen(s);
   if (i >= slen || -i > slen)
@@ -47,7 +47,7 @@ string_t string_get(string_t s, int_t i)
 }
 
 
-string_t string_set(string_t s, int_t i, string_t v)
+string_t string_set(string_t s, int i, string_t v)
 {
   // replace the 'i'-th position with 'v', e.g.
   //     string_set("test", 1, "a") == "tast"

@@ -10,7 +10,7 @@
 
 
 /* handy function that checks indices and transforms them if negative */
-int_t idx(int_t i, int_t len)
+int idx(int i, int len)
 {
   if (i >= len || -i > len)
     rha_error("index out-of-bounds");

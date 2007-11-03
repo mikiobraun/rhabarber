@@ -12,9 +12,9 @@
 #include "tuple_fn.h"
 #include "list_fn.h"
 #include "int_fn.h"
-#include "real_fn.h"
 #include "string_fn.h"
 #include "bool_fn.h"
+#include "real_fn.h"
 #include "mat_fn.h"
 #include "messages.h"
 #include "python_fn.h"
@@ -32,23 +32,20 @@ typedef int                       _rha_ symbol_t;
 typedef struct rha_object *       _rha_ any_t;
 #include "gtuple.h" // depends on 'any_t'
 #include "glist.h"  // depends on 'any_t'
-typedef int                       _rha_ int_t; 
-typedef bool                      _rha_ bool_t;
 typedef struct gtuple*            _rha_ tuple_t;
 typedef any_t (*_builtin_t)(tuple_t);
 typedef _builtin_t                _rha_ builtin_t;
 typedef double                    _rha_ real_t;
 typedef struct _mat_t_ { 
   real_t *array;
-  int_t  rows;
-  int_t  cols;
-  int_t  len;
+  int  rows;
+  int  cols;
+  int  len;
 }*                                _rha_ mat_t;
 typedef char *                    _rha_ string_t;
 typedef void *                    _rha_ address_t;
 typedef struct glist *            _rha_ list_t;
 typedef glist_iterator_t *        _rha_ list_it_t;
-typedef PyObject *                _rha_ pyobject_t;
 
 //SYMBOLS
 // the most basic symbols
@@ -56,7 +53,8 @@ extern symbol_t parent_sym;
 extern symbol_t proto_sym;
 extern symbol_t do_sym;
 extern symbol_t quote_sym;
-extern symbol_t type_sym;
+extern symbol_t types_sym; // an object that collects all types as slots
+extern symbol_t type_sym;  // the type of type objects
 extern symbol_t ptype_sym;
 extern symbol_t this_sym;
 extern symbol_t static_sym;
@@ -126,16 +124,16 @@ extern symbol_t apostrophe_fn_sym;
 extern symbol_t domain_sym;
 
 //MACROS
-#define UNWRAP_INT(o)     (unwrap_int(INT_T, o))
-#define UNWRAP_BOOL(o)    (unwrap_int(BOOL_T, o))
-#define UNWRAP_SYMBOL(o)  (unwrap_int(SYMBOL_T, o))
-#define UNWRAP_REAL(o)    (unwrap_double(REAL_T, o))
-#define UNWRAP_BUILTIN(o) (unwrap_builtin(BUILTIN_T, o))
+#define UNWRAP_INT(o)     (unwrap_int(_INT, o))
+#define UNWRAP_BOOL(o)    (unwrap_int(_BOOL, o))
+#define UNWRAP_SYMBOL(o)  (unwrap_int(_SYMBOL_T, o))
+#define UNWRAP_REAL(o)    (unwrap_double(_REAL_T, o))
+#define UNWRAP_BUILTIN(o) (unwrap_builtin(_BUILTIN_T, o))
 #define UNWRAP_PTR(pt, o) (unwrap_ptr(pt, o))
 
-#define WRAP_INT(i)       (wrap_int(INT_T, i))
-#define WRAP_BOOL(b)      (wrap_int(BOOL_T, b))
-#define WRAP_SYMBOL(s)    (wrap_int(SYMBOL_T, s))
-#define WRAP_REAL(d)      (wrap_double(REAL_T, d))
-#define WRAP_BUILTIN(p)   (wrap_builtin(BUILTIN_T, p))
+#define WRAP_INT(i)       (wrap_int(_INT, i))
+#define WRAP_BOOL(b)      (wrap_int(_BOOL, b))
+#define WRAP_SYMBOL(s)    (wrap_int(_SYMBOL_T, s))
+#define WRAP_REAL(d)      (wrap_double(_REAL_T, d))
+#define WRAP_BUILTIN(p)   (wrap_builtin(_BUILTIN_T, p))
 #define WRAP_PTR(pt, p)   (wrap_ptr(pt, p))

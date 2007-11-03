@@ -76,7 +76,7 @@ static any_t replace_expr(any_t expr, symbol_t s, any_t sub);
 // find the best prule, and apply the prule
 any_t resolve(any_t env, list_t source)
 {
-  //debug("resolve(%o, %o)\n", env, WRAP_PTR(LIST_T, source));
+  //debug("resolve(%o, %o)\n", env, WRAP_PTR(_LIST_T, source));
   any_t prule = find_best_prule(env, source);
   any_t excp = 0;
   any_t result = 0;
@@ -112,12 +112,12 @@ any_t resolve_each(any_t env, list_t source)
   list_t sink = list_new();
   any_t head = 0;
   while ((head = list_popfirst(source))) {
-    if (ptype(head) == LIST_T)
-      list_append(sink, resolve(env, UNWRAP_PTR(LIST_T, head)));
+    if (ptype(head) == _LIST_T)
+      list_append(sink, resolve(env, UNWRAP_PTR(_LIST_T, head)));
     else
       list_append(sink, head);
   }
-  return WRAP_PTR(TUPLE_T, list_to_tuple(sink));
+  return WRAP_PTR(_TUPLE_T, list_to_tuple(sink));
 }
 
 
@@ -132,17 +132,17 @@ any_t call_prule(any_t env, list_t source, any_t prule)
   tuple_t prule_call = tuple_new(tlen);
   tuple_set(prule_call, 0, prule);
   tuple_set(prule_call, 1, env);
-  tuple_set(prule_call, 2, WRAP_PTR(LIST_T, source));
+  tuple_set(prule_call, 2, WRAP_PTR(_LIST_T, source));
 
   // the list containing the parse tree
   // run the prule itself to resolve it
   any_t expr = call_fun(env, prule_call);
 
   // check what we got
-  if (ptype(expr) == TUPLE_T) {
-    tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
+  if (ptype(expr) == _TUPLE_T) {
+    tuple_t t = UNWRAP_PTR(_TUPLE_T, expr);
     // check the resulting tuple
-    if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=SYMBOL_T))
+    if ((tuple_len(t)==0) || (ptype(tuple_get(t, 0))!=_SYMBOL_T))
       rha_error("(parsing) prule must create function call with function symbol");
 
     // finally resolve a possible macro that we got
@@ -168,7 +168,7 @@ static any_t find_best_prule(any_t env, list_t source)
   for (it = list_begin(source); !list_done(it); glist_next(it)) {
     any_t symbol_obj = list_get(it);
 
-    if (ptype(symbol_obj) == SYMBOL_T) {
+    if (ptype(symbol_obj) == _SYMBOL_T) {
       any_t prule = lookup(prules, UNWRAP_SYMBOL(symbol_obj));
       double priority = get_priority(prule);
 
@@ -195,7 +195,7 @@ static double get_priority(any_t prule)
 {
   if (prule) {
     any_t prior = lookup(prule, priority_sym);
-    if (prior && (ptype(prior) == REAL_T))
+    if (prior && (ptype(prior) == _REAL_T))
       return UNWRAP_REAL(prior);
   }
   return NAN;
@@ -237,9 +237,9 @@ any_t resolve_dots_and_fn_calls(any_t env, list_t source)
   // get the first piece and resolve it
   any_t obj = list_popfirst(source);
   assert(obj);
-  if ((ptype(obj)==SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym)
+  if ((ptype(obj)==_SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym)
     rha_error("(parsing) something else than dot expected");
-  else if (ptype(obj) == LIST_T) {
+  else if (ptype(obj) == _LIST_T) {
     list_t l = 0;
     if (is_marked_list(rounded_sym, obj)) {
       // must be a grouped expression, so remove the brackets
@@ -251,7 +251,7 @@ any_t resolve_dots_and_fn_calls(any_t env, list_t source)
     //  
     //}
     else
-      l = UNWRAP_PTR(LIST_T, obj);
+      l = UNWRAP_PTR(_LIST_T, obj);
     // and resolve it
     obj = resolve(env, l);
   }
@@ -262,14 +262,14 @@ any_t resolve_dots_and_fn_calls(any_t env, list_t source)
   // we need to keep a flag which tells us later whether we have the
   // usual function call or whether the last dot results in a
   // slotcall. 
-  bool_t dotted = false;
+  bool dotted = false;
   while ((obj = list_popfirst(source))) {
-    if ((ptype(obj) == SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym) {
+    if ((ptype(obj) == _SYMBOL_T) && UNWRAP_SYMBOL(obj)==dot_sym) {
       // (2) dotted expression
 
       // get the next object as well which must be a symbol
       obj = list_popfirst(source);
-      if (!obj || (ptype(obj) != SYMBOL_T))
+      if (!obj || (ptype(obj) != _SYMBOL_T))
 	rha_error("(parsing) a dot is always followed by a symbol");
 
       // make dotted expression
@@ -284,7 +284,7 @@ any_t resolve_dots_and_fn_calls(any_t env, list_t source)
       
       // we are potentially constructing a method call
       dotted = true;
-      expr = WRAP_PTR(TUPLE_T, t);
+      expr = WRAP_PTR(_TUPLE_T, t);
       continue;
     }
     else if (is_marked_list(rounded_sym, obj)) {
@@ -293,8 +293,8 @@ any_t resolve_dots_and_fn_calls(any_t env, list_t source)
       list_t signature = split_rounded_list_obj(obj);
       any_t arg = 0;
       while ((arg = list_popfirst(signature))) {
-	assert(arg && ptype(arg)==LIST_T);
-	list_append(sink, resolve(env, UNWRAP_PTR(LIST_T, arg)));
+	assert(arg && ptype(arg)==_LIST_T);
+	list_append(sink, resolve(env, UNWRAP_PTR(_LIST_T, arg)));
       }
       if (dotted) {
 	// construct a method call
@@ -304,11 +304,11 @@ any_t resolve_dots_and_fn_calls(any_t env, list_t source)
 	// (ii) sink == [x y]
 	// from those we construct
 	//      (callslot a \f x y)
-	tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
+	tuple_t t = UNWRAP_PTR(_TUPLE_T, expr);
 	list_prepend(sink, tuple_get(t, 2));           // prepend '\f'
 	list_prepend(sink, tuple_get(t, 1));           // prepend 'a'
 	list_prepend(sink, WRAP_SYMBOL(callslot_sym)); // prepend 'callslot'
-	expr = WRAP_PTR(TUPLE_T, list_to_tuple(sink));
+	expr = WRAP_PTR(_TUPLE_T, list_to_tuple(sink));
 	continue;
       }
       else {
@@ -320,7 +320,7 @@ any_t resolve_dots_and_fn_calls(any_t env, list_t source)
     }
     else if (is_marked_list(squared_sym, obj)) {
       // (3) named literal
-      tuple_t literal = squared_pr(env, UNWRAP_PTR(LIST_T, obj));
+      tuple_t literal = squared_pr(env, UNWRAP_PTR(_LIST_T, obj));
       // (callslot lhs \literal env [1 ,, 2 ,, 3])
       tuple_t t = tuple_new(5);
       tuple_set(t, 0, WRAP_SYMBOL(callslot_sym));
@@ -328,7 +328,7 @@ any_t resolve_dots_and_fn_calls(any_t env, list_t source)
       tuple_set(t, 2, quoted(tuple_get(literal, 0)));
       tuple_set(t, 3, tuple_get(literal, 1));
       tuple_set(t, 4, tuple_get(literal, 2));
-      expr = WRAP_PTR(TUPLE_T, t);
+      expr = WRAP_PTR(_TUPLE_T, t);
       continue;
     }
     else {
@@ -361,9 +361,9 @@ any_t resolve_pattern(any_t env, list_t source)
     theliteral = resolve(env, lhs);
 
   if (thetype)
-    return WRAP_PTR(TUPLE_T, tuple_make(2, quoted(theliteral), thetype));
+    return WRAP_PTR(_TUPLE_T, tuple_make(2, quoted(theliteral), thetype));
   else
-    return WRAP_PTR(TUPLE_T, tuple_make(1, quoted(theliteral)));
+    return WRAP_PTR(_TUPLE_T, tuple_make(1, quoted(theliteral)));
 }
 
 any_t resolve_patterns(any_t env, list_t source)
@@ -375,13 +375,13 @@ any_t resolve_patterns(any_t env, list_t source)
   int i = 0;
   while ((entry = list_popfirst(source))) {
     // resolve the entries as patterns
-    assert(entry && ptype(entry)==LIST_T);
-    tuple_set(t, i++, resolve_pattern(env, UNWRAP_PTR(LIST_T, entry)));
+    assert(entry && ptype(entry)==_LIST_T);
+    tuple_set(t, i++, resolve_pattern(env, UNWRAP_PTR(_LIST_T, entry)));
   }
-  return WRAP_PTR(TUPLE_T, tuple_make(4, WRAP_SYMBOL(symbol_new("map_fn")),
+  return WRAP_PTR(_TUPLE_T, tuple_make(4, WRAP_SYMBOL(symbol_new("map_fn")),
 				      WRAP_SYMBOL(local_sym),
 				      WRAP_SYMBOL(symbol_new("pattern")),
-				      quoted(WRAP_PTR(TUPLE_T, t))));
+				      quoted(WRAP_PTR(_TUPLE_T, t))));
 }
 
 
@@ -399,12 +399,12 @@ any_t resolve_macro(any_t env, tuple_t t)
   // It might just be an empty tuple
   int tlen = tuple_len(t);
   if (tlen == 0) 
-    return WRAP_PTR(TUPLE_T, t);
+    return WRAP_PTR(_TUPLE_T, t);
 
   // or a tuple which does not contain a symbol at position 0
   any_t t0 = tuple_get(t, 0);
-  if (ptype(t0) != SYMBOL_T)
-    return WRAP_PTR(TUPLE_T, t);
+  if (ptype(t0) != _SYMBOL_T)
+    return WRAP_PTR(_TUPLE_T, t);
   symbol_t s = UNWRAP_SYMBOL(t0);
 
   // okay, we're ready to gather all information and perform the
@@ -415,9 +415,9 @@ any_t resolve_macro(any_t env, tuple_t t)
        && lookup(macro, ismacro_sym) ) {
     if ( (macro_body = lookup(macro, fnbody_sym))
 	 && (_macro_args = lookup(macro, argnames_sym)) ) {
-      if (ptype(_macro_args)!=TUPLE_T)
+      if (ptype(_macro_args)!=_TUPLE_T)
 	rha_error("(parsing) broken macroargs");
-      tuple_t macro_args = UNWRAP_PTR(TUPLE_T, _macro_args);
+      tuple_t macro_args = UNWRAP_PTR(_TUPLE_T, _macro_args);
       
       if (tuple_len(macro_args) != tlen-1)
 	rha_error("(parsing) wrong macro argument number (expected %d, got %d)", 
@@ -436,26 +436,26 @@ any_t resolve_macro(any_t env, tuple_t t)
     }
   }
   else // not found or ismacro missing
-    return WRAP_PTR(TUPLE_T, t);
+    return WRAP_PTR(_TUPLE_T, t);
 }
 
 
 // replace all occurences of 's' in 'expr' by 'sub'
 static any_t replace_expr(any_t expr, symbol_t s, any_t sub)
 {
-  if (ptype(expr) == SYMBOL_T) {
+  if (ptype(expr) == _SYMBOL_T) {
     symbol_t sy = UNWRAP_SYMBOL(expr);
     if (sy == s)
       return sub;
   }
-  else if (ptype(expr) == TUPLE_T) {
-    tuple_t t = UNWRAP_PTR(TUPLE_T, expr);
+  else if (ptype(expr) == _TUPLE_T) {
+    tuple_t t = UNWRAP_PTR(_TUPLE_T, expr);
     // create a new tuple
     int tlen = tuple_len(t);
     tuple_t newt = tuple_new(tlen);
     for (int i=0; i<tuple_len(t); i++)
       tuple_set(newt, i, replace_expr(tuple_get(t, i), s, sub));
-    return WRAP_PTR(TUPLE_T, newt);
+    return WRAP_PTR(_TUPLE_T, newt);
   }
   return expr;
 }

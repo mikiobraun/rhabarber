@@ -1,5 +1,24 @@
 2007-11-02  Stefan Harmeling  <harmeling@gmail.com>
 
+	* ALLOVERTHEPLACE: naming scheme for types has changed, since now
+	types are automatically included from all modules.  Don't use
+	'int_t' and 'bool_t' anymore, use instead 'int' and 'bool'.  All
+	types that we declare additionally in C end with '_t' as before.
+	The macro-constants do now start with '_', the rest is exactly the
+	name of the type, e.g. '_INT', '_TUPLE_T'.
+
+	   in C                           in rhabarber
+	   typename   macroconstant       typename
+	     int        _INT                 int
+	     bool       _BOOL                bool
+	     real_t     _REAL_T              real_t
+	     string_t   _STRING_T            string_t
+	     tuple_t    _TUPLE_T             tuple_t
+
+	Note that 'real_t' and 'string_t' gets renamed in 'prelude.rha'...
+
+
+
 	* prelude.rha (mat.proto(..., ...)): added slice support for
 	matrices:
 

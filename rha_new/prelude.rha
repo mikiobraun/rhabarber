@@ -24,6 +24,23 @@
 //   assign_fn = modules.object.assign_fn;
 //   extend = modules.object.extend;
 
+// (1.1a) all types that should be directly visible
+bool = types.bool;
+int = types.int;
+
+types.real_t.name = "real";
+real = types.real_t;
+
+types.string_t.name = "string";
+string = types.string_t;
+
+tuple = types.tuple_t;
+symbol = types.symbol_t;
+builtin = types.builtin_t;
+mat = types.mat_t;
+list = types.list_t;
+address = types.address_t;
+
 // (1.2) more essential stuff
 print      = modules.object.print_fn;
 new      = modules.object.new;

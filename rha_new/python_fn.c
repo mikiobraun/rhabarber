@@ -104,7 +104,7 @@ any_t python_newinteger(int i)
   return python_wrap(PyInt_FromLong(i));
 }
 
-any_t python_newreal(double d)
+any_t python_newreal(real_t d)
 {
   start_python_if_necessary();
 
@@ -135,7 +135,7 @@ any_t python_newstring(string_t s)
 /*
  * Getting Python types
  */
-int_t python_getint(pyobject_t o)
+int python_getint(pyobject_t o)
 {
   start_python_if_necessary();
   if (PyInt_Check(o))
@@ -222,7 +222,7 @@ string_t python_to_string(pyobject_t o)
   return s;
 }
 
-bool_t python_callable(pyobject_t o)
+bool python_callable(pyobject_t o)
 {
   start_python_if_necessary();
   return PyCallable_Check(o);
@@ -231,22 +231,22 @@ bool_t python_callable(pyobject_t o)
 any_t python_call(tuple_t values)
 {
   start_python_if_necessary();
-  if(ptype(tuple_get(values, 0)) != PYOBJECT_T) 
+  if(ptype(tuple_get(values, 0)) != _PYOBJECT_T) 
     rha_error("(python_call) called for non-python object!");
 
-  pyobject_t fct = UNWRAP_PTR(PYOBJECT_T, tuple_get(values, 0));
+  pyobject_t fct = UNWRAP_PTR(_PYOBJECT_T, tuple_get(values, 0));
   int numargs = tuple_len(values) - 1;
 
   if (python_callable(fct)) {
     PyObject *args = PyTuple_New(numargs);
     for(int i = 0; i < numargs; i++) {
       any_t a = tuple_get(values, i + 1);
-      if (ptype(a) != PYOBJECT_T) {
+      if (ptype(a) != _PYOBJECT_T) {
 	Py_DECREF(args);
 	rha_error("(python_call) argument %d is not a python object!", i + 1);
       }
 
-      PyObject *arg = UNWRAP_PTR(PYOBJECT_T, a);
+      PyObject *arg = UNWRAP_PTR(_PYOBJECT_T, a);
       Py_INCREF(arg); // PyTuple_SetItem steals references
       PyTuple_SetItem(args, i, arg);
     }
@@ -298,7 +298,7 @@ any_t python_lookup(pyobject_t o, symbol_t name)
 
 any_t python_wrap(PyObject *p)
 {
-  any_t o = WRAP_PTR(PYOBJECT_T, p);
+  any_t o = WRAP_PTR(_PYOBJECT_T, p);
 
   // register finalizer to decrease pythons counts
   GC_REGISTER_FINALIZER(o, python_finalizer, NULL, NULL, NULL);
@@ -313,9 +313,9 @@ static
 void python_finalizer(GC_PTR obj, GC_PTR cd)
 {
   any_t p = (any_t)obj;
-  assert(ptype(p) == PYOBJECT_T);
+  assert(ptype(p) == _PYOBJECT_T);
 
-  PyObject *po = UNWRAP_PTR(PYOBJECT_T, p);
+  PyObject *po = UNWRAP_PTR(_PYOBJECT_T, p);
 
   print("Calling finalizer for %x, %o\n", (any_t) obj, (any_t) obj);
   Py_DECREF(po);

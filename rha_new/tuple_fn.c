@@ -17,30 +17,30 @@
 #include "utils.h"
 #include "string_fn.h"
 
-tuple_t tuple_new(int_t len)
+tuple_t tuple_new(int len)
 {
   tuple_t t = ALLOC_SIZE(sizeof(struct gtuple));
   gtuple_init(t, len);
   return t;
 }
 
-int_t tuple_len(tuple_t t)
+int tuple_len(tuple_t t)
 {
   return gtuple_length(t);
 }
 
-any_t tuple_get(tuple_t t, int_t i)
+any_t tuple_get(tuple_t t, int i)
 {
   return gtuple_getp(t, idx(i, gtuple_length(t)));
 }
 
-tuple_t tuple_set(tuple_t t, int_t i, any_t s)
+tuple_t tuple_set(tuple_t t, int i, any_t s)
 {
   gtuple_set(t, idx(i, gtuple_length(t)), s);
   return t;
 }
 
-tuple_t tuple_make(int_t narg, ...)
+tuple_t tuple_make(int narg, ...)
 {
   va_list ap;
   va_start(ap, narg);

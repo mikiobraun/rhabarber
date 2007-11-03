@@ -47,21 +47,21 @@ any_t new(void)
      // creates a new primitive object
 {
   any_t o = ALLOC_SIZE(sizeof(struct rha_object));
-  o->ptype = ANY_T;
+  o->ptype = _ANY_T;
   o->table = symtable_new();
   o->raw.p = 0;
   // debug(" %p created by object.h->new.\n", (void *) o);
   return o;
 }
 
-any_t create_pt(int_t pt)
+any_t create_pt(int pt)
 {
   any_t o = new();
   setptype(o, pt);
   return o;
 }
 
-any_t new_pt(int_t pt)
+any_t new_pt(int pt)
 {
   any_t o = new();
   setptype(o, pt);
@@ -78,7 +78,7 @@ any_t copy_pt(any_t other)
 {
   // note that symbol table information is lost
   // thus this function is not intended to copy ANY_T stuff
-  assert(ptype(other) != ANY_T);
+  assert(ptype(other) != _ANY_T);
   any_t o = new();
   o->ptype   = other->ptype;
   o->raw     = other->raw;
@@ -104,9 +104,9 @@ any_t clone(any_t parent)
 }
 
 
-int_t ptype(any_t o)
+int ptype(any_t o)
 {
-  if (!o) return 0; // == VOID_T // see rha_types.h
+  if (!o) return 0; // == _VOID // see rha_types.h
   return o->ptype;
 }
 
@@ -115,14 +115,14 @@ string_t ptypename(any_t o)
   return ptype_names[ptype(o)];
 }
 
-void setptype(any_t o, int_t id)
+void setptype(any_t o, int id)
 {
   o->ptype = id;
 }
 
 any_t wrap_int(int pt, int i)
 {
-  assert(pt==BOOL_T || pt==INT_T || pt==SYMBOL_T);
+  assert(pt==_BOOL || pt==_INT || pt==_SYMBOL_T);
   any_t o = new_pt(pt);
   o->raw.i = i;
   return o;
@@ -130,7 +130,7 @@ any_t wrap_int(int pt, int i)
 
 any_t wrap_float(int pt, float d)
 {
-  assert(pt==REAL_T);
+  assert(pt==_REAL_T);
   any_t o = new_pt(pt);
   o->raw.d = d;
   return o;
@@ -138,7 +138,7 @@ any_t wrap_float(int pt, float d)
 
 any_t wrap_double(int pt, double d)
 {
-  assert(pt==REAL_T);
+  assert(pt==_REAL_T);
   any_t o = new_pt(pt);
   o->raw.d = d;
   return o;
@@ -146,7 +146,7 @@ any_t wrap_double(int pt, double d)
 
 any_t wrap_builtin(int pt, builtin_t b)
 {
-  assert(pt==BUILTIN_T);
+  assert(pt==_BUILTIN_T);
   any_t o = new_pt(pt);
   o->raw.b = b;
   return o;
@@ -154,10 +154,10 @@ any_t wrap_builtin(int pt, builtin_t b)
 
 any_t wrap_ptr(int pt, void *p)
 {
-  assert(pt!=BOOL_T);
-  assert(pt!=INT_T);
-  assert(pt!=SYMBOL_T);
-  assert(pt!=REAL_T);
+  assert(pt!=_BOOL);
+  assert(pt!=_INT);
+  assert(pt!=_SYMBOL_T);
+  assert(pt!=_REAL_T);
   any_t o = new_pt(pt);
   o->raw.p = p;
   return o;
@@ -168,12 +168,12 @@ any_t wrap(int ptype, ...)
   va_list ap;
   any_t o = new_pt(ptype);
   switch (ptype) {
-  case BOOL_T:
-  case INT_T:
-  case SYMBOL_T:
+  case _BOOL:
+  case _INT:
+  case _SYMBOL_T:
     o->raw.i = va_arg(ap, int);
     break;
-  case REAL_T:
+  case _REAL_T:
     o->raw.d = va_arg(ap, double);
     break;
   default:
@@ -185,21 +185,21 @@ any_t wrap(int ptype, ...)
 
 int unwrap_int(int pt, any_t o)
 {
-  assert(pt==INT_T || pt==BOOL_T || pt==SYMBOL_T);
+  assert(pt==_INT || pt==_BOOL || pt==_SYMBOL_T);
   assert(pt==ptype(o));
   return o->raw.i;
 }
 
 double unwrap_double(int pt, any_t o)
 {
-  assert(pt==REAL_T);
+  assert(pt==_REAL_T);
   assert(pt==ptype(o));
   return o->raw.d;
 }
 
 builtin_t unwrap_builtin(int pt, any_t o)
 {
-  assert(pt==BUILTIN_T);
+  assert(pt==_BUILTIN_T);
   assert(pt==ptype(o));
   builtin_t b = o->raw.b;
   if (!b)
@@ -209,7 +209,7 @@ builtin_t unwrap_builtin(int pt, any_t o)
 
 void *unwrap_ptr(int pt, any_t o)
 {
-  assert(pt != ANY_T || ptype(o) == pt);
+  assert(pt != _ANY_T || ptype(o) == pt);
   void *p = o->raw.p;
   // might be zero
   if (!p)
@@ -245,7 +245,7 @@ void *uw(int pt, any_t o, string_t msg)
  * Creating builtin functions
  *
  */
-any_t vcreate_builtin(builtin_t code, bool_t varargs, int narg, va_list args)
+any_t vcreate_builtin(builtin_t code, bool varargs, int narg, va_list args)
 {
   // built a signature to be passed to 'create_fn_data_entry'
   tuple_t signature = 0;
@@ -257,10 +257,10 @@ any_t vcreate_builtin(builtin_t code, bool_t varargs, int narg, va_list args)
   else
     signature = tuple_new(narg);
   for (int i=0; i<narg; i++) {
-    int_t pt = va_arg(args, int_t);
+    int pt = va_arg(args, int);
     // we assume that the typeobject for ANY_T is zero
     // this allows us later to avoid testing at all!
-    assert(pt!=ANY_T || typeobjects[pt]==0);
+    assert(pt!=_ANY_T || typeobjects[pt]==0);
     // note that 'theliteral' of the pattern is void
     // note that for pt==ANY_T also 'thetype' is void
     
@@ -272,7 +272,7 @@ any_t vcreate_builtin(builtin_t code, bool_t varargs, int narg, va_list args)
 }
 
 
-any_t create_builtin(builtin_t code, bool_t varargs, int narg, ...)
+any_t create_builtin(builtin_t code, bool varargs, int narg, ...)
 {
   // read out the argument types
   va_list args;
@@ -328,7 +328,7 @@ any_t location(any_t l, symbol_t s)
   return 0; // ZERO meaning "not found"
 }
 
-bool_t has(any_t obj, symbol_t s)
+bool has(any_t obj, symbol_t s)
 {
   // note that 'void' doesn't have any slots
   if (lookup(obj, s))
@@ -354,7 +354,7 @@ any_t assign_many(any_t o, tuple_t t, any_t v)
   // check that all entries in the tuple are symbols
   int tlen = tuple_len(t);
   for (int i = 0; i < tlen; i++)
-    if (ptype(tuple_get(t, i)) != SYMBOL_T)
+    if (ptype(tuple_get(t, i)) != _SYMBOL_T)
       rha_error("assign_many must be called with tuple of symbols");
   
   // the RHS must be iterable
@@ -378,16 +378,16 @@ any_t assign_many(any_t o, tuple_t t, any_t v)
 
 any_t assign_fn(any_t obj, any_t a, any_t newobj)
 {
-  if (ptype(a) == SYMBOL_T)
+  if (ptype(a) == _SYMBOL_T)
     return assign(obj, UNWRAP_SYMBOL(a), newobj);
-  else if (ptype(a) == TUPLE_T)
-    return assign_many(obj, UNWRAP_PTR(TUPLE_T, a), newobj);
+  else if (ptype(a) == _TUPLE_T)
+    return assign_many(obj, UNWRAP_PTR(_TUPLE_T, a), newobj);
   else
     rha_error("can't assign to %o", a);
   assert(false);
 }
 
-bool_t is_void(any_t o)
+bool is_void(any_t o)
 {
   return o==0;
 }
@@ -416,7 +416,7 @@ any_t extend(any_t this, symbol_t s, tuple_t signature,
     int siglen = tuple_len(signature);
     for (int i = 0; i < siglen; i++)
       tuple_set(signature, i, eval(this, tuple_get(signature, i)));
-    return callslot(obj, extend_sym, 3, WRAP_PTR(TUPLE_T, signature), env, rhs);
+    return callslot(obj, extend_sym, 3, WRAP_PTR(_TUPLE_T, signature), env, rhs);
   }
 
   // (3) is 'obj' itself already a function?
@@ -433,14 +433,14 @@ any_t extend(any_t this, symbol_t s, tuple_t signature,
   }
   else {
     any_t fn_data = lookup(obj, fn_data_sym);
-    if (ptype(fn_data)!=LIST_T
-	|| list_len(fn_data_l=UNWRAP_PTR(LIST_T, fn_data)) == 0)
+    if (ptype(fn_data)!=_LIST_T
+	|| list_len(fn_data_l=UNWRAP_PTR(_LIST_T, fn_data)) == 0)
       rha_error("(eval) %o has a faulty 'fn_data' slot", obj);
-    fn_data_l = UNWRAP_PTR(LIST_T, fn_data);
+    fn_data_l = UNWRAP_PTR(_LIST_T, fn_data);
   }
   any_t entry = create_fn_data_entry(env, signature, rhs);
   fn_data_l = list_insert_sorted(fn_data_l, entry, &fn_data_entry_lessthan);
-  any_t fn_data = WRAP_PTR(LIST_T, fn_data_l);
+  any_t fn_data = WRAP_PTR(_LIST_T, fn_data_l);
   assign(fn_data, parent_sym, fn_data_proto);
   assign(obj, fn_data_sym, fn_data);
   return 0;
@@ -491,11 +491,12 @@ string_t to_string(any_t o)
     return sprint("<%s prototype>", ptype_names[pt]);
 
   // SOMETHING WITH SLOT 'to_string'
+  symbol_t string_sym = symbol_new("string");
   if (has(o, string_sym)) {
     any_t s_o = callslot(o, string_sym, 0);
-    if (!s_o || ptype(s_o) != STRING_T)
+    if (!s_o || ptype(s_o) != _STRING_T)
       rha_error("(to_string) slot 'string' found but does not create a string");
-    return UNWRAP_PTR(STRING_T, s_o);
+    return UNWRAP_PTR(_STRING_T, s_o);
   }
 
   // NO SLOT 'string'
@@ -527,23 +528,23 @@ string_t to_string_only_in_c(any_t o)
       return sprint("<%s prototype>", ptype_names[pt]);
     // else something more interesting
     switch (pt) {
-    case ANY_T: {
+    case _ANY_T: {
       return sprint("<object@%p>", (void *) addr(o));
     }
-    case BOOL_T: {
+    case _BOOL: {
       if (UNWRAP_BOOL(o))
 	return sprint("true");
       else
 	return sprint("false");
     }
-    case INT_T: {
+    case _INT: {
       return sprint("%d", UNWRAP_INT(o));
     }
-    case SYMBOL_T: {
+    case _SYMBOL_T: {
       symbol_t s = UNWRAP_SYMBOL(o);
       return sprint("%s", symbol_name(s));
     }
-    case REAL_T: {
+    case _REAL_T: {
       return sprint("%f", UNWRAP_REAL(o));
     }
     default:
@@ -553,12 +554,12 @@ string_t to_string_only_in_c(any_t o)
       // happen primitive prototypes, thus we can safely access the
       // raw content
       switch (pt) {
-      case STRING_T: {
-	s = UNWRAP_PTR(STRING_T, o);
+      case _STRING_T: {
+	s = UNWRAP_PTR(_STRING_T, o);
 	return sprint("%s", s); 
       }
-      case TUPLE_T: {
-	tuple_t t = UNWRAP_PTR(TUPLE_T, o);
+      case _TUPLE_T: {
+	tuple_t t = UNWRAP_PTR(_TUPLE_T, o);
 	s = gc_strdup("(");
 	int tlen = tuple_len(t);
 	for(int i = 0; i < tlen; i++) {
@@ -567,9 +568,9 @@ string_t to_string_only_in_c(any_t o)
 	}
 	return string_concat(s, ")");
       }
-      case LIST_T: {
+      case _LIST_T: {
 	s = gc_strdup("[");
-	list_t l = UNWRAP_PTR(LIST_T, o);
+	list_t l = UNWRAP_PTR(_LIST_T, o);
 	int i; 
 	list_it_t it;
 	for(it = list_begin(l), i = 0; !list_done(it); list_next(it), i++) {
@@ -578,11 +579,11 @@ string_t to_string_only_in_c(any_t o)
 	}
 	return string_concat(s, "]");
       }
-      case ADDRESS_T: {
-	return sprint("%p", (void *) UNWRAP_PTR(ADDRESS_T, o));
+      case _ADDRESS_T: {
+	return sprint("%p", (void *) UNWRAP_PTR(_ADDRESS_T, o));
       }
-      case BUILTIN_T: {
-	return sprint("<builtin@%p>", (void *) UNWRAP_PTR(BUILTIN_T, o));
+      case _BUILTIN_T: {
+	return sprint("<builtin@%p>", (void *) UNWRAP_PTR(_BUILTIN_T, o));
       }
       default:
 	return sprint("<UNKNOWN ptype: addr=%p>", (void *) addr(o));
@@ -598,7 +599,7 @@ void vprint_fn(tuple_t args)
   fprintf(stdout, "\n");
 }
 
-void print_fn(int_t narg, ...)
+void print_fn(int narg, ...)
 {
   va_list ap;
   va_start(ap, narg);
@@ -622,29 +623,29 @@ void ls(any_t o)
 }
 
 
-bool_t equalequal_fn(any_t a, any_t b)
+bool equalequal_fn(any_t a, any_t b)
 {
-  if ((ptype(a) == ADDRESS_T) && (ptype(b) == ADDRESS_T))
-    return UNWRAP_PTR(ADDRESS_T, a) == UNWRAP_PTR(ADDRESS_T, b);
-  if ((ptype(a) == SYMBOL_T) && (ptype(b) == SYMBOL_T))
-    return UNWRAP_PTR(SYMBOL_T, a) == UNWRAP_PTR(SYMBOL_T, b);
-  if ((ptype(a) == BOOL_T) && (ptype(b) == BOOL_T))
+  if ((ptype(a) == _ADDRESS_T) && (ptype(b) == _ADDRESS_T))
+    return UNWRAP_PTR(_ADDRESS_T, a) == UNWRAP_PTR(_ADDRESS_T, b);
+  if ((ptype(a) == _SYMBOL_T) && (ptype(b) == _SYMBOL_T))
+    return UNWRAP_PTR(_SYMBOL_T, a) == UNWRAP_PTR(_SYMBOL_T, b);
+  if ((ptype(a) == _BOOL) && (ptype(b) == _BOOL))
     return UNWRAP_BOOL(a) == UNWRAP_BOOL(b);
-  if ((ptype(a) == INT_T) && (ptype(b) == INT_T))
+  if ((ptype(a) == _INT) && (ptype(b) == _INT))
     return UNWRAP_INT(a) == UNWRAP_INT(b);
-  if ((ptype(a) == REAL_T) && (ptype(b) == INT_T))
+  if ((ptype(a) == _REAL_T) && (ptype(b) == _INT))
     return UNWRAP_REAL(a) == (real_t) UNWRAP_INT(b);
-  if ((ptype(a) == INT_T) && (ptype(b) == REAL_T))
+  if ((ptype(a) == _INT) && (ptype(b) == _REAL_T))
     return (real_t) UNWRAP_INT(a) == UNWRAP_REAL(b);
-  if ((ptype(a) == REAL_T) && (ptype(b) == REAL_T))
+  if ((ptype(a) == _REAL_T) && (ptype(b) == _REAL_T))
     return UNWRAP_REAL(a) == UNWRAP_REAL(b);
-  else if ((ptype(a) == STRING_T) && (ptype(b) == STRING_T))
-    return 0==strcmp(UNWRAP_PTR(STRING_T, a), UNWRAP_PTR(STRING_T, b));
+  else if ((ptype(a) == _STRING_T) && (ptype(b) == _STRING_T))
+    return 0==strcmp(UNWRAP_PTR(_STRING_T, a), UNWRAP_PTR(_STRING_T, b));
   else
     return a == b;
 }
 
-bool_t notequal_fn(any_t a, any_t b)
+bool notequal_fn(any_t a, any_t b)
 {
   return !equalequal_fn(a, b);
 }
@@ -652,7 +653,7 @@ bool_t notequal_fn(any_t a, any_t b)
 
 any_t inc(any_t o)
 {
-  if (ptype(o) == INT_T) {
+  if (ptype(o) == _INT) {
     o->raw.i++;
     return o;
   }
@@ -663,7 +664,7 @@ any_t inc(any_t o)
 
 any_t dec(any_t o)
 {
-  if (ptype(o) == INT_T) {
+  if (ptype(o) == _INT) {
     o->raw.i--;
     return o;
   }
@@ -674,7 +675,7 @@ any_t dec(any_t o)
 
 any_t inc_copy(any_t o)
 {
-  if (ptype(o) == INT_T) {
+  if (ptype(o) == _INT) {
     any_t other = copy_pt(o);
     o->raw.i++;
     return other;
@@ -686,7 +687,7 @@ any_t inc_copy(any_t o)
 
 any_t dec_copy(any_t o)
 {
-  if (ptype(o) == INT_T) {
+  if (ptype(o) == _INT) {
     any_t other = copy_pt(o);
     o->raw.i--;
     return other;
@@ -698,7 +699,7 @@ any_t dec_copy(any_t o)
 
 
 // 'check' does a type check by looking along the parent hierarchy
-bool_t check(any_t t, any_t o)
+bool check(any_t t, any_t o)
 {
   any_t proto = lookup(t, proto_sym);
   if (!proto)
@@ -712,7 +713,7 @@ bool_t check(any_t t, any_t o)
 
 // 'pcheck' does a primitive type check which is sufficient (and much
 // faster) for ptypes
-bool_t pcheck(any_t t, any_t o)
+bool pcheck(any_t t, any_t o)
 {
   any_t proto = lookup(t, proto_sym);
   if (!proto)

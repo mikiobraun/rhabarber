@@ -7,12 +7,12 @@
 
 extern       void   eval_init(any_t root, any_t module);
 extern _rha_ any_t  eval(any_t, any_t);
-extern _rha_ any_t  callslot(any_t obj, symbol_t slotname, int_t narg, ...);
+extern _rha_ any_t  callslot(any_t obj, symbol_t slotname, int narg, ...);
 extern _rha_ any_t  vcallslot(any_t obj, symbol_t slotname, tuple_t args);
 
-extern _rha_ bool_t pattern_lessthan(any_t p1, any_t p2);
-extern _rha_ bool_t signature_lessthan(any_t s1, any_t s2);
-extern _rha_ bool_t fn_data_entry_lessthan(any_t e1, any_t e2);
+extern _rha_ bool pattern_lessthan(any_t p1, any_t p2);
+extern _rha_ bool signature_lessthan(any_t s1, any_t s2);
+extern _rha_ bool fn_data_entry_lessthan(any_t e1, any_t e2);
 
 
 // used by parse.c

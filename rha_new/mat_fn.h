@@ -3,21 +3,21 @@
 
 #include "rha_types.h"
 
-extern _rha_ mat_t  mat_new(int_t rows, int_t cols);
-extern _rha_ mat_t  mat_eye(int_t n);
-extern _rha_ mat_t  mat_rand(int_t m, int_t n);
-extern _rha_ mat_t  mat_randn(int_t m, int_t n);
+extern _rha_ mat_t  mat_new(int rows, int cols);
+extern _rha_ mat_t  mat_eye(int n);
+extern _rha_ mat_t  mat_rand(int m, int n);
+extern _rha_ mat_t  mat_randn(int m, int n);
 
-extern _rha_ int_t  mat_cols(mat_t m);
-extern _rha_ int_t  mat_rows(mat_t m);
-extern _rha_ int_t  mat_len(mat_t m);
+extern _rha_ int  mat_cols(mat_t m);
+extern _rha_ int  mat_rows(mat_t m);
+extern _rha_ int  mat_len(mat_t m);
 extern _rha_ mat_t  mat_copy(mat_t m);
 
-extern _rha_ real_t mat_get(mat_t m, int_t i, int_t j);
-extern _rha_ void   mat_set(mat_t m, int_t i, int_t j, real_t v);
+extern _rha_ real_t mat_get(mat_t m, int i, int j);
+extern _rha_ void   mat_set(mat_t m, int i, int j, real_t v);
 
-extern _rha_ real_t mat_getl(mat_t m, int_t idx);
-extern _rha_ void   mat_setl(mat_t m, int_t idx, real_t v);
+extern _rha_ real_t mat_getl(mat_t m, int idx);
+extern _rha_ void   mat_setl(mat_t m, int idx, real_t v);
 
 extern _rha_ real_t mat_norm(mat_t m);
 extern _rha_ real_t mat_max(mat_t m);
@@ -28,8 +28,8 @@ extern _rha_ mat_t  mat_transpose(mat_t a);
 extern _rha_ mat_t  mat_sort(mat_t a);
 extern _rha_ mat_t  mat_solve(mat_t A, mat_t b);
 
-extern _rha_ mat_t  mat_repmat(mat_t a, int_t i, int_t j);
-extern _rha_ mat_t  mat_reshape(mat_t a, int_t i, int_t j);
+extern _rha_ mat_t  mat_repmat(mat_t a, int i, int j);
+extern _rha_ mat_t  mat_reshape(mat_t a, int i, int j);
 
 extern _rha_ mat_t  mat_minus(mat_t a);
 extern _rha_ mat_t  mat_plus_mat(mat_t a, mat_t b);

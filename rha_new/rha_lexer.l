@@ -52,12 +52,12 @@ extern int yylineno;
                  }
 \"\"[^\"]*\"\"   { // w/o expansion of esc characters 
                    yytext[strlen(yytext) - 2] = 0;
-                   yylval.obj = WRAP_PTR(STRING_T, gc_strdup(yytext + 2));
+                   yylval.obj = WRAP_PTR(_STRING_T, gc_strdup(yytext + 2));
                    return STRING;
                  }
 \"[^\"]*\"       { // with expansion of esc characters
                    yytext[strlen(yytext) - 1] = 0;
-                   yylval.obj = WRAP_PTR(STRING_T, gc_strdup(escexpand(yytext + 1)));
+                   yylval.obj = WRAP_PTR(_STRING_T, gc_strdup(escexpand(yytext + 1)));
                    return STRING;
                  }
 [0-9]+		 { yylval.obj = WRAP_INT(atoi(yytext)); return INT; }

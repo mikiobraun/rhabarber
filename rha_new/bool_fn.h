@@ -4,11 +4,11 @@
 #include <stdbool.h>
 #include "rha_init.h"
 
-extern _rha_ bool_t   bool_equalequal(bool_t, bool_t);
-extern _rha_ string_t bool_to_string(bool_t);
+extern _rha_ bool   bool_equalequal(bool, bool);
+extern _rha_ string_t bool_to_string(bool);
 
-extern _rha_ bool_t   bool_not(bool_t);
-extern _rha_ bool_t   bool_or(bool_t, bool_t);
-extern _rha_ bool_t   bool_and(bool_t, bool_t);
+extern _rha_ bool   bool_not(bool);
+extern _rha_ bool   bool_or(bool, bool);
+extern _rha_ bool   bool_and(bool, bool);
 
 #endif

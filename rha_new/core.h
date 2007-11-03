@@ -19,7 +19,7 @@ extern _rha_ any_t  create_fn_data_entry(any_t env, tuple_t argnames,
 extern _rha_ any_t  fn_fn(any_t env, tuple_t patterns, any_t fnbody);
 extern _rha_ any_t  macro_fn(tuple_t argnames, any_t fnbody);
 
-extern _rha_ any_t  if_fn(any_t this, bool_t cond, 
+extern _rha_ any_t  if_fn(any_t this, bool cond, 
 			  any_t then_code, any_t else_code);
 extern _rha_ void   return_fn(any_t);
 extern _rha_ void   deliver_fn(any_t);
@@ -37,7 +37,7 @@ extern _rha_ any_t  literal(any_t env, list_t parsetree);
 
 extern _rha_ void   tic_fn(void);
 extern _rha_ real_t toc_fn(void);
-extern _rha_ void   exit_fn(int_t);
+extern _rha_ void   exit_fn(int);
 extern _rha_ any_t  run_fn(any_t root, string_t fname);
 
 extern _rha_ tuple_t map_fn(any_t this, any_t f, tuple_t t);
