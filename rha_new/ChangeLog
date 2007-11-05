@@ -1,3 +1,35 @@
+2007-11-05  Stefan Harmeling  <harmeling@gmail.com>
+
+	* rha_config.pl: Note that the _rha_ is now ignored.  All
+	functions of a header listed in rha_config.d will be loaded.
+	Functions that should not be loaded can be excluded by the keyword
+	_ignore_. 
+
+	Note that the types appearing in functions that are embedded are
+	automatically introduced to rhabarber.  The types listed in
+	rha_config.d are only there for convenient inclusion in
+	rhabarber's sources.
+
+	* object.h: removed some unused functions.
+
+	* symbol_fn.h: commented out three wraping functions, which were
+	not find at linking time.  Did anybody use them?
+
+	* python_fn.h: non-rhabarber stuff written in C that is included
+	at compile time doesn't need to use special rhabarber types.  Just
+	use the usual types, like PyObject * and rha_config.pl will
+	automatically create the necessary types, which will appear in
+	'root.types'.
+
+	Note that to check ptypes you need to find out how your type
+	translates to the macroconstant.  For PyObject * this becomes:
+
+	  _PYOBJECT_PTR
+
+	Maybe we should also allow lower case letter, to avoid possible
+	conflicts.
+	
+
 2007-11-02  Stefan Harmeling  <harmeling@gmail.com>
 
 	* ALLOVERTHEPLACE: naming scheme for types has changed, since now
@@ -17,8 +49,9 @@
 
 	Note that 'real_t' and 'string_t' gets renamed in 'prelude.rha'...
 
-
-
+	All types are now under 'root.types'.  In 'prelude.rha' only those
+	are used that are needed.
+	
 	* prelude.rha (mat.proto(..., ...)): added slice support for
 	matrices:
 

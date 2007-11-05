@@ -18,7 +18,7 @@
 #include "mat_fn.h"
 #include "messages.h"
 #include "python_fn.h"
-#include <gsl/gsl_matrix_double.h>
+#include "gsl_matrix_double.h"
 
 //TYPES
 #include "config.h"

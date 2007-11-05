@@ -13,11 +13,11 @@
 
 #include "object.h"
 
-extern _rha_ void warning(string_t);
-extern _rha_ void error(string_t);
-extern void rha_warning(const char *fmt, ...);
-extern void rha_error(const char *fmt, ...);
-extern void rha_errorloc(any_t expr, const char *fmt, ...);
+extern void warning(string_t);
+extern void error(string_t);
+extern _ignore_ void rha_warning(const char *fmt, ...);
+extern _ignore_ void rha_error(const char *fmt, ...);
+extern _ignore_ void rha_errorloc(any_t expr, const char *fmt, ...);
 
 extern void sayhello(void);
 extern void saybye(void);

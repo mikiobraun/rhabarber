@@ -74,7 +74,6 @@ extern _rha_ any_t   inc_copy(any_t);
 extern _rha_ any_t   dec_copy(any_t);
 
 extern       any_t   wrap_int(int ptype, int i);
-extern       any_t   wrap_float(int ptype, float f);
 extern       any_t   wrap_double(int ptype, double d);
 extern       any_t   wrap_builtin(int ptype, builtin_t b);
 extern       any_t   wrap_ptr(int ptype, void *p);
@@ -82,8 +81,6 @@ extern       int        unwrap_int(int ptype, any_t o);
 extern       double     unwrap_double(int ptype, any_t o);
 extern       builtin_t  unwrap_builtin(int ptype, any_t o);
 extern       void      *unwrap_ptr(int ptype, any_t o);
-
-extern       any_t   wrap(int ptype, ...);
 
 
 //        z          -> lookup(local, \z);

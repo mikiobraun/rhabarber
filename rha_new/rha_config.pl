@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 #use strict 'vars';
+use strict;
 use warnings;
 
 # input file:
@@ -41,6 +42,7 @@ my $debug = shift @ARGV;
 my $id = '[a-zA-Z_]\w*';
 
 my $keyword = "_rha_";
+my $ignorekeyword = "_ignore_";
 
 # load def file into one string
 open(FILE, "<$conf_d_fname") or die "Can't open $conf_d_fname: $!";
@@ -65,6 +67,7 @@ $macros  =~ s/\/\/[^\n]*//g;
 my @mods = $modules =~ /include\s+\"($id)\.h\"/gox;
 
 # (2) disect the typedefs
+my @tdefs;
 #my @tdefs = $types =~ /$keyword\s+($id)/gox;
 
 # (3) disect the symbols
@@ -134,8 +137,8 @@ my $reargs = "$rear\\s*" # first arg
     .")*\\s*";        # more args are optional
 
 # regexp for function declaration
-#my $refd = "($refn)\\s*" # return type and function name
-my $refd = "_rha_\\s+($refn)\\s*" # return type and function name
+#my $refd = "$keyword\\s+($refn)\\s*" # return type and function name
+my $refd = "($refn)\\s*" # return type and function name
     ."\\(\\s*"        # left bracket of args
     ."($reargs|\\s*)" # optional args 
     ."\\)\\s*"        # right bracket of args
@@ -241,11 +244,14 @@ sub process_module() {
     # also add a symbol
     push(@symbs, $module);
 
-    while ($module_content =~ /$refd/go) {
-	my $fntid  = $1;
-	my $fnargs = $2;
-	print "MATCHED $fntid WITH ARGS $fnargs\n" if $debug;
-	process_fun($fntid, $fnargs);
+    while ($module_content =~ /((?:$ignorekeyword\s+)?)$refd/go) {
+	my $ignore = $1;
+	my $fntid  = $2;
+	my $fnargs = $3;
+	if ($ignore eq "") {
+	    print "MATCHED $fntid WITH ARGS $fnargs\n" if $debug;
+	    process_fun($fntid, $fnargs);
+	}
     }
 
     # check for $module_init function
@@ -278,8 +284,9 @@ sub process_typedid {
     $tid =~ s/\s+\*/\*/go;  # remove whitespace preceeding stars
     my $typename = "";
     my $varname = "";
+
     if ($tid ne "void") {
-	$tid =~ /(?:$reco)?($id\**|\.\.\.)\s*($id)?/o;
+	$tid =~ /(?:$reco)?($id\**|\.\.\.)\s*(($id)?)/o;
 	$typename = $1;
 	$varname  = $2;
 	$typename =~ s/(\*|$rebr)/_ptr/go;
@@ -510,6 +517,7 @@ sub create_type_h {
 // (0) use the keyword to mark the datatypes and function in
 // 'rha_config.d' that should be accessible in Rhabarber
 #define $keyword
+#define $ignorekeyword
 
 // (1) datatypes which are available in Rhabarber
 $type_h_types

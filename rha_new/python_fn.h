@@ -17,8 +17,6 @@
 
 #include "rha_types.h"
 
-typedef PyObject *                _rha_ pyobject_t;
-
 extern _rha_ void python_init(any_t, any_t);
 
 extern _rha_ any_t python_newinteger(int i);
@@ -27,27 +25,27 @@ extern _rha_ any_t python_newstring(string_t s);
 extern _rha_ any_t python_newtuple(int len);
 extern _rha_ any_t python_newlist(int len);
 
-extern _rha_ void       python_tuple_setitem(pyobject_t o, int i, pyobject_t v);
-extern _rha_ pyobject_t python_tuple_getitem(pyobject_t o, int i);
+extern _rha_ void      python_tuple_setitem(PyObject *o, int i, PyObject *v);
+extern _rha_ PyObject *python_tuple_getitem(PyObject *o, int i);
 
-extern _rha_ void       python_list_setitem(pyobject_t o, int i, pyobject_t v);
-extern _rha_ pyobject_t python_list_getitem(pyobject_t o, int i);
+extern _rha_ void      python_list_setitem(PyObject *o, int i, PyObject *v);
+extern _rha_ PyObject *python_list_getitem(PyObject *o, int i);
 
-extern _rha_ int      python_getint(pyobject_t o);
-extern _rha_ real_t     python_getreal(pyobject_t o);
-extern _rha_ string_t   python_getstring(pyobject_t o);
+extern _rha_ int       python_getint(PyObject *o);
+extern _rha_ real_t    python_getreal(PyObject *o);
+extern _rha_ string_t  python_getstring(PyObject *o);
 
-extern _rha_ string_t   python_to_string(pyobject_t o);
+extern _rha_ string_t  python_to_string(PyObject *o);
 
-extern _rha_ pyobject_t python_importmodule(string_t name);
-extern _rha_ void python_runstring(string_t command);
+extern _rha_ PyObject *python_importmodule(string_t name);
+extern _rha_ void      python_runstring(string_t command);
 
-extern _rha_ string_t python_getversion(void);
+extern _rha_ string_t  python_getversion(void);
 
-extern       any_t  python_wrap(PyObject *po);
-extern _rha_ any_t  python_lookup(pyobject_t o, symbol_t name);
-extern _rha_ bool python_callable(pyobject_t o);
-extern _rha_ any_t  python_call(tuple_t values);
+extern       any_t     python_wrap(PyObject *po);
+extern _rha_ any_t     python_lookup(PyObject *o, symbol_t name);
+extern _rha_ bool      python_callable(PyObject *o);
+extern _rha_ any_t     python_call(tuple_t values);
 
 #endif /* HAVE_PYTHON */
 

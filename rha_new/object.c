@@ -69,11 +69,6 @@ any_t new_pt(int pt)
   return o;
 }
 
-any_t b_copy_pt(tuple_t t)
-{
-  return copy_pt(tuple_get(t, 1));  
-}
-
 any_t copy_pt(any_t other)
 {
   // note that symbol table information is lost
@@ -125,14 +120,6 @@ any_t wrap_int(int pt, int i)
   assert(pt==_BOOL || pt==_INT || pt==_SYMBOL_T);
   any_t o = new_pt(pt);
   o->raw.i = i;
-  return o;
-}
-
-any_t wrap_float(int pt, float d)
-{
-  assert(pt==_REAL_T);
-  any_t o = new_pt(pt);
-  o->raw.d = d;
   return o;
 }
 
