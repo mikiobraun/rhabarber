@@ -4,6 +4,8 @@
 	functions of a header listed in rha_config.d will be loaded.
 	Functions that should not be loaded can be excluded by the keyword
 	_ignore_. 
+	(process_module): now newlines gets replaced by space and is not
+	removed any longer.
 
 	Note that the types appearing in functions that are embedded are
 	automatically introduced to rhabarber.  The types listed in

@@ -229,8 +229,8 @@ sub process_module() {
     my $module_content = shift;
     print "CALLING process_module_header($module, <module_content>)\n" if $debug;
 
-    # get rid of all newlines
-    $module_content =~ s/\n//gso;
+    # replace all newlines with a single space
+    $module_content =~ s/\n/ /gso;
 
     # replace white space by a single space (for readability)
     $module_content =~ s/\s+/ /gso;
