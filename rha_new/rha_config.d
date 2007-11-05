@@ -24,7 +24,7 @@
 #include "config.h"
 #include <stdbool.h>
 #ifdef HAVE_PYTHON
-#undef _POSIX_C_SOURCE
+#undef RHA_posix_c_source
 #include <Python.h>
 #endif
 struct rha_object;
@@ -124,16 +124,16 @@ extern symbol_t apostrophe_fn_sym;
 extern symbol_t domain_sym;
 
 //MACROS
-#define UNWRAP_INT(o)     (unwrap_int(_INT, o))
-#define UNWRAP_BOOL(o)    (unwrap_int(_BOOL, o))
-#define UNWRAP_SYMBOL(o)  (unwrap_int(_SYMBOL_T, o))
-#define UNWRAP_REAL(o)    (unwrap_double(_REAL_T, o))
-#define UNWRAP_BUILTIN(o) (unwrap_builtin(_BUILTIN_T, o))
+#define UNWRAP_INT(o)     (unwrap_int(RHA_int, o))
+#define UNWRAP_BOOL(o)    (unwrap_int(RHA_bool, o))
+#define UNWRAP_SYMBOL(o)  (unwrap_int(RHA_symbol_t, o))
+#define UNWRAP_REAL(o)    (unwrap_double(RHA_real_t, o))
+#define UNWRAP_BUILTIN(o) (unwrap_builtin(RHA_builtin_t, o))
 #define UNWRAP_PTR(pt, o) (unwrap_ptr(pt, o))
 
-#define WRAP_INT(i)       (wrap_int(_INT, i))
-#define WRAP_BOOL(b)      (wrap_int(_BOOL, b))
-#define WRAP_SYMBOL(s)    (wrap_int(_SYMBOL_T, s))
-#define WRAP_REAL(d)      (wrap_double(_REAL_T, d))
-#define WRAP_BUILTIN(p)   (wrap_builtin(_BUILTIN_T, p))
+#define WRAP_INT(i)       (wrap_int(RHA_int, i))
+#define WRAP_BOOL(b)      (wrap_int(RHA_bool, b))
+#define WRAP_SYMBOL(s)    (wrap_int(RHA_symbol_t, s))
+#define WRAP_REAL(d)      (wrap_double(RHA_real_t, d))
+#define WRAP_BUILTIN(p)   (wrap_builtin(RHA_builtin_t, p))
 #define WRAP_PTR(pt, p)   (wrap_ptr(pt, p))

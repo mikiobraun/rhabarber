@@ -231,22 +231,22 @@ bool python_callable(PyObject *o)
 any_t python_call(tuple_t values)
 {
   start_python_if_necessary();
-  if(ptype(tuple_get(values, 0)) != _PYOBJECT_PTR) 
+  if(ptype(tuple_get(values, 0)) != RHA_PyObject_ptr) 
     rha_error("(python_call) called for non-python object!");
 
-  PyObject *fct = UNWRAP_PTR(_PYOBJECT_PTR, tuple_get(values, 0));
+  PyObject *fct = UNWRAP_PTR(RHA_PyObject_ptr, tuple_get(values, 0));
   int numargs = tuple_len(values) - 1;
 
   if (python_callable(fct)) {
     PyObject *args = PyTuple_New(numargs);
     for(int i = 0; i < numargs; i++) {
       any_t a = tuple_get(values, i + 1);
-      if (ptype(a) != _PYOBJECT_PTR) {
+      if (ptype(a) != RHA_PyObject_ptr) {
 	Py_DECREF(args);
 	rha_error("(python_call) argument %d is not a python object!", i + 1);
       }
 
-      PyObject *arg = UNWRAP_PTR(_PYOBJECT_PTR, a);
+      PyObject *arg = UNWRAP_PTR(RHA_PyObject_ptr, a);
       Py_INCREF(arg); // PyTuple_SetItem steals references
       PyTuple_SetItem(args, i, arg);
     }
@@ -298,7 +298,7 @@ any_t python_lookup(PyObject *o, symbol_t name)
 
 any_t python_wrap(PyObject *p)
 {
-  any_t o = WRAP_PTR(_PYOBJECT_PTR, p);
+  any_t o = WRAP_PTR(RHA_PyObject_ptr, p);
 
   // register finalizer to decrease pythons counts
   GC_REGISTER_FINALIZER(o, python_finalizer, NULL, NULL, NULL);
@@ -313,9 +313,9 @@ static
 void python_finalizer(GC_PTR obj, GC_PTR cd)
 {
   any_t p = (any_t)obj;
-  assert(ptype(p) == _PYOBJECT_PTR);
+  assert(ptype(p) == RHA_PyObject_ptr);
 
-  PyObject *po = UNWRAP_PTR(_PYOBJECT_PTR, p);
+  PyObject *po = UNWRAP_PTR(RHA_PyObject_ptr, p);
 
   print("Calling finalizer for %x, %o\n", (any_t) obj, (any_t) obj);
   Py_DECREF(po);

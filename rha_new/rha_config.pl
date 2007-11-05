@@ -391,8 +391,7 @@ sub process_fun() {
 	    $fnarg_str = "args";
 	}
 	elsif ($item ne "any_t") {
-	    my $ucitem = uc($item);
-	    $fnarg_str = "UNWRAP_PTR(_$ucitem, $fnarg_str)";
+	    $fnarg_str = "UNWRAP_PTR(RHA_$item, $fnarg_str)";
 	}
 	$fncall_str .= $fnarg_str;
 	$i++;
@@ -405,8 +404,7 @@ sub process_fun() {
 	$fncall_str = "WRAP_$ucitem($fncall_str)";
     }
     elsif ($fntype ne "any_t" && $fntype ne "void") {
-	my $ucfntype = uc($fntype);
-	$fncall_str = "WRAP_PTR(_$ucfntype, $fncall_str)";
+	$fncall_str = "WRAP_PTR(RHA_$fntype, $fncall_str)";
     }
     if ($fntype eq "void") { 
 	$init_c_functions .= "  $fncall_str;\n  return void_obj;\n" 
@@ -428,8 +426,7 @@ sub process_fun() {
     $init_c_add_functions .= ", $narg";
     foreach my $item (@args) {
 	if ($item ne "...") {
-	    my $ucitem = uc($item);
-	    $init_c_add_functions .= ", _$ucitem";
+	    $init_c_add_functions .= ", RHA_$item";
 	}
     }
     $init_c_add_functions .= ");\n";
@@ -437,12 +434,11 @@ sub process_fun() {
 
 
 sub create_ids {
-    $type_h_ids .= "  _VOID = 0";
+    $type_h_ids .= "  RHA_void = 0";
     $init_c_ptypenames .= "    \"void\"";
     my $id = 1;
     foreach my $item (@tdefs) {
-	my $ucitem = uc($item);
-	$type_h_ids .= ",\n  _$ucitem = $id";
+	$type_h_ids .= ",\n  RHA_$item = $id";
 	$init_c_ptypenames .= ",\n    \"$item\"";
 	$id++;
     }
@@ -465,13 +461,12 @@ sub create_prototypes {
     $init_c_init_prototypes .= "    prototypes[i] = create_pt(i);\n";
     $init_c_init_prototypes .= "    typeobjects[i] = new();\n";
     $init_c_init_prototypes .= "  }\n";
-    $init_c_init_prototypes .= "  typeobjects[_ANY_T] = 0;\n";
+    $init_c_init_prototypes .= "  typeobjects[RHA_any_t] = 0;\n";
     my $i = 1;
     foreach my $item (@tdefs) {
-	my $ucitem = uc($item);
 	if ($item ne "any_t") {
-	    $init_c_init_typeobjects .= "  ADD_TYPE($item, _$ucitem);\n";
-	    $init_c_add_pchecks .= "  assign(typeobjects[_$ucitem], check_sym, pcheck_f);\n";
+	    $init_c_init_typeobjects .= "  ADD_TYPE($item, RHA_$item);\n";
+	    $init_c_add_pchecks .= "  assign(typeobjects[RHA_$item], check_sym, pcheck_f);\n";
 	    # note that we omit _ANY_T for the type slot
 	    $init_c_extend_prototypes .= "  assign(prototypes[$i], type_sym, typeobjects[$i]);\n";
 	}
@@ -602,7 +597,7 @@ $init_c_functions
   assign(types, ttt ## _sym, typeobjects[TTT]);                 \\
   assign(typeobjects[TTT], proto_sym, prototypes[TTT]);         \\
   assign(typeobjects[TTT], parent_sym, type_obj);               \\
-  assign(typeobjects[TTT], name_sym, WRAP_PTR(_STRING_T, #ttt));
+  assign(typeobjects[TTT], name_sym, WRAP_PTR(RHA_string_t, #ttt));
 
 #define ADD_MODULE(mmm)                                               \\
   module = new();                                                     \\
@@ -661,7 +656,7 @@ any_t create_special_fn_data(any_t module, bool method,
   }
   list_prepend(fnbody_l, WRAP_SYMBOL(fn_sym));
   return create_fn_data(module, signature, 
-			WRAP_PTR(_TUPLE_T, list_to_tuple(fnbody_l)));
+			WRAP_PTR(RHA_tuple_t, list_to_tuple(fnbody_l)));
 }
 
 any_t rha_init(void)

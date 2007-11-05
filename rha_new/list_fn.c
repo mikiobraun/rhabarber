@@ -138,16 +138,16 @@ list_t list_chop(list_t l, symbol_t s)
   list_t part = list_new();
   any_t head;
   while ((head = list_popfirst(l))) {
-    if (ptype(head) == _SYMBOL_T)
+    if (ptype(head) == RHA_symbol_t)
       if (s == UNWRAP_SYMBOL(head)) {
 	// split here
-	list_append(parts, WRAP_PTR(_LIST_T, part));
+	list_append(parts, WRAP_PTR(RHA_list_t, part));
 	part = list_new();
 	continue;
       }
     list_append(part, head);
   }
-  list_append(parts, WRAP_PTR(_LIST_T, part));
+  list_append(parts, WRAP_PTR(RHA_list_t, part));
   return parts;
 }
 
@@ -159,7 +159,7 @@ list_t list_chop_first(list_t l, symbol_t s)
   list_t part = list_new();
   any_t head;
   while ((head = list_popfirst(l))) {
-    if (ptype(head) == _SYMBOL_T)
+    if (ptype(head) == RHA_symbol_t)
       if (s == UNWRAP_SYMBOL(head))
 	break;
     list_append(part, head);
@@ -174,7 +174,7 @@ list_t list_chop_first_list(list_t l, glist_t *sym_list)
   list_t part = list_new();
   any_t head;
   while ((head = list_popfirst(l))) {
-    if (ptype(head) == _SYMBOL_T)
+    if (ptype(head) == RHA_symbol_t)
       if (glist_iselementi(sym_list, UNWRAP_SYMBOL(head)))
 	return part;
     list_append(part, head);
@@ -190,7 +190,7 @@ list_t list_chop_last(list_t l, symbol_t s)
   list_t part = list_new();
   any_t tail;
   while ((tail = list_poplast(l))) {
-    if (ptype(tail) == _SYMBOL_T)
+    if (ptype(tail) == RHA_symbol_t)
       if (s == UNWRAP_SYMBOL(tail))
 	break;
     list_prepend(part, tail);
@@ -205,7 +205,7 @@ list_t list_chop_last_list(list_t l, glist_t *sym_list)
   list_t part = list_new();
   any_t tail;
   while ((tail = list_poplast(l))) {
-    if (ptype(tail) == _SYMBOL_T)
+    if (ptype(tail) == RHA_symbol_t)
       if (glist_iselementi(sym_list, UNWRAP_SYMBOL(tail)))
 	return part;
     list_prepend(part, tail);
@@ -235,7 +235,7 @@ list_t list_chop_matching(list_t l, symbol_t left, symbol_t right)
   list_t part = list_new();
   any_t head = 0;
   while ((head = list_popfirst(l))) {
-    if (ptype(head) == _SYMBOL_T) {
+    if (ptype(head) == RHA_symbol_t) {
       symbol_t head_s = UNWRAP_SYMBOL(head);
       if (head_s == left)
 	counter++;

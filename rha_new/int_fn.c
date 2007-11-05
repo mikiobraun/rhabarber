@@ -31,9 +31,9 @@ int int_cmp(int x, int y) {
 int int_cast(any_t x)
 {
   switch (ptype(x)) {
-  case _INT:
+  case RHA_int:
     return UNWRAP_INT(x);
-  case _REAL_T:
+  case RHA_real_t:
     return (int) UNWRAP_REAL(x);
   default:
     rha_error("(casting) can't convert %o to 'int'", x);

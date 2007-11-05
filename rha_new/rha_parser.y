@@ -64,7 +64,7 @@ int numerrors;
 any_t solidify(symbol_t s, list_t l)
 {
   list_prepend(l, WRAP_SYMBOL(s));
-  return WRAP_PTR(_LIST_T, l);
+  return WRAP_PTR(RHA_list_t, l);
 }
 
 

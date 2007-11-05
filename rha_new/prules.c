@@ -262,7 +262,7 @@ tuple_t apostrophe_pr(any_t env, list_t parsetree)
   any_t last = list_poplast(parsetree);
   if (list_len(parsetree) == 0)
     rha_error("(parse) found apostrophe (') following nothing");
-  if (!last || ptype(last)!=_SYMBOL_T || UNWRAP_SYMBOL(last)!=apostrophe_sym)
+  if (!last || ptype(last)!=RHA_symbol_t || UNWRAP_SYMBOL(last)!=apostrophe_sym)
     rha_error("(parse) apostrophe (') must be last in expression");
   return tuple_make(2, WRAP_SYMBOL(apostrophe_fn_sym), resolve(env, parsetree));
 }
@@ -332,7 +332,7 @@ tuple_t minus_pr(any_t env, list_t parsetree)
   // if so, we replace it by a special symbol which will trigger a
   // prefix prule later on
   any_t first = list_first(parsetree);
-  if ((ptype(first)==_SYMBOL_T) && (UNWRAP_SYMBOL(first)==minus_sym)) {
+  if ((ptype(first)==RHA_symbol_t) && (UNWRAP_SYMBOL(first)==minus_sym)) {
     // replace it
     list_popfirst(parsetree);
     list_prepend(parsetree, WRAP_SYMBOL(prefix_minus_sym));
@@ -375,14 +375,14 @@ tuple_t colon_pr(any_t env, list_t parsetree)
   list_append(thecall, WRAP_SYMBOL(symbol_new("colon_fn")));
 
   // (1) extract 'begin'
-  slice_begin = UNWRAP_PTR(_LIST_T, list_popfirst(parts));
+  slice_begin = UNWRAP_PTR(RHA_list_t, list_popfirst(parts));
   if (list_len(slice_begin) == 0)
     list_append(slice_begin, WRAP_INT(0));  // default begin == 0
   list_append(thecall, resolve(env, slice_begin));
 
   // (2) extract 'end'
   assert(list_len(parts) == 1 || list_len(parts) == 2);
-  slice_end = UNWRAP_PTR(_LIST_T, list_poplast(parts));
+  slice_end = UNWRAP_PTR(RHA_list_t, list_poplast(parts));
   if (list_len(slice_end) == 0)
     list_append(thecall, void_obj);
   else
@@ -393,7 +393,7 @@ tuple_t colon_pr(any_t env, list_t parsetree)
   if (list_len(parts) > 0) {
     assert(partsl == 3);
     assert(list_len(parts) == 1);
-    slice_step = UNWRAP_PTR(_LIST_T, list_popfirst(parts));
+    slice_step = UNWRAP_PTR(RHA_list_t, list_popfirst(parts));
     if (list_len(slice_step) == 0)
       rha_error("missing step size");
     list_append(thecall, resolve(env, slice_step));
@@ -482,13 +482,13 @@ tuple_t if_pr(any_t env, list_t parsetree)
   tuple_set(t, 0, tuple_get(pre_t, 0));
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   any_t obj = tuple_get(pre_t, 1);
-  assert(obj && ptype(obj)==_LIST_T);  // otherwise bug in resolve_freefix*
-  list_t obj_l = UNWRAP_PTR(_LIST_T, obj);
+  assert(obj && ptype(obj)==RHA_list_t);  // otherwise bug in resolve_freefix*
+  list_t obj_l = UNWRAP_PTR(RHA_list_t, obj);
   if (list_len(obj_l) != 1)
     rha_error("(parsing) condition expected, found %o", obj);
   obj = list_popfirst(obj_l);
-  assert(obj && ptype(obj) == _LIST_T);
-  any_t cond = resolve(env, UNWRAP_PTR(_LIST_T, obj));
+  assert(obj && ptype(obj) == RHA_list_t);
+  any_t cond = resolve(env, UNWRAP_PTR(RHA_list_t, obj));
   tuple_set(t, 2, cond);
   tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   tuple_set(t, 4, quoted(tuple_get(pre_t, 3)));
@@ -499,21 +499,21 @@ tuple_t try_pr(any_t env, list_t parsetree)
 { 
   tuple_t pre_t = resolve_freefix_prule2(env, parsetree, try_fn_sym,
 					 try_sym, 1, catch_sym, 2);
-  //debug("pre_t==%o\n", WRAP_PTR(_TUPLE_T, pre_t));
+  //debug("pre_t==%o\n", WRAP_PTR(RHA_tuple_t, pre_t));
   assert(tuple_len(pre_t) == 4);
   tuple_t t = tuple_new(5);
   tuple_set(t, 0, tuple_get(pre_t, 0));
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   tuple_set(t, 2, quoted(tuple_get(pre_t, 1)));
   any_t obj = tuple_get(pre_t, 2);
-  assert(obj && ptype(obj)==_LIST_T);  // otherwise bug in resolve_freefix*
-  list_t obj_l = UNWRAP_PTR(_LIST_T, obj);
+  assert(obj && ptype(obj)==RHA_list_t);  // otherwise bug in resolve_freefix*
+  list_t obj_l = UNWRAP_PTR(RHA_list_t, obj);
   if (list_len(obj_l) != 1)
     rha_error("(parsing) symbol for exception expected, found %o", obj);
   obj = list_popfirst(obj_l);
-  assert(obj && ptype(obj)==_LIST_T);
-  any_t s = resolve(env, UNWRAP_PTR(_LIST_T, obj));
-  if (ptype(s) != _SYMBOL_T)
+  assert(obj && ptype(obj)==RHA_list_t);
+  any_t s = resolve(env, UNWRAP_PTR(RHA_list_t, obj));
+  if (ptype(s) != RHA_symbol_t)
     rha_error("in 'try 17 catch (x) 42', 'x' must be a symbol");
   tuple_set(t, 3, quoted(s));
   tuple_set(t, 4, quoted(tuple_get(pre_t, 3)));
@@ -529,13 +529,13 @@ tuple_t while_pr(any_t env, list_t parsetree)
   tuple_set(t, 0, tuple_get(pre_t, 0));
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   any_t obj = tuple_get(pre_t, 1);
-  assert(obj && ptype(obj)==_LIST_T);  // otherwise bug in resolve_freefix*
-  list_t obj_l = UNWRAP_PTR(_LIST_T, obj);
+  assert(obj && ptype(obj)==RHA_list_t);  // otherwise bug in resolve_freefix*
+  list_t obj_l = UNWRAP_PTR(RHA_list_t, obj);
   if (list_len(obj_l) != 1)
     rha_error("(parsing) condition expected, found %o", obj);
   obj = list_popfirst(obj_l);
-  assert(obj && ptype(obj) == _LIST_T);
-  any_t cond = resolve(env, UNWRAP_PTR(_LIST_T, obj));
+  assert(obj && ptype(obj) == RHA_list_t);
+  any_t cond = resolve(env, UNWRAP_PTR(RHA_list_t, obj));
   tuple_set(t, 2, quoted(cond));
   tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
   return t;
@@ -551,20 +551,20 @@ tuple_t for_pr(any_t env, list_t parsetree)
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   // check whether the first arg has the right form, i.e. "x in expr"
   any_t obj = tuple_get(pre_t, 1);
-  assert(obj && ptype(obj)==_LIST_T);  // otherwise bug in resolve_freefix*
-  list_t obj_l = UNWRAP_PTR(_LIST_T, obj);
+  assert(obj && ptype(obj)==RHA_list_t);  // otherwise bug in resolve_freefix*
+  list_t obj_l = UNWRAP_PTR(RHA_list_t, obj);
   if (list_len(obj_l) != 1)
     rha_error("(parsing) second arg to 'for' must look like (x in l), found %o", obj);
   any_t obj_t0 = list_popfirst(obj_l);
-  assert(obj_t0 && ptype(obj_t0)==_LIST_T);  // otherwise bug in resolve_freefix*
-  list_t part = UNWRAP_PTR(_LIST_T, obj_t0);
+  assert(obj_t0 && ptype(obj_t0)==RHA_list_t);  // otherwise bug in resolve_freefix*
+  list_t part = UNWRAP_PTR(RHA_list_t, obj_t0);
   if (list_len(part) < 3)
     rha_error("(parsing) second arg to 'for' must look like (x in l), found %o", obj);
   any_t s = list_popfirst(part);
-  if (ptype(s) != _SYMBOL_T) {
-    if (ptype(s) != _LIST_T)
+  if (ptype(s) != RHA_symbol_t) {
+    if (ptype(s) != RHA_list_t)
       rha_error("(for_pr) can't assign to %o", s);
-    s = WRAP_PTR(_TUPLE_T, resolve_lhs_symbol_list(env, UNWRAP_PTR(_LIST_T, s)));
+    s = WRAP_PTR(RHA_tuple_t, resolve_lhs_symbol_list(env, UNWRAP_PTR(RHA_list_t, s)));
   }
   any_t in_o = list_popfirst(part);
   if (!in_o || !is_symbol(in_sym, in_o))
@@ -585,11 +585,11 @@ tuple_t fn_pr(any_t env, list_t parsetree)
   tuple_set(t, 0, WRAP_SYMBOL(fn_fn_sym));
   tuple_set(t, 1, WRAP_SYMBOL(local_sym));
   any_t obj = tuple_get(pre_t, 1);
-  assert(obj && ptype(obj)==_LIST_T);  // otherwise bug in resolve_freefix*
-  list_t obj_l = UNWRAP_PTR(_LIST_T, obj);
+  assert(obj && ptype(obj)==RHA_list_t);  // otherwise bug in resolve_freefix*
+  list_t obj_l = UNWRAP_PTR(RHA_list_t, obj);
   tuple_set(t, 2, quoted(resolve_each(env, obj_l)));
   tuple_set(t, 3, quoted(tuple_get(pre_t, 2)));
-  //debug("(fn_pr) %o\n", WRAP_PTR(_TUPLE_T, t));
+  //debug("(fn_pr) %o\n", WRAP_PTR(RHA_tuple_t, t));
   return t;
 }
 
@@ -601,20 +601,20 @@ tuple_t macro_pr(any_t env, list_t parsetree)
   tuple_t t = tuple_new(3);
   tuple_set(t, 0, WRAP_SYMBOL(macro_fn_sym));
   any_t obj = tuple_get(pre_t, 1);
-  assert(obj && ptype(obj)==_LIST_T);  // otherwise bug in resolve_freefix*
-  tuple_t obj_t = list_to_tuple(UNWRAP_PTR(_LIST_T, obj));
+  assert(obj && ptype(obj)==RHA_list_t);  // otherwise bug in resolve_freefix*
+  tuple_t obj_t = list_to_tuple(UNWRAP_PTR(RHA_list_t, obj));
   for (int i = 0; i < tuple_len(obj_t); i++) {
     // simply check whether the args are symbols
     any_t entry = tuple_get(obj_t, i);
-    assert(entry && ptype(entry)==_LIST_T);
-    any_t arg = resolve(env, UNWRAP_PTR(_LIST_T, entry));
-    if (!arg || ptype(arg)!=_SYMBOL_T)
+    assert(entry && ptype(entry)==RHA_list_t);
+    any_t arg = resolve(env, UNWRAP_PTR(RHA_list_t, entry));
+    if (!arg || ptype(arg)!=RHA_symbol_t)
       rha_error("(parsing) macro expects symbol, found", arg);
     tuple_set(obj_t, i, arg);
   }
-  tuple_set(t, 1, quoted(WRAP_PTR(_TUPLE_T, obj_t)));
+  tuple_set(t, 1, quoted(WRAP_PTR(RHA_tuple_t, obj_t)));
   tuple_set(t, 2, quoted(tuple_get(pre_t, 2)));
-  //debug("(macro_pr) %o\n", WRAP_PTR(_TUPLE_T, t));
+  //debug("(macro_pr) %o\n", WRAP_PTR(RHA_tuple_t, t));
   return t;
 }
 
@@ -647,7 +647,7 @@ tuple_t quote_pr(any_t env, list_t parsetree)
     if (is_symbol(quote_sym, list_first(parsetree))) {
       // this allows to avoid resolving prules at all
       list_popfirst(parsetree);
-      tuple_set(t, 1, WRAP_PTR(_LIST_T, parsetree));
+      tuple_set(t, 1, WRAP_PTR(RHA_list_t, parsetree));
     }
     else
       // resolve prules
@@ -692,7 +692,7 @@ list_t split_by_semicolon(list_t parsetree)
       if (!obj) break;
       if (!is_second_order_keyword(obj) && list_len(part)>0) {
 	// split here
-	list_append(sink, WRAP_PTR(_LIST_T, part));
+	list_append(sink, WRAP_PTR(RHA_list_t, part));
 	part = list_new();
 	// ignore the semicolon
       }
@@ -709,7 +709,7 @@ list_t split_by_semicolon(list_t parsetree)
     obj = list_popfirst(parsetree);
   }
   if (list_len(part)>0)
-    list_append(sink, WRAP_PTR(_LIST_T, part));
+    list_append(sink, WRAP_PTR(RHA_list_t, part));
   return sink;
 }
 
@@ -723,7 +723,7 @@ list_t split_by_semicolon(list_t parsetree)
 // split by semicolon, comma is not allowed
 tuple_t curlied_pr(any_t env, list_t parsetree)
 {
-  //debug("curlied_pr(%o, %o)\n", env, WRAP_PTR(_LIST_T, parsetree));
+  //debug("curlied_pr(%o, %o)\n", env, WRAP_PTR(RHA_list_t, parsetree));
   assert(list_len(parsetree)>0);
   any_t head = list_popfirst(parsetree);  // pop off curlied_sym
   assert(head);
@@ -734,8 +734,8 @@ tuple_t curlied_pr(any_t env, list_t parsetree)
   // note that the first is ignored, since it is the 'do_sym'
   any_t obj = 0;
   while ((obj = list_popfirst(source))) {
-    assert(ptype(obj) == _LIST_T);
-    list_append(sink, resolve(env, UNWRAP_PTR(_LIST_T, obj)));
+    assert(ptype(obj) == RHA_list_t);
+    list_append(sink, resolve(env, UNWRAP_PTR(RHA_list_t, obj)));
   }
   list_prepend(sink, WRAP_SYMBOL(do_sym));
   return list_to_tuple(sink);
@@ -769,7 +769,7 @@ tuple_t squared_pr(any_t env, list_t parsetree)
     rha_error("(squared_pr) don't call prules directly");
 
   return tuple_make(3, WRAP_SYMBOL(literal_sym), WRAP_SYMBOL(local_sym),
-		    quoted(WRAP_PTR(_LIST_T, parsetree)));
+		    quoted(WRAP_PTR(RHA_list_t, parsetree)));
 }
 
 
@@ -785,9 +785,9 @@ tuple_t squared_pr(any_t env, list_t parsetree)
 
 bool is_marked_list(symbol_t mark, any_t obj)
 {
-  if (ptype(obj) != _LIST_T)
+  if (ptype(obj) != RHA_list_t)
     return false;
-  list_t l = UNWRAP_PTR(_LIST_T, obj);
+  list_t l = UNWRAP_PTR(RHA_list_t, obj);
   if (list_len(l) == 0)
     return false;
   any_t l0 = list_first(l);
@@ -799,14 +799,14 @@ bool is_marked_list(symbol_t mark, any_t obj)
 
 // check whether an expression is a specific symbol
 bool is_symbol(symbol_t a_symbol, any_t expr) {
-  return (ptype(expr) == _SYMBOL_T)
+  return (ptype(expr) == RHA_symbol_t)
     && (UNWRAP_SYMBOL(expr) == a_symbol);
 }
 
 static bool is_second_order_keyword(any_t obj)
 {
   // 2nd order keywords are for example 'else' or 'catch'
-  if (ptype(obj) != _SYMBOL_T)
+  if (ptype(obj) != RHA_symbol_t)
     return false;
   symbol_t s = UNWRAP_SYMBOL(obj);
   if (glist_iselementi(&sec_sym_list, s))
@@ -817,21 +817,21 @@ static bool is_second_order_keyword(any_t obj)
 
 any_t quoted(any_t obj)
 {
-  return WRAP_PTR(_TUPLE_T, 
+  return WRAP_PTR(RHA_tuple_t, 
 		  tuple_make(2, WRAP_SYMBOL(quote_sym), obj));
 }
 
 /* static bool isquotedsymbol(any_t obj) */
 /* { */
-/*   if (ptype(obj) != _TUPLE_T) return false; */
-/*   tuple_t t = UNWRAP_PTR(_TUPLE_T, obj); */
+/*   if (ptype(obj) != RHA_tuple_t) return false; */
+/*   tuple_t t = UNWRAP_PTR(RHA_tuple_t, obj); */
 /*   if (tuple_len(t) != 2) return false; */
 /*   any_t t0 = tuple_get(t, 0); */
-/*   if (ptype(t0) != _SYMBOL_T) return false; */
+/*   if (ptype(t0) != RHA_symbol_t) return false; */
 /*   symbol_t t0_s = UNWRAP_SYMBOL(t0); */
 /*   if (t0_s != quote_sym) return false; */
 /*   any_t t1 = tuple_get(t, 1); */
-/*   if (ptype(t1) != _SYMBOL_T) return false; */
+/*   if (ptype(t1) != RHA_symbol_t) return false; */
 /*   // all tests passed! */
 /*   return true; */
 /* } */
@@ -840,21 +840,21 @@ any_t copy_expr(any_t expr)
 {
   // copy the structure (i.e. tuple and list structure)
   // but not the object elements
-  if (ptype(expr) == _TUPLE_T) {
-    tuple_t t = UNWRAP_PTR(_TUPLE_T, expr);
+  if (ptype(expr) == RHA_tuple_t) {
+    tuple_t t = UNWRAP_PTR(RHA_tuple_t, expr);
     int tlen = tuple_len(t);
     tuple_t other = tuple_new(tlen);
     for (int i=0; i<tlen; i++)
       tuple_set(other, i, copy_expr(tuple_get(t, i)));
-    return WRAP_PTR(_TUPLE_T, other);
+    return WRAP_PTR(RHA_tuple_t, other);
   }
-  else if (ptype(expr) == _LIST_T) {
-    list_t l = UNWRAP_PTR(_LIST_T, expr);
+  else if (ptype(expr) == RHA_list_t) {
+    list_t l = UNWRAP_PTR(RHA_list_t, expr);
     list_t other = list_new();
     list_it_t it;
     for (it = list_begin(l); !list_done(it); list_next(it))
       list_append(other, copy_expr(list_get(it)));
-    return WRAP_PTR(_LIST_T, other);
+    return WRAP_PTR(RHA_list_t, other);
   }
   else
     return expr;
@@ -871,8 +871,8 @@ list_t split_rounded_list_obj(any_t list_obj)
   // split only by comma, no semicolon is allowed
 
   //debug("split_rounded_list_obj(%o)\n", list_obj);
-  assert(list_obj && ptype(list_obj) == _LIST_T);
-  list_t source = UNWRAP_PTR(_LIST_T, list_obj);
+  assert(list_obj && ptype(list_obj) == RHA_list_t);
+  list_t source = UNWRAP_PTR(RHA_list_t, list_obj);
   any_t head = list_popfirst(source);  // pop off curlied_sym
   assert(head && is_symbol(rounded_sym, head));
 
@@ -889,7 +889,7 @@ list_t split_rounded_list_obj(any_t list_obj)
       // split here and ignore the comma
       if (list_len(part)==0)
 	rha_error("can't start argument list with COMMA");
-      list_append(sink, WRAP_PTR(_LIST_T, part));
+      list_append(sink, WRAP_PTR(RHA_list_t, part));
       part = list_new();
       continue;
     }
@@ -902,7 +902,7 @@ list_t split_rounded_list_obj(any_t list_obj)
   }
   if (list_len(part) == 0)
     rha_error("can't end argument list with COMMA");
-  list_append(sink, WRAP_PTR(_LIST_T, part));
+  list_append(sink, WRAP_PTR(RHA_list_t, part));
   return sink;
 }
 
@@ -915,14 +915,14 @@ tuple_t resolve_incdec_prule(any_t env, list_t parsetree)
   // what is that "copy" thing?
   //   inc_copy = fn (x) { o=copy(x); inc(x); return o };
   // similarly for 'dec'
-  //debug("resolve_incdec_prule(%o)\n", WRAP_PTR(_LIST_T, parsetree));
+  //debug("resolve_incdec_prule(%o)\n", WRAP_PTR(RHA_list_t, parsetree));
 
   assert(list_len(parsetree) > 0);
   if (list_len(parsetree) == 1)
     rha_error("++ and -- require an argument");
   // check whether ++ is used as prefix
   any_t first = list_first(parsetree);
-  if (ptype(first) == _SYMBOL_T) {
+  if (ptype(first) == RHA_symbol_t) {
     symbol_t first_s = UNWRAP_SYMBOL(first);
     if ((first_s == plusplus_sym) || (first_s == minusminus_sym)) {
       // transform the parsetree!
@@ -939,7 +939,7 @@ tuple_t resolve_incdec_prule(any_t env, list_t parsetree)
   }
   // else
   any_t last = list_last(parsetree);
-  if (ptype(last) == _SYMBOL_T) {
+  if (ptype(last) == RHA_symbol_t) {
     symbol_t last_s = UNWRAP_SYMBOL(last);
     if ((last_s == plusplus_sym) || (last_s == minusminus_sym)) {
       // transform the parsetree!
@@ -1002,7 +1002,7 @@ tuple_t resolve_lhs_symbol_list(any_t env, list_t parsetree)
   any_t head = 0;
   bool next_is_comma = false;
   while ((head = list_popfirst(parsetree))) {
-    if (ptype(head) != _SYMBOL_T)
+    if (ptype(head) != RHA_symbol_t)
       rha_error("LHS must be flat list of symbols");
     symbol_t head_s = UNWRAP_SYMBOL(head);
     if (next_is_comma) {
@@ -1041,7 +1041,7 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
 
   // resolves the right-most assignment (could be = += -= *= /=)
 
-  // debug("resolve_assign_prule(%o)\n", WRAP_PTR(_LIST_T, parsetree));
+  // debug("resolve_assign_prule(%o)\n", WRAP_PTR(RHA_list_t, parsetree));
 
   // (0) let's find the first appearance (left-most) of an assignment
   list_t lhs_l = list_chop_first(parsetree, prule_sym);
@@ -1077,8 +1077,8 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
       
       list_poplast(lhs_l); // remove the symbol list
       list_append(lhs_l, 
-		  WRAP_PTR(_TUPLE_T, 
-			   resolve_lhs_symbol_list(env, UNWRAP_PTR(_LIST_T, right_most))));
+		  WRAP_PTR(RHA_tuple_t, 
+			   resolve_lhs_symbol_list(env, UNWRAP_PTR(RHA_list_t, right_most))));
       assign_many = true;
     }
     // now the right-most entry in 'lhs' should be a symbol
@@ -1092,16 +1092,16 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
   // where <x> could be
   //       * a symbol like 'x' (for x=0 and for f(x)=0)
   //       * a flat list of symbols like '[x, y]' (for [x,y]=[17,42])
-  if (ptype(lhs) == _SYMBOL_T) {
+  if (ptype(lhs) == RHA_symbol_t) {
     symb = quoted(lhs);
   }
-  else if (ptype(lhs) == _TUPLE_T) {
-    tuple_t t = UNWRAP_PTR(_TUPLE_T, lhs);
+  else if (ptype(lhs) == RHA_tuple_t) {
+    tuple_t t = UNWRAP_PTR(RHA_tuple_t, lhs);
     int tlen = tuple_len(t);
     if (tlen == 0)
 	rha_error("(parsing) can't assign to %o", lhs);
     any_t t0 = tuple_get(t, 0);
-    if (t0 && ptype(t0) == _SYMBOL_T && UNWRAP_SYMBOL(t0) == eval_sym) {
+    if (t0 && ptype(t0) == RHA_symbol_t && UNWRAP_SYMBOL(t0) == eval_sym) {
       // must be something like: a.<x>
       if (tlen != 3)
 	rha_error("(parsing) can't assign to %o", lhs);
@@ -1122,12 +1122,12 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
 /*   // (3) we need to replace all 'eval_sym' in 'scope' by */
 /*   // 'lookup_local' */
 /*   any_t i = scope; */
-/*   while (ptype(i)==_TUPLE_T) { */
+/*   while (ptype(i)==RHA_tuple_t) { */
 /*     // we only expect stuff like (eval x \s) */
-/*     tuple_t i_t = UNWRAP_PTR(_TUPLE_T, i); */
+/*     tuple_t i_t = UNWRAP_PTR(RHA_tuple_t, i); */
 /*     assert(tuple_len(i_t) == 3); */
 /*     any_t i_t0 = tuple_get(i_t, 0); */
-/*     assert(ptype(i_t0)==_SYMBOL_T); */
+/*     assert(ptype(i_t0)==RHA_symbol_t); */
 /*     assert(UNWRAP_SYMBOL(i_t0) == eval_sym); */
 /*     tuple_set(i_t, 0, WRAP_SYMBOL(lookup_local_sym)); */
 /*     i = tuple_get(i_t, 1); */
@@ -1169,7 +1169,7 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
 	tuple_set(rhs_t, 0, WRAP_SYMBOL(divide_fn_sym));
       else
 	assert(1==0);
-      rhs = WRAP_PTR(_TUPLE_T, rhs_t);
+      rhs = WRAP_PTR(RHA_tuple_t, rhs_t);
     }
     t = tuple_new(4);
     tuple_set(t, 0, WRAP_SYMBOL(assign_fn_sym));
@@ -1177,7 +1177,7 @@ tuple_t resolve_assign_prule(any_t env, list_t parsetree, symbol_t prule_sym, gl
     tuple_set(t, 2, symb);
     tuple_set(t, 3, rhs);
   }
-  //debug("resolve_assign_prule returns: %o\n", WRAP_PTR(_TUPLE_T, 0, t));
+  //debug("resolve_assign_prule returns: %o\n", WRAP_PTR(RHA_tuple_t, 0, t));
   return t;
 }
 
@@ -1209,7 +1209,7 @@ tuple_t resolve_cmp_prule(any_t env, list_t parsetree)
   list_t cmp_l = list_new();
   any_t head;
   while ((head = list_popfirst(parsetree))) {
-    if (ptype(head) == _SYMBOL_T) {
+    if (ptype(head) == RHA_symbol_t) {
       symbol_t s = UNWRAP_SYMBOL(head);
       if (glist_iselementi(&cmp_sym_list, s)) {
 	if (list_len(parts) == 0)
@@ -1236,8 +1236,8 @@ tuple_t resolve_cmp_prule(any_t env, list_t parsetree)
     part1 = part2;
     part2 = list_popfirst(pieces);
     call = tuple_make(3, and_fn_obj,
-		      WRAP_PTR(_TUPLE_T, call),
-		      WRAP_PTR(_TUPLE_T, 
+		      WRAP_PTR(RHA_tuple_t, call),
+		      WRAP_PTR(RHA_tuple_t, 
 			       tuple_make(3, cmp_obj, part1, part2)));
   }
   return call;
@@ -1254,11 +1254,11 @@ list_t read_freefix_args(any_t env, list_t parsetree, int narg)
     if (!is_marked_list(rounded_sym, obj))
       rha_error("first argument of freefix form must be in round "
 		"brackets, found %o", obj);
-    list_append(args, WRAP_PTR(_LIST_T, split_rounded_list_obj(obj)));
+    list_append(args, WRAP_PTR(RHA_list_t, split_rounded_list_obj(obj)));
   }
   // last argument is the rest of the list
   list_append(args, resolve(env, parsetree));
-  //debug("%o\n", WRAP_PTR(_LIST_T, args));
+  //debug("%o\n", WRAP_PTR(RHA_list_t, args));
   return args;
 }
 
@@ -1278,7 +1278,7 @@ tuple_t resolve_freefix_prule1(any_t env, list_t parsetree,
   //
   // note that all but the last of several arguments to keys must be
   // in rounded brackets
-  //debug("resolve_freefix_prule1(%o)\n", WRAP_PTR(_LIST_T, parsetree));
+  //debug("resolve_freefix_prule1(%o)\n", WRAP_PTR(RHA_list_t, parsetree));
   any_t head = list_popfirst(parsetree);
   assert(head && is_symbol(key1, head));
   list_t call = read_freefix_args(env, parsetree, narg1);
@@ -1303,11 +1303,11 @@ tuple_t resolve_freefix_prule2(any_t env, list_t parsetree,
   // note that the expression with key2 is optional
   // note that all but the last of several arguments to keys must be
   // in rounded brackets
-  //debug("resolve_freefix_prule2(%o)\n", WRAP_PTR(_LIST_T, parsetree));
+  //debug("resolve_freefix_prule2(%o)\n", WRAP_PTR(RHA_list_t, parsetree));
   any_t head = list_popfirst(parsetree);
   if (!head || !is_symbol(key1, head))
     rha_error("expression '%o' should start with keyword found %o",
-	      WRAP_PTR(_LIST_T, parsetree), head);
+	      WRAP_PTR(RHA_list_t, parsetree), head);
   // split the parsetree
   int parsetree_len = list_len(parsetree);
   list_t front_l = list_chop_matching(parsetree, key1, key2);

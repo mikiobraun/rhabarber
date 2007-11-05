@@ -35,9 +35,9 @@ real_t real_cmp(real_t x, real_t y) {
 real_t real_cast(any_t x)
 {
   switch (ptype(x)) {
-  case _REAL_T:
+  case RHA_real_t:
     return UNWRAP_REAL(x);
-  case _INT:
+  case RHA_int:
     return (real_t) UNWRAP_INT(x);
   default:
     rha_error("(casting) can't convert %o to 'real'", x);

@@ -12,7 +12,7 @@ void excp_init(any_t root, any_t module)
 any_t excp_new(string_t msg)
 {
   any_t excp = new();
-  assign(excp, msg_sym, WRAP_PTR(_STRING_T, msg));
+  assign(excp, msg_sym, WRAP_PTR(RHA_string_t, msg));
   return excp;
 }
 
@@ -26,8 +26,8 @@ any_t excp_newf(const char *fmt, ...)
 string_t excp_msg(any_t excp)
 {
   any_t msg_obj = lookup(excp, msg_sym);
-  if (msg_obj && (ptype(msg_obj)==_STRING_T)) {
-    string_t msg = UNWRAP_PTR(_STRING_T, msg_obj);
+  if (msg_obj && (ptype(msg_obj)==RHA_string_t)) {
+    string_t msg = UNWRAP_PTR(RHA_string_t, msg_obj);
     return msg;
   }
   else {
