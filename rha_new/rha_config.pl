@@ -103,6 +103,24 @@ my %typemapping = ( bool      => "bool",
 		    real_t    => "real",
 		    builtin_t => "builtin" );
 
+# by default we store the address of the content of a variable, since
+# we can't be sure whether it is a pointer.  All types listed below
+# are declared to be pointers themselves, thus saving one level of
+# indifference
+
+# ultimatively this should go to 'rha_config.d' as well
+my %typeptrs = ( tuple_t => 1,
+		 string_t => 1,
+		 address_t => 1,
+		 list_t => 1,
+		 list_it_t => 1,
+		 mat_t => 1,
+		 builtin_t => 1,
+		 PyObject_ptr => 1,
+		 gsl_block_ptr => 1,
+		 gsl_vector_ptr => 1,
+		 gsl_matrix_ptr => 1);
+
 # (6) define regular expressions for C-header parsing
 
 # regexp for 'const'
@@ -391,7 +409,11 @@ sub process_fun() {
 	    $fnarg_str = "args";
 	}
 	elsif ($item ne "any_t") {
-	    $fnarg_str = "UNWRAP_PTR(RHA_$item, $fnarg_str)";
+	    $fnarg_str = "UNWRAP_PTR(RHA_$item, $fnarg_str)";	
+	    if (!$typeptrs{$item}) {
+		# thus we dereference the pointer we get
+		$fnarg_str = "*$fnarg_str";
+	    }
 	}
 	$fncall_str .= $fnarg_str;
 	$i++;
@@ -404,6 +426,10 @@ sub process_fun() {
 	$fncall_str = "WRAP_$ucitem($fncall_str)";
     }
     elsif ($fntype ne "any_t" && $fntype ne "void") {
+	if (!$typeptrs{$fntype}) {
+	    # thus we take the address of the return value
+	    $fncall_str = "&$fncall_str";
+	}
 	$fncall_str = "WRAP_PTR(RHA_$fntype, $fncall_str)";
     }
     if ($fntype eq "void") { 

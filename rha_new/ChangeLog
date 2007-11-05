@@ -1,5 +1,14 @@
 2007-11-05  Stefan Harmeling  <harmeling@gmail.com>
 
+	* Right now the automated embedding with 
+	     //#include "gsl_matrix_double.h"
+	in rha_config.d is NOT working.  To get a feel for the current
+	issue uncomment	that line and run 'make clean; make'.
+
+	The problem is that some return values are not pointer and we need
+	more sophisticated code than just taking the address with '&' to
+	deal with it correctly.  Mikio, do you have some idea?
+	
 	* AGAIN: there was a problem with automatically generated
 	macroconstant "_SIZE_T" after binding in some GSL stuff.  Thus the
 	naming scheme changed again.  Now the type name stays the same and
