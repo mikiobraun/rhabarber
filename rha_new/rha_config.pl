@@ -731,6 +731,9 @@ $init_c_init_typeobjects
   fn_data = create_special_fn_data(module, true, symbol_new("check"), 1,
                                    0, symbol_new("x"));
   assign(type_obj, check_sym, create_function(fn_data));
+  fn_data = create_special_fn_data(module, true, symbol_new("isparent"), 1,
+                                   0, symbol_new("x"));
+  assign(type_obj, isparent_sym, create_function(fn_data));
   fn_data = create_special_fn_data(module, true, symbol_new("pcheck"), 1,
 		                   0, symbol_new("x"));
   any_t pcheck_f = create_function(fn_data);

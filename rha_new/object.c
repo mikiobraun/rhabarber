@@ -685,18 +685,36 @@ any_t dec_copy(any_t o)
 }
 
 
-// 'check' does a type check by looking along the parent hierarchy
+// there are two different 'checks'
+// (i)  check whether 'x' is an instance of 't'
+//      t.check(x) = {
+//        return isparent(t.proto, x);
+//      }  
+// (ii) check whether 'x' is a subtype of 't'
+//      t.isparent(x) = {
+//        // go along the the parents of x to see whether we reach t
+//      }
+
+// 'check' looks along the parent hierarchy of the prototype
 bool check(any_t t, any_t o)
 {
   any_t proto = lookup(t, proto_sym);
   if (!proto)
-    rha_error("(check) object %o doesn't have a slot 'proto'", t);
+    rha_error("(check) object %o doesn't have a slot 'proto' thus can "
+	      "not have instances", t);
+  return isparent(proto, o);
+}
+
+// 'isparent' looks along the parent hierarchy
+bool isparent(any_t p, any_t o)
+{
   do {
-    if (addr(o) == addr(proto))
+    if (addr(o) == addr(p))
       return true;
   } while ((o = lookup(o, parent_sym)));
   return false;
 }
+
 
 // 'pcheck' does a primitive type check which is sufficient (and much
 // faster) for ptypes

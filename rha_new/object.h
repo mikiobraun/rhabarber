@@ -87,9 +87,10 @@ extern _ignore_ void      *unwrap_ptr(int ptype, any_t o);
 //        a.x        -> lookup(a, \x);
 extern _rha_ any_t   lookup(any_t env, symbol_t s);
 extern _rha_ any_t   lookup_local(any_t l, symbol_t s);
-extern _rha_ bool     check(any_t t, any_t o);
-extern _rha_ bool     pcheck(any_t t, any_t o);
-extern _rha_ bool   is_void(any_t o);
+extern _rha_ bool    isparent(any_t p, any_t o);
+extern _rha_ bool    check(any_t t, any_t o);
+extern _rha_ bool    pcheck(any_t t, any_t o);
+extern _rha_ bool    is_void(any_t o);
 extern _rha_ any_t   location(any_t l, symbol_t s);
 
 //       x = 17;    ->  assign(local_sym, \x, 17);

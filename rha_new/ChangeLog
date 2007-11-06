@@ -1,3 +1,38 @@
+2007-11-06  Stefan Harmeling  <harmeling@gmail.com>
+
+	* eval.c (pattern_lessthan): to define the lessthan relation for
+	patterns we need to check for subtyping, thus we need to call
+	'isparent' and NOT 'check'.
+
+	* object.c (isparent, check): now we distinguish between:
+	(i) is 'x' an instance of 't', which is 'check(t, x)'
+	(ii) is 'x' a subtype of 't', which is 'isparent(t, x)'
+
+	* prelude.rha: removed new(type:t) which was for creating
+	instances.  however it was mostly used for new(type) which is
+	better done by clone(type) with the same effect.
+
+	E.g.  a new slice instance is created (inside the constructor) by
+	s = clone(slice.proto);
+
+	Right now we have structural subtying with additional nominal
+	subtyping.  If 't' is an ancestor of 'x', then 'x' is a subtype of
+	't'.  This is checked by 'type.isparent' which is available in all
+	subtypes of 'type'.
+
+	Note that objects like 'iterable' which are like JAVA interfaces
+	can implement their own 'isparent' function which might check for
+	the existence of certain slots.
+	
+	To check whether 'x' is an instance of a type 't', we call
+	't.check(x)' which can be written as 't:x' 
+
+	    int:17           // TRUE
+	    tuple:[1,2,3]    // TRUE
+	    iterable:tuple   // FALSE, since 'tuple' is not a tuple but a type
+	    iterable:[1,2,3] // TRUE
+	    iterable.isparent(tuple)  // TRUE
+	
 2007-11-05  Stefan Harmeling  <harmeling@gmail.com>
 
 	* Right now the automated embedding with 

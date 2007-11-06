@@ -7,6 +7,7 @@
 //   type = new();
 //   type.proto = type;
 //   type.check = fn (x) modules.object.check(this, x);
+//   type.isparent = fn (x) modules.object.isparent(this, x);
 //
 //   bool.check = fn (x) modules.object.pcheck(this, x);
 //   int.check = fn (x) modules.object.pcheck(this, x);
@@ -15,7 +16,7 @@
 //   pattern = clone(type);
 //   pattern.proto = new();
 //   pattern(type:t, symbol:s) = {
-//     p = new(pattern);
+//     p = clone(pattern.proto);
 //     p.patterntype = t;
 //     p.patternliteral = s;
 //     return p;
@@ -34,22 +35,27 @@ real = types.real_t;
 types.string_t.name = "string";
 string = types.string_t;
 
-tuple = types.tuple_t;
-symbol = types.symbol_t;
-builtin = types.builtin_t;
-mat = types.mat_t;
+types.list_t.name = "list";
 list = types.list_t;
+
+types.tuple_t.name = "tuple";
+tuple = types.tuple_t;
+
+types.symbol_t.name = "symbol";
+symbol = types.symbol_t;
+
+types.symbol_t.name = "builtin";
+builtin = types.builtin_t;
+
+types.mat_t.name = "mat";
+mat = types.mat_t;
+
+types.address_t.name = "address";
 address = types.address_t;
 
 // (1.2) more essential stuff
 print      = modules.object.print_fn;
 new      = modules.object.new;
-// let's overloaded that builtin function!!!
-new(type:t) = {
-  x = new(); // creates new object
-  x.parent = t.proto;
-  return x;
-}
 
 // note that if 't' doesn't have a slot 'proto' this code raises an 
 // look-up-failed exception, which is the intended behavior. 
@@ -171,10 +177,12 @@ isa = fn (x, t) {
 }
 
 // what is iterable?
-iterable = new(type);
+iterable = clone(type);
 iterable.name = "iterable";
+// to check whether 'x' is iterable
 iterable.check = fn (x) has(x, \iter);
-
+// to check whether 'x' is a subtype of 'iterable'
+iterable.isparent = fn (x) iterable.check(x.proto);
 
 // for 'length' convenience
 len = fn (x) x.len();
@@ -308,7 +316,7 @@ implementation_proto.string = fn () {
 
 
 // any
-any = new(type);
+any = clone(type);
 any.check = fn (x) true;
 
 // symbol
@@ -331,19 +339,19 @@ pattern.proto.string = fn () {
 // types
 less_fn(type:x, type:y) = x:y;
 or_fn(type:t1, type:t2) = {
-  t = new(type);
+  t = clone(type);
   t.check = fn (x) t1:x || t2:x;
   return t;
 }
 plus_fn(type:t1, type:t2) = {
   // (t1+t2):x  == t1:x && t2:x
-  t = new(type);
+  t = clone(type);
   t.check = fn (x) t1:x && t2:x;
   return t;
 }
 times_fn(type:t1, type:t2) = { 
   // int*real*string   (tuples of types)
-  t = new(type); 
+  t = clone(type); 
   t.check = fn (x) tuple.check(x) 
                    && x.len() == 2 
                    && t1:x(0) && t2:x(1); 
@@ -361,11 +369,11 @@ address.proto.string = fn () modules.object.address_to_string(this);
 
 //----------------------------------------------------------------------
 // slices
-slice = new(type);
+slice = clone(type);
 slice(int:begin, int:step) = {
   if (step == 0)
     error("step size must be positive or negative but not zero");
-  s = new(slice);
+  s = clone(slice.proto);
   s.begin = begin;
   s.step = step;
   return s;
@@ -443,7 +451,8 @@ string.proto(list:idx) = {
 
 //----------------------------------------------------------------------
 // natural numbers (not yet working as indented...)
-nat = subtype(int);
+nat = clone(int);
+nat.proto = clone(int.proto);
 nat.name = "nat";
 nat.check = fn (x) int:x && x >= 0;
 
@@ -820,7 +829,7 @@ in_fn = fn (a, iterable:b) {
 };
 
 // what is comparable?
-comparable = new(type);
+comparable = clone(type);
 comparable.check = fn (x) {
   // check here whether x can be argument of cmp
   //  try {

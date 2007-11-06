@@ -185,7 +185,7 @@ any_t eval_sequence(any_t env, tuple_t t)
 // searches for the matching implementation, collect the information and
 // call the function.
 //
-// Also called from parse.c!
+// Also called from parse.c to execute prules!
 any_t call_fun(any_t this, tuple_t values)
 {
   // get the function to be called and the arguments
@@ -208,18 +208,20 @@ any_t call_fun(any_t this, tuple_t values)
   string_t msg = "(eval) can't call %o, since it has a faulty entry in 'fn_data'";
 
   // go through list and look for matching signatures
-  for (list_it_t it = list_begin(fn_data_l); !list_done(it); list_next(it)) {
+  list_it_t it = list_begin(fn_data_l);
+  while (!list_done(it)) {
     any_t theimpl = list_get(it);
     if (!theimpl) rha_error(msg);
-
+    
     signature = get_slot_tuple(theimpl, signature_sym, msg);
     varargs = get_slot_bool(theimpl, varargs_sym, msg);
-
+    
     if (signature_matches(signature, varargs, values)) {
-      // match found!!!
+      // first match found!!!
       impl = theimpl;
       break;
     }
+    list_next(it);
   }
   
   if (!impl) {
@@ -301,6 +303,30 @@ bool pattern_valid(any_t p)
 }
 
 
+bool pattern_equalequal(any_t p1, any_t p2)
+{
+  if (!pattern_valid(p1) || !pattern_valid(p2))
+    rha_error("(pattern) the patterns are invalid");
+  any_t thelit1 = lookup(p1, patternliteral_sym);
+  any_t thetyp1 = lookup(p1, patterntype_sym);
+  any_t thelit2 = lookup(p2, patternliteral_sym);
+  any_t thetyp2 = lookup(p2, patterntype_sym);
+  // CASE 1
+  // if p1 is a (non-symbol) literal then it is equal to p2 only if it
+  // is the same literal
+  if (thelit1 && ptype(thelit1) != RHA_symbol_t) 
+    return (thelit2 && equalequal_fn(thelit1, thelit2));
+  // CASE 2
+  // we know that p1 is not a (non-symbol) literal, thus it is either
+  // zero or a symbol.
+  // if p1 is a type then it is equal to p2 only if it is the same type
+  if (thetyp1) return (thetyp2 && thetyp1 == thetyp2);
+  // CASE 3
+  // we know that p1 is neither a literal nor a type, so it is 'any'
+  // and so must be p2
+  return !thetyp2;
+}
+
 bool pattern_lessthan(any_t p1, any_t p2)
 // examples:
 //     17 < x         // literals smaller than non-literals
@@ -326,44 +352,69 @@ bool pattern_lessthan(any_t p1, any_t p2)
   // we know that p1 is not a (non-symbol) literal
   // if p1 is a type then it is more special than p2 only if p2 is a
   // type as well, and p2:p1 holds
-  if (thetyp1) return (!thetyp2 || callslot(thetyp2, check_sym, 1, thetyp1));
+  if (thetyp1) return (!thetyp2 || callslot(thetyp2, isparent_sym, 1, thetyp1));
   // CASE 3
   // we know that p1 is neither a literal nor a type, so it is 'any'
   // which is the most general and wont be more special than p2
   return false;
 }
 
-bool signature_lessthan(any_t s1, any_t s2)
+
+bool signature_equalequal(tuple_t sig1, tuple_t sig2)
 {
-  if (ptype(s1)!=RHA_tuple_t || ptype(s2)!=RHA_tuple_t)
-    rha_error("some signatures are broken");
-  //print("%s against %s", to_string(s1), to_string(s2));
-  tuple_t sig1 = UNWRAP_PTR(RHA_tuple_t, s1), sig2 = UNWRAP_PTR(RHA_tuple_t, s2);
   // compare lexicographically
-  int tlen1 = tuple_len(sig1), tlen2 = tuple_len(sig2);
-  for (int i = 0; i < tlen2; i++) {
-    if (i >= tlen1) {
-      // ok, sig1 is similar to sig2 but shorter
-      // note that with default args this returnvalue might be wrong
-      //print(" true\n");
-      return true;
-    }
-    if (pattern_lessthan(tuple_get(sig1, i), tuple_get(sig2, i))) {
-      //print(" true\n");
-      return true;
-    }
+  int tlen = tuple_len(sig1);
+  if (tlen != tuple_len(sig2))
+    // not equal
+    return false;
+  for (int i = 0; i < tlen; i++) {
+    any_t p1 = tuple_get(sig1, i);
+    any_t p2 = tuple_get(sig2, i);
+    if (!pattern_equalequal(p1, p2))
+      return false;
   }
-  //print(" false\n");
+  // they are equal
+  return true;
+}
+
+
+bool signature_lessthan(tuple_t sig1, tuple_t sig2)
+{
+  // compare lexicographically
+  int tlen = tuple_len(sig1);
+  if (tlen != tuple_len(sig2))
+    // incomparable due to different length and thus not "lessthan"
+    return false;
+  for (int i = 0; i < tlen; i++) {
+    any_t p1 = tuple_get(sig1, i);
+    any_t p2 = tuple_get(sig2, i);
+    if (pattern_lessthan(p1, p2))
+      // equal so far and now lessthan
+      return true;
+    if (!pattern_equalequal(p1, p2))
+      // equal so far and now neither "lessthan" nor equal
+      return false;
+  }
+  // they are equal, but not "lessthan"
   return false;
+}
+
+tuple_t get_signature(any_t obj)
+{
+  obj = get_slot_any(obj, signature_sym, "signature expected");
+  if (ptype(obj) != RHA_tuple_t)
+    rha_error("broken signature");
+  return UNWRAP_PTR(RHA_tuple_t, obj);
+}
+
+bool fn_data_entry_equalequal(any_t e1, any_t e2)
+{
+  return signature_equalequal(get_signature(e1), get_signature(e2));
 }
 
 bool fn_data_entry_lessthan(any_t e1, any_t e2)
 {
-  any_t s1 = get_slot_any(e1, signature_sym, 
-			  "(eval) signature expected");
-  any_t s2 = get_slot_any(e2, signature_sym, 
-			  "(eval) signature expected");
-  return signature_lessthan(s1, s2);
+  return signature_lessthan(get_signature(e1), get_signature(e2));
 }
 
 
