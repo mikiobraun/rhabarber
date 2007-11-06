@@ -111,6 +111,7 @@ my %typemapping = ( bool      => "bool",
 # ultimatively this should go to 'rha_config.d' as well
 my %typeptrs = ( tuple_t => 1,
 		 string_t => 1,
+		 dict_t => 1,
 		 address_t => 1,
 		 list_t => 1,
 		 list_it_t => 1,

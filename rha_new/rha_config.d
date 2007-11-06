@@ -18,6 +18,7 @@
 #include "mat_fn.h"
 #include "messages.h"
 #include "python_fn.h"
+//#include "gtree.h"    // for a hashtable
 //#include "gsl_matrix_double.h"
 
 //TYPES
@@ -33,6 +34,7 @@ typedef struct rha_object *       _rha_ any_t;
 #include "gtuple.h" // depends on 'any_t'
 #include "glist.h"  // depends on 'any_t'
 typedef struct gtuple*            _rha_ tuple_t;
+typedef struct gtree*             _rha_ dict_t;
 typedef any_t (*_builtin_t)(tuple_t);
 typedef _builtin_t                _rha_ builtin_t;
 typedef double                    _rha_ real_t;
