@@ -55,6 +55,7 @@ any_t new(void)
 }
 
 any_t create_pt(int pt)
+// this function is only used to create prototypes
 {
   any_t o = new();
   setptype(o, pt);
