@@ -22,6 +22,7 @@
 #include "excp.h"
 #include "rha_init.h"
 #include "utilalloc.h"
+#include "core.h"
 
 int main(int argc, char **argv)
 {

@@ -36,10 +36,10 @@ AC_PROG_MAKE_SET
 #
 # Checking for python!
 #
-AM_PATH_PYTHON([2.4],[AC_DEFINE(HAVE_PYTHON, 1, 
-   [Found a python installation > 2.4]) CFLAGS="$CFLAGS -I/usr/include/python$PYTHON_VERSION"],)
-#AM_CONDITIONAL([HAVE_PYTHON],[test x"$PYTHON" != x":"])
-AC_CHECK_LIB([python2.4], [Py_Main])
+#AM_PATH_PYTHON([2.4],[AC_DEFINE(HAVE_PYTHON, 1, 
+#   [Found a python installation > 2.4]) CFLAGS="$CFLAGS -I/usr/include/python$PYTHON_VERSION"],)
+##AM_CONDITIONAL([HAVE_PYTHON],[test x"$PYTHON" != x":"])
+#AC_CHECK_LIB([python2.4], [Py_Main])
 
 #
 # Checking for matlab!

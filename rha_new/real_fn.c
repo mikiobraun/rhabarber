@@ -1,6 +1,7 @@
 #include "real_fn.h"
 
 #include <math.h>
+#include <assert.h>
 #include "object.h"
 #include "messages.h"
 #include "utils.h"

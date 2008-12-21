@@ -1,5 +1,6 @@
 #include "int_fn.h"
 
+#include <assert.h>
 #include "object.h"
 #include "messages.h"
 #include "utils.h"

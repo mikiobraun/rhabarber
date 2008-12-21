@@ -17,17 +17,17 @@
 #include "real_fn.h"
 #include "mat_fn.h"
 #include "messages.h"
-#include "python_fn.h"
+//#include "python_fn.h"
 //#include "gtree.h"    // for a hashtable
 //#include "gsl_matrix_double.h"
 
 //TYPES
 #include "config.h"
 #include <stdbool.h>
-#ifdef HAVE_PYTHON
-#undef RHA_posix_c_source
-#include <Python.h>
-#endif
+//#ifdef HAVE_PYTHON
+//#undef RHA_posix_c_source
+//#include <Python.h>
+//#endif
 struct rha_object;
 typedef int                       _rha_ symbol_t;
 typedef struct rha_object *       _rha_ any_t;
