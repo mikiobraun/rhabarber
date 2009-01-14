@@ -13,6 +13,7 @@
 #include "list_fn.h"
 #include "tuple_fn.h"
 #include "symbol_fn.h"
+#include "prules.h"
 
 void eval_init(any_t root, any_t module)
 {

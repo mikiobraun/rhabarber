@@ -17,6 +17,7 @@
 #include "real_fn.h"
 #include "mat_fn.h"
 #include "messages.h"
+#include "ccode.h"
 //#include "python_fn.h"
 //#include "gtree.h"    // for a hashtable
 //#include "gsl_matrix_double.h"
@@ -54,7 +55,7 @@ typedef glist_iterator_t *        _rha_ list_it_t;
 extern symbol_t parent_sym;
 extern symbol_t proto_sym;
 extern symbol_t do_sym;
-extern symbol_t quote_sym;
+//extern symbol_t quote_sym;
 extern symbol_t types_sym; // an object that collects all types as slots
 extern symbol_t type_sym;  // the type of type objects
 extern symbol_t ptype_sym;

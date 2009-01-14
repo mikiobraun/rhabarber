@@ -53,7 +53,7 @@ extern       any_t   vcreate_builtin(any_t (*code)(tuple_t),
 extern       any_t   copy_pt(any_t o);
 extern _rha_ address_t  addr(any_t o);
 extern _rha_ any_t   clone(any_t parent);
-extern       int      ptype(any_t);      // primtype
+extern _rha_ int      ptype(any_t);      // primtype
 extern _rha_ string_t   ptypename(any_t o);
 extern       void       setptype(any_t, int);
 

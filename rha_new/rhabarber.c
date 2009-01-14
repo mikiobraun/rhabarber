@@ -24,6 +24,8 @@
 #include "utilalloc.h"
 #include "core.h"
 
+#include "ccode.h"
+
 int main(int argc, char **argv)
 {
   // handle command line arguments

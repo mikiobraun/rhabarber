@@ -6,6 +6,7 @@
 extern       void     prules_init(any_t root, any_t module);
 
 // helper
+extern       symbol_t quote_sym;
 extern       list_t split_by_semicolon(list_t parsetree);
 
 extern       bool   is_symbol(symbol_t a_symbol, any_t expr);

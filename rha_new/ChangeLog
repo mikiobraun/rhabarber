@@ -1,3 +1,15 @@
+2009-01-14  Stefan Harmeling  <harmeling@gmail.com>
+
+	* example.c (wrapped_ccode): try the following to see the current
+	issue:
+	modules.ccode.ccode("result=f(arg1);", int, int)(17)
+	somehow the generate object does not have a valid symbol table
+
+2009-01-11  Stefan Harmeling  <harmeling@gmail.com>
+
+	* Makefile.am (AM_CFLAGS): added -fno-common which seems to be
+	important for the -dynamiclib business of macos.  see ccode.c
+
 2007-11-06  Stefan Harmeling  <harmeling@gmail.com>
 
 	* eval.c (pattern_lessthan): to define the lessthan relation for

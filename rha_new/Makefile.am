@@ -1,6 +1,7 @@
 bin_PROGRAMS = rhabarber
 rhabarber_SOURCES = alloc.c alloc.h \
 	bool_fn.c bool_fn.h \
+	ccode.c ccode.h \
 	core.c core.h \
 	cstream.c cstream.h \
 	debug.c debug.h \
@@ -30,12 +31,12 @@ rhabarber_SOURCES = alloc.c alloc.h \
 	utils.h
 
 rhabarber_LDADD = @LEXLIB@
-AM_CFLAGS = -Wall -pedantic
+AM_CFLAGS = -Wall -pedantic -fno-common
 EXTRA_DIST = rha_config.pl prelude.rha test.rha rha_config.d
 
 AM_YFLAGS = -d
 
-BUILT_SOURCES = rha_types.h rha_init.h rha_init.c 
+BUILT_SOURCES = rha_types.h rha_init.h rha_init.c
 CLEANFILES = rha_types.h rha_init.h rha_init.c
 rhabarber_LDADD += rha_init.o
 rhabarber_LDFLAGS = -framework Python
