@@ -25,11 +25,12 @@
 //TYPES
 #include "config.h"
 #include <stdbool.h>
+
 //#ifdef HAVE_PYTHON
 //#undef RHA_posix_c_source
 //#include <Python.h>
 //#endif
-struct rha_object;
+
 typedef int                       _rha_ symbol_t;
 typedef struct rha_object *       _rha_ any_t;
 #include "gtuple.h" // depends on 'any_t'
@@ -51,6 +52,27 @@ typedef char *                    _rha_ string_t;
 typedef void *                    _rha_ address_t;
 typedef struct glist *            _rha_ list_t;
 typedef glist_iterator_t *        _rha_ list_it_t;
+
+// a union for the raw content
+union raw_t {
+  int i;
+  float f;
+  double d;
+  builtin_t b;     // possible pointer to builtin function
+                   // because gcc doesn't like casting function
+                   // pointer to void pointer and vice versa
+  ccode_t c;
+  void *p;         // possible raw content
+};
+
+/* the rhabarber object */
+struct rha_object {
+  enum ptypes ptype;            // primtype (ptype): internal type 
+                          // that describes the content
+  struct symtable *table; // symbol table of slots
+  union raw_t raw;
+};
+
 
 //SYMBOLS
 // the most basic symbols

@@ -18,25 +18,6 @@
 // stuff for the perl magic
 #define rhabarber
 
-// a union for the raw content
-union raw_t {
-  int i;
-  float f;
-  double d;
-  builtin_t b;     // possible pointer to builtin function
-                   // because gcc doesn't like casting function
-                   // pointer to void pointer and vice versa
-  ccode_t c;
-  void *p;         // possible raw content
-};
-
-/* the rhabarber object */
-struct rha_object {
-  enum ptypes ptype;            // primtype (ptype): internal type 
-                          // that describes the content
-  struct symtable *table; // symbol table of slots
-  union raw_t raw;
-};
 
 /*
  * Functions
@@ -48,8 +29,8 @@ extern       any_t   create_pt(int pt);
 extern       any_t   new_pt(int pt);
 extern _ignore_ any_t   create_builtin(builtin_t code, bool varargs, int narg, ...);
 extern _ignore_ any_t   vcreate_builtin(builtin_t code, bool varargs, int narg, va_list);
-extern _ignore_ any_t   create_ccode(ccode_t code, bool varargs, int narg, ...);
-extern _ignore_ any_t   vcreate_ccode(ccode_t code, bool varargs, int narg, va_list);
+extern _ignore_ any_t   create_ccode(ccode_t code, enum ptypes returntype, bool varargs, int narg, ...);
+extern _ignore_ any_t vcreate_ccode(ccode_t code, enum ptypes returntype, bool varargs, int narg, va_list args);
 
 extern       any_t   copy_pt(any_t o);
 extern _rha_ address_t  addr(any_t o);

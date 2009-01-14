@@ -65,7 +65,8 @@ any_t ccode(string_t codestring, any_t returntype, any_t argtype)
   if (error) rha_error("(ccode) dlsym created error msg: %s", error);
 
   // 4. create builtin from wrapped_code
-  any_t f = create_ccode(wrapped_code, false, 1, argtype);
+  enum ptypes ptype = 0;
+  any_t f = create_ccode(wrapped_code, ptype, false, 1, argtype);
   return f;
 }
 

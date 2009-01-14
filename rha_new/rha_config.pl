@@ -542,13 +542,13 @@ sub create_type_h {
 #define $keyword
 #define $ignorekeyword
 
-// (1) datatypes which are available in Rhabarber
-$type_h_types
-// (2) primtype id for all types
+// (1) primtype id for all types
 enum ptypes {
 $type_h_ids
 };
 
+// (2) datatypes which are available in Rhabarber
+$type_h_types
 
 // (3) prototypes for all types
 $type_h_prototypes

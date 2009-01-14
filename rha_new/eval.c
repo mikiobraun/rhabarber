@@ -478,6 +478,19 @@ static any_t call_builtin_fun(any_t fnbody, tuple_t values, bool no_frame)
   return res;
 }
 
+static any_t call_ccode_fun_narg(tuple_t values, int narg, enum ptypes returntype)
+{
+  switch (narg) {
+  case 0:
+  case 1:
+  case 2:
+  case 3:
+  default:
+    rha_error("[eval.c:call_ccode_fun_narg] not implemented for that many arguments");
+    break;
+  }
+}
+
 static any_t call_ccode_fun(any_t fnbody, tuple_t values, bool no_frame)
 {
   // (1) function with C code
@@ -491,10 +504,10 @@ static any_t call_ccode_fun(any_t fnbody, tuple_t values, bool no_frame)
       tuple_set(values, i, 0);
   }
   if(no_frame)
-    res = WRAP_INT((int) f(1, &UNWRAP_INT(tuple_get(values, 0))));
+    res = WRAP_INT((int) f(1, tuple_get(values, 0)->raw));    
   else {
     begin_frame(FUNCTION_FRAME)
-      res = WRAP_INT((int) f(1, &UNWRAP_INT(tuple_get(values, 0))));
+      res = WRAP_INT((int) f(1, tuple_get(values, 0)->raw));
     end_frame(res);
   }
   return res;

@@ -1,5 +1,13 @@
 2009-01-14  Stefan Harmeling  <harmeling@gmail.com>
 
+	* ccode.c (ccode): ok, 
+	g = modules.ccode.ccode("", int, int)(17)
+	should work now.  next step:
+	in eval.c 'call_ccode_fun' must no longer depend on WRAP_INT.
+	This should be done by storing in CCODE_T also the return_ptype.
+	This should allow us to do the wrapping generically.  Next also
+	implement call_ccode_fun_narg.
+
 	* eval.c (call_ccode_fun): ok, issue solved.  introduced a new
 	basic type called 'ccode_t' (see rha_config.d).  For now the
 	signature is fixed.  Maybe we can use 

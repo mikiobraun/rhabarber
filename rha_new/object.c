@@ -293,7 +293,7 @@ any_t create_builtin(builtin_t code, bool varargs, int narg, ...)
  * Creating builtin functions
  *
  */
-any_t vcreate_ccode(ccode_t code, bool varargs, int narg, va_list args)
+any_t vcreate_ccode(ccode_t code, enum ptypes returntype, bool varargs, int narg, va_list args)
 {
   // built a signature to be passed to 'create_fn_data_entry'
   tuple_t signature = 0;
@@ -320,12 +320,12 @@ any_t vcreate_ccode(ccode_t code, bool varargs, int narg, va_list args)
 }
 
 
-any_t create_ccode(ccode_t code, bool varargs, int narg, ...)
+any_t create_ccode(ccode_t code, enum ptypes returntype, bool varargs, int narg, ...)
 {
   // read out the argument types
   va_list args;
   va_start(args, narg);
-  any_t f = vcreate_ccode(code, varargs, narg, args);
+  any_t f = vcreate_ccode(code, returntype, varargs, narg, args);
   va_end(args);
 
   return f;

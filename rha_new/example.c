@@ -1,6 +1,6 @@
 #include <stdarg.h>
 #include <stdio.h>
-#include "raw.h"
+#include "rha_types.h"
 
 // this file should be compiled like this:
 // gcc -dynamiclib -std=gnu99 -Wall -pedantic -fno-common -o example.so example.c
@@ -18,11 +18,11 @@ void *wrapped_ccode(int narg, ...)
 {
   va_list args;
   int result;
-  int *arg1;
+  union raw_t arg1;
 
   va_start(args, narg);
   arg1 = va_arg(args, union raw_t);
-  result = f(arg1->i);
+  result = f(arg1.i);
   return (void *) result;
 }
 
