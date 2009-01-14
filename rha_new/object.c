@@ -140,6 +140,14 @@ any_t wrap_builtin(int pt, builtin_t b)
   return o;
 }
 
+any_t wrap_ccode(int pt, ccode_t c)
+{
+  assert(pt==RHA_ccode_t);
+  any_t o = new_pt(pt);
+  o->raw.c = c;
+  return o;
+}
+
 any_t wrap_ptr(int pt, void *p)
 {
   assert(pt!=RHA_bool);
@@ -193,6 +201,16 @@ builtin_t unwrap_builtin(int pt, any_t o)
   if (!b)
     rha_error("can not access builtin, are you trying to use the builtin prototype?");
   return b;
+}
+
+ccode_t unwrap_ccode(int pt, any_t o)
+{
+  assert(pt==RHA_ccode_t);
+  assert(pt==ptype(o));
+  ccode_t c = o->raw.c;
+  if (!c)
+    rha_error("can not access ccode, are you trying to use the ccode prototype?");
+  return c;
 }
 
 void *unwrap_ptr(int pt, any_t o)
@@ -259,13 +277,55 @@ any_t vcreate_builtin(builtin_t code, bool varargs, int narg, va_list args)
   return fn_fn(0, signature, WRAP_BUILTIN(code));
 }
 
-
 any_t create_builtin(builtin_t code, bool varargs, int narg, ...)
 {
   // read out the argument types
   va_list args;
   va_start(args, narg);
   any_t f = vcreate_builtin(code, varargs, narg, args);
+  va_end(args);
+
+  return f;
+}
+
+/*
+ *
+ * Creating builtin functions
+ *
+ */
+any_t vcreate_ccode(ccode_t code, bool varargs, int narg, va_list args)
+{
+  // built a signature to be passed to 'create_fn_data_entry'
+  tuple_t signature = 0;
+  if (varargs) {
+    // reserve a spot for the ellipsis
+    signature = tuple_new(narg+1);
+    tuple_set(signature, narg, WRAP_SYMBOL(symbol_new("...")));
+  }
+  else
+    signature = tuple_new(narg);
+  for (int i=0; i<narg; i++) {
+    int pt = va_arg(args, int);
+    // we assume that the typeobject for ANY_T is zero
+    // this allows us later to avoid testing at all!
+    assert(pt!=RHA_any_t || typeobjects[pt]==0);
+    // note that 'theliteral' of the pattern is void
+    // note that for pt==ANY_T also 'thetype' is void
+    
+    tuple_set(signature, i, create_prepattern(0, quoted(typeobjects[pt])));
+  }
+
+  // create a new object and return it
+  return fn_fn(0, signature, WRAP_CCODE(code));
+}
+
+
+any_t create_ccode(ccode_t code, bool varargs, int narg, ...)
+{
+  // read out the argument types
+  va_list args;
+  va_start(args, narg);
+  any_t f = vcreate_ccode(code, varargs, narg, args);
   va_end(args);
 
   return f;
@@ -496,6 +556,11 @@ string_t builtin_to_string(builtin_t b)
   return sprint("<builtin@%p>", b);
 }
 
+string_t ccode_to_string(ccode_t c)
+{
+  return sprint("<ccode@%p>", c);
+}
+
 string_t address_to_string(address_t a)
 {
   return sprint("%p", (void *) a);
@@ -571,7 +636,10 @@ string_t to_string_only_in_c(any_t o)
 	return sprint("%p", (void *) UNWRAP_PTR(RHA_address_t, o));
       }
       case RHA_builtin_t: {
-	return sprint("<builtin@%p>", (void *) UNWRAP_PTR(RHA_builtin_t, o));
+	return sprint("<builtin@%p>", UNWRAP_PTR(RHA_builtin_t, o));
+      }
+      case RHA_ccode_t: {
+	return sprint("<ccode@%p>", UNWRAP_PTR(RHA_ccode_t, o));
       }
       default:
 	return sprint("<UNKNOWN ptype: addr=%p>", (void *) addr(o));

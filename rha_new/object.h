@@ -26,6 +26,7 @@ union raw_t {
   builtin_t b;     // possible pointer to builtin function
                    // because gcc doesn't like casting function
                    // pointer to void pointer and vice versa
+  ccode_t c;
   void *p;         // possible raw content
 };
 
@@ -45,10 +46,10 @@ extern       void       object_init(any_t root, any_t module);
 extern _rha_ any_t   new(void);
 extern       any_t   create_pt(int pt);
 extern       any_t   new_pt(int pt);
-extern       any_t   create_builtin(any_t (*code)(tuple_t),
-				       bool varargs, int narg, ...);
-extern       any_t   vcreate_builtin(any_t (*code)(tuple_t),
-					bool varargs, int narg, va_list);
+extern _ignore_ any_t   create_builtin(builtin_t code, bool varargs, int narg, ...);
+extern _ignore_ any_t   vcreate_builtin(builtin_t code, bool varargs, int narg, va_list);
+extern _ignore_ any_t   create_ccode(ccode_t code, bool varargs, int narg, ...);
+extern _ignore_ any_t   vcreate_ccode(ccode_t code, bool varargs, int narg, va_list);
 
 extern       any_t   copy_pt(any_t o);
 extern _rha_ address_t  addr(any_t o);
@@ -62,6 +63,7 @@ extern _rha_ void       vprint_fn(tuple_t args);
 extern _rha_ string_t   to_string(any_t);
 extern       string_t   to_string_only_in_c(any_t o);
 extern _rha_ string_t   builtin_to_string(builtin_t);
+extern _rha_ string_t   ccode_to_string(ccode_t);
 extern _rha_ string_t   address_to_string(address_t);
 
 extern _rha_ void       ls(any_t);
@@ -76,10 +78,12 @@ extern _rha_ any_t   dec_copy(any_t);
 extern _ignore_ any_t   wrap_int(int ptype, int i);
 extern _ignore_ any_t   wrap_double(int ptype, double d);
 extern _ignore_ any_t   wrap_builtin(int ptype, builtin_t b);
+extern _ignore_ any_t   wrap_ccode(int ptype, ccode_t c);
 extern _ignore_ any_t   wrap_ptr(int ptype, void *p);
 extern _ignore_ int        unwrap_int(int ptype, any_t o);
 extern _ignore_ double     unwrap_double(int ptype, any_t o);
 extern _ignore_ builtin_t  unwrap_builtin(int ptype, any_t o);
+extern _ignore_ ccode_t  unwrap_ccode(int ptype, any_t o);
 extern _ignore_ void      *unwrap_ptr(int ptype, any_t o);
 
 

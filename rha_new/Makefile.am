@@ -41,5 +41,5 @@ CLEANFILES = rha_types.h rha_init.h rha_init.c
 rhabarber_LDADD += rha_init.o
 rhabarber_LDFLAGS = -framework Python
 
-rha_types.h rha_init.h rha_init.c : rha_config.d $(rhabarber_SOURCES)
+rha_types.h rha_init.h rha_init.c : rha_config.d rha_config.pl $(rhabarber_SOURCES)
 	@srcdir@/rha_config.pl

@@ -30,7 +30,8 @@ static any_t eval_sequence(any_t env, tuple_t t);
 static list_t get_fn_data(any_t fn);
 static bool signature_matches(tuple_t signature, bool varargs, tuple_t values);
 static bool pattern_matches(any_t pattern, any_t value);
-static any_t call_builtin_fun(any_t fnbody,tuple_t values, bool no_frame);
+static any_t call_builtin_fun(any_t fnbody, tuple_t values, bool no_frame);
+static any_t call_ccode_fun(any_t fnbody, tuple_t values, bool no_frame);
 static any_t call_rhabarber_fun(any_t this, any_t fn, any_t scope, any_t fnbody,
 				tuple_t signature, tuple_t values, bool no_frame);
 static any_t construct_fun_scope(any_t this, any_t fn, tuple_t values, any_t scope);
@@ -237,6 +238,8 @@ any_t call_fun(any_t this, tuple_t values)
   // call function
   if (ptype(fnbody) == RHA_builtin_t)
     return call_builtin_fun(fnbody, values, no_frame);
+  else if (ptype(fnbody) == RHA_ccode_t)
+    return call_ccode_fun(fnbody, values, no_frame);
   else {
     scope = get_slot_any(impl, scope_sym, 
 			 "(eval) can't find defining scope");
@@ -470,6 +473,28 @@ static any_t call_builtin_fun(any_t fnbody, tuple_t values, bool no_frame)
   else {
     begin_frame(FUNCTION_FRAME)
       res = f(values);
+    end_frame(res);
+  }
+  return res;
+}
+
+static any_t call_ccode_fun(any_t fnbody, tuple_t values, bool no_frame)
+{
+  // (1) function with C code
+  any_t res = 0;
+  ccode_t f = UNWRAP_CCODE(fnbody);
+  // replace all 'void_obj' by zeroes
+  for (int i = 0; i < tuple_len(values); i++) {
+    any_t value = tuple_get(values, i);
+    //assert(value); // void in values should right now not be zero but void_obj
+    if (value == void_obj)
+      tuple_set(values, i, 0);
+  }
+  if(no_frame)
+    res = WRAP_INT((int) f(1, &UNWRAP_INT(tuple_get(values, 0))));
+  else {
+    begin_frame(FUNCTION_FRAME)
+      res = WRAP_INT((int) f(1, &UNWRAP_INT(tuple_get(values, 0))));
     end_frame(res);
   }
   return res;

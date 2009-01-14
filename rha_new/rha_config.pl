@@ -101,7 +101,8 @@ my %typemapping = ( bool      => "bool",
 		    float     => "float",
 		    double    => "real",
 		    real_t    => "real",
-		    builtin_t => "builtin" );
+		    builtin_t => "builtin",
+		    ccode_t => "ccode" );
 
 # by default we store the address of the content of a variable, since
 # we can't be sure whether it is a pointer.  All types listed below

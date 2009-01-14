@@ -38,6 +38,8 @@ typedef struct gtuple*            _rha_ tuple_t;
 typedef struct gtree*             _rha_ dict_t;
 typedef any_t (*_builtin_t)(tuple_t);
 typedef _builtin_t                _rha_ builtin_t;
+typedef void *(*_ccode_t)(int, ...);
+typedef _ccode_t                  _rha_ ccode_t;
 typedef double                    _rha_ real_t;
 typedef struct _mat_t_ { 
   real_t *array;
@@ -132,6 +134,7 @@ extern symbol_t domain_sym;
 #define UNWRAP_SYMBOL(o)  (unwrap_int(RHA_symbol_t, o))
 #define UNWRAP_REAL(o)    (unwrap_double(RHA_real_t, o))
 #define UNWRAP_BUILTIN(o) (unwrap_builtin(RHA_builtin_t, o))
+#define UNWRAP_CCODE(o)   (unwrap_ccode(RHA_ccode_t, o))
 #define UNWRAP_PTR(pt, o) (unwrap_ptr(pt, o))
 
 #define WRAP_INT(i)       (wrap_int(RHA_int, i))
@@ -139,4 +142,5 @@ extern symbol_t domain_sym;
 #define WRAP_SYMBOL(s)    (wrap_int(RHA_symbol_t, s))
 #define WRAP_REAL(d)      (wrap_double(RHA_real_t, d))
 #define WRAP_BUILTIN(p)   (wrap_builtin(RHA_builtin_t, p))
+#define WRAP_CCODE(p)     (wrap_ccode(RHA_ccode_t, p))
 #define WRAP_PTR(pt, p)   (wrap_ptr(pt, p))
