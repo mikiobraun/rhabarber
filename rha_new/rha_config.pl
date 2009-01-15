@@ -75,6 +75,7 @@ my @symbs = $symbols =~ /($id)\_sym/gox;
 #my %typeset = map { $_ => 1 } @tdefs;
 
 my %typenames = (); # to collect all typenames found in the header files
+my %typenamesC = ();  # to collect typenames as they appear in C code
 
 # some of the types are not stored in the void pointer but are stored
 # directly in the union that is attached to each object.  if a type
@@ -300,17 +301,20 @@ sub process_typedid {
 
     print "CALLING process_typedid($tid)\n" if $debug;
     $tid =~ s/\s+\*/\*/go;  # remove whitespace preceeding stars
-    my $typename = "";
+    my $typename = "";    # name in rhabarber
+    my $typenamec = "";   # name in C
     my $varname = "";
 
     if ($tid ne "void") {
 	$tid =~ /(?:$reco)?($id\**|\.\.\.)\s*(($id)?)/o;
 	$typename = $1;
+	$typenamec = $typename;
 	$varname  = $2;
 	$typename =~ s/(\*|$rebr)/_ptr/go;
     }
     else {
 	$typename = "void";
+	$typenamec = $typename;
 	$varname = "";
     }
 
@@ -318,6 +322,7 @@ sub process_typedid {
     if ($typename ne "..."
 	&& $typename ne "void") {
 	$typenames{$typename} = $typename;
+	$typenamesC{$typename} = $typenamec;
     }
 
     print "RETURNING ($typename, $varname) FROM process_typedid($tid)\n" if $debug;
@@ -409,7 +414,7 @@ sub process_fun() {
 	    $fnarg_str = "args";
 	}
 	elsif ($item ne "any_t") {
-	    $fnarg_str = "UNWRAP_PTR(RHA_$item, $fnarg_str)";	
+	    $fnarg_str = "UNWRAP_PTR(RHA_$item, $fnarg_str)";
 	    if (!$typeptrs{$item}) {
 		# thus we dereference the pointer we get
 		$fnarg_str = "*$fnarg_str";
@@ -421,22 +426,29 @@ sub process_fun() {
     $fncall_str .= ")";
 
     # how do we deal with the return value?
-    if ($typemapping{$fntype}) {
-	my $ucitem = uc($typemapping{$fntype});
-	$fncall_str = "WRAP_$ucitem($fncall_str)";
-    }
-    elsif ($fntype ne "any_t" && $fntype ne "void") {
-	if (!$typeptrs{$fntype}) {
-	    # thus we take the address of the return value
-	    $fncall_str = "&$fncall_str";
-	}
-	$fncall_str = "WRAP_PTR(RHA_$fntype, $fncall_str)";
-    }
     if ($fntype eq "void") { 
 	$init_c_functions .= "  $fncall_str;\n  return void_obj;\n" 
     }
-    else { 
+    elsif ($typemapping{$fntype}) {
+	my $ucitem = uc($typemapping{$fntype});
+	$fncall_str = "WRAP_$ucitem($fncall_str)";
 	$init_c_functions .= "  return $fncall_str;\n" 
+    }
+    elsif ($fntype ne "any_t" && $fntype ne "void") {
+	if (!$typeptrs{$fntype}) {
+	    # thus we need to allocate memory for the result
+	    $init_c_functions .= "  $typenamesC{$fntype} res;\n";
+	    $init_c_functions .= "  res = $fncall_str;\n";
+	    $init_c_functions .= "  return WRAP_PTR(RHA_$fntype, &res);\n" 
+	}
+	else {
+	    # don't allocate extra memory
+	    $init_c_functions .= "  $typenamesC{$fntype} res = $fncall_str;\n";
+	    $init_c_functions .= "  return WRAP_PTR(RHA_$fntype, res);\n" 
+	}
+    }
+    else {
+	$init_c_functions .= "  return $fncall_str;\n"
     }
     $init_c_functions .= "}\n";
     
