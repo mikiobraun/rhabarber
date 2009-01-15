@@ -31,27 +31,29 @@
 //#include <Python.h>
 //#endif
 
-typedef int                       _rha_ symbol_t;
-typedef struct rha_object *       _rha_ any_t;
+typedef int                        symbol_t;
+typedef struct rha_object *        any_t;
 #include "gtuple.h" // depends on 'any_t'
 #include "glist.h"  // depends on 'any_t'
-typedef struct gtuple*            _rha_ tuple_t;
-typedef struct gtree*             _rha_ dict_t;
-typedef any_t (*_builtin_t)(tuple_t);
-typedef _builtin_t                _rha_ builtin_t;
-typedef void *(*_ccode_t)(int, ...);
-typedef _ccode_t                  _rha_ ccode_t;
-typedef double                    _rha_ real_t;
+typedef struct gtuple*             tuple_t;
+typedef struct gtree*              dict_t;
+typedef double                     real_t;
 typedef struct _mat_t_ { 
   real_t *array;
   int  rows;
   int  cols;
   int  len;
-}*                                _rha_ mat_t;
-typedef char *                    _rha_ string_t;
-typedef void *                    _rha_ address_t;
-typedef struct glist *            _rha_ list_t;
-typedef glist_iterator_t *        _rha_ list_it_t;
+}*                                 mat_t;
+typedef char *                     string_t;
+typedef void *                     address_t;
+typedef struct glist *             list_t;
+typedef glist_iterator_t *         list_it_t;
+typedef any_t (*builtin_t)(tuple_t);
+typedef union raw_t (*code_t)(int, ...);
+typedef struct {
+  code_t code;
+  ptype_t rptype;     // return type
+}                                  ccode_t;
 
 // a union for the raw content
 union raw_t {
@@ -67,7 +69,7 @@ union raw_t {
 
 /* the rhabarber object */
 struct rha_object {
-  enum ptypes ptype;            // primtype (ptype): internal type 
+  ptype_t ptype;          // primtype (ptype): internal type 
                           // that describes the content
   struct symtable *table; // symbol table of slots
   union raw_t raw;

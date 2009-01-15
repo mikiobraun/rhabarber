@@ -18,10 +18,10 @@ void *wrapped_ccode(int narg, ...)
 {
   va_list args;
   int result;
-  union raw_t arg1;
+  raw_t arg1;
 
   va_start(args, narg);
-  arg1 = va_arg(args, union raw_t);
+  arg1 = va_arg(args, raw_t);
   result = f(arg1.i);
   return (void *) result;
 }

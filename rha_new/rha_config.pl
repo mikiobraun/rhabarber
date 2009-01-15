@@ -102,7 +102,7 @@ my %typemapping = ( bool      => "bool",
 		    double    => "real",
 		    real_t    => "real",
 		    builtin_t => "builtin",
-		    ccode_t => "ccode" );
+		    ccode_t   => "ccode" );
 
 # by default we store the address of the content of a variable, since
 # we can't be sure whether it is a pointer.  All types listed below
@@ -118,6 +118,7 @@ my %typeptrs = ( tuple_t => 1,
 		 list_it_t => 1,
 		 mat_t => 1,
 		 builtin_t => 1,
+		 ccode_t => 0,
 		 PyObject_ptr => 1,
 		 gsl_block_ptr => 1,
 		 gsl_vector_ptr => 1,
@@ -543,9 +544,9 @@ sub create_type_h {
 #define $ignorekeyword
 
 // (1) primtype id for all types
-enum ptypes {
+typedef enum {
 $type_h_ids
-};
+} ptype_t;
 
 // (2) datatypes which are available in Rhabarber
 $type_h_types

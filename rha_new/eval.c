@@ -478,36 +478,100 @@ static any_t call_builtin_fun(any_t fnbody, tuple_t values, bool no_frame)
   return res;
 }
 
-static any_t call_ccode_fun_narg(tuple_t values, int narg, enum ptypes returntype)
+static any_t call_ccode_fun_narg(ccode_t c, tuple_t values, int narg)
 {
+  code_t f = c.code;
+  ptype_t rptype = c.rptype;
+  union raw_t vres;
   switch (narg) {
   case 0:
-  case 1:
+    vres = f(0);
+    break;
+  case 1:    
+    vres = f(1, 
+	     tuple_get(values, 0)->raw);    
+    break;
   case 2:
+    vres = f(2, 
+	     tuple_get(values, 0)->raw,
+	     tuple_get(values, 1)->raw);    
+    break;
   case 3:
+    vres = f(3, 
+	     tuple_get(values, 0)->raw,
+	     tuple_get(values, 1)->raw,
+	     tuple_get(values, 2)->raw);    
+    break;
+  case 4:
+    vres = f(4, 
+	     tuple_get(values, 0)->raw,
+	     tuple_get(values, 1)->raw,
+	     tuple_get(values, 2)->raw,
+	     tuple_get(values, 3)->raw);    
+    break;
+  case 5:
+    vres = f(5, 
+	     tuple_get(values, 0)->raw,
+	     tuple_get(values, 1)->raw,
+	     tuple_get(values, 2)->raw,
+	     tuple_get(values, 3)->raw,
+	     tuple_get(values, 4)->raw);    
+    break;
+  case 6:
+    vres = f(6, 
+	     tuple_get(values, 0)->raw,
+	     tuple_get(values, 1)->raw,
+	     tuple_get(values, 2)->raw,
+	     tuple_get(values, 3)->raw,
+	     tuple_get(values, 4)->raw,
+	     tuple_get(values, 5)->raw);    
+    break;
+  case 7:
+    vres = f(7, 
+	     tuple_get(values, 0)->raw,
+	     tuple_get(values, 1)->raw,
+	     tuple_get(values, 2)->raw,
+	     tuple_get(values, 3)->raw,
+	     tuple_get(values, 4)->raw,
+	     tuple_get(values, 5)->raw,
+	     tuple_get(values, 6)->raw);    
+    break;
   default:
     rha_error("[eval.c:call_ccode_fun_narg] not implemented for that many arguments");
     break;
   }
+  // convert return value to its right type
+  any_t res;
+  switch (rptype) {
+  case RHA_int:	      res = WRAP_INT(vres.i);	      break;
+  case RHA_bool:      res = WRAP_BOOL(vres.i);	      break;
+  case RHA_symbol_t:  res = WRAP_SYMBOL(vres.i);      break;
+  case RHA_real_t:    res = WRAP_REAL(vres.d);        break;
+  case RHA_builtin_t: res = WRAP_BUILTIN(vres.b);     break;
+  case RHA_ccode_t:   res = WRAP_CCODE(vres.c);       break;
+  default:            res = WRAP_PTR(rptype, vres.p); break;
+  }
+  return res;
 }
 
 static any_t call_ccode_fun(any_t fnbody, tuple_t values, bool no_frame)
 {
   // (1) function with C code
   any_t res = 0;
-  ccode_t f = UNWRAP_CCODE(fnbody);
+  ccode_t c = UNWRAP_CCODE(fnbody);
+  int narg = tuple_len(values);
   // replace all 'void_obj' by zeroes
-  for (int i = 0; i < tuple_len(values); i++) {
+  for (int i = 0; i < narg; i++) {
     any_t value = tuple_get(values, i);
     //assert(value); // void in values should right now not be zero but void_obj
     if (value == void_obj)
       tuple_set(values, i, 0);
   }
   if(no_frame)
-    res = WRAP_INT((int) f(1, tuple_get(values, 0)->raw));    
+    res = call_ccode_fun_narg(c, values, narg);
   else {
     begin_frame(FUNCTION_FRAME)
-      res = WRAP_INT((int) f(1, tuple_get(values, 0)->raw));
+      res = call_ccode_fun_narg(c, values, narg);
     end_frame(res);
   }
   return res;

@@ -273,3 +273,8 @@ check(a==3);
 check(b==7);
 check(c==5);
 summarize();
+
+test("shared object");
+g = modules.ccode.ccode("result=f(arg1);", int, int);
+check(g(17)==34);
+summarize();

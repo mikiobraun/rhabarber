@@ -7,13 +7,10 @@
 #include "messages.h"
 #include "object.h"
 
-// gcc -dynamiclib -o lib1.so lib1.c
-
 // next step: try
 // autoreconf -i
 // ./configure
 // make
-//gcc -dynamiclib -std=gnu99 -Wall -pedantic -fno-common -g -O2 -framework Python  -o rhabarber alloc.o bool_fn.o ccode.o core.o cstream.o debug.o eval.o excp.o fmt.o glist.o gtree.o gtuple.o int_fn.o list_fn.o mat_fn.o messages.o object.o parse.o prules.o python_fn.o real_fn.o rhabarber.o rha_lexer.o rha_parser.o string_fn.o symbol_fn.o symtable.o tuple_fn.o utilalloc.o utils.o -lfl rha_init.o -lgsl -lcblas -lreadline -lgc -o example.so example.c
 
 
 // bundle all .o in a library
@@ -47,7 +44,7 @@
 //   return f;
 // }
 
-any_t ccode(string_t codestring, any_t returntype, any_t argtype)
+any_t ccode(string_t codestring, any_t rtype, any_t argtype)
 {
   // STEPS:
   // 1. create c-file
@@ -55,7 +52,7 @@ any_t ccode(string_t codestring, any_t returntype, any_t argtype)
   // 3. dlopen it
   void *lib_handle = dlopen("example.so", RTLD_LAZY);
   if (!lib_handle) rha_error("(ccode) can't open shared object");
-  ccode_t wrapped_code;
+  code_t wrapped_code;
 
   // the next line triggers the following compilation warning:
   // > ISO C forbids assignment between function pointer and void*
@@ -65,8 +62,9 @@ any_t ccode(string_t codestring, any_t returntype, any_t argtype)
   if (error) rha_error("(ccode) dlsym created error msg: %s", error);
 
   // 4. create builtin from wrapped_code
-  enum ptypes ptype = 0;
-  any_t f = create_ccode(wrapped_code, ptype, false, 1, argtype);
+  ptype_t rptype = RHA_int;
+  ccode_t c = { wrapped_code, rptype };
+  any_t f = create_ccode(c, false, 1, argtype);
   return f;
 }
 

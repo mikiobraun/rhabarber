@@ -29,8 +29,8 @@ extern       any_t   create_pt(int pt);
 extern       any_t   new_pt(int pt);
 extern _ignore_ any_t   create_builtin(builtin_t code, bool varargs, int narg, ...);
 extern _ignore_ any_t   vcreate_builtin(builtin_t code, bool varargs, int narg, va_list);
-extern _ignore_ any_t   create_ccode(ccode_t code, enum ptypes returntype, bool varargs, int narg, ...);
-extern _ignore_ any_t vcreate_ccode(ccode_t code, enum ptypes returntype, bool varargs, int narg, va_list args);
+extern _ignore_ any_t   create_ccode(ccode_t c, bool varargs, int narg, ...);
+extern _ignore_ any_t vcreate_ccode(ccode_t c, bool varargs, int narg, va_list args);
 
 extern       any_t   copy_pt(any_t o);
 extern _rha_ address_t  addr(any_t o);
