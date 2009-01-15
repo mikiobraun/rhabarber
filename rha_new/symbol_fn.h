@@ -13,11 +13,11 @@
 
 #include "rha_types.h"
 
-extern _rha_ symbol_t symbol_new(string_t s);
-extern _rha_ bool   symbol_equalequal(symbol_t s, symbol_t t);
-extern _rha_ string_t symbol_name(symbol_t s);
-extern _rha_ string_t symbol_to_string(symbol_t s);
-extern _rha_ bool   symbol_valid(symbol_t s);
+extern  symbol_t symbol_new(string_t s);
+extern  bool   symbol_equalequal(symbol_t s, symbol_t t);
+extern  string_t symbol_name(symbol_t s);
+extern  string_t symbol_to_string(symbol_t s);
+extern  bool   symbol_valid(symbol_t s);
 
 //extern any_t symbol_wrap(symbol_t s);
 //extern any_t symbol_new_wrap(string_t s);

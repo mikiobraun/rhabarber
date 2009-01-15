@@ -41,7 +41,6 @@ my $debug = shift @ARGV;
 # C identifier
 my $id = '[a-zA-Z_]\w*';
 
-my $keyword = "_rha_";
 my $ignorekeyword = "_ignore_";
 
 # load def file into one string
@@ -68,7 +67,6 @@ my @mods = $modules =~ /include\s+\"($id)\.h\"/gox;
 
 # (2) disect the typedefs
 my @tdefs;
-#my @tdefs = $types =~ /$keyword\s+($id)/gox;
 
 # (3) disect the symbols
 my @symbs = $symbols =~ /($id)\_sym/gox;
@@ -158,7 +156,6 @@ my $reargs = "$rear\\s*" # first arg
     .")*\\s*";        # more args are optional
 
 # regexp for function declaration
-#my $refd = "$keyword\\s+($refn)\\s*" # return type and function name
 my $refd = "($refn)\\s*" # return type and function name
     ."\\(\\s*"        # left bracket of args
     ."($reargs|\\s*)" # optional args 
@@ -540,7 +537,6 @@ sub create_type_h {
 
 // (0) use the keyword to mark the datatypes and function in
 // 'rha_config.d' that should be accessible in Rhabarber
-#define $keyword
 #define $ignorekeyword
 
 // (1) primtype id for all types

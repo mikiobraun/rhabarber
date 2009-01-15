@@ -3,7 +3,7 @@
 
 #include "rha_types.h"
 
-extern _rha_ any_t resolve(any_t root, list_t source);
+extern       any_t resolve(any_t root, list_t source);
 extern       any_t resolve_patterns(any_t env, list_t source);
 extern       any_t resolve_each(any_t env, list_t source);
 
@@ -14,7 +14,6 @@ extern       void     parse_init(any_t root, any_t module);
 // the string for 'dot_sym' is ':' and not 'dot'
 extern symbol_t dot_sym;
 
-//extern _rha_ any_t prule_failed_excp; // exception
 extern any_t prule_failed_excp; // exception
 
 #define LEFT_BIND true

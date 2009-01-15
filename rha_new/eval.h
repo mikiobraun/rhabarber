@@ -6,12 +6,12 @@
 #include "object.h"
 
 extern       void   eval_init(any_t root, any_t module);
-extern _rha_ any_t  eval(any_t, any_t);
-extern _rha_ any_t  callslot(any_t obj, symbol_t slotname, int narg, ...);
-extern _rha_ any_t  vcallslot(any_t obj, symbol_t slotname, tuple_t args);
+extern  any_t  eval(any_t, any_t);
+extern  any_t  callslot(any_t obj, symbol_t slotname, int narg, ...);
+extern  any_t  vcallslot(any_t obj, symbol_t slotname, tuple_t args);
 
-extern _rha_ bool fn_data_entry_equalequal(any_t e1, any_t e2);
-extern _rha_ bool fn_data_entry_lessthan(any_t e1, any_t e2);
+extern  bool fn_data_entry_equalequal(any_t e1, any_t e2);
+extern  bool fn_data_entry_lessthan(any_t e1, any_t e2);
 
 
 // used by parse.c
