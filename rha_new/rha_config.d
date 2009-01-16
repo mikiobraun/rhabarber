@@ -15,9 +15,9 @@
 #include "string_fn.h"
 #include "bool_fn.h"
 #include "real_fn.h"
+#include "ccode.h"
 #include "mat_fn.h"
 #include "messages.h"
-#include "ccode.h"
 //#include "python_fn.h"
 //#include "gtree.h"    // for a hashtable
 //#include "gsl_matrix_double.h"

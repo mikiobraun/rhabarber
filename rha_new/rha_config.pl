@@ -119,6 +119,10 @@ my %typeptrs = ( tuple_t => 1,
 		 builtin_t => 1,
 		 ccode_t => 0,
 		 PyObject_ptr => 1,
+		 double_ptr => 1,
+		 FILE_ptr => 1,
+		 char_ptr => 1,
+		 size_t_ptr => 1,
 		 gsl_block_ptr => 1,
 		 gsl_vector_ptr => 1,
 		 gsl_matrix_ptr => 1);
@@ -437,9 +441,9 @@ sub process_fun() {
     elsif ($fntype ne "any_t" && $fntype ne "void") {
 	if (!$typeptrs{$fntype}) {
 	    # thus we need to allocate memory for the result
-	    $init_c_functions .= "  $typenamesC{$fntype} res;\n";
-	    $init_c_functions .= "  res = $fncall_str;\n";
-	    $init_c_functions .= "  return WRAP_PTR(RHA_$fntype, &res);\n" 
+	    $init_c_functions .= "  $typenamesC{$fntype} *res = GC_MALLOC(sizeof($typenamesC{$fntype}));\n";
+	    $init_c_functions .= "  *res = $fncall_str;\n";
+	    $init_c_functions .= "  return WRAP_PTR(RHA_$fntype, res);\n" 
 	}
 	else {
 	    # don't allocate extra memory

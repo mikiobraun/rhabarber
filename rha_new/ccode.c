@@ -22,28 +22,6 @@
 // * thus make a list for all lib_handles and write a function that
 // closes all at the end of rhabarber...
 
-// any_t ccode(string_t codestring, any_t returntype, any_t argtype)
-// {
-//   // STEPS:
-//   // 1. create c-file
-//   // 2. compile with gcc -dynamiclib -o lib1.so lib1.c
-//   // 3. dlopen it
-//   void *lib_handle = dlopen("example.so", RTLD_LAZY);
-//   if (!lib_handle) rha_error("(ccode) can't open shared object");
-//   builtin_t wrapped_code;
-//  
-//   // the next line triggers the following compilation warning:
-//   // > ISO C forbids assignment between function pointer and void*
-//   // is that a problem of dlsym which returns a void* ?
-//   wrapped_code = (builtin_t) dlsym(lib_handle, "wrapped_ccode");
-//   const char* error = dlerror();
-//   if (error) rha_error("(ccode) dlsym created error msg: %s", error);
-//  
-//   // 4. create builtin from wrapped_code
-//   any_t f = create_builtin(wrapped_code, false, 1, RHA_int);
-//   return f;
-// }
-
 any_t ccode(string_t codestring, any_t rtype, any_t argtype)
 {
   // STEPS:
