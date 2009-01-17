@@ -13,6 +13,6 @@
 
 #include "rha_types.h"
 
-extern any_t ccode(string_t codestring, any_t returntype, any_t argtype);
+extern any_t ccode(string_t codestring, any_t rtype, int narg, ...);
 
 #endif

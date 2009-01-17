@@ -35,7 +35,7 @@ extern _ignore_ any_t vcreate_ccode(ccode_t c, bool varargs, int narg, va_list a
 extern       any_t   copy_pt(any_t o);
 extern  address_t  addr(any_t o);
 extern  any_t   clone(any_t parent);
-extern  int      ptype(any_t);      // primtype
+extern  int   ptype(any_t);      // primtype
 extern  string_t   ptypename(any_t o);
 extern       void       setptype(any_t, int);
 

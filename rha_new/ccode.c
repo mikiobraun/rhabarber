@@ -22,7 +22,7 @@
 // * thus make a list for all lib_handles and write a function that
 // closes all at the end of rhabarber...
 
-any_t ccode(string_t codestring, any_t rtype, any_t argtype)
+any_t ccode(string_t codestring, any_t rtype, int narg, ...)
 {
   // STEPS:
   // 1. create c-file
@@ -40,9 +40,14 @@ any_t ccode(string_t codestring, any_t rtype, any_t argtype)
   if (error) rha_error("(ccode) dlsym created error msg: %s", error);
 
   // 4. create builtin from wrapped_code
-  ptype_t rptype = RHA_int;
+  any_t proto = lookup(rtype, proto_sym);
+  if (!proto) rha_error("[ccode] return type must have 'proto' slot");
+  ptype_t rptype = ptype(proto);
   ccode_t c = { wrapped_code, rptype };
-  any_t f = create_ccode(c, false, 1, argtype);
+  va_list args;
+  va_start(args, narg);
+  any_t f = create_ccode(c, false, narg, args);
+  va_end(args);
   return f;
 }
 

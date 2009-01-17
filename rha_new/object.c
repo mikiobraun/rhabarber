@@ -292,6 +292,7 @@ any_t create_builtin(builtin_t code, bool varargs, int narg, ...)
  *
  */
 any_t vcreate_ccode(ccode_t c, bool varargs, int narg, va_list args)
+// 'args' are integers which correspond to primitive types
 {
   // built a signature to be passed to 'create_fn_data_entry'
   tuple_t signature = 0;
@@ -303,13 +304,15 @@ any_t vcreate_ccode(ccode_t c, bool varargs, int narg, va_list args)
   else
     signature = tuple_new(narg);
   for (int i=0; i<narg; i++) {
-    int pt = va_arg(args, int);
+    any_t argtype = va_arg(args, any_t);
+    any_t proto = lookup(argtype, proto_sym);
+    if (!proto) rha_error("[vcreate_ccode] arg type must have 'proto' slot");
+    int pt = ptype(proto);
     // we assume that the typeobject for ANY_T is zero
     // this allows us later to avoid testing at all!
     assert(pt!=RHA_any_t || typeobjects[pt]==0);
     // note that 'theliteral' of the pattern is void
     // note that for pt==ANY_T also 'thetype' is void
-    
     tuple_set(signature, i, create_prepattern(0, quoted(typeobjects[pt])));
   }
 
@@ -325,7 +328,6 @@ any_t create_ccode(ccode_t c, bool varargs, int narg, ...)
   va_start(args, narg);
   any_t f = vcreate_ccode(c, varargs, narg, args);
   va_end(args);
-
   return f;
 }
 

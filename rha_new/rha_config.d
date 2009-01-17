@@ -20,7 +20,7 @@
 #include "messages.h"
 //#include "python_fn.h"
 //#include "gtree.h"    // for a hashtable
-//#include "gsl_matrix_double.h"
+#include "gsl_matrix_double.h"
 
 //TYPES
 #include "config.h"
